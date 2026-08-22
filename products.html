@@ -114,7 +114,7 @@
             <th>Status</th>
             <th>Owner</th>
             <th>Users</th>
-            <th>Date created</th>
+            <th>Created / target date</th>
           </tr>
         </thead>
         <tbody id="rows"></tbody>
@@ -144,8 +144,9 @@
         ? '<span class="owner"><span class="avatar" aria-hidden="true">' + p.owner.avatar + '</span>' + p.owner.name + '</span>'
         : '—';
       const name = '<a href="' + destination + '"><img class="product-wordmark" src="' + p.avatar + '" alt="' + p.name + '"></a>';
-      const date = p.created
-        ? '<time datetime="' + p.created + '">' + longDate(p.created) + '</time>'
+      const productDate = p.created || p.targetDate;
+      const date = productDate
+        ? '<time datetime="' + productDate + '">' + longDate(productDate) + '</time>'
         : '—';
       return '<tr data-link="' + destination + '" data-product-slug="' + p.slug + '">' +
         '<td class="name">' + name + '</td>' +

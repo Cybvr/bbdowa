@@ -159,7 +159,7 @@
         <div><span class="meta-label">Role</span><strong><span id="product-owner">Owner to be assigned</span><br><span id="product-role">Product Owner</span></strong></div>
       </div>
       <div class="meta-item">
-        <span class="meta-label">Date created</span>
+        <span class="meta-label" id="product-date-label">Date created</span>
         <strong><time id="product-created">Not yet created</time></strong>
       </div>
       <div class="meta-item">
@@ -215,12 +215,14 @@
       listInto("product-roadmap", product.roadmap);
 
       const created = document.getElementById("product-created");
-      if (product.created) {
-        created.dateTime = product.created;
-        created.textContent = new Date(product.created + "T00:00:00Z").toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+      const productDate = product.created || product.targetDate;
+      document.getElementById("product-date-label").textContent = product.created ? "Date created" : "Target date";
+      if (productDate) {
+        created.dateTime = productDate;
+        created.textContent = new Date(productDate + "T00:00:00Z").toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
       } else {
         created.removeAttribute("datetime");
-        created.textContent = "Not yet created";
+        created.textContent = "Not scheduled";
       }
       const link = document.getElementById("product-link");
       link.href = "product.html#" + product.slug;

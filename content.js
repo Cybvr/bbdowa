@@ -49,6 +49,7 @@ window.CHAOS_CONTENT = {
       roadmap: ["Define minimum content", "Connect the pitch workflow", "Add credentials and case studies"],
       reviewCadence: "Quarterly",
       created: null,
+      targetDate: "2026-10-01",
       url: null
     },
     {
@@ -65,6 +66,7 @@ window.CHAOS_CONTENT = {
       roadmap: ["Standardise profiles", "Import current shortlists", "Add availability and work samples"],
       reviewCadence: "Monthly",
       created: null,
+      targetDate: "2026-11-19",
       url: null
     },
     {
@@ -81,6 +83,7 @@ window.CHAOS_CONTENT = {
       roadmap: ["Import the production shortlist", "Add rate cards", "Create post-project reviews"],
       reviewCadence: "Monthly",
       created: null,
+      targetDate: "2027-01-07",
       url: null
     },
     {
@@ -97,6 +100,7 @@ window.CHAOS_CONTENT = {
       roadmap: ["Audit existing assets", "Create a simple taxonomy", "Assign content owners"],
       reviewCadence: "Quarterly",
       created: null,
+      targetDate: "2027-02-25",
       url: null
     },
     {
@@ -113,6 +117,7 @@ window.CHAOS_CONTENT = {
       roadmap: ["Define account-health signals", "Connect current client data", "Add review cadence"],
       reviewCadence: "Monthly",
       created: null,
+      targetDate: "2027-04-15",
       url: null
     },
     {
@@ -129,6 +134,7 @@ window.CHAOS_CONTENT = {
       roadmap: ["Define the campaign record", "Import priority work", "Add results and learning fields"],
       reviewCadence: "Quarterly",
       created: null,
+      targetDate: "2027-06-03",
       url: null
     },
     {
@@ -145,6 +151,7 @@ window.CHAOS_CONTENT = {
       roadmap: ["Define signal format", "Recruit contributors", "Start a weekly publishing rhythm"],
       reviewCadence: "Monthly",
       created: null,
+      targetDate: "2027-07-22",
       url: null
     }
   ]
