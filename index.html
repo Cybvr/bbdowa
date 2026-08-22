@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BBDOWA Chaos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      background: #f4f2ed;
+      color: #111;
+      font-family: "Outfit", Arial, Helvetica, sans-serif;
+      display: flex;
+      flex-direction: column;
+    }
+    .site-nav {
+      flex: none;
+      min-height: 88px;
+      padding: 14px clamp(24px, 6vw, 96px);
+      background: #e51b23;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 32px;
+    }
+    .site-nav img { display: block; width: clamp(150px, 18vw, 230px); height: auto; filter: brightness(0) invert(1); }
+    .site-nav ul { display: flex; align-items: center; gap: clamp(18px, 3vw, 48px); margin: 0; padding: 0; list-style: none; }
+    .site-nav li { font-size: 14px; }
+    .site-nav a { color: #fff; font-weight: 800; letter-spacing: .06em; text-decoration: none; text-transform: uppercase; }
+    .site-nav a:hover, .site-nav a:focus-visible { color: #111; }
+    .site-nav a[aria-current="page"] { text-decoration: underline; text-underline-offset: 6px; }
+    .site-nav a:focus-visible { outline: 2px solid #fff; outline-offset: 6px; }
+
+    .site-nav li.has-menu { position: relative; }
+    .site-nav .trigger {
+      border: 0; background: none; padding: 0; cursor: pointer;
+      color: #fff; font: inherit; font-size: inherit; font-weight: 800;
+      letter-spacing: .06em; text-transform: uppercase;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .site-nav .trigger::after { content: "\25BE"; font-size: .8em; }
+    .site-nav .has-menu:hover .trigger, .site-nav .trigger:focus-visible { color: var(--menu-ink, #111); }
+    .site-nav .trigger:focus-visible { outline: 2px solid #fff; outline-offset: 6px; }
+    .site-nav .has-menu.active .trigger { text-decoration: underline; text-underline-offset: 6px; }
+    .site-nav .menu {
+      display: none; position: absolute; top: calc(100% + 14px); left: -16px;
+      min-width: 200px; padding: 6px 0; background: #111; z-index: 200;
+    }
+    .site-nav .menu::before {
+      content: "";
+      position: absolute;
+      right: 0;
+      bottom: 100%;
+      left: 0;
+      height: 14px;
+    }
+    .site-nav .has-menu:hover .menu,
+    .site-nav .has-menu:focus-within .menu,
+    .site-nav .has-menu.open .menu { display: block; }
+    .site-nav .menu li { display: block; font-size: 12px; }
+    .site-nav .menu a { display: block; padding: 11px 16px; letter-spacing: .1em; }
+    .site-nav .menu a:hover, .site-nav .menu a:focus-visible { background: var(--red, #e51b23); color: #fff; }
+
+    header {
+      flex: 1;
+      padding: 40px clamp(24px, 6vw, 96px) 64px;
+      background: #e51b23;
+      color: #fff;
+      display: flex;
+      align-items: center;
+    }
+    h1 {
+      margin: 0;
+      max-width: 14ch;
+      font-size: clamp(64px, 13vw, 190px);
+      line-height: .82;
+      letter-spacing: -.07em;
+      text-transform: uppercase;
+    }
+    footer {
+      flex: none;
+      padding: 34px clamp(24px, 6vw, 96px);
+      background: #111;
+      color: #fff;
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+    @media (max-width: 720px) {
+      .site-nav { min-height: 68px; padding-block: 10px; gap: 14px; flex-wrap: wrap; }
+      .site-nav img { width: 125px; }
+      .site-nav ul { gap: 14px; }
+      .site-nav li { font-size: 11px; }
+      footer { flex-direction: column; }
+    }
+  </style>
+  <link rel="stylesheet" href="nav-dropdown.css">
+</head>
+<body>
+  <nav class="site-nav" aria-label="Primary navigation">
+    <a href="index.html" aria-label="BBDO West Africa home">
+      <img src="bbdo-west-africa.png" alt="BBDO West Africa — Do Big Things">
+    </a>
+    <ul>
+      <li><a href="about.html">About</a></li>
+      <li><a href="people.html">People</a></li>
+      <li><a href="clients.html">Clients</a></li>
+      <li class="has-menu">
+        <button type="button" class="trigger" aria-haspopup="true" aria-expanded="false">Products</button>
+        <ul class="menu" data-products-menu>
+          <li><a href="products.html">All Products</a></li>
+          <li><a href="product.html#industry-labs">Industry Labs</a></li>
+        </ul>
+      </li>
+      <li class="has-menu">
+        <button type="button" class="trigger" aria-haspopup="true" aria-expanded="false">Workflows</button>
+        <ul class="menu">
+          <li><a href="agency-workflow.html">Agency</a></li>
+          <li><a href="checklist.html">Pitch</a></li>
+        </ul>
+      </li>
+      <li><a href="resources.html">Resources</a></li>
+    </ul>
+  </nav>
+
+  <header>
+    <h1>Welcome to<br>BBDOWA<br>Chaos</h1>
+  </header>
+
+  <footer>
+    <span>BBDO Chaos <span id="today">22 August 2026</span></span>
+    <span>Do Big Things</span>
+  </footer>
+  <script>
+    document.getElementById("today").textContent =
+      new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+
+  </script>
+  <script src="content.js"></script>
+  <script src="nav-dropdown.js"></script>
+</body>
+</html>

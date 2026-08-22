@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pitch Workflow — BBDO West Africa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  :root { --red: #e51b23; --ink: #111; --cream: #f4f2ed; --line: #c8c5be; --muted: #6b675f; }
+  body {
+    margin: 0;
+    background: var(--cream);
+    color: var(--ink);
+    font-family: "Outfit", Arial, Helvetica, sans-serif;
+  }
+
+  /* ---------- site nav (same as home) ---------- */
+  .site-nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    min-height: 88px;
+    padding: 14px clamp(24px, 6vw, 96px);
+    background: var(--red);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 32px;
+  }
+  .site-nav img { display: block; width: clamp(150px, 18vw, 230px); height: auto; filter: brightness(0) invert(1); }
+  .site-nav ul { display: flex; align-items: center; gap: clamp(20px, 3vw, 48px); margin: 0; padding: 0; list-style: none; }
+  .site-nav li { font-size: 14px; }
+  .site-nav a { color: #fff; font-weight: 800; letter-spacing: .06em; text-decoration: none; text-transform: uppercase; }
+  .site-nav a:hover, .site-nav a:focus-visible { color: var(--ink); }
+  .site-nav a[aria-current="page"] { text-decoration: underline; text-underline-offset: 6px; }
+  .site-nav a:focus-visible { outline: 2px solid #fff; outline-offset: 6px; }
+
+    .site-nav li.has-menu { position: relative; }
+    .site-nav .trigger {
+      border: 0; background: none; padding: 0; cursor: pointer;
+      color: #fff; font: inherit; font-size: inherit; font-weight: 800;
+      letter-spacing: .06em; text-transform: uppercase;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .site-nav .trigger::after { content: "\25BE"; font-size: .8em; }
+    .site-nav .has-menu:hover .trigger, .site-nav .trigger:focus-visible { color: var(--menu-ink, #111); }
+    .site-nav .trigger:focus-visible { outline: 2px solid #fff; outline-offset: 6px; }
+    .site-nav .has-menu.active .trigger { text-decoration: underline; text-underline-offset: 6px; }
+    .site-nav .menu {
+      display: none; position: absolute; top: calc(100% + 14px); left: -16px;
+      min-width: 200px; padding: 6px 0; background: #111; z-index: 200;
+    }
+    .site-nav .has-menu:hover .menu, .site-nav .has-menu:focus-within .menu { display: block; }
+    .site-nav .menu li { display: block; font-size: 12px; }
+    .site-nav .menu a { display: block; padding: 11px 16px; letter-spacing: .1em; }
+    .site-nav .menu a:hover, .site-nav .menu a:focus-visible { background: var(--red, #e51b23); color: #fff; }
+
+
+  /* ---------- workflow hero ---------- */
+  .workflow-hero {
+    min-height: clamp(420px, 62vh, 720px);
+    padding: clamp(64px, 9vw, 128px) clamp(24px, 6vw, 96px);
+    display: flex;
+    align-items: center;
+  }
+  .workflow-hero h1 {
+    margin: 0;
+    max-width: 9ch;
+    font-size: clamp(64px, 13vw, 180px);
+    line-height: .82;
+    letter-spacing: -.07em;
+    text-transform: uppercase;
+  }
+
+  /* ---------- progress strip ---------- */
+  .strip {
+    display: flex;
+    align-items: center;
+    gap: clamp(14px, 2vw, 28px);
+    padding: 16px clamp(24px, 6vw, 96px);
+    border-bottom: 1px solid var(--ink);
+  }
+  .strip .title {
+    margin: 0;
+    font-size: clamp(20px, 2.4vw, 30px);
+    line-height: 1;
+    letter-spacing: -.045em;
+    text-transform: uppercase;
+  }
+  .strip .spacer { flex: 1; }
+  .track { width: clamp(90px, 20vw, 280px); height: 8px; background: #dcd8d0; }
+  .fill { height: 100%; width: 0; background: var(--red); transition: width .25s ease; }
+  .pct { font-size: 13px; font-weight: 800; letter-spacing: .06em; font-variant-numeric: tabular-nums; }
+  .reset {
+    border: 2px solid var(--ink);
+    background: none;
+    color: var(--ink);
+    font: inherit;
+    font-size: 11px; font-weight: 800; letter-spacing: .1em;
+    text-transform: uppercase;
+    padding: 8px 13px;
+    cursor: pointer;
+  }
+  .reset:hover, .reset:focus-visible { background: var(--ink); color: #fff; }
+
+  /* ---------- two pane layout ---------- */
+  .shell {
+    display: grid;
+    grid-template-columns: minmax(250px, 320px) minmax(0, 1fr);
+    min-height: calc(100vh - 240px);
+  }
+  .index { border-right: 1px solid var(--line); padding: 18px 0 40px; }
+  .index .label {
+    padding: 4px clamp(20px, 3vw, 34px) 12px;
+    font-size: 11px; font-weight: 800; letter-spacing: .16em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  .tab {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 26px 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 12px clamp(20px, 3vw, 34px);
+    border: 0;
+    border-left: 4px solid transparent;
+    background: none;
+    font: inherit;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.15;
+    text-align: left;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .tab .num, .tab .count { font-size: 12px; font-weight: 800; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .tab:hover { background: rgba(17,17,17,.05); }
+  .tab[aria-selected="true"] { background: var(--ink); color: #fff; border-left-color: var(--red); }
+  .tab[aria-selected="true"] .num, .tab[aria-selected="true"] .count { color: rgba(255,255,255,.7); }
+  .tab.done .count { color: var(--red); }
+  .tab[aria-selected="true"].done .count { color: #fff; }
+  .tab:focus-visible { outline: 3px solid var(--red); outline-offset: -3px; }
+
+  .panel { padding: clamp(26px, 3.6vw, 52px) clamp(24px, 4vw, 64px) 56px; }
+  .eyebrow { margin: 0 0 10px; font-size: 11px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--red); }
+  .panel h2 {
+    margin: 0 0 26px;
+    max-width: 16ch;
+    font-size: clamp(34px, 5vw, 66px);
+    line-height: .92;
+    letter-spacing: -.055em;
+    text-transform: uppercase;
+  }
+  ul.tasks { margin: 0; padding: 0; list-style: none; max-width: 900px; border-top: 1px solid var(--line); }
+  ul.tasks li { border-bottom: 1px solid var(--line); }
+  ul.tasks label {
+    display: grid;
+    grid-template-columns: 22px 1fr;
+    gap: 14px;
+    align-items: start;
+    padding: 15px 4px;
+    font-size: clamp(17px, 1.5vw, 21px);
+    line-height: 1.32;
+    cursor: pointer;
+  }
+  ul.tasks label:hover { background: rgba(17,17,17,.04); }
+  ul.tasks input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .box {
+    margin-top: 3px;
+    width: 22px; height: 22px;
+    border: 2px solid var(--red);
+    display: grid; place-items: center;
+    transition: background .15s ease;
+  }
+  .box::after {
+    content: "";
+    width: 11px; height: 6px;
+    border-left: 3px solid #fff;
+    border-bottom: 3px solid #fff;
+    transform: rotate(-45deg) scale(0);
+    transition: transform .15s ease;
+  }
+  input:checked + .box { background: var(--red); }
+  input:checked + .box::after { transform: rotate(-45deg) scale(1); }
+  input:focus-visible + .box { outline: 3px solid var(--ink); outline-offset: 3px; }
+  input:checked ~ .txt { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--red); }
+
+  .nav-btns { display: flex; gap: 10px; margin-top: 32px; }
+  .nav-btns button {
+    border: 2px solid var(--ink);
+    background: none;
+    color: var(--ink);
+    font: inherit;
+    font-size: 12px; font-weight: 800; letter-spacing: .1em;
+    text-transform: uppercase;
+    padding: 12px 18px;
+    cursor: pointer;
+  }
+  .nav-btns button:hover:not(:disabled) { background: var(--ink); color: #fff; }
+  .nav-btns button:disabled { opacity: .3; cursor: default; }
+
+  footer {
+    padding: 34px clamp(24px, 6vw, 96px);
+    background: var(--ink);
+    color: #fff;
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+  }
+
+  @media (max-width: 860px) {
+    .site-nav { min-height: 68px; padding-block: 10px; gap: 18px; }
+    .site-nav img { width: 125px; }
+    .site-nav ul { gap: 14px; }
+    .site-nav li { font-size: 11px; }
+    .strip { flex-wrap: wrap; gap: 12px; }
+    .strip .title { width: 100%; }
+    .shell { display: block; min-height: 0; }
+    .index {
+      border-right: 0;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 12px clamp(16px, 4vw, 24px);
+      position: sticky;
+      top: 68px;
+      background: var(--cream);
+      z-index: 5;
+    }
+    .index .label { display: none; }
+    .tab {
+      width: auto;
+      flex: none;
+      grid-template-columns: auto auto auto;
+      gap: 8px;
+      padding: 9px 13px;
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--line);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    footer { flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+<link rel="stylesheet" href="nav-dropdown.css">
+</head>
+<body>
+
+<nav class="site-nav" aria-label="Primary navigation">
+  <a href="index.html" aria-label="BBDO West Africa home">
+    <img src="bbdo-west-africa.png" alt="BBDO West Africa — Do Big Things">
+  </a>
+  <ul>
+      <li><a href="about.html">About</a></li>
+      <li><a href="people.html">People</a></li>
+      <li><a href="clients.html">Clients</a></li>
+      <li class="has-menu">
+        <button type="button" class="trigger" aria-haspopup="true">Products</button>
+        <ul class="menu" data-products-menu>
+          <li><a href="products.html">All Products</a></li>
+          <li><a href="product.html#industry-labs">Industry Labs</a></li>
+        </ul>
+      </li>
+      <li class="has-menu active">
+        <button type="button" class="trigger" aria-haspopup="true">Workflows</button>
+        <ul class="menu">
+          <li><a href="agency-workflow.html">Agency</a></li>
+          <li><a href="checklist.html" aria-current="page">Pitch</a></li>
+        </ul>
+      </li>
+      <li><a href="resources.html">Resources</a></li>
+    </ul>
+  </nav>
+
+<header class="workflow-hero">
+  <h1>Pitch Workflow</h1>
+</header>
+
+<div class="strip">
+  <h2 class="title">Pitch Progress</h2>
+  <div class="spacer"></div>
+  <div class="track"><div class="fill" id="fill"></div></div>
+  <span class="pct" id="pct">0%</span>
+  <button class="reset" id="reset" type="button">Reset</button>
+</div>
+
+<div class="shell">
+  <div class="index" id="index" role="tablist" aria-label="Pitch stages">
+    <div class="label">Stages</div>
+  </div>
+  <div class="panel" id="panel"></div>
+</div>
+
+<noscript><p style="padding:24px 6vw">This checklist needs JavaScript enabled.</p></noscript>
+
+<footer>
+    <span>BBDO Chaos <span id="today">22 August 2026</span></span>
+    <span>Do Big Things</span>
+  </footer>
+
+<script>
+const STAGES = [
+  ["Client Consultation", [
+    "Confirm receipt of brief and agency participation",
+    "Prepare and share key questions for clarification"]],
+  ["Prequalification Documentation", [
+    "Update agency credentials and show reel"]],
+  ["Team Setup", [
+    "Assign pitch coordinator and assistant",
+    "Assign strategy resource(s)",
+    "Assign creative resource(s)",
+    "Identify and appoint freelance resource(s)"]],
+  ["Pitch Budget", [
+    "Prepare and secure approvals for welfare budget",
+    "Prepare and secure approvals for production budget",
+    "Prepare and secure approvals for freelancer budget"]],
+  ["Welfare & Logistics", [
+    "Reserve meeting rooms for sessions and reviews",
+    "Schedule key sessions and reviews"]],
+  ["Prep Work", [
+    "Distill client brief and define specific tasks",
+    "Develop creative brief",
+    "Gather all relevant reference materials",
+    "Consult MEA for previous experience within network",
+    "Gather relevant resources on client and category"]],
+  ["Research & Testing", [
+    "Acquire relevant omnibus research",
+    "Organise consumer sessions to gain deeper insights",
+    "Organise concept testing for agreed creative ideas"]],
+  ["Strategy", [
+    "Interrogate consumers, category, culture and the company",
+    "Identify the context and challenge",
+    "Define our story in five lines (refer to playbook)",
+    "Apply the MoveBeyondReason strategic tool",
+    "Define strategic imperatives and identify specific initiatives",
+    "Cascade overall strategy to digital, activation, media, etc."]],
+  ["Ideation & Exploration", [
+    "Develop and agree on an organising idea",
+    "Explore multiple territories and develop rationales",
+    "Agree on visual style and assets",
+    "Review organising idea, territories and visual style"]],
+  ["Amplification & Leveraging", [
+    "Broadcast executions — radio, TV and videos",
+    "Print executions — KV and adaptations to OOH and POSM",
+    "Digital executions — content, social media and online media",
+    "Consumer engagement executions — online and offline",
+    "Media management strategy and plan",
+    "Reputation management strategy and plan",
+    "The Outlier / Game Changer initiative",
+    "Review amplification ideas, initiatives and executions"]],
+  ["Execution & Production", [
+    "Broadcast — radio/jingle demos, moodboards and animatics",
+    "Print — mockups and print samples",
+    "Digital — animations and demos"]],
+  ["Final Document Preparation", [
+    "Introducing DDB Lagos",
+    "Recap of brief, context and challenge",
+    "Shifts — consumer, category, culture and company",
+    "Our story in five lines",
+    "Organising idea, territories and rationale",
+    "Amplification and execution",
+    "Account management structure, remuneration and final recap"]],
+  ["Final Reviews & Rehearsals", [
+    "Complete the final review",
+    "Run the full presentation rehearsal"]],
+  ["Client Presentation", [
+    "Deliver the final client presentation"]],
+  ["Follow Up", [
+    "Send follow-up communication and agree next steps"]]
+];
+
+const KEY = "bbdo-pitch-workflow-v1";
+const indexEl = document.getElementById("index");
+const panelEl = document.getElementById("panel");
+const fillEl = document.getElementById("fill");
+const pctEl = document.getElementById("pct");
+
+let state = {};
+try { state = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { state = {}; }
+function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+
+const tabs = [];
+STAGES.forEach(function (stage, i) {
+  const b = document.createElement("button");
+  b.className = "tab";
+  b.type = "button";
+  b.setAttribute("role", "tab");
+  b.id = "tab-" + i;
+  b.setAttribute("aria-controls", "panel-view");
+  b.setAttribute("aria-selected", "false");
+  b.tabIndex = -1;
+  b.innerHTML = '<span class="num">' + String(i + 1).padStart(2, "0") +
+    '</span><span class="name">' + stage[0] + '</span><span class="count"></span>';
+  b.addEventListener("click", function () { show(i, true); });
+  b.addEventListener("keydown", function (e) {
+    let n = null;
+    if (e.key === "ArrowDown" || e.key === "ArrowRight") n = (i + 1) % STAGES.length;
+    if (e.key === "ArrowUp" || e.key === "ArrowLeft") n = (i - 1 + STAGES.length) % STAGES.length;
+    if (e.key === "Home") n = 0;
+    if (e.key === "End") n = STAGES.length - 1;
+    if (n !== null) { e.preventDefault(); show(n, true); }
+  });
+  indexEl.appendChild(b);
+  tabs.push(b);
+});
+
+let current = 0;
+
+function done(i) {
+  return STAGES[i][1].reduce(function (n, _, j) { return n + (state[i + ":" + j] ? 1 : 0); }, 0);
+}
+
+function refresh() {
+  let total = 0, complete = 0;
+  STAGES.forEach(function (stage, i) {
+    const d = done(i), t = stage[1].length;
+    total += t; complete += d;
+    tabs[i].querySelector(".count").textContent = d + "/" + t;
+    tabs[i].classList.toggle("done", d === t);
+  });
+  const pct = total ? Math.round((complete / total) * 100) : 0;
+  fillEl.style.width = pct + "%";
+  pctEl.textContent = pct + "%";
+}
+
+function show(i, focusTab) {
+  current = i;
+  tabs.forEach(function (t, j) {
+    t.setAttribute("aria-selected", j === i ? "true" : "false");
+    t.tabIndex = j === i ? 0 : -1;
+  });
+  if (focusTab) tabs[i].focus({ preventScroll: true });
+  tabs[i].scrollIntoView({ block: "nearest", inline: "nearest" });
+  history.replaceState(null, "", "#s" + (i + 1));
+
+  const stage = STAGES[i];
+  panelEl.innerHTML = "";
+  const view = document.createElement("div");
+  view.id = "panel-view";
+  view.setAttribute("role", "tabpanel");
+  view.setAttribute("aria-labelledby", "tab-" + i);
+
+  const eyebrow = document.createElement("p");
+  eyebrow.className = "eyebrow";
+  eyebrow.textContent = "Stage " + (i + 1) + " of " + STAGES.length;
+  const h2 = document.createElement("h2");
+  h2.textContent = stage[0];
+  const ul = document.createElement("ul");
+  ul.className = "tasks";
+
+  stage[1].forEach(function (task, j) {
+    const key = i + ":" + j;
+    const li = document.createElement("li");
+    const label = document.createElement("label");
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.checked = !!state[key];
+    input.addEventListener("change", function () {
+      if (input.checked) { state[key] = 1; } else { delete state[key]; }
+      save(); refresh();
+    });
+    const box = document.createElement("span");
+    box.className = "box";
+    const txt = document.createElement("span");
+    txt.className = "txt";
+    txt.textContent = task;
+    label.append(input, box, txt);
+    li.appendChild(label);
+    ul.appendChild(li);
+  });
+
+  const nav = document.createElement("div");
+  nav.className = "nav-btns";
+  const prev = document.createElement("button");
+  prev.type = "button"; prev.textContent = "Previous"; prev.disabled = i === 0;
+  prev.addEventListener("click", function () { show(i - 1, false); });
+  const next = document.createElement("button");
+  next.type = "button"; next.textContent = "Next stage"; next.disabled = i === STAGES.length - 1;
+  next.addEventListener("click", function () { show(i + 1, false); });
+  nav.append(prev, next);
+
+  view.append(eyebrow, h2, ul, nav);
+  panelEl.appendChild(view);
+}
+
+document.getElementById("reset").addEventListener("click", function () {
+  state = {}; save(); refresh(); show(current, false);
+});
+
+function fromHash() {
+  const m = /^#s(\d+)$/.exec(location.hash);
+  const n = m ? parseInt(m[1], 10) - 1 : 0;
+  return (n >= 0 && n < STAGES.length) ? n : 0;
+}
+window.addEventListener("hashchange", function () { show(fromHash(), false); });
+
+refresh();
+show(fromHash(), false);
+</script>
+  <script>
+    document.getElementById("today").textContent =
+      new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+  </script>
+<script src="content.js"></script>
+<script src="nav-dropdown.js"></script>
+</body>
+</html>
