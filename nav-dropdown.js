@@ -38,7 +38,7 @@ document.querySelectorAll(".site-nav").forEach((nav) => {
   });
 
   window.addEventListener("resize", () => {
-    if (window.innerWidth > 720) closeNavigation();
+    if (window.innerWidth > 1100) closeNavigation();
   });
 });
 
