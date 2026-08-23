@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;600;700&display=swap");
+
 .site-nav {
   position: sticky;
   top: 0;
@@ -8,6 +10,19 @@
   width: clamp(150px, 15vw, 190px);
   height: auto;
   filter: brightness(0) invert(1);
+}
+
+.site-nav > ul {
+  gap: clamp(12px, 1.8vw, 28px);
+}
+
+.site-nav a,
+.site-nav .trigger {
+  font-family: "Roboto Mono", "Courier New", monospace;
+  font-size: 0.9em;
+  font-weight: 600;
+  letter-spacing: .03em;
+  text-transform: uppercase;
 }
 
 .site-nav .nav-toggle {

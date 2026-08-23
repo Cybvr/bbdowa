@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Browse live and completed BBDO West Africa projects.">
+  <title>Projects — BBDO West Africa</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    :root { --red: #e51b23; --ink: #111; --cream: #f4f2ed; --line: #c8c5be; --muted: #625f58; }
+    html, body { min-height: 100%; }
+    body {
+      margin: 0; background: var(--cream); color: var(--ink);
+      font-family: "Outfit", Arial, Helvetica, sans-serif;
+      display: flex; flex-direction: column;
+    }
+    .site-nav {
+      flex: none; min-height: 88px; padding: 14px clamp(24px, 6vw, 96px);
+      background: var(--red); display: flex; align-items: center; justify-content: space-between; gap: 32px;
+    }
+    .site-nav img { display: block; width: clamp(150px, 18vw, 230px); height: auto; filter: brightness(0) invert(1); }
+    .site-nav ul { display: flex; align-items: center; gap: clamp(16px, 2.4vw, 40px); margin: 0; padding: 0; list-style: none; }
+    .site-nav li { font-size: 14px; }
+    .site-nav a { color: #fff; font-weight: 800; letter-spacing: .06em; text-decoration: none; text-transform: uppercase; }
+    .site-nav a:hover, .site-nav a:focus-visible { color: var(--ink); }
+    .site-nav a[aria-current="page"] { text-decoration: underline; text-underline-offset: 6px; }
+    .site-nav a:focus-visible { outline: 2px solid #fff; outline-offset: 6px; }
+    .site-nav li.has-menu { position: relative; }
+    .site-nav .trigger {
+      border: 0; background: none; padding: 0; cursor: pointer; color: #fff; font: inherit;
+      font-size: inherit; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .site-nav .trigger::after { content: "\25BE"; font-size: .8em; }
+    .site-nav .has-menu:hover .trigger, .site-nav .trigger:focus-visible { color: var(--ink); }
+    .site-nav .trigger:focus-visible { outline: 2px solid #fff; outline-offset: 6px; }
+    .site-nav .menu {
+      display: none; position: absolute; top: calc(100% + 14px); left: -16px;
+      min-width: 200px; padding: 6px 0; background: var(--ink); z-index: 200;
+    }
+    .site-nav .has-menu:hover .menu, .site-nav .has-menu:focus-within .menu { display: block; }
+    .site-nav .menu li { display: block; font-size: 12px; }
+    .site-nav .menu a { display: block; padding: 11px 16px; letter-spacing: .1em; }
+    .site-nav .menu a:hover, .site-nav .menu a:focus-visible { background: var(--red); color: #fff; }
+
+    main { flex: 1; padding: clamp(42px, 6vw, 82px) clamp(24px, 6vw, 96px) 96px; }
+    .lede {
+      display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 32ch);
+      align-items: end; gap: 32px; padding-bottom: clamp(26px, 4vw, 44px); border-bottom: 2px solid var(--ink);
+    }
+    h1 { margin: 0; font-size: clamp(52px, 9vw, 96px); line-height: .86; letter-spacing: -.04em; text-transform: uppercase; }
+    .lede p { margin: 0 0 4px; font-size: clamp(17px, 1.8vw, 23px); line-height: 1.3; }
+    .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin: 28px 0 20px; }
+    .switch { display: flex; flex-wrap: wrap; gap: 8px; }
+    .switch button {
+      min-height: 44px; border: 2px solid var(--ink); background: transparent; color: var(--ink); font: inherit;
+      font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+      padding: 10px 18px; cursor: pointer;
+    }
+    .switch button[aria-selected="true"] { background: var(--ink); color: #fff; }
+    .switch button:hover { background: var(--red); border-color: var(--red); color: #fff; }
+    .switch button:focus-visible { outline: 3px solid var(--red); outline-offset: 3px; }
+    .count { margin: 0; color: var(--red); font-size: 12px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    .wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+      padding: 12px 16px 12px 0; border-bottom: 2px solid var(--ink); text-align: left;
+      color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; white-space: nowrap;
+    }
+    tbody td { padding: 16px 16px 16px 0; border-bottom: 1px solid var(--line); font-size: clamp(15px, 1.3vw, 18px); line-height: 1.3; vertical-align: middle; }
+    tbody tr { cursor: pointer; transition: background-color 160ms ease-out; }
+    tbody tr:hover { background: rgba(17, 17, 17, .045); }
+    tbody tr:focus-within { background: rgba(229, 27, 35, .07); }
+    .project-cell { display: flex; align-items: center; gap: 16px; min-width: 280px; }
+    .project-thumb { width: 64px; height: 44px; flex: none; border-radius: 6px; object-fit: cover; background: var(--ink); }
+    .project-name { color: var(--ink); font-size: clamp(20px, 2vw, 29px); font-weight: 800; letter-spacing: -.025em; line-height: 1; text-decoration: none; }
+    .project-name::after {
+      content: ""; display: inline-block; width: 18px; height: 10px; margin-left: 8px;
+      background: var(--red); clip-path: polygon(0 40%, 65% 40%, 65% 0, 100% 50%, 65% 100%, 65% 60%, 0 60%);
+    }
+    .project-name:hover, .project-name:focus-visible { color: var(--red); }
+    .project-name:focus-visible { outline: 3px solid var(--red); outline-offset: 4px; }
+    .project-mobile-meta { display: none; margin-top: 7px; color: var(--muted); font-size: 12px; line-height: 1.35; }
+    .year-column { white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .status { display: inline-block; padding: 6px 10px; background: var(--ink); color: #fff; font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+    .status.live { background: var(--red); }
+    .empty { padding: clamp(52px, 8vw, 104px) 0; border-top: 2px solid var(--ink); border-bottom: 1px solid var(--ink); }
+    .empty h2 { max-width: 14ch; margin: 0 0 14px; font-size: clamp(32px, 5vw, 62px); line-height: .96; letter-spacing: -.035em; text-transform: uppercase; }
+    .empty p { max-width: 52ch; margin: 0; color: var(--muted); font-size: 18px; line-height: 1.45; }
+    [hidden] { display: none !important; }
+    footer {
+      flex: none; padding: 34px clamp(24px, 6vw, 96px); background: var(--ink); color: #fff;
+      display: flex; justify-content: space-between; gap: 24px; font-size: 14px; text-transform: uppercase; letter-spacing: .08em;
+    }
+    @media (max-width: 900px) {
+      .lead-column { display: none; }
+    }
+    @media (max-width: 720px) {
+      .site-nav { min-height: 68px; padding-block: 10px; gap: 14px; flex-wrap: wrap; }
+      .site-nav img { width: 125px; }
+      .site-nav ul { gap: 12px; }
+      .site-nav li { font-size: 11px; }
+      .lede { grid-template-columns: 1fr; align-items: start; }
+      .lede p { max-width: 34ch; }
+      .toolbar { align-items: flex-start; flex-direction: column; }
+      .client-column, .category-column { display: none; }
+      .project-mobile-meta { display: block; }
+      .project-cell { min-width: 0; }
+      .project-thumb { width: 56px; height: 40px; border-radius: 5px; }
+      footer { flex-direction: column; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      tbody tr { transition: none; }
+    }
+  </style>
+  <link rel="stylesheet" href="nav-dropdown.css">
+</head>
+<body>
+  <!--
+    THESIS: Projects are a working index that turns client names into browsable case-study records, avoiding a generic card gallery.
+    OWN-WORLD: Inherit BBDO red, black, cream, heavy uppercase typography, ruled tables, and square editorial geometry.
+    STORY: Scan project status, choose a project, then read its evidence in a fixed case-study sequence.
+    FIRST VIEWPORT: Overscale Projects heading and purpose lead into compact status filters and an image-led table.
+    FORM: Incumbent table extension; seed incumbent-project-index.
+    FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
+  -->
+  <nav class="site-nav" aria-label="Primary navigation">
+    <a href="index.html" aria-label="BBDO West Africa home"><img src="bbdo-west-africa.png" alt="BBDO West Africa"></a>
+    <ul>
+      <li><a href="about.html">About</a></li>
+      <li><a href="people.html">People</a></li>
+      <li><a href="careers.html">Careers</a></li>
+      <li><a href="projects.html" aria-current="page">Projects</a></li>
+      <li class="has-menu">
+        <button type="button" class="trigger" aria-haspopup="true" aria-expanded="false">Products</button>
+        <ul class="menu" data-products-menu>
+          <li><a href="products.html">All Products</a></li>
+          <li><a href="product.html#industry-labs">Industry Labs</a></li>
+        </ul>
+      </li>
+      <li class="has-menu">
+        <button type="button" class="trigger" aria-haspopup="true" aria-expanded="false">Workflows</button>
+        <ul class="menu">
+          <li><a href="agency-workflow.html">Agency</a></li>
+          <li><a href="checklist.html">Pitch</a></li>
+        </ul>
+      </li>
+      <li><a href="resources.html">Resources</a></li>
+    </ul>
+  </nav>
+
+  <main>
+    <header class="lede">
+      <h1>Projects</h1>
+      <p>Live work and completed projects, documented from challenge to outcome.</p>
+    </header>
+
+    <div class="toolbar">
+      <div class="switch" role="tablist" aria-label="Filter projects by status">
+        <button type="button" role="tab" id="tab-all" aria-controls="project-panel" aria-selected="true">All</button>
+        <button type="button" role="tab" id="tab-live" aria-controls="project-panel" aria-selected="false" tabindex="-1">Live</button>
+        <button type="button" role="tab" id="tab-completed" aria-controls="project-panel" aria-selected="false" tabindex="-1">Completed</button>
+      </div>
+      <p class="count" id="project-count" aria-live="polite"></p>
+    </div>
+
+    <section id="project-panel" role="tabpanel" aria-labelledby="tab-all">
+      <div class="wrap" id="project-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Project</th>
+              <th class="client-column">Client</th>
+              <th class="category-column">Category</th>
+              <th class="year-column">Year</th>
+              <th>Status</th>
+              <th class="lead-column">Lead</th>
+            </tr>
+          </thead>
+          <tbody id="project-rows"></tbody>
+        </table>
+      </div>
+      <div class="empty" id="project-empty" hidden>
+        <h2>No completed projects yet</h2>
+        <p>Completed case studies will appear here when their copy and project evidence are ready.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer><span>BBDO Chaos <span id="today">23 August 2026</span></span><span>Do Big Things</span></footer>
+
+  <script src="content.js"></script>
+  <script>
+    (function () {
+      const projects = window.CHAOS_CONTENT.projects;
+      const states = ["all", "live", "completed"];
+      const tabs = states.map(function (state) { return document.getElementById("tab-" + state); });
+      const rows = document.getElementById("project-rows");
+      const count = document.getElementById("project-count");
+      const wrap = document.getElementById("project-table-wrap");
+      const empty = document.getElementById("project-empty");
+      const panel = document.getElementById("project-panel");
+
+      function addCell(row, className) {
+        const cell = document.createElement("td");
+        if (className) cell.className = className;
+        row.appendChild(cell);
+        return cell;
+      }
+
+      function makeRow(project) {
+        const destination = "project.html#" + project.slug;
+        const row = document.createElement("tr");
+        row.dataset.link = destination;
+
+        const projectCell = addCell(row);
+        const projectWrap = document.createElement("div");
+        projectWrap.className = "project-cell";
+        const image = document.createElement("img");
+        image.className = "project-thumb";
+        image.src = project.image;
+        image.alt = project.imageAlt || "";
+        image.width = 64;
+        image.height = 64;
+        const text = document.createElement("div");
+        const link = document.createElement("a");
+        link.className = "project-name";
+        link.href = destination;
+        link.textContent = project.name;
+        const mobileMeta = document.createElement("span");
+        mobileMeta.className = "project-mobile-meta";
+        mobileMeta.textContent = project.client + " · " + project.category;
+        text.appendChild(link);
+        text.appendChild(mobileMeta);
+        projectWrap.appendChild(image);
+        projectWrap.appendChild(text);
+        projectCell.appendChild(projectWrap);
+
+        addCell(row, "client-column").textContent = project.client;
+        addCell(row, "category-column").textContent = project.category;
+        addCell(row, "year-column").textContent = project.year || "—";
+        const statusCell = addCell(row);
+        const status = document.createElement("span");
+        status.className = "status " + project.status;
+        status.textContent = project.status;
+        statusCell.appendChild(status);
+        addCell(row, "lead-column").textContent = project.lead || "—";
+
+        row.addEventListener("click", function (event) {
+          if (!event.target.closest("a")) window.location.href = destination;
+        });
+        return row;
+      }
+
+      function showState(state) {
+        const filtered = state === "all"
+          ? projects
+          : projects.filter(function (project) { return project.status === state; });
+        rows.replaceChildren();
+        filtered.forEach(function (project) { rows.appendChild(makeRow(project)); });
+        count.textContent = filtered.length + (filtered.length === 1 ? " project" : " projects");
+        wrap.hidden = filtered.length === 0;
+        empty.hidden = filtered.length !== 0;
+        tabs.forEach(function (tab, index) {
+          const active = states[index] === state;
+          tab.setAttribute("aria-selected", active ? "true" : "false");
+          tab.tabIndex = active ? 0 : -1;
+        });
+        const activeTab = tabs[states.indexOf(state)];
+        panel.setAttribute("aria-labelledby", activeTab.id);
+      }
+
+      tabs.forEach(function (tab, index) {
+        tab.addEventListener("click", function () { showState(states[index]); });
+        tab.addEventListener("keydown", function (event) {
+          let next = null;
+          if (event.key === "ArrowRight") next = (index + 1) % tabs.length;
+          if (event.key === "ArrowLeft") next = (index - 1 + tabs.length) % tabs.length;
+          if (event.key === "Home") next = 0;
+          if (event.key === "End") next = tabs.length - 1;
+          if (next !== null) {
+            event.preventDefault();
+            showState(states[next]);
+            tabs[next].focus();
+          }
+        });
+      });
+
+      showState("all");
+      document.getElementById("today").textContent =
+        new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+    }());
+  </script>
+  <script src="nav-dropdown.js"></script>
+</body>
+</html>
