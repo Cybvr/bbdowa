@@ -12,7 +12,7 @@ BBDO West Africa team members use the site to understand the agency, its people,
 
 ## Product Purpose
 
-BBDOWA Chaos is a shared web home for BBDO West Africa information and working knowledge. The Projects section makes agency work browsable as project records rather than as a client-account list.
+BBDO West Africa is a shared web home for agency information and working knowledge. The Projects section makes agency work browsable as project records rather than as a client-account list.
 
 ## Operating Context
 
