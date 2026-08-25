@@ -93,6 +93,7 @@ export function ProfileNav({
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={open ? "Close profile menu" : "Open profile menu"}
+        title={open ? "Close profile menu" : "Open profile menu"}
         onClick={() => setOpen((current) => !current)}
         className="inline-flex h-9 w-9 items-center justify-center bg-white/10 text-white transition-colors hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
       >

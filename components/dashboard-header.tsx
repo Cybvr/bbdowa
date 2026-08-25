@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { IoNotifications } from "react-icons/io5";
+import { IoGlobeOutline } from "react-icons/io5";
 import { NAV_ITEMS } from "@/lib/nav";
 import { ProfileNav } from "@/components/profile-nav";
 
@@ -63,7 +63,7 @@ export function DashboardHeader() {
           mobileOpen ? "max-nav:flex" : "max-nav:hidden"
         }`}
       >
-        {NAV_ITEMS.map((item) => {
+        {NAV_ITEMS.filter((item) => item.label !== "Dashboard").map((item) => {
           if (item.kind === "link") {
             const current = pathname === item.href;
             return (
@@ -141,17 +141,12 @@ export function DashboardHeader() {
         <Link
           href="/"
           onClick={closeAll}
-          className="inline-flex items-center whitespace-nowrap border border-white/70 px-3.5 py-[9px] font-mono text-[11px] font-extrabold uppercase tracking-[0.08em] text-white no-underline transition-colors hover:bg-white hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white max-nav:hidden"
+          aria-label="Main site"
+          title="Main site"
+          className="inline-flex h-11 w-11 items-center justify-center bg-white/10 text-white transition-colors hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
         >
-          Main site
+          <IoGlobeOutline aria-hidden="true" className="h-[18px] w-[18px]" />
         </Link>
-        <button
-          type="button"
-          aria-label="Open notifications"
-          className="inline-flex h-11 w-11 items-center justify-center border border-white/45 bg-white/10 text-white transition-colors hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-        >
-          <IoNotifications aria-hidden="true" className="h-[18px] w-[18px]" />
-        </button>
         <ProfileNav />
         <button
           type="button"
