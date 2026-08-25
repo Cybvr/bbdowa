@@ -5,6 +5,7 @@ export const metadata: Metadata = { title: "About" };
 const FACTS = [
   { value: "15", label: "Pitch stages" },
   { value: "6", label: "Industry labs" },
+  { value: "40+", label: "Awards" },
 ];
 
 export default function AboutPage() {

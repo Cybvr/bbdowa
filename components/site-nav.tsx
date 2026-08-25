@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { NAV_ITEMS } from "@/lib/nav";
+import { ProfileMenu } from "@/components/profile-menu";
 
 const TOP_TEXT =
   "font-mono text-[12.6px] font-semibold uppercase tracking-[0.03em] text-white no-underline hover:text-ink focus-visible:text-ink focus-visible:outline-2 focus-visible:outline-offset-[6px] focus-visible:outline-white max-nav:flex max-nav:w-full max-nav:min-h-[48px] max-nav:items-center max-nav:justify-between max-nav:text-[13px]";
@@ -45,29 +46,19 @@ export function SiteNav() {
       onKeyDown={(event) => {
         if (event.key === "Escape") closeAll();
       }}
-      className="sticky top-0 z-[1000] flex min-h-[88px] flex-none items-center justify-between gap-8 bg-brand px-[clamp(24px,6vw,96px)] py-[14px] max-nav:grid max-nav:min-h-[68px] max-nav:grid-cols-[minmax(0,1fr)_auto] max-nav:gap-x-4 max-nav:gap-y-0 max-nav:px-[max(18px,env(safe-area-inset-left))] max-nav:py-[10px]"
+      className="sticky top-0 z-[1000] flex min-h-[60px] flex-none items-center justify-between gap-8 bg-brand px-[clamp(24px,6vw,96px)] py-[6px] max-nav:grid max-nav:min-h-[68px] max-nav:grid-cols-[minmax(0,1fr)_auto] max-nav:gap-x-4 max-nav:gap-y-0 max-nav:px-[max(18px,env(safe-area-inset-left))] max-nav:py-[10px]"
     >
       <Link href="/" aria-label="BBDO West Africa home" className="min-w-0">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/bbdo-west-africa.png"
           alt="BBDO West Africa"
-          className="block h-auto w-[clamp(150px,15vw,190px)] max-w-full brightness-0 invert"
+          className="block h-auto w-[clamp(120px,11vw,150px)] max-w-full brightness-0 invert"
         />
       </Link>
 
-      <button
-        type="button"
-        aria-expanded={mobileOpen}
-        aria-label={mobileOpen ? "Close navigation" : "Open navigation"}
-        onClick={() => setMobileOpen((open) => !open)}
-        className="hidden min-h-[44px] min-w-[64px] cursor-pointer items-center justify-center border border-white bg-transparent px-[14px] text-[12px] font-extrabold uppercase tracking-[0.08em] text-white focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-white max-nav:inline-flex"
-      >
-        {mobileOpen ? "Close" : "Menu"}
-      </button>
-
       <ul
-        className={`m-0 flex list-none items-center gap-[clamp(12px,1.8vw,28px)] p-0 max-nav:col-span-full max-nav:mt-2.5 max-nav:w-full max-nav:flex-col max-nav:items-stretch max-nav:gap-0 max-nav:pt-2.5 max-nav:pb-[max(10px,env(safe-area-inset-bottom))] ${
+        className={`m-0 ml-auto flex list-none items-center gap-[clamp(12px,1.8vw,28px)] p-0 max-nav:col-span-full max-nav:mt-2.5 max-nav:ml-0 max-nav:w-full max-nav:flex-col max-nav:items-stretch max-nav:gap-0 max-nav:pt-2.5 max-nav:pb-[max(10px,env(safe-area-inset-bottom))] ${
           mobileOpen ? "max-nav:flex" : "max-nav:hidden"
         }`}
       >
@@ -142,6 +133,32 @@ export function SiteNav() {
           );
         })}
       </ul>
+
+      <div className="order-3 flex items-center gap-2 max-nav:col-start-2 max-nav:row-start-1 max-nav:justify-self-end">
+        <a
+          href="https://www.linkedin.com/company/bbdo-west-africa"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Open BBDO West Africa on LinkedIn"
+          className="inline-flex h-11 w-11 items-center justify-center border border-white/45 bg-white/10 text-white transition-colors hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+        >
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className="h-[18px] w-[18px]">
+            <path d="M12 3.25a2 2 0 0 1 3.72 1.02c0 .25-.04.5-.13.72a6.03 6.03 0 0 1 4.68 5.86c0 3.33-2.8 6.02-6.27 6.02S7.73 14.18 7.73 10.85c0-2.95 2.12-5.4 4.96-5.88A2 2 0 0 1 12 3.25Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+            <path d="M9.55 17.05v1.02c0 .78-.63 1.42-1.41 1.42h-.4M14.45 17.05v1.02c0 .78.63 1.42 1.41 1.42h.4M10 21h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            <path d="M12 9.2v3.2M12 7.05v.05" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+          </svg>
+        </a>
+        <ProfileMenu />
+        <button
+          type="button"
+          aria-expanded={mobileOpen}
+          aria-label={mobileOpen ? "Close navigation" : "Open navigation"}
+          onClick={() => setMobileOpen((open) => !open)}
+          className="hidden min-h-[44px] min-w-[64px] cursor-pointer items-center justify-center border border-white bg-transparent px-[14px] text-[12px] font-extrabold uppercase tracking-[0.08em] text-white focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-white max-nav:inline-flex"
+        >
+          {mobileOpen ? "Close" : "Menu"}
+        </button>
+      </div>
     </nav>
   );
 }
