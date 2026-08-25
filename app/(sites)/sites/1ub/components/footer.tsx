@@ -21,7 +21,7 @@ export default function Footer() {
             <a className="hover:text-blue-soft transition-colors" href="#proposal">Proposal</a>
             <a
               className="hover:text-blue-soft transition-colors underline"
-              href="/sites/1ub/campaign/deck/1u-bank-campaign-native.pptx"
+              href="/upload-latertofirebase/sites/1ub/campaign/deck/1u-bank-campaign-native.pptx"
               download
             >
               Download the deck

@@ -8,7 +8,7 @@ export default function BriefSection() {
         <video
           className="absolute inset-0 h-full w-full object-cover"
           poster="/sites/1ub/campaign/deck/uploads/hero-audience-v3.jpg"
-          src="/sites/1ub/campaign/deck/uploads/hero-audience-v3-video.mp4"
+          src="/upload-latertofirebase/sites/1ub/campaign/deck/uploads/hero-audience-v3-video.mp4"
           autoPlay
           loop
           muted
@@ -202,7 +202,7 @@ export default function BriefSection() {
                 <Image
                   fill
                   className="object-cover"
-                  src="/sites/1ub/campaign/deck/uploads/concept-utility-giant-v2.png"
+                  src="/upload-latertofirebase/sites/1ub/campaign/deck/uploads/concept-utility-giant-v2.png"
                   alt="A monumental figure dressed in symbols of everyday utilities towers over a Lagos cityscape"
                   sizes="(min-width: 768px) 33vw, 100vw"
                 />
@@ -224,7 +224,7 @@ export default function BriefSection() {
                 <Image
                   fill
                   className="object-cover"
-                  src="/sites/1ub/campaign/deck/uploads/concept-one-number-world-v2.png"
+                  src="/upload-latertofirebase/sites/1ub/campaign/deck/uploads/concept-one-number-world-v2.png"
                   alt="An oversized phone number transformed into a Nigerian street landscape a figure walks through"
                   sizes="(min-width: 768px) 33vw, 100vw"
                 />

@@ -39,7 +39,7 @@ export default function Header() {
         </nav>
         <a
           className="ml-auto inline-flex items-center px-4 py-2 rounded-full bg-blue text-primary-foreground text-xs md:text-sm font-bold hover:bg-blue-deep transition-colors whitespace-nowrap"
-          href="/sites/1ub/campaign/deck/1u-bank-campaign-native.pptx"
+          href="/upload-latertofirebase/sites/1ub/campaign/deck/1u-bank-campaign-native.pptx"
           download
         >
           Download the deck

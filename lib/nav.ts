@@ -4,7 +4,7 @@ export type NavLink = { label: string; href: string };
 
 export type NavItem =
   | { kind: "link"; label: string; href: string }
-  | { kind: "menu"; label: string; match: string; items: NavLink[] };
+  | { kind: "menu"; label: string; match: string | string[]; items: NavLink[] };
 
 export const NAV_ITEMS: NavItem[] = [
   { kind: "link", label: "About", href: "/about" },
@@ -29,5 +29,13 @@ export const NAV_ITEMS: NavItem[] = [
       { label: "Pitch", href: "/workflows/pitch" },
     ],
   },
-  { kind: "link", label: "Resources", href: "/resources" },
+  {
+    kind: "menu",
+    label: "Resources",
+    match: ["/resources", "/blog"],
+    items: [
+      { label: "Resources", href: "/resources" },
+      { label: "Blog", href: "/blog" },
+    ],
+  },
 ];

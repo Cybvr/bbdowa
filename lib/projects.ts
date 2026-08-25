@@ -1,5 +1,12 @@
 export type ProjectStatus = "live" | "pitch" | "completed";
 
+export type ProjectMedia = {
+  kind: "image" | "video";
+  src: string;
+  alt: string;
+  poster?: string;
+};
+
 export type Project = {
   slug: string;
   name: string;
@@ -10,6 +17,7 @@ export type Project = {
   lead: string;
   image: string;
   imageAlt: string;
+  media: ProjectMedia[];
   summary: string;
   challenge: string;
   insight: string;
@@ -31,6 +39,7 @@ export const PROJECTS: Project[] = [
     lead: "Samiat Basorun",
     image: "/images/projects/project-placeholder.svg",
     imageAlt: "",
+    media: [],
     summary: "Project details will be added when the case-study content is supplied.",
     challenge: "Challenge details coming soon.",
     insight: "Insight details coming soon.",
@@ -50,6 +59,7 @@ export const PROJECTS: Project[] = [
     lead: "Samiat Basorun",
     image: "/images/projects/project-placeholder.svg",
     imageAlt: "",
+    media: [],
     summary:
       "Created by DDB Lagos, Make We Bet launched for Betano across Nigeria and Ghana in January 2026.",
     challenge:
@@ -75,6 +85,7 @@ export const PROJECTS: Project[] = [
     lead: "Samiat Basorun",
     image: "/images/projects/project-placeholder.svg",
     imageAlt: "",
+    media: [],
     summary: "Project details will be added when the case-study content is supplied.",
     challenge: "Challenge details coming soon.",
     insight: "Insight details coming soon.",
@@ -94,6 +105,7 @@ export const PROJECTS: Project[] = [
     lead: "Samiat Basorun",
     image: "/images/projects/project-placeholder.svg",
     imageAlt: "",
+    media: [],
     summary: "Project details will be added when the case-study content is supplied.",
     challenge: "Challenge details coming soon.",
     insight: "Insight details coming soon.",
@@ -113,6 +125,7 @@ export const PROJECTS: Project[] = [
     lead: "",
     image: "/images/projects/project-placeholder.svg",
     imageAlt: "",
+    media: [],
     summary: "Project details will be added when the case-study content is supplied.",
     challenge: "Challenge details coming soon.",
     insight: "Insight details coming soon.",
@@ -130,8 +143,31 @@ export const PROJECTS: Project[] = [
     year: 2021,
     status: "completed",
     lead: "",
-    image: "/images/projects/project-placeholder.svg",
-    imageAlt: "",
+    image: "/media/projects/guinness/beerable-guinness.jpg",
+    imageAlt: "Guinness responsible-drinking campaign artwork",
+    media: [
+      {
+        kind: "image",
+        src: "/media/projects/guinness/beerable-guinness.jpg",
+        alt: "Guinness responsible-drinking campaign artwork with bottle caps",
+      },
+      {
+        kind: "image",
+        src: "/media/projects/guinness/beerable-guinness-2.jpg",
+        alt: "Guinness responsible-drinking campaign artwork",
+      },
+      {
+        kind: "image",
+        src: "/media/projects/guinness/lagos-at-50-guinness.jpg",
+        alt: "Lagos at 50 Guinness campaign artwork",
+      },
+      {
+        kind: "video",
+        src: "/upload-latertofirebase/media/projects/guinness/made-of-black-guinness.mp4",
+        poster: "/media/projects/guinness/made-of-black-guinness-poster.jpg",
+        alt: "Made of Black Guinness campaign film",
+      },
+    ],
     summary:
       "BBDO West Africa supports Guinness, owned by Diageo, with creative and strategic campaigns shaped for audiences across the region.",
     challenge:
@@ -148,6 +184,159 @@ export const PROJECTS: Project[] = [
     placeholder: false,
   },
   {
+    slug: "visa-work",
+    name: "Visa",
+    client: "Visa",
+    category: "Finance",
+    year: 2016,
+    status: "completed",
+    lead: "",
+    image: "/media/projects/visa/rio-2016-visa.jpg",
+    imageAlt: "Rio 2016 Visa campaign artwork",
+    media: [
+      {
+        kind: "image",
+        src: "/media/projects/visa/rio-2016-visa.jpg",
+        alt: "Rio 2016 Visa campaign artwork",
+      },
+      {
+        kind: "image",
+        src: "/media/projects/visa/not-a-tourist-visa.jpg",
+        alt: "Not a Tourist Visa campaign artwork",
+      },
+      {
+        kind: "image",
+        src: "/media/projects/visa/not-a-tourist-visa-2.jpg",
+        alt: "Not a Tourist Visa campaign artwork",
+      },
+    ],
+    summary: "Source gallery work includes Rio 2016 and Not a Tourist campaign artwork for Visa.",
+    challenge: "Challenge details coming soon.",
+    insight: "Insight details coming soon.",
+    strategy: "Strategy details coming soon.",
+    platform: ["Channels to be confirmed"],
+    execution: "Execution details coming soon.",
+    outcome: "Outcome details coming soon.",
+    placeholder: true,
+  },
+  {
+    slug: "google-work",
+    name: "Google",
+    client: "Google",
+    category: "Technology",
+    year: null,
+    status: "completed",
+    lead: "",
+    image: "/media/projects/google/football-google-poster.jpg",
+    imageAlt: "Football Google campaign film still",
+    media: [
+      {
+        kind: "video",
+        src: "/upload-latertofirebase/media/projects/google/football-google.mp4",
+        poster: "/media/projects/google/football-google-poster.jpg",
+        alt: "Football Google campaign film",
+      },
+      {
+        kind: "video",
+        src: "/media/projects/google/know-google.mp4",
+        poster: "/media/projects/google/know-google-poster.jpg",
+        alt: "Know Google campaign film",
+      },
+    ],
+    summary: "Source gallery work includes Football Google and Know Google campaign films.",
+    challenge: "Challenge details coming soon.",
+    insight: "Insight details coming soon.",
+    strategy: "Strategy details coming soon.",
+    platform: ["Channels to be confirmed"],
+    execution: "Execution details coming soon.",
+    outcome: "Outcome details coming soon.",
+    placeholder: true,
+  },
+  {
+    slug: "orijin",
+    name: "Orijin",
+    client: "Orijin",
+    category: "Food & beverages",
+    year: null,
+    status: "completed",
+    lead: "",
+    image: "/media/projects/orijin/live-orijinal-orijin-poster.jpg",
+    imageAlt: "Live Orijinal Orijin campaign film still",
+    media: [
+      {
+        kind: "video",
+        src: "/upload-latertofirebase/media/projects/orijin/live-orijinal-orijin.mp4",
+        poster: "/media/projects/orijin/live-orijinal-orijin-poster.jpg",
+        alt: "Live Orijinal Orijin campaign film",
+      },
+    ],
+    summary: "Source gallery work includes the Live Orijinal Orijin campaign film.",
+    challenge: "Challenge details coming soon.",
+    insight: "Insight details coming soon.",
+    strategy: "Strategy details coming soon.",
+    platform: ["Channels to be confirmed"],
+    execution: "Execution details coming soon.",
+    outcome: "Outcome details coming soon.",
+    placeholder: true,
+  },
+  {
+    slug: "pringles",
+    name: "Pringles",
+    client: "Pringles",
+    category: "Food & beverages",
+    year: null,
+    status: "completed",
+    lead: "",
+    image: "/media/projects/pringles/cool-days-pringles.jpg",
+    imageAlt: "Cool Days Pringles campaign artwork",
+    media: [
+      {
+        kind: "image",
+        src: "/media/projects/pringles/cool-days-pringles.jpg",
+        alt: "Cool Days Pringles campaign artwork",
+      },
+    ],
+    summary: "Source gallery work includes Cool Days campaign artwork for Pringles.",
+    challenge: "Challenge details coming soon.",
+    insight: "Insight details coming soon.",
+    strategy: "Strategy details coming soon.",
+    platform: ["Channels to be confirmed"],
+    execution: "Execution details coming soon.",
+    outcome: "Outcome details coming soon.",
+    placeholder: true,
+  },
+  {
+    slug: "chicken-republic",
+    name: "Chicken Republic",
+    client: "Chicken Republic",
+    category: "Food & beverages",
+    year: null,
+    status: "completed",
+    lead: "",
+    image: "/media/projects/chicken-republic/easter-chicken-republic.jpg",
+    imageAlt: "Easter Chicken Republic campaign artwork",
+    media: [
+      {
+        kind: "image",
+        src: "/media/projects/chicken-republic/easter-chicken-republic.jpg",
+        alt: "Easter Chicken Republic campaign artwork",
+      },
+      {
+        kind: "image",
+        src: "/media/projects/chicken-republic/anti-violence-chicken-republic.jpg",
+        alt: "Anti-Violence Chicken Republic campaign artwork",
+      },
+    ],
+    summary: "Source gallery work includes Easter and Anti-Violence campaign artwork for Chicken Republic.",
+    challenge: "Challenge details coming soon.",
+    insight: "Insight details coming soon.",
+    strategy: "Strategy details coming soon.",
+    platform: ["Channels to be confirmed"],
+    execution: "Execution details coming soon.",
+    outcome: "Outcome details coming soon.",
+    placeholder: true,
+  },
+  {
     slug: "unilever",
     name: "Unilever",
     client: "Unilever",
@@ -157,6 +346,7 @@ export const PROJECTS: Project[] = [
     lead: "Samiat Basorun",
     image: "/images/projects/project-placeholder.svg",
     imageAlt: "",
+    media: [],
     summary: "Project details will be added when the case-study content is supplied.",
     challenge: "Challenge details coming soon.",
     insight: "Insight details coming soon.",

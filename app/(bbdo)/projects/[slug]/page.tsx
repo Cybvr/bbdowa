@@ -71,6 +71,44 @@ export default async function ProjectDetailPage({ params }: Params) {
         </div>
       </section>
 
+      {project.media.length > 0 && (
+        <section className="mt-[clamp(42px,6vw,72px)] border-t-2 border-ink pt-6" aria-labelledby="project-media">
+          <div className="mb-5 flex items-baseline justify-between gap-5">
+            <h2 id="project-media" className="m-0 text-[12px] uppercase tracking-[0.14em] text-brand">
+              Project media
+            </h2>
+            <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-ash">
+              {project.media.length} {project.media.length === 1 ? "asset" : "assets"}
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-4 max-[760px]:grid-cols-1">
+            {project.media.map((media) =>
+              media.kind === "video" ? (
+                <video
+                  key={media.src}
+                  className="block aspect-video h-full w-full rounded-lg bg-ink object-cover"
+                  controls
+                  preload="metadata"
+                  poster={media.poster}
+                  aria-label={media.alt}
+                >
+                  <source src={media.src} type="video/mp4" />
+                  Your browser does not support this video.
+                </video>
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={media.src}
+                  src={media.src}
+                  alt={media.alt}
+                  className="block aspect-video h-full w-full rounded-lg bg-ink object-cover"
+                />
+              ),
+            )}
+          </div>
+        </section>
+      )}
+
       <section
         className="mt-[clamp(42px,6vw,72px)] grid grid-cols-3 border-b border-ink border-t-2 border-t-ink max-[760px]:grid-cols-1"
         aria-label="Project information"

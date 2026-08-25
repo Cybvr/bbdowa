@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { IoNotifications } from "react-icons/io5";
 import { NAV_ITEMS } from "@/lib/nav";
 import { ProfileMenu } from "@/components/profile-menu";
 
@@ -79,7 +80,9 @@ export function SiteNav() {
             );
           }
 
-          const sectionActive = pathname.startsWith(item.match);
+          const sectionActive = Array.isArray(item.match)
+            ? item.match.some((match) => pathname.startsWith(match))
+            : pathname.startsWith(item.match);
           const open = openMenu === item.label;
 
           return (
@@ -135,19 +138,13 @@ export function SiteNav() {
       </ul>
 
       <div className="order-3 flex items-center gap-2 max-nav:col-start-2 max-nav:row-start-1 max-nav:justify-self-end">
-        <a
-          href="https://www.linkedin.com/company/bbdo-west-africa"
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Open BBDO West Africa on LinkedIn"
+        <button
+          type="button"
+          aria-label="Open notifications"
           className="inline-flex h-11 w-11 items-center justify-center border border-white/45 bg-white/10 text-white transition-colors hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
         >
-          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className="h-[18px] w-[18px]">
-            <path d="M12 3.25a2 2 0 0 1 3.72 1.02c0 .25-.04.5-.13.72a6.03 6.03 0 0 1 4.68 5.86c0 3.33-2.8 6.02-6.27 6.02S7.73 14.18 7.73 10.85c0-2.95 2.12-5.4 4.96-5.88A2 2 0 0 1 12 3.25Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
-            <path d="M9.55 17.05v1.02c0 .78-.63 1.42-1.41 1.42h-.4M14.45 17.05v1.02c0 .78.63 1.42 1.41 1.42h.4M10 21h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-            <path d="M12 9.2v3.2M12 7.05v.05" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-          </svg>
-        </a>
+          <IoNotifications aria-hidden="true" className="h-[18px] w-[18px]" />
+        </button>
         <ProfileMenu />
         <button
           type="button"

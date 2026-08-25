@@ -42,7 +42,7 @@ export default function UnderstandingSection() {
             </a>
             <a
               className="inline-flex items-center justify-center px-5 py-3 rounded-full border border-paper/25 text-paper font-bold text-sm hover:bg-paper/10 transition-colors"
-              href="/sites/1ub/campaign/deck/1u-bank-campaign-native.pptx"
+              href="/upload-latertofirebase/sites/1ub/campaign/deck/1u-bank-campaign-native.pptx"
               download
             >
               Download as PowerPoint
