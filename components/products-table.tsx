@@ -7,9 +7,9 @@ import { productDate, productHref } from "@/lib/products";
 import { longDate } from "@/lib/format";
 
 const TH =
-  "whitespace-nowrap border-b-2 border-ink pb-3 pl-0 pr-4 pt-3 text-left text-[11px] font-extrabold uppercase tracking-[0.14em] text-ash";
+  "whitespace-nowrap border-b-2 border-foreground pb-3 pl-0 pr-4 pt-3 text-left text-[11px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground";
 const TD =
-  "border-b border-hairline pb-[22px] pl-0 pr-4 pt-[22px] align-middle text-[clamp(16px,1.4vw,20px)] leading-[1.25]";
+  "border-b border-border pb-[22px] pl-0 pr-4 pt-[22px] align-middle text-[clamp(16px,1.4vw,20px)] leading-[1.25]";
 
 export function ProductsTable({ products }: { products: Product[] }) {
   const router = useRouter();
@@ -36,12 +36,12 @@ export function ProductsTable({ products }: { products: Product[] }) {
                 onClick={(event) => {
                   if (!(event.target as HTMLElement).closest("a")) router.push(href);
                 }}
-                className="cursor-pointer hover:bg-ink/[0.04]"
+                className="cursor-pointer hover:bg-foreground/[0.04]"
               >
                 <td className={TD}>
                   <Link
                     href={href}
-                    className="inline-flex items-center gap-2.5 text-[clamp(22px,2.4vw,34px)] font-bold uppercase leading-[0.98] tracking-[-0.045em] text-ink no-underline after:whitespace-nowrap after:text-brand after:content-['_→'] hover:text-brand focus-visible:text-brand"
+                    className="inline-flex items-center gap-2.5 text-[clamp(22px,2.4vw,34px)] font-bold uppercase leading-[0.98] tracking-[-0.045em] text-foreground no-underline after:whitespace-nowrap after:text-primary after:content-['_→'] hover:text-primary focus-visible:text-primary"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
@@ -54,7 +54,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
                 <td className={TD}>
                   <span
                     className={`inline-block px-[9px] py-[5px] text-[10px] font-extrabold uppercase tracking-[0.12em] text-white ${
-                      product.status === "active" ? "bg-brand" : "bg-ink"
+                      product.status === "active" ? "bg-primary" : "bg-foreground"
                     }`}
                   >
                     {product.status}
@@ -65,7 +65,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
                     <span className="flex items-center gap-3 whitespace-nowrap">
                       <span
                         aria-hidden="true"
-                        className="grid h-10 w-10 flex-none place-items-center rounded-full bg-brand text-[14px] font-black tracking-[-0.03em] text-white"
+                        className="grid h-10 w-10 flex-none place-items-center rounded-full bg-primary text-[14px] font-black tracking-[-0.03em] text-white"
                       >
                         {product.owner.avatar}
                       </span>
@@ -80,7 +80,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
                     {product.users.map((user) => (
                       <span
                         key={user}
-                        className="whitespace-nowrap border border-ink px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-[0.1em]"
+                        className="whitespace-nowrap border border-foreground px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-[0.1em]"
                       >
                         {user}
                       </span>

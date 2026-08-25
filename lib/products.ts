@@ -186,7 +186,7 @@ export function getProduct(slug: string): Product | undefined {
 }
 
 export function productHref(slug: string): string {
-  return `/products/${slug}`;
+  return `/dashboard/products/${slug}`;
 }
 
 export function productDate(product: Product): string | null {

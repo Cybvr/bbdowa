@@ -7,12 +7,18 @@ export type ProjectMedia = {
   poster?: string;
 };
 
+export type ProjectLiveDate = {
+  date: string;
+};
+
 export type Project = {
   slug: string;
   name: string;
+  campaign?: string;
   client: string;
   category: string;
   year: number | null;
+  liveAt?: ProjectLiveDate;
   status: ProjectStatus;
   lead: string;
   image: string;
@@ -32,9 +38,11 @@ export const PROJECTS: Project[] = [
   {
     slug: "jack-daniels",
     name: "Jack Daniel’s",
+    campaign: "That’s Naija, That’s Jack",
     client: "Brown-Forman",
     category: "Food & beverages",
     year: 2024,
+    liveAt: { date: "2024-06-15" },
     status: "live",
     lead: "Samiat Basorun",
     image: "/images/projects/project-placeholder.svg",
@@ -52,13 +60,15 @@ export const PROJECTS: Project[] = [
   {
     slug: "betano",
     name: "Betano",
+    campaign: "Make We Bet",
     client: "Keizen Games",
     category: "Entertainment",
     year: 2026,
+    liveAt: { date: "2026-01-15" },
     status: "live",
     lead: "Samiat Basorun",
-    image: "/images/projects/project-placeholder.svg",
-    imageAlt: "",
+    image: "/media/projects/betano/make-we-bet-betano.png",
+    imageAlt: "Two people linking pinky fingers during a sports conversation",
     media: [],
     summary:
       "Created by DDB Lagos, Make We Bet launched for Betano across Nigeria and Ghana in January 2026.",
@@ -81,6 +91,7 @@ export const PROJECTS: Project[] = [
     client: "Proforce Nigeria",
     category: "Defence & manufacturing",
     year: 2026,
+    liveAt: { date: "2026-03-15" },
     status: "pitch",
     lead: "Samiat Basorun",
     image: "/images/projects/project-placeholder.svg",
@@ -101,6 +112,7 @@ export const PROJECTS: Project[] = [
     client: "1 Utility Bank",
     category: "Finance",
     year: 2026,
+    liveAt: { date: "2026-08-19" },
     status: "pitch",
     lead: "Samiat Basorun",
     image: "/images/projects/project-placeholder.svg",
@@ -121,6 +133,7 @@ export const PROJECTS: Project[] = [
     client: "Interswitch",
     category: "Finance",
     year: 2021,
+    liveAt: { date: "2021-04-15" },
     status: "completed",
     lead: "",
     image: "/images/projects/project-placeholder.svg",
@@ -138,9 +151,11 @@ export const PROJECTS: Project[] = [
   {
     slug: "diageo-guinness",
     name: "Guinness",
+    campaign: "Made of Black",
     client: "Diageo",
     category: "Food & beverages",
     year: 2021,
+    liveAt: { date: "2021-07-15" },
     status: "completed",
     lead: "",
     image: "/media/projects/guinness/beerable-guinness.jpg",
@@ -186,9 +201,11 @@ export const PROJECTS: Project[] = [
   {
     slug: "visa-work",
     name: "Visa",
+    campaign: "Not a Tourist",
     client: "Visa",
     category: "Finance",
     year: 2016,
+    liveAt: { date: "2016-08-05" },
     status: "completed",
     lead: "",
     image: "/media/projects/visa/rio-2016-visa.jpg",
@@ -222,9 +239,11 @@ export const PROJECTS: Project[] = [
   {
     slug: "google-work",
     name: "Google",
+    campaign: "Know Google",
     client: "Google",
     category: "Technology",
     year: null,
+    liveAt: { date: "2020-06-15" },
     status: "completed",
     lead: "",
     image: "/media/projects/google/football-google-poster.jpg",
@@ -255,9 +274,11 @@ export const PROJECTS: Project[] = [
   {
     slug: "orijin",
     name: "Orijin",
+    campaign: "Live Original",
     client: "Orijin",
     category: "Food & beverages",
     year: null,
+    liveAt: { date: "2019-09-15" },
     status: "completed",
     lead: "",
     image: "/media/projects/orijin/live-orijinal-orijin-poster.jpg",
@@ -282,9 +303,11 @@ export const PROJECTS: Project[] = [
   {
     slug: "pringles",
     name: "Pringles",
+    campaign: "Cool Days",
     client: "Pringles",
     category: "Food & beverages",
     year: null,
+    liveAt: { date: "2018-07-15" },
     status: "completed",
     lead: "",
     image: "/media/projects/pringles/cool-days-pringles.jpg",
@@ -308,9 +331,11 @@ export const PROJECTS: Project[] = [
   {
     slug: "chicken-republic",
     name: "Chicken Republic",
+    campaign: "Easter / Anti-Violence",
     client: "Chicken Republic",
     category: "Food & beverages",
     year: null,
+    liveAt: { date: "2020-04-15" },
     status: "completed",
     lead: "",
     image: "/media/projects/chicken-republic/easter-chicken-republic.jpg",
@@ -339,10 +364,12 @@ export const PROJECTS: Project[] = [
   {
     slug: "unilever",
     name: "Unilever",
+    campaign: "Closer Is Better",
     client: "Unilever",
     category: "Consumer goods",
     year: 2026,
-    status: "live",
+    liveAt: { date: "2026-02-15" },
+    status: "completed",
     lead: "Samiat Basorun",
     image: "/images/projects/project-placeholder.svg",
     imageAlt: "",
@@ -363,5 +390,28 @@ export function getProject(slug: string): Project | undefined {
 }
 
 export function projectHref(slug: string): string {
-  return `/projects/${slug}`;
+  return `/dashboard/projects/${slug}`;
+}
+
+function liveSortValue(project: Project): number {
+  return project.liveAt ? Date.parse(`${project.liveAt.date}T00:00:00Z`) : 0;
+}
+
+export function sortProjectsByLatestLive(projects: Project[]): Project[] {
+  return [...projects].sort((a, b) => {
+    const liveStatus = Number(b.status === "live") - Number(a.status === "live");
+    if (liveStatus !== 0) return liveStatus;
+    return liveSortValue(b) - liveSortValue(a);
+  });
+}
+
+export function projectLiveDateLabel(project: Project): string {
+  if (!project.liveAt) return "Date TBC";
+
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${project.liveAt.date}T00:00:00Z`));
 }

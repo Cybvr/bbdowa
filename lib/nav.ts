@@ -2,40 +2,63 @@ import { PRODUCTS, productHref } from "./products";
 
 export type NavLink = { label: string; href: string };
 
+export const MARKETING_NAV: NavLink[] = [
+  { label: "The Work", href: "/#work" },
+  { label: "About", href: "/about" },
+  { label: "Clients", href: "/clients" },
+  { label: "The Plug", href: "/the-plug" },
+  { label: "Contact", href: "/contact" },
+];
+
+export const MARKETING_DASHBOARD_LINK: NavLink = {
+  label: "Dashboard",
+  href: "/dashboard",
+};
+
+export const MARKETING_FOOTER_LINKS: NavLink[] = [
+  { label: "About", href: "/about" },
+  { label: "People", href: "/dashboard/people" },
+  { label: "Projects", href: "/dashboard/projects" },
+  { label: "Careers", href: "/dashboard/careers" },
+  { label: "Blog", href: "/dashboard/blog" },
+  { label: "Dashboard", href: "/dashboard" },
+];
+
 export type NavItem =
   | { kind: "link"; label: string; href: string }
   | { kind: "menu"; label: string; match: string | string[]; items: NavLink[] };
 
 export const NAV_ITEMS: NavItem[] = [
-  { kind: "link", label: "About", href: "/about" },
-  { kind: "link", label: "People", href: "/people" },
-  { kind: "link", label: "Careers", href: "/careers" },
-  { kind: "link", label: "Projects", href: "/projects" },
+  { kind: "link", label: "Dashboard", href: "/dashboard" },
+  { kind: "link", label: "About", href: "/dashboard/about" },
+  { kind: "link", label: "People", href: "/dashboard/people" },
+  { kind: "link", label: "Careers", href: "/dashboard/careers" },
+  { kind: "link", label: "Projects", href: "/dashboard/projects" },
   {
     kind: "menu",
     label: "Products",
-    match: "/products",
+    match: "/dashboard/products",
     items: [
-      { label: "All Products", href: "/products" },
+      { label: "All Products", href: "/dashboard/products" },
       ...PRODUCTS.map((product) => ({ label: product.name, href: productHref(product.slug) })),
     ],
   },
   {
     kind: "menu",
     label: "Workflows",
-    match: "/workflows",
+    match: "/dashboard/workflows",
     items: [
-      { label: "Agency", href: "/workflows/agency" },
-      { label: "Pitch", href: "/workflows/pitch" },
+      { label: "Agency", href: "/dashboard/workflows/agency" },
+      { label: "Pitch", href: "/dashboard/workflows/pitch" },
     ],
   },
   {
     kind: "menu",
     label: "Resources",
-    match: ["/resources", "/blog"],
+    match: ["/dashboard/resources", "/dashboard/blog"],
     items: [
-      { label: "Resources", href: "/resources" },
-      { label: "Blog", href: "/blog" },
+      { label: "Resources", href: "/dashboard/resources" },
+      { label: "Blog", href: "/dashboard/blog" },
     ],
   },
 ];

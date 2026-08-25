@@ -1,15 +1,6 @@
 import type { Metadata } from "next";
-import { Outfit, Roboto_Mono } from "next/font/google";
-import "./globals.css";
-import { SiteNav } from "@/components/site-nav";
+import { DashboardHeader } from "@/components/dashboard-header";
 import { SiteFooter } from "@/components/site-footer";
-
-const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit", display: "swap" });
-const robotoMono = Roboto_Mono({
-  subsets: ["latin"],
-  variable: "--font-roboto-mono",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: {
@@ -22,14 +13,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body
-        className={`${outfit.variable} ${robotoMono.variable} flex min-h-screen flex-col bg-cream font-sans text-ink antialiased`}
-      >
-        <SiteNav />
+    <div className="flex min-h-screen flex-col bg-background font-sans text-foreground antialiased">
+        <DashboardHeader />
         {children}
         <SiteFooter />
-      </body>
-    </html>
+    </div>
   );
 }

@@ -1,0 +1,127 @@
+@import "tailwindcss";
+
+@theme {
+  --breakpoint-nav: 1100px;
+
+  --font-sans: var(--font-outfit), Arial, Helvetica, sans-serif;
+  --font-mono: var(--font-roboto-mono), "Courier New", monospace;
+}
+
+:root {
+  --radius: 0.5rem;
+
+  --red: #e51b23;
+  --black: #111111;
+  --white: #ffffff;
+
+  --background: var(--white);
+  --foreground: var(--black);
+  --muted: rgb(17 17 17 / 0.05);
+  --muted-foreground: rgb(17 17 17 / 0.62);
+  --popover: var(--white);
+  --popover-foreground: var(--black);
+  --card: var(--white);
+  --card-foreground: var(--black);
+  --border: rgb(17 17 17 / 0.15);
+  --input: rgb(17 17 17 / 0.15);
+  --primary: var(--red);
+  --primary-foreground: var(--white);
+  --secondary: var(--black);
+  --secondary-foreground: var(--white);
+  --accent: var(--red);
+  --accent-foreground: var(--white);
+  --destructive: var(--red);
+  --destructive-foreground: var(--white);
+  --ring: var(--red);
+  --chart-1: var(--red);
+  --chart-2: var(--black);
+  --chart-3: rgb(17 17 17 / 0.6);
+  --chart-4: rgb(229 27 35 / 0.6);
+  --chart-5: rgb(17 17 17 / 0.3);
+}
+
+.dark {
+  --radius: 0.5rem;
+
+  --background: var(--black);
+  --foreground: var(--white);
+  --muted: rgb(255 255 255 / 0.08);
+  --muted-foreground: rgb(255 255 255 / 0.7);
+  --popover: var(--black);
+  --popover-foreground: var(--white);
+  --card: var(--black);
+  --card-foreground: var(--white);
+  --border: rgb(255 255 255 / 0.22);
+  --input: rgb(255 255 255 / 0.22);
+  --primary: var(--red);
+  --primary-foreground: var(--white);
+  --secondary: var(--white);
+  --secondary-foreground: var(--black);
+  --accent: var(--red);
+  --accent-foreground: var(--white);
+  --destructive: var(--red);
+  --destructive-foreground: var(--white);
+  --ring: var(--red);
+  --chart-1: var(--red);
+  --chart-2: var(--white);
+  --chart-3: rgb(255 255 255 / 0.6);
+  --chart-4: rgb(229 27 35 / 0.6);
+  --chart-5: rgb(255 255 255 / 0.3);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: var(--font-outfit), Arial, Helvetica, sans-serif;
+  }
+
+  /*
+   * Tailwind's preflight resets headings to `font-weight: inherit`, which would
+   * render them at 400. The incumbent site relied on the browser default, so
+   * restore bold Outfit here. Utility classes still win where a heading needs
+   * the heavier 800/900 weights the original CSS set explicitly.
+   */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: inherit;
+    font-weight: 700 !important;
+  }
+}

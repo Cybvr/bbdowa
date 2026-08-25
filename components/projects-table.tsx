@@ -16,9 +16,9 @@ const FILTERS = [
 type FilterKey = (typeof FILTERS)[number]["key"];
 
 const TH =
-  "whitespace-nowrap border-b-2 border-ink pb-3 pl-0 pr-4 pt-3 text-left text-[11px] font-extrabold uppercase tracking-[0.14em] text-ash";
+  "whitespace-nowrap border-b-2 border-foreground pb-3 pl-0 pr-4 pt-3 text-left text-[11px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground";
 const TD =
-  "border-b border-hairline py-4 pl-0 pr-4 align-middle text-[clamp(15px,1.3vw,18px)] leading-[1.3]";
+  "border-b border-border py-4 pl-0 pr-4 align-middle text-[clamp(15px,1.3vw,18px)] leading-[1.3]";
 
 export function ProjectsTable({ projects }: { projects: Project[] }) {
   const router = useRouter();
@@ -67,8 +67,8 @@ export function ProjectsTable({ projects }: { projects: Project[] }) {
                     move(FILTERS.length - 1);
                   }
                 }}
-                className={`min-h-[44px] cursor-pointer border-2 px-[18px] py-2.5 text-[12px] font-extrabold uppercase tracking-[0.1em] hover:border-brand hover:bg-brand hover:text-white focus-visible:outline-[3px] focus-visible:outline-offset-[3px] focus-visible:outline-brand ${
-                  selected ? "border-ink bg-ink text-white" : "border-ink bg-transparent text-ink"
+                className={`min-h-[44px] cursor-pointer border-2 px-[18px] py-2.5 text-[12px] font-extrabold uppercase tracking-[0.1em] hover:border-primary hover:bg-primary hover:text-white focus-visible:outline-[3px] focus-visible:outline-offset-[3px] focus-visible:outline-primary ${
+                  selected ? "border-foreground bg-foreground text-white" : "border-foreground bg-transparent text-foreground"
                 }`}
               >
                 {tab.label}
@@ -78,7 +78,7 @@ export function ProjectsTable({ projects }: { projects: Project[] }) {
         </div>
         <p
           aria-live="polite"
-          className="m-0 text-[12px] font-extrabold uppercase tracking-[0.14em] text-brand"
+          className="m-0 text-[12px] font-extrabold uppercase tracking-[0.14em] text-primary"
         >
           {plural(visible.length, "project")}
         </p>
@@ -107,7 +107,7 @@ export function ProjectsTable({ projects }: { projects: Project[] }) {
                       onClick={(event) => {
                         if (!(event.target as HTMLElement).closest("a")) router.push(href);
                       }}
-                      className="cursor-pointer transition-colors duration-150 hover:bg-ink/5 focus-within:bg-brand/[0.07] motion-reduce:transition-none"
+                      className="cursor-pointer transition-colors duration-150 hover:bg-foreground/5 focus-within:bg-primary/[0.07] motion-reduce:transition-none"
                     >
                       <td className={TD}>
                         <div className="flex min-w-[280px] items-center gap-4 max-[720px]:min-w-0">
@@ -117,16 +117,16 @@ export function ProjectsTable({ projects }: { projects: Project[] }) {
                             alt={project.imageAlt}
                             width={64}
                             height={64}
-                            className="h-[44px] w-16 flex-none rounded-[6px] bg-ink object-cover max-[720px]:h-10 max-[720px]:w-14 max-[720px]:rounded-[5px]"
+                            className="h-[44px] w-16 flex-none rounded-[6px] bg-foreground object-cover max-[720px]:h-10 max-[720px]:w-14 max-[720px]:rounded-[5px]"
                           />
                           <div>
                             <Link
                               href={href}
-                              className="text-[clamp(20px,2vw,29px)] font-extrabold leading-none tracking-[-0.025em] text-ink no-underline after:ml-2 after:inline-block after:h-2.5 after:w-[18px] after:bg-brand after:align-middle after:content-[''] after:[clip-path:polygon(0_40%,65%_40%,65%_0,100%_50%,65%_100%,65%_60%,0_60%)] hover:text-brand focus-visible:text-brand focus-visible:outline-[3px] focus-visible:outline-offset-4 focus-visible:outline-brand"
+                              className="text-[clamp(20px,2vw,29px)] font-extrabold leading-none tracking-[-0.025em] text-foreground no-underline after:ml-2 after:inline-block after:h-2.5 after:w-[18px] after:bg-primary after:align-middle after:content-[''] after:[clip-path:polygon(0_40%,65%_40%,65%_0,100%_50%,65%_100%,65%_60%,0_60%)] hover:text-primary focus-visible:text-primary focus-visible:outline-[3px] focus-visible:outline-offset-4 focus-visible:outline-primary"
                             >
                               {project.name}
                             </Link>
-                            <span className="mt-[7px] hidden text-[12px] leading-[1.35] text-ash max-[720px]:block">
+                            <span className="mt-[7px] hidden text-[12px] leading-[1.35] text-muted-foreground max-[720px]:block">
                               {project.client} · {project.category}
                             </span>
                           </div>
@@ -140,7 +140,7 @@ export function ProjectsTable({ projects }: { projects: Project[] }) {
                       <td className={TD}>
                         <span
                           className={`inline-block px-2.5 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.12em] text-white ${
-                            project.status === "live" ? "bg-brand" : "bg-ink"
+                            project.status === "live" ? "bg-primary" : "bg-foreground"
                           }`}
                         >
                           {project.status}
@@ -154,11 +154,11 @@ export function ProjectsTable({ projects }: { projects: Project[] }) {
             </table>
           </div>
         ) : (
-          <div className="border-b border-hairline border-t-2 border-t-ink py-[clamp(52px,8vw,104px)]">
+          <div className="border-b border-border border-t-2 border-t-foreground py-[clamp(52px,8vw,104px)]">
             <h2 className="mb-3.5 mt-0 max-w-[14ch] text-[clamp(32px,5vw,62px)] uppercase leading-[0.96] tracking-[-0.035em]">
               No completed projects yet
             </h2>
-            <p className="m-0 max-w-[52ch] text-[18px] leading-[1.45] text-ash">
+            <p className="m-0 max-w-[52ch] text-[18px] leading-[1.45] text-muted-foreground">
               Completed case studies will appear here when their copy and project evidence are ready.
             </p>
           </div>
