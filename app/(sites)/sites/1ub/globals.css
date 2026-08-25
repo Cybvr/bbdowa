@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+:root {
+  --radius: 1.25rem;
+
+  /* Brand: lifted directly from the DDB Lagos deck and the 1U logo, so the
+     microsite and the presentation it hosts read as one system. */
+  --ink: oklch(0.222 0.006 68);
+  --paper: oklch(0.975 0.018 85);
+  --blue: oklch(0.447 0.192 265);
+  --blue-deep: oklch(0.32 0.16 265);
+  --blue-soft: oklch(0.79 0.09 245);
+  --blue-mist: oklch(0.94 0.024 250);
+
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --muted: oklch(0.9 0.006 68);
+  --muted-foreground: oklch(0.47 0.012 68);
+  --card: oklch(1 0 0);
+  --card-foreground: var(--ink);
+  --border: oklch(0.87 0.008 68);
+  --primary: var(--blue);
+  --primary-foreground: oklch(0.98 0.003 68);
+  --header-height: 4.75rem;
+}
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 0.75rem);
+  --radius-md: calc(var(--radius) - 0.5rem);
+  --radius-lg: var(--radius);
+  --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-ink: var(--ink);
+  --color-paper: var(--paper);
+  --color-blue: var(--blue);
+  --color-blue-deep: var(--blue-deep);
+  --color-blue-soft: var(--blue-soft);
+  --color-blue-mist: var(--blue-mist);
+}
+
+body {
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.doc-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: oklch(0.75 0.01 68) transparent;
+}
+
+.doc-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.doc-scroll::-webkit-scrollbar-thumb {
+  background: oklch(0.75 0.01 68);
+  border-radius: 999px;
+}

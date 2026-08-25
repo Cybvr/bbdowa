@@ -1,0 +1,123 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand: #e51b23;
+  --color-ink: #111111;
+  --color-cream: #f4f2ed;
+  --color-hairline: #c8c5be;
+  --color-ash: #6b675f;
+  --color-rule: #5a5a5a;
+
+  --breakpoint-nav: 1100px;
+
+  --font-sans: var(--font-outfit), Arial, Helvetica, sans-serif;
+  --font-mono: var(--font-roboto-mono), "Courier New", monospace;
+}
+
+:root {
+  --radius: 0.5rem;
+  --background: oklch(1 0 180);
+  --foreground: oklch(0.145 0 180);
+  --muted: oklch(0.97 0 180);
+  --muted-foreground: oklch(0.556 0 180);
+  --popover: oklch(1 0 180);
+  --popover-foreground: oklch(0.145 0 180);
+  --card: oklch(1 0 180);
+  --card-foreground: oklch(0.145 0 180);
+  --border: oklch(0.922 0 168.69);
+  --input: oklch(0.922 0 168.69);
+  --primary: oklch(0.577 0.215 27.319);
+  --primary-foreground: oklch(0.971 0.013 17.376);
+  --secondary: oklch(0.97 0 180);
+  --secondary-foreground: oklch(0.204 0 180);
+  --accent: oklch(0.97 0 180);
+  --accent-foreground: oklch(0.204 0 180);
+  --destructive: oklch(0.637 0.208 25.326);
+  --destructive-foreground: oklch(0.985 0 180);
+  --ring: oklch(0.577 0.215 27.319);
+  --chart-1: oklch(0.677 0.157 35.19);
+  --chart-2: oklch(0.631 0.101 183.491);
+  --chart-3: oklch(0.379 0.044 225.539);
+  --chart-4: oklch(0.834 0.119 88.146);
+  --chart-5: oklch(0.783 0.126 58.749);
+}
+
+.dark {
+  --radius: 0.5rem;
+  --background: oklch(0.145 0 180);
+  --foreground: oklch(0.985 0 180);
+  --muted: oklch(0.269 0 180);
+  --muted-foreground: oklch(0.715 0 158.199);
+  --popover: oklch(0.145 0 180);
+  --popover-foreground: oklch(0.985 0 180);
+  --card: oklch(0.145 0 180);
+  --card-foreground: oklch(0.985 0 180);
+  --border: oklch(0.269 0 180);
+  --input: oklch(0.269 0 180);
+  --primary: oklch(0.659 0.228 29.629);
+  --primary-foreground: oklch(0.971 0.013 17.376);
+  --secondary: oklch(0.269 0 180);
+  --secondary-foreground: oklch(0.985 0 180);
+  --accent: oklch(0.269 0 180);
+  --accent-foreground: oklch(0.985 0 180);
+  --destructive: oklch(0.396 0.133 25.721);
+  --destructive-foreground: oklch(0.985 0 180);
+  --ring: oklch(0.577 0.215 27.319);
+  --chart-1: oklch(0.529 0.193 262.129);
+  --chart-2: oklch(0.698 0.134 165.463);
+  --chart-3: oklch(0.723 0.15 60.631);
+  --chart-4: oklch(0.619 0.204 312.728);
+  --chart-5: oklch(0.612 0.209 6.386);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /*
+   * Tailwind's preflight resets headings to `font-weight: inherit`, which would
+   * render them at 400. The incumbent site relied on the browser default, so
+   * restore bold Outfit here. Utility classes still win where a heading needs
+   * the heavier 800/900 weights the original CSS set explicitly.
+   */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-weight: 700;
+  }
+}
