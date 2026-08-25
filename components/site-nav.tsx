@@ -154,7 +154,7 @@ export function SiteNav() {
           aria-expanded={mobileOpen}
           aria-label={mobileOpen ? "Close navigation" : "Open navigation"}
           onClick={() => setMobileOpen((open) => !open)}
-          className="hidden min-h-[44px] min-w-[64px] cursor-pointer items-center justify-center border border-white bg-transparent px-[14px] text-[12px] font-extrabold uppercase tracking-[0.08em] text-white focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-white max-nav:inline-flex"
+          className="hidden min-h-[44px] min-w-[64px] cursor-pointer items-center justify-center border border-white bg-transparent px-[14px] font-mono text-[12px] font-extrabold uppercase tracking-[0.08em] text-white focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-white max-nav:inline-flex"
         >
           {mobileOpen ? "Close" : "Menu"}
         </button>
