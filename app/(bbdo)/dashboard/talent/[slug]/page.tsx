@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import type { IconType } from "react-icons";
+import { FaBehance, FaGlobe, FaLinkedinIn } from "react-icons/fa";
+import { FiArrowUpRight } from "react-icons/fi";
 import { BackLink } from "@/components/back-link";
-import { TALENT, getTalent } from "@/lib/talent";
+import { TALENT, getTalent, type Talent } from "@/lib/talent";
 import { longDate } from "@/lib/format";
 
 type Params = { params: Promise<{ slug: string }> };
@@ -24,10 +27,56 @@ const META_CELL =
 
 const HISTORY_ROW = "border-t border-border py-3.5";
 
+type TalentPlatform = {
+  label: string;
+  href: string;
+  Icon: IconType;
+};
+
+function platformsFor(talent: Talent): TalentPlatform[] {
+  const platforms: TalentPlatform[] = [];
+  if (talent.portfolio) {
+    const isBehance = talent.portfolio.toLowerCase().includes("behance.net");
+    if (!isBehance) {
+      platforms.push({ label: "Website", href: talent.portfolio, Icon: FaGlobe });
+    }
+    if (isBehance && !talent.behance) {
+      platforms.push({ label: "Behance", href: talent.portfolio, Icon: FaBehance });
+    }
+  }
+  if (talent.behance) {
+    platforms.push({ label: "Behance", href: talent.behance, Icon: FaBehance });
+  }
+  if (talent.linkedin) {
+    platforms.push({ label: "LinkedIn", href: talent.linkedin, Icon: FaLinkedinIn });
+  }
+  return platforms;
+}
+
+function ProfileMark({ talent, className }: { talent: Talent; className: string }) {
+  return (
+    <span aria-hidden="true" className={`grid flex-none place-items-center overflow-hidden bg-border/60 ${className}`}>
+      {talent.profileImage ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={talent.profileImage} alt="" className="h-full w-full object-cover" />
+      ) : (
+        <span className="font-black tracking-[-0.06em] text-foreground/25">
+          {talent.name
+            .split(" ")
+            .map((part) => part[0])
+            .slice(0, 2)
+            .join("")}
+        </span>
+      )}
+    </span>
+  );
+}
+
 export default async function TalentDetailPage({ params }: Params) {
   const { slug } = await params;
   const talent = getTalent(slug);
   if (!talent) notFound();
+  const platforms = platformsFor(talent);
 
   return (
     <main className="flex-1 px-[clamp(24px,6vw,96px)] pb-20 pt-[clamp(30px,4vw,56px)]">
@@ -35,19 +84,10 @@ export default async function TalentDetailPage({ params }: Params) {
 
       <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-b border-foreground pb-5">
         <div className="flex items-center gap-[clamp(16px,2vw,28px)]">
-          <span
-            aria-hidden="true"
-            className="grid h-[clamp(64px,8vw,104px)] w-[clamp(64px,8vw,104px)] flex-none place-items-center bg-border/60 text-[clamp(22px,2.6vw,36px)] font-black tracking-[-0.06em] text-foreground/25"
-          >
-            {talent.name
-              .split(" ")
-              .map((part) => part[0])
-              .slice(0, 2)
-              .join("")}
-          </span>
+          <ProfileMark talent={talent} className="h-[clamp(64px,8vw,104px)] w-[clamp(64px,8vw,104px)] text-[clamp(22px,2.6vw,36px)]" />
           <div>
             <span className="block text-[13px] font-extrabold uppercase tracking-[0.14em] text-primary">
-              {talent.discipline}
+              {talent.category}
             </span>
             <h1 className="mb-0 mt-3 text-[clamp(38px,6vw,86px)] uppercase leading-[0.9] tracking-[-0.06em]">
               {talent.name}
@@ -65,7 +105,7 @@ export default async function TalentDetailPage({ params }: Params) {
 
       <div className="grid grid-cols-3 border-t border-foreground max-[720px]:grid-cols-1">
         <div className={META_CELL}>
-          <span className={META_LABEL}>Day rate</span>
+          <span className={META_LABEL}>Day rate estimate</span>
           <strong className={META_VALUE}>{talent.dayRate}</strong>
         </div>
         <div className={META_CELL}>
@@ -137,48 +177,60 @@ export default async function TalentDetailPage({ params }: Params) {
         <div className="grid grid-cols-1 gap-[clamp(28px,4vw,48px)]">
         <section>
           <h2 className="mb-[18px] mt-0 text-[12px] uppercase tracking-[0.14em] text-primary">
-            Specialties
+            Tags
           </h2>
           <ul className="m-0 list-none p-0">
-            {talent.specialties.map((specialty) => (
+            {talent.tags.map((tag) => (
               <li
-                key={specialty}
+                key={tag}
                 className="relative border-t border-border py-2.5 pl-[22px] text-[16px] leading-[1.35] before:absolute before:left-0 before:top-[17px] before:h-[7px] before:w-[7px] before:bg-primary before:content-['']"
               >
-                {specialty}
+                {tag}
               </li>
             ))}
           </ul>
+        </section>
+        <section className="border border-border p-5">
+          <h2 className="mb-[18px] mt-0 text-[12px] uppercase tracking-[0.14em] text-primary">
+            Platforms
+          </h2>
+          {platforms.length ? (
+            <div className="grid grid-cols-1 gap-2">
+              {platforms.map(({ label, href, Icon }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={`Open ${talent.name} on ${label}`}
+                  className="group flex items-center justify-between gap-3 border border-border p-3 text-foreground no-underline transition-colors hover:border-foreground hover:bg-foreground hover:text-white focus-visible:outline-[3px] focus-visible:outline-offset-[3px] focus-visible:outline-primary"
+                >
+                  <span className="flex items-center gap-3">
+                    <span className="grid h-9 w-9 place-items-center bg-foreground text-white group-hover:bg-primary">
+                      <Icon aria-hidden="true" className="h-[17px] w-[17px]" />
+                    </span>
+                    <span>
+                      <strong className="block text-[15px] leading-none">{label}</strong>
+                      <span className="mt-1 block text-[11px] uppercase tracking-[0.1em] text-muted-foreground group-hover:text-white/70">
+                        Open profile
+                      </span>
+                    </span>
+                  </span>
+                  <FiArrowUpRight aria-hidden="true" className="h-4 w-4 flex-none" />
+                </a>
+              ))}
+            </div>
+          ) : (
+            <p className="m-0 border-t border-border pt-3.5 text-[15px] text-muted-foreground">
+              Public platform links not yet confirmed.
+            </p>
+          )}
         </section>
         <section>
           <h2 className="mb-[18px] mt-0 text-[12px] uppercase tracking-[0.14em] text-primary">
             Contact
           </h2>
           <ul className="m-0 list-none p-0 text-[16px] leading-[1.35]">
-            {talent.portfolio ? (
-              <li className="border-t border-border py-2.5">
-                <a
-                  href={talent.portfolio}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="font-extrabold uppercase text-foreground underline underline-offset-[6px] hover:text-primary focus-visible:text-primary"
-                >
-                  Portfolio
-                </a>
-              </li>
-            ) : null}
-            {talent.linkedin ? (
-              <li className="border-t border-border py-2.5">
-                <a
-                  href={talent.linkedin}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="font-extrabold uppercase text-foreground underline underline-offset-[6px] hover:text-primary focus-visible:text-primary"
-                >
-                  LinkedIn
-                </a>
-              </li>
-            ) : null}
             {talent.email ? (
               <li className="border-t border-border py-2.5">
                 <a href={`mailto:${talent.email}`} className="text-foreground hover:text-primary">
@@ -187,7 +239,7 @@ export default async function TalentDetailPage({ params }: Params) {
               </li>
             ) : null}
             {talent.phone ? <li className="border-t border-border py-2.5">{talent.phone}</li> : null}
-            {!talent.portfolio && !talent.linkedin && !talent.email && !talent.phone ? (
+            {!talent.email && !talent.phone ? (
               <li className="border-t border-border py-2.5 text-muted-foreground">Public contact links not yet confirmed.</li>
             ) : null}
           </ul>
