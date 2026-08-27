@@ -363,9 +363,11 @@ export function TalentDirectory({
             </div>
 
             <div className="mt-6 flex flex-wrap items-center gap-x-8 gap-y-3">
-              <Stat>
-                <strong className="font-extrabold">{talent.dayRate}</strong> / day
-              </Stat>
+              {talent.hideRate === false ? (
+                <Stat>
+                  <strong className="font-extrabold">{talent.dayRate}</strong> / day
+                </Stat>
+              ) : null}
               {talent.yearsActive !== null && (
                 <Stat>
                   <strong className="font-extrabold">{talent.yearsActive}</strong> years active

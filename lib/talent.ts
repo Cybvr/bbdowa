@@ -23,6 +23,8 @@ export type Talent = {
   /** Bottom of the day-rate band, in rateCurrency units. */
   rateMin: number | null;
   rateCurrency: "NGN" | "USD";
+  /** Frontend display flag; omitted records default to hiding the rate. */
+  hideRate?: boolean;
   /** Payment terms agreed with finance. */
   terms: string;
   availability: TalentAvailability;
@@ -368,6 +370,7 @@ export const TALENT: Talent[] = [
     dayRate: "₦8k–₦10k",
     rateMin: 8_000,
     rateCurrency: "NGN",
+    hideRate: false,
     terms: "To confirm",
     availability: "open",
     clearance: "pending",
@@ -427,6 +430,7 @@ export const TALENT: Talent[] = [
     dayRate: "₦12k–₦15k",
     rateMin: 12_000,
     rateCurrency: "NGN",
+    hideRate: false,
     terms: "To confirm",
     availability: "open",
     clearance: "pending",
@@ -514,6 +518,7 @@ export const TALENT: Talent[] = [
     dayRate: "₦12k–₦16k",
     rateMin: 12_000,
     rateCurrency: "NGN",
+    hideRate: false,
     terms: "To confirm",
     availability: "busy",
     clearance: "pending",
