@@ -39,6 +39,8 @@ export type Talent = {
   phone: string | null;
   /** Public profile image URL sourced from a researched online profile. */
   profileImage?: string | null;
+  /** Public work/project image used for the directory feature tile. */
+  featuredImage?: string | null;
   /** Public professional history researched from the supplied profile and linked sources. */
   workHistory?: TalentWorkHistory[];
   linkedin?: string | null;
@@ -67,6 +69,8 @@ export const TALENT: Talent[] = [
     portfolio: "https://madebynull.com",
     profileImage:
       "https://res.cloudinary.com/dmwfd0zhh/image/upload/v1656082679/Group%20256/Info%20Page%20Files/Info_Page_Avatar_ojcvuj.jpg",
+    featuredImage:
+      "https://res.cloudinary.com/dmwfd0zhh/image/upload/v1656079559/Group%20256/Jelly/Jelly_2_sh7bjf.jpg",
     email: null,
     phone: null,
     linkedin: null,
@@ -94,6 +98,8 @@ export const TALENT: Talent[] = [
     behance: "https://www.behance.net/Bhorie",
     profileImage:
       "https://cdn.dribbble.com/users/11558370/avatars/normal/69d94c498dc437a890f329af57dcb93b.jpg?1702737779",
+    featuredImage:
+      "https://mir-s3-cdn-cf.behance.net/projects/max_808_webp/508ecb245377627.Y3JvcCwzNjU2LDI4NjAsNzk2LDA.png",
     email: null,
     phone: null,
     linkedin: "https://www.linkedin.com/in/bhorie",
@@ -125,6 +131,7 @@ export const TALENT: Talent[] = [
     workedOn: [],
     yearsActive: null,
     portfolio: "https://yagazie.vercel.app",
+    featuredImage: "https://yagazie.vercel.app/images/stackko-1080x1080.png",
     email: null,
     phone: null,
     linkedin: null,
@@ -152,6 +159,8 @@ export const TALENT: Talent[] = [
     behance: "https://www.behance.net/obasolaboluwaji",
     profileImage:
       "https://pps.services.adobe.com/api/profile/E10934F25C96204C0A495FE9@AdobeID/image/04c707be-c941-4252-9f44-ed89ce94ef24/276",
+    featuredImage:
+      "https://mir-s3-cdn-cf.behance.net/projects/max_808_webp/d669be212224419.Y3JvcCwzMjQwLDI1MzQsMCwxNTI.jpg",
     email: null,
     phone: null,
     linkedin: "https://ng.linkedin.com/in/obasola-akintola-1370771b4",
@@ -239,6 +248,8 @@ export const TALENT: Talent[] = [
     behance: "https://www.behance.net/lukebamtefa",
     profileImage:
       "https://pps.services.adobe.com/api/profile/CAEDF908590913A80A495D55@AdobeID/image/43b51cc0-25b4-47e9-a572-77d8c8608b1e/230",
+    featuredImage:
+      "https://mir-s3-cdn-cf.behance.net/projects/max_808_webp/8ffba9166803139.Y3JvcCwxMDA3LDc4OCwzODksMA.jpg",
     email: null,
     phone: null,
     linkedin: "https://ng.linkedin.com/in/lukebamtefa",
@@ -269,6 +280,8 @@ export const TALENT: Talent[] = [
     portfolio: "https://www.behance.net/anjoladave",
     profileImage:
       "https://pps.services.adobe.com/api/profile/B1FA1E4A5C3269E60A495CB3@AdobeID/image/8d0cac34-f448-493a-bb77-b9415f04d1cc/276",
+    featuredImage:
+      "https://mir-s3-cdn-cf.behance.net/projects/max_808_webp/446432253131701.Y3JvcCwyNDAwLDE4NzcsMCw1NTg.png",
     email: null,
     phone: null,
     linkedin: "https://ng.linkedin.com/in/anjolaoluwa-aduroja-352959208",
@@ -300,6 +313,8 @@ export const TALENT: Talent[] = [
     behance: "https://www.behance.net/_damilareee",
     profileImage:
       "https://pps.services.adobe.com/api/profile/7F7142AD5DB84FB90A495F84@AdobeID/image/bacce8c5-ea7d-4397-8e2d-0a09a8f09b04/230",
+    featuredImage:
+      "https://mir-s3-cdn-cf.behance.net/projects/max_808_webp/9165a3227209695.683c309c2753e.jpg",
     email: null,
     phone: null,
     linkedin: "https://ng.linkedin.com/in/d%C3%A1mil%C3%A1re-fol%C3%A1b%C3%AD-614016207",
@@ -331,6 +346,8 @@ export const TALENT: Talent[] = [
     behance: "https://www.behance.net/rukhayatorekoya",
     profileImage:
       "https://pps.services.adobe.com/api/profile/64F22A395BF987D60A495C7C@AdobeID/image/715d69dd-6f61-4a58-934f-5521f853c374/276",
+    featuredImage:
+      "https://mir-s3-cdn-cf.behance.net/projects/max_808_webp/913e8a227981935.Y3JvcCwyMDcxLDE2MjAsNDA1LDA.png",
     email: null,
     phone: null,
     linkedin: null,
@@ -361,6 +378,8 @@ export const TALENT: Talent[] = [
     behance: "https://www.behance.net/Joeadeyemo",
     profileImage:
       "https://pps.services.adobe.com/api/profile/CFE42A62643257490A495F9D@AdobeID/image/649dec9a-bc87-4df7-9322-bdf860495af9/276",
+    featuredImage:
+      "https://mir-s3-cdn-cf.behance.net/projects/max_808_webp/30ca96245571391.Y3JvcCw5NzcsNzY0LDAsMA.png",
     email: null,
     phone: null,
     linkedin: null,

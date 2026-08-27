@@ -82,9 +82,11 @@ export default async function TalentDetailPage({ params }: Params) {
     <main className="flex-1 px-[clamp(24px,6vw,96px)] pb-20 pt-[clamp(30px,4vw,56px)]">
       <BackLink href="/dashboard/talent">Back to talent</BackLink>
 
-      <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-b border-foreground pb-5">
+      <div className="mt-8 grid items-start grid-cols-[minmax(0,1fr)_minmax(300px,0.72fr)] gap-[clamp(28px,5vw,72px)] max-[900px]:grid-cols-1">
+        <div className="min-w-0">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-foreground pb-5">
         <div className="flex items-center gap-[clamp(16px,2vw,28px)]">
-          <ProfileMark talent={talent} className="h-[clamp(64px,8vw,104px)] w-[clamp(64px,8vw,104px)] text-[clamp(22px,2.6vw,36px)]" />
+          <ProfileMark talent={talent} className="h-[clamp(64px,8vw,104px)] w-[clamp(64px,8vw,104px)] rounded-full text-[clamp(22px,2.6vw,36px)]" />
           <div>
             <span className="block text-[13px] font-extrabold uppercase tracking-[0.14em] text-primary">
               {talent.category}
@@ -146,7 +148,7 @@ export default async function TalentDetailPage({ params }: Params) {
         </div>
       </div>
 
-      <div className="mt-[clamp(28px,4vw,48px)] grid grid-cols-[minmax(0,1.25fr)_minmax(260px,0.75fr)] gap-[clamp(28px,4vw,64px)] max-[900px]:grid-cols-1">
+      <div className="mt-[clamp(28px,4vw,48px)] grid grid-cols-1 gap-[clamp(28px,4vw,48px)]">
         <section>
           <h2 className="mb-[18px] mt-0 text-[12px] uppercase tracking-[0.14em] text-primary">
             Work history
@@ -245,6 +247,36 @@ export default async function TalentDetailPage({ params }: Params) {
           </ul>
         </section>
         </div>
+      </div>
+        </div>
+
+        <aside className="min-w-0 max-[900px]:order-first">
+          <div className="border border-border bg-background">
+            <div className="relative aspect-[4/5] overflow-hidden bg-transparent">
+              {talent.featuredImage ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={talent.featuredImage} alt={`${talent.name} featured work`} className="h-full w-full object-cover" />
+              ) : (
+                <span className="grid h-full w-full place-items-center text-[clamp(64px,10vw,140px)] font-black tracking-[-0.08em] text-foreground/20">
+                  {talent.name
+                    .split(" ")
+                    .map((part) => part[0])
+                    .slice(0, 2)
+                    .join("")}
+                </span>
+              )}
+              <span className="absolute right-4 top-4 h-3 w-3 rounded-full bg-primary" aria-hidden="true" />
+            </div>
+            <div className="border-t border-border p-4">
+              <span className="block text-[11px] font-extrabold uppercase tracking-[0.14em] text-primary">
+                Featured work
+              </span>
+              <span className="mt-1 block text-[13px] text-muted-foreground">
+                {talent.featuredImage ? "Public portfolio image" : "No verified project image yet"}
+              </span>
+            </div>
+          </div>
+        </aside>
       </div>
     </main>
   );

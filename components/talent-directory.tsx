@@ -208,9 +208,14 @@ export function TalentDirectory({
               className="group bg-background no-underline outline outline-1 outline-border hover:bg-foreground hover:text-white focus-visible:outline-[3px] focus-visible:-outline-offset-[3px] focus-visible:outline-primary"
             >
               <div className="relative grid aspect-square place-items-center overflow-hidden bg-transparent">
-                <span className="relative text-[clamp(48px,5vw,72px)] font-black tracking-[-0.06em] text-foreground/25">
-                  {initials(talent.name)}
-                </span>
+                {talent.featuredImage ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={talent.featuredImage} alt={`${talent.name} featured work`} className="absolute inset-0 h-full w-full object-cover" />
+                ) : (
+                  <span className="relative text-[clamp(48px,5vw,72px)] font-black tracking-[-0.06em] text-foreground/25">
+                    {initials(talent.name)}
+                  </span>
+                )}
                 <span className="absolute right-3 top-3 text-foreground">
                   <Availability value={talent.availability} />
                 </span>
