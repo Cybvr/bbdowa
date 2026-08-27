@@ -474,6 +474,36 @@ export const TALENT: Talent[] = [
     craftNote:
       "Creative brand and web designer who helps businesses stand out with work that balances efficiency, aesthetics, and functionality.",
   },
+  {
+    slug: "ella-james",
+    name: "Ella James",
+    category: "UX",
+    tags: ["Brand design", "Product design", "Interaction design", "Website design", "UX mapping"],
+    location: "Nigeria",
+    entity: "Freelancer",
+    dayRate: "₦16k–₦20k",
+    rateMin: 16_000,
+    rateCurrency: "NGN",
+    terms: "To confirm",
+    availability: "busy",
+    clearance: "pending",
+    vouchedBy: "Not yet vouched",
+    workedOn: [],
+    yearsActive: null,
+    portfolio: "https://ellajames.framer.website/",
+    featuredImage:
+      "https://framerusercontent.com/images/NsQSsAEKrV8Wgn8FTxhxansFTw.png?width=2448&height=1980",
+    email: "jamesogechi35@gmail.com",
+    phone: null,
+    linkedin: null,
+    workHistory: [
+      { role: "Product & Brand Designer", company: "Blocverse", period: "Oct 2023–Present" },
+      { role: "Product & Brand Designer", company: "Codetivite", period: "Oct 2023–Present" },
+      { role: "Brand Designer", company: "Stramm Design Agency", period: "Sep 2024–May 2025" },
+    ],
+    craftNote:
+      "Brand and product designer working across identity, digital products, interaction design, and clear visual systems.",
+  },
 ];
 
 export const TALENT_CATEGORIES = [...new Set(TALENT.map((talent) => talent.category))].sort();

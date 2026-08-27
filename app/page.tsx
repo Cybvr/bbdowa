@@ -34,7 +34,7 @@ export default function MarketingHomePage() {
             muted
             loop
             playsInline
-            className="aspect-video w-full rounded-xl object-cover"
+            className="aspect-video w-full rounded-xl object-cover max-[640px]:aspect-[4/3]"
           />
         </section>
 
@@ -49,13 +49,16 @@ export default function MarketingHomePage() {
             We make work that moves business, culture and people.
           </p>
 
-          <dl className="m-0 grid grid-cols-3 gap-x-[clamp(14px,2.5vw,32px)] gap-y-4 self-end border-t border-foreground pt-4">
+          <dl className="m-0 grid grid-cols-3 gap-x-[clamp(14px,2.5vw,32px)] gap-y-4 self-end border-t border-foreground pt-4 max-[480px]:grid-cols-1 max-[480px]:gap-y-0">
             {RECORD.map((item) => (
-              <div key={item.label} className="min-w-0">
+              <div
+                key={item.label}
+                className="min-w-0 max-[480px]:flex max-[480px]:flex-row-reverse max-[480px]:items-baseline max-[480px]:justify-end max-[480px]:gap-3 max-[480px]:border-b max-[480px]:border-border max-[480px]:py-3"
+              >
                 <dt className="font-mono text-[10px] uppercase leading-[1.2] tracking-[0.12em] text-muted-foreground">
                   {item.label}
                 </dt>
-                <dd className="m-0 mt-2 text-[clamp(24px,3vw,40px)] font-semibold leading-none tracking-[-0.04em]">
+                <dd className="m-0 mt-2 text-[clamp(24px,3vw,40px)] font-semibold leading-none tracking-[-0.04em] max-[480px]:mt-0 max-[480px]:w-[3.5ch] max-[480px]:text-[28px]">
                   {item.value}
                 </dd>
               </div>
@@ -75,7 +78,7 @@ export default function MarketingHomePage() {
                 (item) => item.kind === "image" && item.src !== project.image,
               );
               return (
-                <article key={project.slug} className={featured ? "lg:col-span-2" : undefined}>
+                <article key={project.slug} className={featured ? "sm:col-span-2" : undefined}>
                   <Link
                     href={`/dashboard/projects/${project.slug}`}
                     className="group block text-foreground no-underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
