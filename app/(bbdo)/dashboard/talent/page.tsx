@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { TalentDirectory } from "@/components/talent-directory";
-import { TALENT, TALENT_DISCIPLINES } from "@/lib/talent";
+import { TALENT, TALENT_DISCIPLINES, TALENT_LOCATIONS } from "@/lib/talent";
 
 export const metadata: Metadata = { title: "Talent" };
 
@@ -11,7 +11,11 @@ export default function TalentPage() {
         Talent
       </h1>
 
-      <TalentDirectory talents={TALENT} disciplines={TALENT_DISCIPLINES} />
+      <TalentDirectory
+        talents={TALENT}
+        disciplines={TALENT_DISCIPLINES}
+        locations={TALENT_LOCATIONS}
+      />
     </main>
   );
 }

@@ -11,6 +11,9 @@ export type Talent = {
   entity: "Freelancer" | "Studio";
   /** Day-rate band, agreed or quoted. */
   dayRate: string;
+  /** Bottom of the day-rate band, in rateCurrency units. */
+  rateMin: number;
+  rateCurrency: "NGN" | "USD";
   /** Payment terms agreed with finance. */
   terms: string;
   availability: TalentAvailability;
@@ -38,6 +41,8 @@ export const TALENT: Talent[] = [
     location: "Lagos",
     entity: "Freelancer",
     dayRate: "₦900k–₦1.4m",
+    rateMin: 900_000,
+    rateCurrency: "NGN",
     terms: "60% on award, balance on picture lock",
     availability: "on a job",
     clearance: "cleared",
@@ -59,6 +64,8 @@ export const TALENT: Talent[] = [
     location: "Enugu / remote",
     entity: "Freelancer",
     dayRate: "₦180k–₦250k",
+    rateMin: 180_000,
+    rateCurrency: "NGN",
     terms: "50% upfront, balance on delivery",
     availability: "open",
     clearance: "cleared",
@@ -80,6 +87,8 @@ export const TALENT: Talent[] = [
     location: "Accra",
     entity: "Freelancer",
     dayRate: "$450–$700",
+    rateMin: 450,
+    rateCurrency: "USD",
     terms: "Full payment on delivery, net 14",
     availability: "open",
     clearance: "cleared",
@@ -101,6 +110,8 @@ export const TALENT: Talent[] = [
     location: "Lagos",
     entity: "Freelancer",
     dayRate: "₦120k–₦160k",
+    rateMin: 120_000,
+    rateCurrency: "NGN",
     terms: "Full payment on delivery, net 7",
     availability: "open",
     clearance: "cleared",
@@ -122,6 +133,8 @@ export const TALENT: Talent[] = [
     location: "Lagos",
     entity: "Freelancer",
     dayRate: "₦220k–₦300k",
+    rateMin: 220_000,
+    rateCurrency: "NGN",
     terms: "50% upfront, balance on final export",
     availability: "unconfirmed",
     clearance: "cleared",
@@ -143,6 +156,8 @@ export const TALENT: Talent[] = [
     location: "Abuja / remote",
     entity: "Freelancer",
     dayRate: "₦150k–₦200k",
+    rateMin: 150_000,
+    rateCurrency: "NGN",
     terms: "50% upfront, balance on delivery",
     availability: "open",
     clearance: "pending",
@@ -164,6 +179,8 @@ export const TALENT: Talent[] = [
     location: "Lagos",
     entity: "Studio",
     dayRate: "₦350k–₦500k",
+    rateMin: 350_000,
+    rateCurrency: "NGN",
     terms: "Studio invoice, net 30",
     availability: "on a job",
     clearance: "cleared",
@@ -185,6 +202,8 @@ export const TALENT: Talent[] = [
     location: "Accra / remote",
     entity: "Freelancer",
     dayRate: "$400–$550",
+    rateMin: 400,
+    rateCurrency: "USD",
     terms: "50% upfront, balance on delivery",
     availability: "open",
     clearance: "pending",
@@ -206,6 +225,8 @@ export const TALENT: Talent[] = [
     location: "Lagos",
     entity: "Freelancer",
     dayRate: "₦160k–₦220k",
+    rateMin: 160_000,
+    rateCurrency: "NGN",
     terms: "Full payment on delivery, net 14",
     availability: "open",
     clearance: "cleared",
@@ -227,6 +248,8 @@ export const TALENT: Talent[] = [
     location: "Lagos",
     entity: "Freelancer",
     dayRate: "₦280k–₦380k",
+    rateMin: 280_000,
+    rateCurrency: "NGN",
     terms: "50% upfront, balance on delivery",
     availability: "unconfirmed",
     clearance: "cleared",
@@ -248,6 +271,8 @@ export const TALENT: Talent[] = [
     location: "Lagos",
     entity: "Freelancer",
     dayRate: "₦200k–₦260k",
+    rateMin: 200_000,
+    rateCurrency: "NGN",
     terms: "Weekly invoicing during production",
     availability: "open",
     clearance: "cleared",
@@ -269,6 +294,8 @@ export const TALENT: Talent[] = [
     location: "Accra / remote",
     entity: "Freelancer",
     dayRate: "$250–$350",
+    rateMin: 250,
+    rateCurrency: "USD",
     terms: "Full payment on delivery, net 14",
     availability: "open",
     clearance: "pending",
@@ -285,6 +312,19 @@ export const TALENT: Talent[] = [
 ];
 
 export const TALENT_DISCIPLINES = [...new Set(TALENT.map((talent) => talent.discipline))].sort();
+
+/** Working rate for comparing dollar quotes against naira budgets. Update when the rate moves. */
+export const NGN_PER_USD = 1500;
+
+export function rateFloorNgn(talent: Talent): number {
+  return talent.rateCurrency === "USD" ? talent.rateMin * NGN_PER_USD : talent.rateMin;
+}
+
+export function baseCity(location: string): string {
+  return location.split(" /")[0];
+}
+
+export const TALENT_LOCATIONS = [...new Set(TALENT.map((talent) => baseCity(talent.location)))].sort();
 
 export function getTalent(slug: string): Talent | undefined {
   return TALENT.find((talent) => talent.slug === slug);

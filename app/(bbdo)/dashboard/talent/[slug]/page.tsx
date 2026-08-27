@@ -35,7 +35,7 @@ export default async function TalentDetailPage({ params }: Params) {
         <div className="flex items-center gap-[clamp(16px,2vw,28px)]">
           <span
             aria-hidden="true"
-            className="grid h-[clamp(64px,8vw,104px)] w-[clamp(64px,8vw,104px)] flex-none place-items-center rounded-full bg-primary text-[clamp(22px,2.6vw,36px)] font-black tracking-[-0.04em] text-white"
+            className="grid h-[clamp(64px,8vw,104px)] w-[clamp(64px,8vw,104px)] flex-none place-items-center bg-border/60 text-[clamp(22px,2.6vw,36px)] font-black tracking-[-0.06em] text-foreground/25"
           >
             {talent.name
               .split(" ")
