@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import type { IconType } from "react-icons";
 import { FaBehance, FaGlobe, FaLinkedinIn } from "react-icons/fa";
+import { FiFilter, FiX } from "react-icons/fi";
 import type { Talent } from "@/lib/talent";
 import { baseCity, rateFloorNgn, talentHref } from "@/lib/talent";
 
@@ -63,9 +65,131 @@ const PILL =
 const RATE_STEP = 1_000;
 const RATE_MIN = 0;
 const RATE_CAP = 100_000;
+const PAGE_SIZE = 10;
 
 function Stat({ children }: { children: React.ReactNode }) {
   return <span className="text-[14px] leading-none text-foreground">{children}</span>;
+}
+
+type FilterControlsProps = {
+  search: string;
+  setSearch: (value: string) => void;
+  category: string;
+  setCategory: (value: string) => void;
+  location: string;
+  setLocation: (value: string) => void;
+  availability: Talent["availability"] | "all";
+  setAvailability: (value: Talent["availability"] | "all") => void;
+  maxRate: number;
+  setMaxRate: (value: number) => void;
+  categories: string[];
+  locations: string[];
+  activeFilterCount: number;
+  onClear: () => void;
+};
+
+function FilterControls({
+  search,
+  setSearch,
+  category,
+  setCategory,
+  location,
+  setLocation,
+  availability,
+  setAvailability,
+  maxRate,
+  setMaxRate,
+  categories,
+  locations,
+  activeFilterCount,
+  onClear,
+}: FilterControlsProps) {
+  return (
+    <div className="flex flex-col gap-5">
+      <label className="flex flex-col gap-2 text-[11px] font-extrabold uppercase tracking-[0.12em]">
+        Search
+        <input
+          type="search"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Name, skill, company"
+          aria-label="Search talent"
+          className="min-h-[44px] w-full border-2 border-foreground bg-transparent px-3 py-2.5 text-[12px] font-extrabold normal-case tracking-normal text-foreground placeholder:text-muted-foreground focus-visible:outline-[3px] focus-visible:outline-offset-[3px] focus-visible:outline-primary"
+        />
+      </label>
+      <label className="flex flex-col gap-2 text-[11px] font-extrabold uppercase tracking-[0.12em]">
+        Category
+        <select
+          value={category}
+          onChange={(event) => setCategory(event.target.value)}
+          aria-label="Category"
+          className={`${SELECT} w-full`}
+        >
+          <option value="all">All categories</option>
+          {categories.map((key) => (
+            <option key={key} value={key}>
+              {key}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="flex flex-col gap-2 text-[11px] font-extrabold uppercase tracking-[0.12em]">
+        Location
+        <select
+          value={location}
+          onChange={(event) => setLocation(event.target.value)}
+          aria-label="Location"
+          className={`${SELECT} w-full`}
+        >
+          <option value="all">All locations</option>
+          {locations.map((key) => (
+            <option key={key} value={key}>
+              {key}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="flex flex-col gap-2 text-[11px] font-extrabold uppercase tracking-[0.12em]">
+        Availability
+        <select
+          value={availability}
+          onChange={(event) => setAvailability(event.target.value as Talent["availability"] | "all")}
+          aria-label="Availability"
+          className={`${SELECT} w-full`}
+        >
+          <option value="all">Any availability</option>
+          <option value="open">Open</option>
+          <option value="busy">Busy</option>
+          <option value="unconfirmed">Unconfirmed</option>
+        </select>
+      </label>
+      <label className="flex flex-col gap-3 border-2 border-foreground px-3 py-3 text-[11px] font-extrabold uppercase tracking-[0.12em]">
+        <span className="flex items-center justify-between">
+          <span>Maximum day rate</span>
+          <span className="text-muted-foreground">₦0–₦100k</span>
+        </span>
+        <input
+          type="range"
+          min={RATE_MIN}
+          max={RATE_CAP}
+          step={RATE_STEP}
+          value={maxRate}
+          onChange={(event) => setMaxRate(Number(event.target.value))}
+          aria-label="Maximum day rate in naira"
+          className="w-full accent-primary"
+        />
+      </label>
+      {activeFilterCount > 0 ? (
+        <button
+          type="button"
+          onClick={onClear}
+          className="min-h-[44px] cursor-pointer border-2 border-border bg-transparent px-3 py-2.5 text-left text-[11px] font-extrabold uppercase tracking-[0.12em] text-muted-foreground hover:border-foreground hover:text-foreground focus-visible:outline-[3px] focus-visible:outline-offset-[3px] focus-visible:outline-primary"
+        >
+          Clear filters ({activeFilterCount})
+        </button>
+      ) : null}
+    </div>
+  );
 }
 
 export function TalentDirectory({
@@ -77,84 +201,116 @@ export function TalentDirectory({
   categories: string[];
   locations: string[];
 }) {
+  const router = useRouter();
+  const [search, setSearch] = useState<string>("");
   const [category, setCategory] = useState<string>("all");
   const [location, setLocation] = useState<string>("all");
   const [availability, setAvailability] = useState<Talent["availability"] | "all">("all");
   const [maxRate, setMaxRate] = useState<number>(RATE_CAP);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [page, setPage] = useState(1);
 
-  const visible = talents.filter(
-    (talent) =>
+  const visible = talents.filter((talent) => {
+    const query = search.trim().toLowerCase();
+    const searchable = [
+      talent.name,
+      talent.category,
+      talent.location,
+      ...talent.tags,
+      ...(talent.workHistory?.flatMap((entry) => [entry.role, entry.company]) ?? []),
+    ]
+      .join(" ")
+      .toLowerCase();
+
+    return (
+      (!query || searchable.includes(query)) &&
       (category === "all" || talent.category === category) &&
       (location === "all" || baseCity(talent.location) === location) &&
       (availability === "all" || talent.availability === availability) &&
-      (maxRate >= RATE_CAP || rateFloorNgn(talent) <= maxRate),
-  );
+      (maxRate >= RATE_CAP || rateFloorNgn(talent) <= maxRate)
+    );
+  });
+
+  const activeFilterCount = [
+    search.trim(),
+    category !== "all" ? category : "",
+    location !== "all" ? location : "",
+    availability !== "all" ? availability : "",
+    maxRate < RATE_CAP ? "rate" : "",
+  ].filter(Boolean).length;
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, category, location, availability, maxRate]);
+
+  const totalPages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pageVisible = visible.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  const clearFilters = () => {
+    setSearch("");
+    setCategory("all");
+    setLocation("all");
+    setAvailability("all");
+    setMaxRate(RATE_CAP);
+  };
 
   return (
     <>
-      <div className="my-7 mb-5 flex flex-wrap items-center gap-3">
-        <select
-          value={category}
-          onChange={(event) => setCategory(event.target.value)}
-          aria-label="Category"
-          className={SELECT}
-        >
-          <option value="all">Category</option>
-          {categories.map((key) => (
-            <option key={key} value={key}>
-              {key}
-            </option>
-          ))}
-        </select>
-        <select
-          value={location}
-          onChange={(event) => setLocation(event.target.value)}
-          aria-label="Location"
-          className={SELECT}
-        >
-          <option value="all">Location</option>
-          {locations.map((key) => (
-            <option key={key} value={key}>
-              {key}
-            </option>
-          ))}
-        </select>
-        <select
-          value={availability}
-          onChange={(event) => setAvailability(event.target.value as Talent["availability"] | "all")}
-          aria-label="Availability"
-          className={SELECT}
-        >
-          <option value="all">Availability</option>
-          <option value="open">Open</option>
-          <option value="busy">Busy</option>
-          <option value="unconfirmed">Unconfirmed</option>
-        </select>
-        <label className="flex h-[44px] items-center gap-3 border-2 border-foreground px-[14px] text-[10px] font-extrabold uppercase text-muted-foreground">
-          <span aria-hidden="true">₦0</span>
-          <input
-            type="range"
-            min={RATE_MIN}
-            max={RATE_CAP}
-            step={RATE_STEP}
-            value={maxRate}
-            onChange={(event) => setMaxRate(Number(event.target.value))}
-            aria-label="Maximum day rate in naira"
-            className="w-[140px] accent-primary"
+      <div className="my-7 grid items-start gap-8 min-[801px]:grid-cols-[240px_minmax(0,1fr)] min-[801px]:gap-10">
+        <aside className="sticky top-6 hidden border border-border bg-background p-5 min-[801px]:block">
+          <h2 className="mb-5 mt-0 text-[13px] uppercase tracking-[0.14em]">Filter talent</h2>
+          <FilterControls
+            search={search}
+            setSearch={setSearch}
+            category={category}
+            setCategory={setCategory}
+            location={location}
+            setLocation={setLocation}
+            availability={availability}
+            setAvailability={setAvailability}
+            maxRate={maxRate}
+            setMaxRate={setMaxRate}
+            categories={categories}
+            locations={locations}
+            activeFilterCount={activeFilterCount}
+            onClear={clearFilters}
           />
-          <span aria-hidden="true">₦100k</span>
-        </label>
-      </div>
+        </aside>
 
-      <p aria-live="polite" className="mb-5 mt-0 text-[12px] font-extrabold uppercase tracking-[0.14em] text-primary">
-        {visible.length} {visible.length === 1 ? "person" : "people"}
-      </p>
+        <section className="min-w-0">
+          <div className="mb-5 flex items-center justify-between gap-3 min-[801px]:hidden">
+            <button
+              type="button"
+              onClick={() => setFilterOpen(true)}
+              className="inline-flex min-h-[44px] items-center gap-2 border-2 border-foreground bg-transparent px-4 py-2.5 text-[11px] font-extrabold uppercase tracking-[0.12em] hover:bg-foreground hover:text-white focus-visible:outline-[3px] focus-visible:outline-offset-[3px] focus-visible:outline-primary"
+            >
+              <FiFilter aria-hidden="true" className="h-4 w-4" />
+              Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+            </button>
+            <span className="text-[12px] font-extrabold uppercase tracking-[0.12em] text-primary">
+              {visible.length} {visible.length === 1 ? "person" : "people"}
+            </span>
+          </div>
 
-      <div className="flex flex-col gap-4">
-        {visible.map((talent) => (
+          <p aria-live="polite" className="mb-5 mt-0 hidden text-[12px] font-extrabold uppercase tracking-[0.14em] text-primary min-[801px]:block">
+            {visible.length} {visible.length === 1 ? "person" : "people"}
+          </p>
+
+          <div className="flex flex-col gap-4">
+        {pageVisible.map((talent) => (
           <article
             key={talent.slug}
-            className="rounded-2xl border border-border bg-background p-[clamp(20px,3vw,32px)] hover:border-foreground"
+            role="link"
+            tabIndex={0}
+            onClick={() => router.push(talentHref(talent.slug))}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                router.push(talentHref(talent.slug));
+              }
+            }}
+            className="cursor-pointer rounded-2xl border border-border bg-background p-[clamp(20px,3vw,32px)] hover:border-foreground focus-visible:outline-[3px] focus-visible:outline-offset-[3px] focus-visible:outline-primary"
           >
             <div className="flex items-start gap-5 max-[640px]:flex-col max-[640px]:gap-4">
               <Link
@@ -186,12 +342,6 @@ export function TalentDirectory({
               </div>
 
               <div className="flex flex-none items-center gap-2 max-[640px]:w-full">
-                <Link
-                  href={talentHref(talent.slug)}
-                  className="rounded-full bg-foreground px-6 py-2.5 text-[12px] font-extrabold uppercase tracking-[0.1em] text-white no-underline hover:bg-primary focus-visible:outline-[3px] focus-visible:outline-offset-[3px] focus-visible:outline-primary max-[640px]:flex-1 max-[640px]:text-center"
-                >
-                  View profile
-                </Link>
                 {platformLinks(talent)
                   .filter((platform) => platform.href)
                   .slice(0, 1)
@@ -203,6 +353,7 @@ export function TalentDirectory({
                       rel="noreferrer"
                       aria-label={`Open ${talent.name} on ${label}`}
                       title={label}
+                      onClick={(event) => event.stopPropagation()}
                       className="grid h-11 w-11 flex-none place-items-center rounded-full border border-border text-foreground hover:border-foreground focus-visible:outline-[3px] focus-visible:outline-offset-[2px] focus-visible:outline-primary"
                     >
                       <Icon aria-hidden="true" className="h-4 w-4" />
@@ -240,7 +391,72 @@ export function TalentDirectory({
             </p>
           </article>
         ))}
+          </div>
+          {totalPages > 1 ? (
+            <nav aria-label="Talent pagination" className="mt-6 flex items-center justify-between gap-4 border-t border-border pt-4">
+              <button
+                type="button"
+                disabled={currentPage === 1}
+                onClick={() => setPage((value) => Math.max(1, value - 1))}
+                className="min-h-[44px] cursor-pointer border-2 border-border bg-transparent px-4 py-2.5 text-[11px] font-extrabold uppercase tracking-[0.12em] text-muted-foreground hover:border-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Previous
+              </button>
+              <span className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-muted-foreground">
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                type="button"
+                disabled={currentPage === totalPages}
+                onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
+                className="min-h-[44px] cursor-pointer border-2 border-border bg-transparent px-4 py-2.5 text-[11px] font-extrabold uppercase tracking-[0.12em] text-muted-foreground hover:border-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Next
+              </button>
+            </nav>
+          ) : null}
+        </section>
       </div>
+
+      {filterOpen ? (
+        <div className="fixed inset-0 z-50 min-[801px]:hidden" role="dialog" aria-modal="true" aria-label="Talent filters">
+          <button
+            type="button"
+            aria-label="Close filters"
+            onClick={() => setFilterOpen(false)}
+            className="absolute inset-0 cursor-default bg-foreground/40"
+          />
+          <aside className="absolute inset-y-0 left-0 w-[min(88vw,360px)] overflow-y-auto border-r border-border bg-background p-5 shadow-2xl">
+            <div className="mb-6 flex items-center justify-between gap-4">
+              <h2 className="m-0 text-[13px] uppercase tracking-[0.14em]">Filter talent</h2>
+              <button
+                type="button"
+                aria-label="Close filters"
+                onClick={() => setFilterOpen(false)}
+                className="grid h-11 w-11 cursor-pointer place-items-center border-2 border-foreground bg-transparent hover:bg-foreground hover:text-white focus-visible:outline-[3px] focus-visible:outline-offset-[3px] focus-visible:outline-primary"
+              >
+                <FiX aria-hidden="true" className="h-5 w-5" />
+              </button>
+            </div>
+            <FilterControls
+              search={search}
+              setSearch={setSearch}
+              category={category}
+              setCategory={setCategory}
+              location={location}
+              setLocation={setLocation}
+              availability={availability}
+              setAvailability={setAvailability}
+              maxRate={maxRate}
+              setMaxRate={setMaxRate}
+              categories={categories}
+              locations={locations}
+              activeFilterCount={activeFilterCount}
+              onClear={clearFilters}
+            />
+          </aside>
+        </div>
+      ) : null}
     </>
   );
 }
