@@ -257,7 +257,7 @@ export const PROJECTS: Project[] = [
       },
       {
         kind: "video",
-        src: "/media/projects/google/know-google.mp4",
+        src: "/media/hero.mp4",
         poster: "/media/projects/google/know-google-poster.jpg",
         alt: "Know Google campaign film",
       },

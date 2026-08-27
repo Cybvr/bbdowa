@@ -22,14 +22,20 @@ export default function MarketingHomePage() {
       <main className="flex-1">
         <section
           aria-labelledby="welcome"
-          className="bg-primary px-[clamp(20px,5vw,72px)] pb-[clamp(28px,4vw,44px)] pt-[clamp(48px,8vw,112px)] text-white"
+          className="px-[clamp(20px,5vw,72px)] pb-[clamp(28px,4vw,44px)] pt-[clamp(24px,4vw,56px)]"
         >
-          <h1
-            id="welcome"
-            className="m-0 text-[clamp(64px,15vw,208px)] font-semibold uppercase leading-[0.82] tracking-[-0.055em]"
-          >
+          <h1 id="welcome" className="sr-only">
             Akwaaba
           </h1>
+          <video
+            src="/media/hero.mp4"
+            poster="/media/projects/google/know-google-poster.jpg"
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="aspect-video w-full rounded-xl object-cover"
+          />
         </section>
 
         <section

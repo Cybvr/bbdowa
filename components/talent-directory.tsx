@@ -204,10 +204,8 @@ export function TalentDirectory({
             <option value="busy">Busy</option>
             <option value="unconfirmed">Unconfirmed</option>
           </select>
-          <label className="flex h-[44px] items-center gap-3 border-2 border-foreground px-[14px] text-[12px] font-extrabold uppercase tracking-[0.1em]">
-            <span className="w-[9ch] whitespace-nowrap">
-              {maxRate >= RATE_CAP ? "Any rate" : `≤ ₦${maxRate / 1_000}k`}
-            </span>
+          <label className="flex h-[44px] items-center gap-3 border-2 border-foreground px-[14px] text-[10px] font-extrabold uppercase text-muted-foreground">
+            <span aria-hidden="true">₦0</span>
             <input
               type="range"
               min={RATE_MIN}
@@ -216,8 +214,9 @@ export function TalentDirectory({
               value={maxRate}
               onChange={(event) => setMaxRate(Number(event.target.value))}
               aria-label="Maximum day rate in naira"
-              className="h-[3px] w-[140px] accent-primary"
+              className="w-[140px] accent-primary"
             />
+            <span aria-hidden="true">₦100k</span>
           </label>
         </div>
         <div className="flex flex-none gap-2" role="group" aria-label="Change view">
