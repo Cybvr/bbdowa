@@ -2,6 +2,13 @@ export type TalentAvailability = "open" | "on a job" | "unconfirmed";
 
 export type TalentClearance = "cleared" | "pending";
 
+export type TalentWorkHistory = {
+  role: string;
+  company: string;
+  period: string;
+  location?: string;
+};
+
 export type Talent = {
   slug: string;
   name: string;
@@ -12,7 +19,7 @@ export type Talent = {
   /** Day-rate band, agreed or quoted. */
   dayRate: string;
   /** Bottom of the day-rate band, in rateCurrency units. */
-  rateMin: number;
+  rateMin: number | null;
   rateCurrency: "NGN" | "USD";
   /** Payment terms agreed with finance. */
   terms: string;
@@ -23,11 +30,14 @@ export type Talent = {
   vouchedBy: string;
   /** Agency work they have delivered on. Empty = not yet used. */
   workedOn: string[];
-  yearsActive: number;
-  portfolio: string;
-  email: string;
-  phone: string;
-  lastEngaged: string | null;
+  yearsActive: number | null;
+  portfolio: string | null;
+  email: string | null;
+  phone: string | null;
+  /** Public professional history researched from the supplied profile and linked sources. */
+  workHistory?: TalentWorkHistory[];
+  linkedin?: string | null;
+  lastEngaged?: string | null;
   /** Creative officer's note on the craft. */
   craftNote: string;
 };
@@ -309,6 +319,356 @@ export const TALENT: Talent[] = [
     craftNote:
       "Covers the Ghana-market language gap when Betano briefs land. Untested on our work — pair him with Esther first time out.",
   },
+  {
+    slug: "isaac-afeyemi",
+    name: "Isaac Afeyemi",
+    discipline: "Design",
+    specialties: ["Brand direction", "Visual systems", "Digital experiences"],
+    location: "Lagos",
+    entity: "Freelancer",
+    dayRate: "Rate on request",
+    rateMin: null,
+    rateCurrency: "NGN",
+    terms: "To confirm",
+    availability: "unconfirmed",
+    clearance: "pending",
+    vouchedBy: "Not yet vouched",
+    workedOn: [],
+    yearsActive: null,
+    portfolio: "https://madebynull.com",
+    email: null,
+    phone: null,
+    linkedin: null,
+    workHistory: [],
+    craftNote:
+      "Design director at How To Null, with a public practice spanning brand direction and digital visual experimentation.",
+  },
+  {
+    slug: "bori-odekunle",
+    name: "Bori Odekunle",
+    discipline: "Design",
+    specialties: ["Product design", "Marketing design", "Design systems", "Framer"],
+    location: "Lagos",
+    entity: "Freelancer",
+    dayRate: "Rate on request",
+    rateMin: null,
+    rateCurrency: "NGN",
+    terms: "To confirm",
+    availability: "open",
+    clearance: "pending",
+    vouchedBy: "Not yet vouched",
+    workedOn: [],
+    yearsActive: 3,
+    portfolio: "https://boridesigns.me",
+    email: null,
+    phone: null,
+    linkedin: "https://www.linkedin.com/in/bhorie",
+    workHistory: [
+      { role: "Founding Product & Marketing Designer", company: "LightWorkAI", period: "Nov 2024–Present" },
+      { role: "Lead Designer", company: "Orivfy", period: "Sep 2025" },
+      { role: "Product Designer", company: "360 Rides", period: "Jun 2025" },
+      { role: "Product Designer", company: "Primedsoft", period: "Aug 2024–Jan 2025" },
+      { role: "Product Designer", company: "International Stablecoins", period: "Dec 2023–Mar 2024" },
+      { role: "Product Designer", company: "DexP2PXpress", period: "Sep–Oct 2023" },
+    ],
+    craftNote:
+      "Product and marketing designer working across product, marketing, and web, with a focus on simplifying complex systems into clear experiences.",
+  },
+  {
+    slug: "yagazie",
+    name: "Yagazie",
+    discipline: "Design",
+    specialties: ["Brand design", "Product design", "Web3", "Visual systems"],
+    location: "Lagos",
+    entity: "Freelancer",
+    dayRate: "Rate on request",
+    rateMin: null,
+    rateCurrency: "NGN",
+    terms: "To confirm",
+    availability: "open",
+    clearance: "pending",
+    vouchedBy: "Not yet vouched",
+    workedOn: [],
+    yearsActive: null,
+    portfolio: "https://yagazie.vercel.app",
+    email: null,
+    phone: null,
+    linkedin: null,
+    workHistory: [{ role: "Co-founder", company: "Zypp Protocol", period: "Current" }],
+    craftNote:
+      "Seasoned brand and product designer who describes the practice simply: design and ships. Also listed publicly as co-founder of Zypp Protocol.",
+  },
+  {
+    slug: "obasola-akintola",
+    name: "Obasola Akintola",
+    discipline: "Design",
+    specialties: ["Brand identity", "Art direction", "Design production", "Community building"],
+    location: "Lagos",
+    entity: "Freelancer",
+    dayRate: "Rate on request",
+    rateMin: null,
+    rateCurrency: "NGN",
+    terms: "To confirm",
+    availability: "open",
+    clearance: "pending",
+    vouchedBy: "Not yet vouched",
+    workedOn: [],
+    yearsActive: 6,
+    portfolio: null,
+    email: null,
+    phone: null,
+    linkedin: "https://ng.linkedin.com/in/obasola-akintola-1370771b4",
+    workHistory: [
+      { role: "Senior Brand Designer", company: "Chowdeck", period: "Current" },
+      { role: "Brand Designer", company: "Cowrywise", period: "2024–2025" },
+    ],
+    craftNote:
+      "Brand designer at Chowdeck with a practice rooted in identity systems, production, and building a stronger design community in Lagos.",
+  },
+  {
+    slug: "peter-olowo",
+    name: "Peter Olowo",
+    discipline: "Design",
+    specialties: ["Brand identity", "Campaign design", "Illustration", "Visual systems"],
+    location: "Lagos",
+    entity: "Freelancer",
+    dayRate: "Rate on request",
+    rateMin: null,
+    rateCurrency: "NGN",
+    terms: "To confirm",
+    availability: "open",
+    clearance: "pending",
+    vouchedBy: "Not yet vouched",
+    workedOn: [],
+    yearsActive: 2,
+    portfolio: null,
+    email: null,
+    phone: null,
+    linkedin: "https://www.linkedin.com/in/peterolowo03",
+    workHistory: [
+      { role: "Senior Brand Designer", company: "Chowdeck", period: "Jan 2026–Present" },
+      { role: "Senior Brand Designer", company: "Cowrywise", period: "Jul–Dec 2025" },
+      { role: "Brand Designer", company: "Cowrywise", period: "Nov 2024–Jun 2025" },
+      { role: "Brand Designer", company: "Cowrywise", period: "Jan–Oct 2024", location: "Contract" },
+    ],
+    craftNote:
+      "Brand designer working across campaign systems and illustration; public work includes Cowrywise ambassador campaigns and campus-focused visual assets.",
+  },
+  {
+    slug: "linda-ojo-taiwo",
+    name: "Linda Ojo Taiwo",
+    discipline: "Design",
+    specialties: ["Design engineering", "Product design", "Iconography", "Frontend development"],
+    location: "Lagos",
+    entity: "Freelancer",
+    dayRate: "Rate on request",
+    rateMin: null,
+    rateCurrency: "NGN",
+    terms: "To confirm",
+    availability: "open",
+    clearance: "pending",
+    vouchedBy: "Not yet vouched",
+    workedOn: [],
+    yearsActive: 5,
+    portfolio: null,
+    email: null,
+    phone: null,
+    linkedin: "https://ng.linkedin.com/in/lindaojo",
+    workHistory: [
+      { role: "Design Engineer", company: "Paystack", period: "Nov 2025–Present" },
+      { role: "Senior Product Designer", company: "Exaum", period: "May 2024–Present", location: "Nigeria · Hybrid" },
+    ],
+    craftNote:
+      "Designer, software engineer, and iconographer who works at the intersection of polished interfaces and working frontend systems.",
+  },
+  {
+    slug: "luke-bamtefa",
+    name: "Luke Bamtefa",
+    discipline: "Design",
+    specialties: ["Brand design", "Illustration", "Campaign systems", "Visual storytelling"],
+    location: "Lagos",
+    entity: "Freelancer",
+    dayRate: "Rate on request",
+    rateMin: null,
+    rateCurrency: "NGN",
+    terms: "To confirm",
+    availability: "open",
+    clearance: "pending",
+    vouchedBy: "Not yet vouched",
+    workedOn: [],
+    yearsActive: 4,
+    portfolio: null,
+    email: null,
+    phone: null,
+    linkedin: "https://ng.linkedin.com/in/lukebamtefa",
+    workHistory: [
+      { role: "Brand Designer", company: "Cowrywise", period: "Jan 2026–Present", location: "Hybrid" },
+      { role: "Brand Designer", company: "tix.africa", period: "Jun 2025–Jan 2026", location: "Remote" },
+      { role: "Visual Designer", company: "The Archers Entertainment", period: "Dec 2023–Jan 2025", location: "Remote" },
+    ],
+    craftNote:
+      "Visual and product designer with a Computer Science background, known for brand systems, illustration, and fast-moving campaign work.",
+  },
+  {
+    slug: "anjolaoluwa-aduroja",
+    name: "AnjolaOluwa Aduroja",
+    discipline: "Design",
+    specialties: ["Brand identity", "Art direction", "3D art", "Visual storytelling"],
+    location: "Ibadan",
+    entity: "Studio",
+    dayRate: "Rate on request",
+    rateMin: null,
+    rateCurrency: "NGN",
+    terms: "To confirm",
+    availability: "open",
+    clearance: "pending",
+    vouchedBy: "Not yet vouched",
+    workedOn: [],
+    yearsActive: 7,
+    portfolio: "https://www.behance.net/anjoladave",
+    email: null,
+    phone: null,
+    linkedin: "https://ng.linkedin.com/in/anjolaoluwa-aduroja-352959208",
+    workHistory: [
+      { role: "Art Director & Brand Designer", company: "Crowther", period: "Jul 2026–Present", location: "Remote" },
+      { role: "Director / Lead Graphic Designer", company: "Conceptuniverse Studios", period: "Feb 2019–Present" },
+      { role: "Lead Visual Designer", company: "Elle & Elle Fitness", period: "Current", location: "Ibadan" },
+    ],
+    craftNote:
+      "Nigerian 3D artist and designer blending visual art, identity design, and emotional storytelling through colorful, abstract compositions.",
+  },
+  {
+    slug: "damilare-folabi",
+    name: "Dámilárẹ Folábí",
+    discipline: "Design",
+    specialties: ["Brand art direction", "Luxury brand creative", "Textile design", "Visual storytelling"],
+    location: "Lagos",
+    entity: "Freelancer",
+    dayRate: "Rate on request",
+    rateMin: null,
+    rateCurrency: "NGN",
+    terms: "To confirm",
+    availability: "open",
+    clearance: "pending",
+    vouchedBy: "Not yet vouched",
+    workedOn: [],
+    yearsActive: 9,
+    portfolio: null,
+    email: null,
+    phone: null,
+    linkedin: "https://ng.linkedin.com/in/d%C3%A1mil%C3%A1re-fol%C3%A1b%C3%AD-614016207",
+    workHistory: [
+      { role: "Senior Brand Designer", company: "Salamanca Tequila", period: "Nov 2025–Present", location: "Remote" },
+      { role: "Textile Designer", company: "Orange Culture Nigeria", period: "Oct 2022–Dec 2025", location: "Remote" },
+      { role: "Design Production Specialist", company: "Orange Culture Nigeria", period: "Earlier role" },
+    ],
+    craftNote:
+      "Brand art director and visual storyteller building premium brands through art, strategy, design, and textile-led expression.",
+  },
+  {
+    slug: "rukhyat-orekoya",
+    name: "Rukhyat Orekoya",
+    discipline: "Illustration",
+    specialties: ["Illustration", "Brand design", "Character development", "Social campaigns"],
+    location: "Lagos",
+    entity: "Freelancer",
+    dayRate: "Rate on request",
+    rateMin: null,
+    rateCurrency: "NGN",
+    terms: "To confirm",
+    availability: "open",
+    clearance: "pending",
+    vouchedBy: "Not yet vouched",
+    workedOn: [],
+    yearsActive: 3,
+    portfolio: null,
+    email: null,
+    phone: null,
+    linkedin: null,
+    workHistory: [
+      { role: "Lead Illustrator / Brand Designer", company: "Chowdeck", period: "Aug 2025–Present", location: "Hybrid" },
+      { role: "Brand Designer / Illustrator", company: "Partna (YC W22)", period: "Apr 2023–Feb 2025", location: "Remote" },
+    ],
+    craftNote:
+      "Illustrator and brand designer whose work brings personality into social campaigns, identity systems, and launch moments.",
+  },
+  {
+    slug: "joseph-adeyemo",
+    name: "Joseph Adeyemo",
+    discipline: "Design",
+    specialties: ["Logo design", "Visual identity", "Social media design", "Illustration"],
+    location: "Lagos",
+    entity: "Freelancer",
+    dayRate: "Rate on request",
+    rateMin: null,
+    rateCurrency: "NGN",
+    terms: "To confirm",
+    availability: "open",
+    clearance: "pending",
+    vouchedBy: "Not yet vouched",
+    workedOn: [],
+    yearsActive: null,
+    portfolio: null,
+    email: null,
+    phone: null,
+    linkedin: null,
+    workHistory: [{ role: "Design Ambassador", company: "Cowrywise", period: "2026" }],
+    craftNote:
+      "Brand designer focused on identities that drive recognition and response, with social design and illustration in the mix.",
+  },
+  {
+    slug: "jeremiah-ajayi",
+    name: "Jeremiah Ajayi",
+    discipline: "Copy",
+    specialties: ["Product marketing", "Content strategy", "GTM messaging", "Sales enablement"],
+    location: "Nigeria",
+    entity: "Freelancer",
+    dayRate: "Rate on request",
+    rateMin: null,
+    rateCurrency: "NGN",
+    terms: "To confirm",
+    availability: "open",
+    clearance: "pending",
+    vouchedBy: "Not yet vouched",
+    workedOn: [],
+    yearsActive: 8,
+    portfolio: "https://www.thejeremiahajayi.com",
+    email: null,
+    phone: null,
+    linkedin: "https://www.linkedin.com/in/jeremiah-ajayi/",
+    workHistory: [
+      { role: "Co-founder", company: "EmpowerQ", period: "2025–Present" },
+      { role: "Content Marketing Manager", company: "RemotePass", period: "c. 2023–2025" },
+      { role: "Senior Content Marketer", company: "Stears", period: "c. 2022–2023" },
+      { role: "Writer", company: "PiggyVest", period: "Earlier role" },
+    ],
+    craftNote:
+      "B2B product-marketing and content partner helping startups turn launches, repositioning, and expansion into buyer-ready messaging.",
+  },
+  {
+    slug: "king-elisha",
+    name: "King Elisha",
+    discipline: "Design",
+    specialties: ["Brand strategy", "Brand design", "Typography", "Visual identity"],
+    location: "Lagos",
+    entity: "Freelancer",
+    dayRate: "Rate on request",
+    rateMin: null,
+    rateCurrency: "NGN",
+    terms: "To confirm",
+    availability: "open",
+    clearance: "pending",
+    vouchedBy: "Not yet vouched",
+    workedOn: [],
+    yearsActive: null,
+    portfolio: null,
+    email: null,
+    phone: null,
+    linkedin: null,
+    workHistory: [{ role: "Brand Designer & Strategist", company: "Cadmon Studio", period: "Current" }],
+    craftNote:
+      "Brand designer and strategist available for freelance work, with an emphasis on clear typography, strong identity systems, and memorable visual direction.",
+  },
 ];
 
 export const TALENT_DISCIPLINES = [...new Set(TALENT.map((talent) => talent.discipline))].sort();
@@ -317,6 +677,7 @@ export const TALENT_DISCIPLINES = [...new Set(TALENT.map((talent) => talent.disc
 export const NGN_PER_USD = 1500;
 
 export function rateFloorNgn(talent: Talent): number {
+  if (talent.rateMin === null) return Number.POSITIVE_INFINITY;
   return talent.rateCurrency === "USD" ? talent.rateMin * NGN_PER_USD : talent.rateMin;
 }
 

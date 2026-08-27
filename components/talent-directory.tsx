@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useState } from "react";
 import type { Talent } from "@/lib/talent";
 import { baseCity, rateFloorNgn, talentHref } from "@/lib/talent";
-import { plural } from "@/lib/format";
 
 const TOGGLE_BUTTON =
   "min-h-[44px] cursor-pointer border-2 px-[18px] py-2.5 text-[12px] font-extrabold uppercase tracking-[0.1em] hover:border-primary hover:bg-primary hover:text-white focus-visible:outline-[3px] focus-visible:outline-offset-[3px] focus-visible:outline-primary";
@@ -144,7 +143,7 @@ export function TalentDirectory({
       </div>
 
       <p aria-live="polite" className="mb-5 mt-0 text-[12px] font-extrabold uppercase tracking-[0.14em] text-primary">
-        {plural(visible.length, "person", "people")}
+        {visible.length} {visible.length === 1 ? "person" : "people"}
       </p>
 
       {view === "cards" ? (
@@ -175,7 +174,9 @@ export function TalentDirectory({
                   <p className="mb-0 mt-1 text-[12px] leading-[1.4] text-muted-foreground group-hover:text-white/70">
                     {talent.discipline} · {baseCity(talent.location)}
                   </p>
-                  <strong className="mt-2 block text-[13px]">{talent.dayRate} / day</strong>
+                  <strong className="mt-2 block text-[13px]">
+                    {talent.rateMin === null ? talent.dayRate : `${talent.dayRate} / day`}
+                  </strong>
                 </div>
               </div>
             </Link>
