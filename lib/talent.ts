@@ -1,8 +1,8 @@
-export type PodAvailability = "open" | "on a job" | "unconfirmed";
+export type TalentAvailability = "open" | "on a job" | "unconfirmed";
 
-export type PodClearance = "cleared" | "pending";
+export type TalentClearance = "cleared" | "pending";
 
-export type PodTalent = {
+export type Talent = {
   slug: string;
   name: string;
   discipline: string;
@@ -13,9 +13,9 @@ export type PodTalent = {
   dayRate: string;
   /** Payment terms agreed with finance. */
   terms: string;
-  availability: PodAvailability;
+  availability: TalentAvailability;
   /** Cleared = signed off by MD, finance and creative. */
-  clearance: PodClearance;
+  clearance: TalentClearance;
   /** Who inside the agency brought them in and vouches for them. */
   vouchedBy: string;
   /** Agency work they have delivered on. Empty = not yet used. */
@@ -29,7 +29,7 @@ export type PodTalent = {
   craftNote: string;
 };
 
-export const POD: PodTalent[] = [
+export const TALENT: Talent[] = [
   {
     slug: "tunde-akerele",
     name: "Tunde Akerele",
@@ -284,12 +284,12 @@ export const POD: PodTalent[] = [
   },
 ];
 
-export const POD_DISCIPLINES = [...new Set(POD.map((talent) => talent.discipline))].sort();
+export const TALENT_DISCIPLINES = [...new Set(TALENT.map((talent) => talent.discipline))].sort();
 
-export function getTalent(slug: string): PodTalent | undefined {
-  return POD.find((talent) => talent.slug === slug);
+export function getTalent(slug: string): Talent | undefined {
+  return TALENT.find((talent) => talent.slug === slug);
 }
 
-export function podHref(slug: string): string {
-  return `/dashboard/pod/${slug}`;
+export function talentHref(slug: string): string {
+  return `/dashboard/talent/${slug}`;
 }
