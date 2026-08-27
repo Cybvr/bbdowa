@@ -9,6 +9,7 @@
     "start": "next start -p 99"
   },
   "dependencies": {
+    "@radix-ui/react-tooltip": "^1.2.16",
     "next": "^15.5.4",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",

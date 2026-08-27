@@ -2,6 +2,12 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export type ProfileNavItem = {
   label: string;
@@ -88,19 +94,27 @@ export function ProfileNav({
 
   return (
     <div ref={menuRef} className="relative shrink-0" data-profile-menu>
-      <button
-        type="button"
-        aria-haspopup="menu"
-        aria-expanded={open}
-        aria-label={open ? "Close profile menu" : "Open profile menu"}
-        title={open ? "Close profile menu" : "Open profile menu"}
-        onClick={() => setOpen((current) => !current)}
-        className="inline-flex h-9 w-9 items-center justify-center bg-white/10 text-white transition-colors hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-      >
-        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white text-[9px] font-extrabold tracking-[0.04em] text-primary">
-          {initials}
-        </span>
-      </button>
+      <TooltipProvider delayDuration={300}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              aria-haspopup="menu"
+              aria-expanded={open}
+              aria-label={open ? "Close profile menu" : "Open profile menu"}
+              onClick={() => setOpen((current) => !current)}
+              className="inline-flex h-9 w-9 items-center justify-center bg-white/10 text-white transition-colors hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            >
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white text-[9px] font-extrabold tracking-[0.04em] text-primary">
+                {initials}
+              </span>
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">
+            {open ? "Close profile menu" : "Open profile menu"}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
 
       {open ? (
         <div

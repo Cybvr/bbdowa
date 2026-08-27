@@ -6,6 +6,12 @@ import { useEffect, useState } from "react";
 import { IoGlobeOutline } from "react-icons/io5";
 import { NAV_ITEMS } from "@/lib/nav";
 import { ProfileNav } from "@/components/profile-nav";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const TOP_TEXT =
   "font-mono text-[12.6px] font-semibold uppercase tracking-[0.03em] text-white no-underline hover:text-foreground focus-visible:text-foreground focus-visible:outline-2 focus-visible:outline-offset-[6px] focus-visible:outline-white max-nav:flex max-nav:w-full max-nav:min-h-[48px] max-nav:items-center max-nav:justify-between max-nav:text-[13px]";
@@ -138,15 +144,21 @@ export function DashboardHeader() {
       </ul>
 
       <div className="order-3 flex items-center gap-2 max-nav:col-start-2 max-nav:row-start-1 max-nav:justify-self-end">
-        <Link
-          href="/"
-          onClick={closeAll}
-          aria-label="Main site"
-          title="Main site"
-          className="inline-flex h-11 w-11 items-center justify-center bg-white/10 text-white transition-colors hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-        >
-          <IoGlobeOutline aria-hidden="true" className="h-[18px] w-[18px]" />
-        </Link>
+        <TooltipProvider delayDuration={300}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link
+                href="/"
+                onClick={closeAll}
+                aria-label="Main site"
+                className="inline-flex h-11 w-11 items-center justify-center bg-white/10 text-white transition-colors hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+              >
+                <IoGlobeOutline aria-hidden="true" className="h-[18px] w-[18px]" />
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Main site</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
         <ProfileNav />
         <button
           type="button"

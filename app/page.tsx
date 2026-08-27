@@ -65,6 +65,9 @@ export default function MarketingHomePage() {
           <div className="grid gap-[clamp(8px,1vw,16px)] sm:grid-cols-2 lg:grid-cols-3">
             {WORK.map((project, index) => {
               const featured = index === 0;
+              const hoverMedia = project.media.find(
+                (item) => item.kind === "image" && item.src !== project.image,
+              );
               return (
                 <article key={project.slug} className={featured ? "lg:col-span-2" : undefined}>
                   <Link
@@ -80,8 +83,22 @@ export default function MarketingHomePage() {
                       <img
                         src={project.image}
                         alt={project.imageAlt}
-                        className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+                        className={`h-full w-full object-cover transition-[transform,opacity] duration-500 ease-out group-hover:scale-[1.03] group-focus-visible:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover:scale-100 ${
+                          hoverMedia
+                            ? "group-hover:opacity-0 group-focus-visible:opacity-0"
+                            : ""
+                        }`}
                       />
+                      {hoverMedia ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={hoverMedia.src}
+                          alt=""
+                          aria-hidden="true"
+                          loading="lazy"
+                          className="absolute inset-0 h-full w-full scale-[1.03] object-cover opacity-0 transition-[transform,opacity] duration-500 ease-out group-hover:scale-100 group-hover:opacity-100 group-focus-visible:scale-100 group-focus-visible:opacity-100 motion-reduce:transition-none motion-reduce:scale-100"
+                        />
+                      ) : null}
                       <span
                         aria-hidden="true"
                         className="absolute bottom-4 right-4 inline-flex h-11 w-11 items-center justify-center bg-primary opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100 motion-reduce:transition-none"
