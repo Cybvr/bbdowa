@@ -11,8 +11,8 @@ const TOGGLE_BUTTON =
   "min-h-[44px] cursor-pointer border-2 px-[18px] py-2.5 text-[12px] font-extrabold uppercase tracking-[0.1em] hover:border-primary hover:bg-primary hover:text-white focus-visible:outline-[3px] focus-visible:outline-offset-[3px] focus-visible:outline-primary";
 
 const AVAILABILITY_DOT: Record<Talent["availability"], string> = {
-  open: "bg-primary",
-  "on a job": "bg-foreground",
+  open: "bg-[#1a9a4a]",
+  busy: "bg-[#d94a3a]",
   unconfirmed: "bg-muted-foreground",
 };
 
@@ -97,13 +97,32 @@ function PlatformBadges({ talent }: { talent: Talent }) {
 const SELECT =
   "min-h-[44px] cursor-pointer border-2 border-foreground bg-transparent px-[14px] py-2.5 text-[12px] font-extrabold uppercase tracking-[0.1em] text-foreground hover:border-primary focus-visible:outline-[3px] focus-visible:outline-offset-[3px] focus-visible:outline-primary";
 
-const RATE_STEP = 50_000;
+const RATE_STEP = 1_000;
 const RATE_MIN = 0;
-const RATE_CAP = 10_000_000;
+const RATE_CAP = 100_000;
 
-function formatNgn(value: number): string {
-  if (value === 0) return "₦0";
-  return value >= 1_000_000 ? `₦${value / 1_000_000}m` : `₦${value / 1_000}k`;
+type SortKey = "name" | "category" | "location" | "rate" | "availability";
+
+const SORT_COLUMNS: { key: SortKey; label: string }[] = [
+  { key: "name", label: "Name" },
+  { key: "category", label: "Category" },
+  { key: "location", label: "Location & tags" },
+  { key: "rate", label: "Day rate estimate" },
+  { key: "availability", label: "Availability" },
+];
+
+const AVAILABILITY_ORDER: Record<Talent["availability"], number> = {
+  open: 0,
+  busy: 1,
+  unconfirmed: 2,
+};
+
+function sortValue(talent: Talent, key: SortKey): string | number {
+  if (key === "name") return talent.name;
+  if (key === "category") return talent.category;
+  if (key === "location") return baseCity(talent.location);
+  if (key === "availability") return AVAILABILITY_ORDER[talent.availability];
+  return talent.rateMin === null ? Number.MAX_SAFE_INTEGER : rateFloorNgn(talent);
 }
 
 export function TalentDirectory({
@@ -117,15 +136,32 @@ export function TalentDirectory({
 }) {
   const [category, setCategory] = useState<string>("all");
   const [location, setLocation] = useState<string>("all");
+  const [availability, setAvailability] = useState<Talent["availability"] | "all">("all");
   const [maxRate, setMaxRate] = useState<number>(RATE_CAP);
   const [view, setView] = useState<"cards" | "list">("cards");
+  const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 } | null>(null);
 
-  const visible = talents.filter(
+  const filtered = talents.filter(
     (talent) =>
       (category === "all" || talent.category === category) &&
       (location === "all" || baseCity(talent.location) === location) &&
+      (availability === "all" || talent.availability === availability) &&
       (maxRate >= RATE_CAP || rateFloorNgn(talent) <= maxRate),
   );
+
+  const visible = sort
+    ? [...filtered].sort((a, b) => {
+        const left = sortValue(a, sort.key);
+        const right = sortValue(b, sort.key);
+        if (left === right) return 0;
+        return (left < right ? -1 : 1) * sort.dir;
+      })
+    : filtered;
+
+  const toggleSort = (key: SortKey) =>
+    setSort((current) =>
+      current?.key === key ? { key, dir: current.dir === 1 ? -1 : 1 } : { key, dir: 1 },
+    );
 
   return (
     <>
@@ -157,9 +193,20 @@ export function TalentDirectory({
               </option>
             ))}
           </select>
-          <label className="flex min-h-[44px] items-center gap-3 border-2 border-foreground px-[14px] text-[12px] font-extrabold uppercase tracking-[0.1em]">
-            <span className="whitespace-nowrap">
-              {maxRate >= RATE_CAP ? "Any day rate" : `Up to ${formatNgn(maxRate)}`}
+          <select
+            value={availability}
+            onChange={(event) => setAvailability(event.target.value as Talent["availability"] | "all")}
+            aria-label="Availability"
+            className={SELECT}
+          >
+            <option value="all">Availability</option>
+            <option value="open">Open</option>
+            <option value="busy">Busy</option>
+            <option value="unconfirmed">Unconfirmed</option>
+          </select>
+          <label className="flex h-[44px] items-center gap-3 border-2 border-foreground px-[14px] text-[12px] font-extrabold uppercase tracking-[0.1em]">
+            <span className="w-[9ch] whitespace-nowrap">
+              {maxRate >= RATE_CAP ? "Any rate" : `≤ ₦${maxRate / 1_000}k`}
             </span>
             <input
               type="range"
@@ -169,7 +216,7 @@ export function TalentDirectory({
               value={maxRate}
               onChange={(event) => setMaxRate(Number(event.target.value))}
               aria-label="Maximum day rate in naira"
-              className="w-[140px] accent-primary"
+              className="h-[3px] w-[140px] accent-primary"
             />
           </label>
         </div>
@@ -239,15 +286,27 @@ export function TalentDirectory({
         </div>
       ) : (
         <div>
-          <div
-            aria-hidden="true"
-            className="hidden grid-cols-[minmax(220px,1.25fr)_minmax(100px,0.7fr)_minmax(180px,1.15fr)_minmax(140px,0.9fr)_minmax(120px,0.75fr)_120px] gap-5 border-b-2 border-foreground py-3 text-[11px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground min-[901px]:grid"
-          >
-            <span>Name</span>
-            <span>Category</span>
-            <span>Location &amp; tags</span>
-            <span>Day rate estimate</span>
-            <span>Availability</span>
+          <div className="hidden grid-cols-[minmax(220px,1.25fr)_minmax(100px,0.7fr)_minmax(180px,1.15fr)_minmax(140px,0.9fr)_minmax(120px,0.75fr)_120px] gap-5 border-b-2 border-foreground py-3 text-[11px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground min-[901px]:grid">
+            {SORT_COLUMNS.map(({ key, label }) => {
+              const active = sort?.key === key;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => toggleSort(key)}
+                  aria-label={`Sort by ${label}`}
+                  aria-pressed={active}
+                  className={`flex cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 text-left text-[11px] font-extrabold uppercase tracking-[0.14em] hover:text-primary focus-visible:outline-[3px] focus-visible:outline-offset-[3px] focus-visible:outline-primary ${
+                    active ? "text-foreground" : "text-muted-foreground"
+                  }`}
+                >
+                  {label}
+                  <span aria-hidden="true" className={active ? "text-primary" : "invisible"}>
+                    {active && sort?.dir === -1 ? "↓" : "↑"}
+                  </span>
+                </button>
+              );
+            })}
             <span>Profiles</span>
           </div>
           {visible.map((talent) => (
