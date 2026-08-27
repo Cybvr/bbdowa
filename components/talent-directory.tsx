@@ -260,7 +260,7 @@ export function TalentDirectory({
                     {talent.name}
                   </Link>
                   {talent.workHistory?.length ? (
-                    <p className="mb-0 mt-3 min-w-0 whitespace-nowrap pl-[52px] text-[12px] leading-[1.45] text-muted-foreground group-hover:text-white/70">
+                    <p className="mb-0 mt-3 min-w-0 truncate whitespace-nowrap pl-[52px] text-[12px] leading-[1.45] text-muted-foreground group-hover:text-white/70">
                       <FaBriefcase aria-hidden="true" className="mr-1.5 inline-block h-3 w-3 text-primary" />
                       {talent.workHistory.map((entry) => entry.company).join(" · ")}
                     </p>
