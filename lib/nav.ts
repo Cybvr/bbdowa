@@ -32,6 +32,7 @@ export const NAV_ITEMS: NavItem[] = [
   { kind: "link", label: "Dashboard", href: "/dashboard" },
   { kind: "link", label: "About", href: "/dashboard/about" },
   { kind: "link", label: "People", href: "/dashboard/people" },
+  { kind: "link", label: "Pod", href: "/dashboard/pod" },
   { kind: "link", label: "Careers", href: "/dashboard/careers" },
   { kind: "link", label: "Projects", href: "/dashboard/projects" },
   {
