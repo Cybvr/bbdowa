@@ -2,7 +2,7 @@ export type TalentAvailability = "open" | "busy" | "unconfirmed";
 
 export type TalentClearance = "cleared" | "pending";
 
-export type TalentCategory = "Art" | "Copy" | "UX" | "Strategy";
+export type TalentCategory = "Art" | "Writing" | "UX" | "Strategy";
 
 export type TalentWorkHistory = {
   role: string;
@@ -390,7 +390,7 @@ export const TALENT: Talent[] = [
   {
     slug: "jeremiah-ajayi",
     name: "Jeremiah Ajayi",
-    category: "Copy",
+    category: "Writing",
     tags: ["Product marketing", "Content strategy", "GTM messaging", "Sales enablement"],
     location: "Nigeria",
     entity: "Freelancer",
@@ -503,6 +503,73 @@ export const TALENT: Talent[] = [
     ],
     craftNote:
       "Brand and product designer working across identity, digital products, interaction design, and clear visual systems.",
+  },
+  {
+    slug: "priscilla-ibiteye",
+    name: "Priscilla Ibiteye",
+    category: "Writing",
+    tags: ["Copywriting", "Content strategy", "Content creation", "Video editing", "Storytelling", "Community management"],
+    location: "Lagos, Nigeria",
+    entity: "Freelancer",
+    dayRate: "₦12k–₦16k",
+    rateMin: 12_000,
+    rateCurrency: "NGN",
+    terms: "To confirm",
+    availability: "busy",
+    clearance: "pending",
+    vouchedBy: "Not yet vouched",
+    workedOn: [],
+    yearsActive: 2,
+    portfolio: null,
+    featuredImage: null,
+    email: null,
+    phone: "+234 704 525 6892",
+    linkedin: null,
+    workHistory: [
+      { role: "Copywriter and Strategist", company: "Disrupt DNA (DDNA)", period: "Mar 2025–Jan 2026" },
+      { role: "Writer & Communications Lead", company: "TRON: The Resurgence of Nigerian Art Education", period: "Apr 2026–Present", location: "Ilorin" },
+      { role: "Lead Writer & Editor-in-Chief", company: "Lust for Life Magazine", period: "Feb 2025–Present" },
+      { role: "Copywriting Consultant", company: "Land Culture, Kwara", period: "Jun 2026–Present", location: "Contract" },
+      { role: "Content Writer & Video Editor", company: "Buxies Incorporated, Lagos", period: "Sep 2024–Mar 2025" },
+    ],
+    craftNote:
+      "Copywriter, strategist, and content creator focused on impactful brand messaging, audience growth, storytelling, and community-led communication.",
+  },
+  {
+    slug: "jai-tekwani",
+    name: "Jai Tekwani",
+    category: "Strategy",
+    tags: ["Brand strategy", "Consumer research", "Marketing strategy", "Positioning", "Campaign development"],
+    location: "Remote",
+    entity: "Freelancer",
+    dayRate: "₦18k–₦20k",
+    rateMin: 18_000,
+    rateCurrency: "NGN",
+    terms: "To confirm",
+    availability: "busy",
+    clearance: "pending",
+    vouchedBy: "Not yet vouched",
+    workedOn: [],
+    yearsActive: 14,
+    portfolio: "https://www.jaitekwani.com/",
+    featuredImage:
+      "https://static.wixstatic.com/media/60dc6a_c1d2d808fa6e43d9b03bb3c7908f752e~mv2.jpg/v1/crop/x_250%2Cy_101%2Cw_302%2Ch_475/fill/w_178%2Ch_321%2Cal_c%2Cq_80%2Cusm_0.66_1.00_0.01%2Cenc_avif%2Cquality_auto/makeyourchoice-McDonalds-India.jpg",
+    profileImage:
+      "https://static.wixstatic.com/media/60dc6a_7b03b46d590d4578b130900ad14a36e1~mv2.jpeg/v1/fill/w_480%2Ch_480%2Cal_c%2Cq_80%2Cusm_0.66_1.00_0.01%2Cenc_avif%2Cquality_auto/JAI.jpeg",
+    email: "jaiprakashtekwani@gmail.com",
+    phone: null,
+    linkedin: "https://www.linkedin.com/in/jai-tekwani/",
+    workHistory: [
+      { role: "Global Brand Strategist", company: "DDB Worldwide", period: "Dec 2021–Present" },
+      { role: "Brand Strategist", company: "DDB Mudra Group, India", period: "Nov 2020–Nov 2021" },
+      { role: "Brand Strategist", company: "DDB Mudra Group, India", period: "Jun 2016–Nov 2020" },
+      { role: "Brand Strategist", company: "TBWA\\India", period: "Nov 2014–Jun 2016" },
+      { role: "Media Strategist", company: "PHD India", period: "Feb 2014–Nov 2014" },
+      { role: "Brand Strategist", company: "JWT India", period: "Apr 2013–Feb 2014" },
+      { role: "Copywriter", company: "JWT India", period: "Apr 2012–Apr 2013" },
+    ],
+    craftNote:
+      "Brand strategist translating research, culture, and data into sharper positioning, campaign ideas, and scalable strategic systems.",
   },
 ];
 
