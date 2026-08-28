@@ -17,7 +17,7 @@ const AVAILABILITY_DOT: Record<Talent["availability"], string> = {
 
 const AVAILABILITY_LABEL: Record<Talent["availability"], string> = {
   open: "Open for work",
-  busy: "On a job",
+  busy: "Busy",
   unconfirmed: "Unconfirmed",
 };
 
@@ -164,9 +164,9 @@ function FilterControls({
         </select>
       </label>
       <label className="flex flex-col gap-3 border-2 border-foreground px-3 py-3 text-[11px] font-extrabold uppercase tracking-[0.12em]">
-        <span className="flex items-center justify-between">
-          <span>Maximum day rate</span>
-          <span className="text-muted-foreground">₦0–₦100k</span>
+        <span className="flex items-center justify-between text-muted-foreground">
+          <span>₦0</span>
+          <span>₦100k</span>
         </span>
         <input
           type="range"
