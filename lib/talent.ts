@@ -2,7 +2,7 @@ export type TalentAvailability = "open" | "busy" | "unconfirmed";
 
 export type TalentClearance = "cleared" | "pending";
 
-export type TalentCategory = "Art" | "Writing" | "UX" | "Strategy";
+export type TalentCategory = "Art" | "Writing" | "UX" | "Strategy" | "Film";
 
 export type TalentWorkHistory = {
   role: string;
@@ -575,6 +575,32 @@ export const TALENT: Talent[] = [
     ],
     craftNote:
       "Brand strategist translating research, culture, and data into sharper positioning, campaign ideas, and scalable strategic systems.",
+  },
+  {
+    slug: "niyi-fagbemi",
+    name: "Niyi Fagbemi",
+    category: "Film",
+    tags: ["Documentary film", "Travel film", "Cinematography", "Drone cinematography", "Photography", "Visual storytelling"],
+    location: "Lagos, Nigeria",
+    entity: "Freelancer",
+    dayRate: "To confirm",
+    rateMin: null,
+    rateCurrency: "NGN",
+    hideRate: true,
+    terms: "To confirm",
+    availability: "busy",
+    clearance: "pending",
+    vouchedBy: "Not yet vouched",
+    workedOn: [],
+    yearsActive: null,
+    portfolio: "https://www.youtube.com/@Theniyifagbemi",
+    featuredImage: null,
+    email: "Theniyifagbemi@gmail.com",
+    phone: null,
+    linkedin: null,
+    workHistory: [{ role: "Travel & Documentary Filmmaker", company: "Independent", period: "2020–Present" }],
+    craftNote:
+      "Travel and documentary filmmaker, photographer, and drone pilot using cinematic visual storytelling to document Nigeria’s culture, landscapes, and people while challenging stereotypes.",
   },
 ];
 
