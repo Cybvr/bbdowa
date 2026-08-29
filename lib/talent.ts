@@ -190,6 +190,7 @@ export const TALENT: Talent[] = [
     workedOn: [],
     yearsActive: 2,
     portfolio: null,
+    profileImage: "/images/talent/peterolowo.png",
     email: null,
     phone: null,
     linkedin: "https://www.linkedin.com/in/peterolowo03",
