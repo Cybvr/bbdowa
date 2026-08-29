@@ -54,7 +54,7 @@ export type Talent = {
 export const TALENT: Talent[] = [
   {
     slug: "isaac-afeyemi",
-    name: "Isaac Afeyemi",
+    name: "Isaac Fayemi",
     category: "Art",
     tags: ["Brand direction", "Visual systems", "Digital experiences"],
     location: "Lagos",
@@ -75,7 +75,7 @@ export const TALENT: Talent[] = [
       "/images/talent/isaac-afeyemi-featured.jpg",
     email: null,
     phone: null,
-    linkedin: null,
+    linkedin: "https://www.linkedin.com/in/isaacfayemi/",
     workHistory: [],
     craftNote:
       "Design director at How To Null, with a public practice spanning brand direction and digital visual experimentation.",
@@ -136,7 +136,7 @@ export const TALENT: Talent[] = [
     featuredImage: "/images/talent/david-ubakaibeya-featured.png",
     email: null,
     phone: null,
-    linkedin: null,
+    linkedin: "https://www.linkedin.com/in/david-ubakaibeya-22229a282/",
     workHistory: [{ role: "Co-founder", company: "Zypp Protocol", period: "Current" }],
     craftNote:
       "Seasoned brand and product designer who describes the practice simply: design and ships. Also listed publicly as co-founder of Zypp Protocol.",
@@ -287,7 +287,7 @@ export const TALENT: Talent[] = [
       "/images/talent/anjolaoluwa-aduroja-featured.png",
     email: null,
     phone: null,
-    linkedin: "https://ng.linkedin.com/in/anjolaoluwa-aduroja-352959208",
+    linkedin: "https://www.linkedin.com/in/anjoladave/",
     workHistory: [
       { role: "Art Director & Brand Designer", company: "Crowther", period: "Jul 2026–Present", location: "Remote" },
       { role: "Director / Lead Graphic Designer", company: "Conceptuniverse Studios", period: "Feb 2019–Present" },
@@ -353,7 +353,7 @@ export const TALENT: Talent[] = [
       "/images/talent/rukhayat-orekoya-featured.png",
     email: null,
     phone: null,
-    linkedin: null,
+    linkedin: "https://www.linkedin.com/in/rukhayat-orekoya/",
     workHistory: [
       { role: "Lead Illustrator / Brand Designer", company: "Chowdeck", period: "Aug 2025–Present", location: "Hybrid" },
       { role: "Brand Designer / Illustrator", company: "Partna (YC W22)", period: "Apr 2023–Feb 2025", location: "Remote" },
