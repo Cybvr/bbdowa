@@ -67,6 +67,78 @@ const RATE_MIN = 0;
 const RATE_CAP = 100_000;
 const PAGE_SIZE = 10;
 
+type DirectoryUrlState = {
+  search: string;
+  category: string;
+  location: string;
+  availability: Talent["availability"] | "all";
+  maxRate: number;
+  page: number;
+};
+
+function readDirectoryUrlState(categories: string[], locations: string[]): DirectoryUrlState {
+  const defaults: DirectoryUrlState = {
+    search: "",
+    category: "all",
+    location: "all",
+    availability: "all",
+    maxRate: RATE_CAP,
+    page: 1,
+  };
+
+  if (typeof window === "undefined") return defaults;
+
+  const params = new URLSearchParams(window.location.search);
+  const rawRate = params.has("maxRate") ? Number(params.get("maxRate")) : NaN;
+  const rawPage = Number(params.get("page"));
+  const category = params.get("category");
+  const location = params.get("location");
+  const availability = params.get("availability");
+
+  return {
+    search: params.get("search") ?? defaults.search,
+    category: category && categories.includes(category) ? category : defaults.category,
+    location: location && locations.includes(location) ? location : defaults.location,
+    availability:
+      availability === "open" || availability === "busy" || availability === "unconfirmed"
+        ? availability
+        : defaults.availability,
+    maxRate:
+      Number.isFinite(rawRate)
+        ? Math.min(RATE_CAP, Math.max(RATE_MIN, Math.round(rawRate / RATE_STEP) * RATE_STEP))
+        : defaults.maxRate,
+    page: Number.isInteger(rawPage) && rawPage > 0 ? rawPage : defaults.page,
+  };
+}
+
+function writeDirectoryUrl(state: DirectoryUrlState) {
+  if (typeof window === "undefined") return;
+
+  const url = new URL(window.location.href);
+  const params = url.searchParams;
+
+  if (state.search.trim()) params.set("search", state.search.trim());
+  else params.delete("search");
+
+  if (state.category !== "all") params.set("category", state.category);
+  else params.delete("category");
+
+  if (state.location !== "all") params.set("location", state.location);
+  else params.delete("location");
+
+  if (state.availability !== "all") params.set("availability", state.availability);
+  else params.delete("availability");
+
+  if (state.maxRate < RATE_CAP) params.set("maxRate", String(state.maxRate));
+  else params.delete("maxRate");
+
+  if (state.page > 1) params.set("page", String(state.page));
+  else params.delete("page");
+
+  url.search = params.toString();
+  window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
 function Stat({ children }: { children: React.ReactNode }) {
   return <span className="text-[14px] leading-none text-foreground">{children}</span>;
 }
@@ -209,6 +281,7 @@ export function TalentDirectory({
   const [maxRate, setMaxRate] = useState<number>(RATE_CAP);
   const [filterOpen, setFilterOpen] = useState(false);
   const [page, setPage] = useState(1);
+  const [urlStateInitialized, setUrlStateInitialized] = useState(false);
 
   const visible = talents.filter((talent) => {
     const query = search.trim().toLowerCase();
@@ -240,12 +313,55 @@ export function TalentDirectory({
   ].filter(Boolean).length;
 
   useEffect(() => {
-    setPage(1);
-  }, [search, category, location, availability, maxRate]);
+    const syncFromUrl = () => {
+      const next = readDirectoryUrlState(categories, locations);
+      setSearch(next.search);
+      setCategory(next.category);
+      setLocation(next.location);
+      setAvailability(next.availability);
+      setMaxRate(next.maxRate);
+      setPage(next.page);
+    };
+
+    syncFromUrl();
+    setUrlStateInitialized(true);
+    window.addEventListener("popstate", syncFromUrl);
+    return () => window.removeEventListener("popstate", syncFromUrl);
+  }, [categories, locations]);
 
   const totalPages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
   const pageVisible = visible.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  useEffect(() => {
+    if (!urlStateInitialized) return;
+    writeDirectoryUrl({ search, category, location, availability, maxRate, page: currentPage });
+  }, [search, category, location, availability, maxRate, currentPage, urlStateInitialized]);
+
+  const updateSearch = (value: string) => {
+    setSearch(value);
+    setPage(1);
+  };
+
+  const updateCategory = (value: string) => {
+    setCategory(value);
+    setPage(1);
+  };
+
+  const updateLocation = (value: string) => {
+    setLocation(value);
+    setPage(1);
+  };
+
+  const updateAvailability = (value: Talent["availability"] | "all") => {
+    setAvailability(value);
+    setPage(1);
+  };
+
+  const updateMaxRate = (value: number) => {
+    setMaxRate(value);
+    setPage(1);
+  };
 
   const clearFilters = () => {
     setSearch("");
@@ -253,6 +369,7 @@ export function TalentDirectory({
     setLocation("all");
     setAvailability("all");
     setMaxRate(RATE_CAP);
+    setPage(1);
   };
 
   return (
@@ -262,15 +379,15 @@ export function TalentDirectory({
           <h2 className="mb-5 mt-0 text-[13px] uppercase tracking-[0.14em]">Filter talent</h2>
           <FilterControls
             search={search}
-            setSearch={setSearch}
+            setSearch={updateSearch}
             category={category}
-            setCategory={setCategory}
+            setCategory={updateCategory}
             location={location}
-            setLocation={setLocation}
+            setLocation={updateLocation}
             availability={availability}
-            setAvailability={setAvailability}
+            setAvailability={updateAvailability}
             maxRate={maxRate}
-            setMaxRate={setMaxRate}
+            setMaxRate={updateMaxRate}
             categories={categories}
             locations={locations}
             activeFilterCount={activeFilterCount}
@@ -442,15 +559,15 @@ export function TalentDirectory({
             </div>
             <FilterControls
               search={search}
-              setSearch={setSearch}
+              setSearch={updateSearch}
               category={category}
-              setCategory={setCategory}
+              setCategory={updateCategory}
               location={location}
-              setLocation={setLocation}
+              setLocation={updateLocation}
               availability={availability}
-              setAvailability={setAvailability}
+              setAvailability={updateAvailability}
               maxRate={maxRate}
-              setMaxRate={setMaxRate}
+              setMaxRate={updateMaxRate}
               categories={categories}
               locations={locations}
               activeFilterCount={activeFilterCount}
