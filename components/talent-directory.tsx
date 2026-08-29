@@ -461,7 +461,6 @@ export function TalentDirectory({
               <div className="flex flex-none items-center gap-2 max-[640px]:w-full">
                 {platformLinks(talent)
                   .filter((platform) => platform.href)
-                  .slice(0, 1)
                   .map(({ label, href, Icon }) => (
                     <a
                       key={label}
