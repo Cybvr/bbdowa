@@ -70,9 +70,9 @@ export const TALENT: Talent[] = [
     yearsActive: null,
     portfolio: "https://madebynull.com",
     profileImage:
-      "https://res.cloudinary.com/dmwfd0zhh/image/upload/v1656082679/Group%20256/Info%20Page%20Files/Info_Page_Avatar_ojcvuj.jpg",
+      "/images/talent/isaac-afeyemi-profile.jpg",
     featuredImage:
-      "https://res.cloudinary.com/dmwfd0zhh/image/upload/v1656079559/Group%20256/Jelly/Jelly_2_sh7bjf.jpg",
+      "/images/talent/isaac-afeyemi-featured.jpg",
     email: null,
     phone: null,
     linkedin: null,
@@ -99,9 +99,9 @@ export const TALENT: Talent[] = [
     portfolio: "https://boridesigns.me",
     behance: "https://www.behance.net/Bhorie",
     profileImage:
-      "https://cdn.dribbble.com/users/11558370/avatars/normal/69d94c498dc437a890f329af57dcb93b.jpg?1702737779",
+      "/images/talent/bori-odekunle-profile.jpg",
     featuredImage:
-      "https://mir-s3-cdn-cf.behance.net/projects/max_808_webp/508ecb245377627.Y3JvcCwzNjU2LDI4NjAsNzk2LDA.png",
+      "/images/talent/bori-odekunle-featured.png",
     email: null,
     phone: null,
     linkedin: "https://www.linkedin.com/in/bhorie",
@@ -133,7 +133,7 @@ export const TALENT: Talent[] = [
     workedOn: [],
     yearsActive: null,
     portfolio: "https://yagazie.vercel.app/",
-    featuredImage: "https://yagazie.vercel.app/images/stackko-1080x1080.png",
+    featuredImage: "/images/talent/david-ubakaibeya-featured.png",
     email: null,
     phone: null,
     linkedin: null,
@@ -160,9 +160,9 @@ export const TALENT: Talent[] = [
     portfolio: null,
     behance: "https://www.behance.net/obasolaboluwaji",
     profileImage:
-      "https://pps.services.adobe.com/api/profile/E10934F25C96204C0A495FE9@AdobeID/image/04c707be-c941-4252-9f44-ed89ce94ef24/276",
+      "/images/talent/obasola-akintola-profile.jpg",
     featuredImage:
-      "https://mir-s3-cdn-cf.behance.net/projects/max_808_webp/d669be212224419.Y3JvcCwzMjQwLDI1MzQsMCwxNTI.jpg",
+      "/images/talent/obasola-akintola-featured.png",
     email: null,
     phone: null,
     linkedin: "https://ng.linkedin.com/in/obasola-akintola-1370771b4",
@@ -219,7 +219,7 @@ export const TALENT: Talent[] = [
     workedOn: [],
     yearsActive: 5,
     portfolio: null,
-    profileImage: "https://media.contra.com/image/upload/h_120,w_120/icybdh6oqog0lpdwpogd.avif",
+    profileImage: "/images/talent/linda-ojo-taiwo-profile.avif",
     email: null,
     phone: null,
     linkedin: "https://ng.linkedin.com/in/lindaojo",
@@ -249,9 +249,9 @@ export const TALENT: Talent[] = [
     portfolio: null,
     behance: "https://www.behance.net/lukebamtefa",
     profileImage:
-      "https://pps.services.adobe.com/api/profile/CAEDF908590913A80A495D55@AdobeID/image/43b51cc0-25b4-47e9-a572-77d8c8608b1e/230",
+      "/images/talent/luke-bamtefa-profile.jpg",
     featuredImage:
-      "https://mir-s3-cdn-cf.behance.net/projects/max_808_webp/8ffba9166803139.Y3JvcCwxMDA3LDc4OCwzODksMA.jpg",
+      "/images/talent/luke-bamtefa-featured.jpg",
     email: null,
     phone: null,
     linkedin: "https://ng.linkedin.com/in/lukebamtefa",
@@ -281,9 +281,9 @@ export const TALENT: Talent[] = [
     yearsActive: 7,
     portfolio: "https://www.behance.net/anjoladave",
     profileImage:
-      "https://pps.services.adobe.com/api/profile/B1FA1E4A5C3269E60A495CB3@AdobeID/image/8d0cac34-f448-493a-bb77-b9415f04d1cc/276",
+      "/images/talent/anjolaoluwa-aduroja-profile.jpg",
     featuredImage:
-      "https://mir-s3-cdn-cf.behance.net/projects/max_808_webp/446432253131701.Y3JvcCwyNDAwLDE4NzcsMCw1NTg.png",
+      "/images/talent/anjolaoluwa-aduroja-featured.png",
     email: null,
     phone: null,
     linkedin: "https://ng.linkedin.com/in/anjolaoluwa-aduroja-352959208",
@@ -314,9 +314,9 @@ export const TALENT: Talent[] = [
     portfolio: null,
     behance: "https://www.behance.net/_damilareee",
     profileImage:
-      "https://pps.services.adobe.com/api/profile/7F7142AD5DB84FB90A495F84@AdobeID/image/bacce8c5-ea7d-4397-8e2d-0a09a8f09b04/230",
+      "/images/talent/damilare-folabi-profile.jpg",
     featuredImage:
-      "https://mir-s3-cdn-cf.behance.net/projects/max_808_webp/9165a3227209695.683c309c2753e.jpg",
+      "/images/talent/damilare-folabi-featured.jpg",
     email: null,
     phone: null,
     linkedin: "https://ng.linkedin.com/in/d%C3%A1mil%C3%A1re-fol%C3%A1b%C3%AD-614016207",
@@ -347,9 +347,9 @@ export const TALENT: Talent[] = [
     portfolio: null,
     behance: "https://www.behance.net/rukhayatorekoya",
     profileImage:
-      "https://pps.services.adobe.com/api/profile/64F22A395BF987D60A495C7C@AdobeID/image/715d69dd-6f61-4a58-934f-5521f853c374/276",
+      "/images/talent/rukhayat-orekoya-profile.jpg",
     featuredImage:
-      "https://mir-s3-cdn-cf.behance.net/projects/max_808_webp/913e8a227981935.Y3JvcCwyMDcxLDE2MjAsNDA1LDA.png",
+      "/images/talent/rukhayat-orekoya-featured.png",
     email: null,
     phone: null,
     linkedin: null,
@@ -379,10 +379,8 @@ export const TALENT: Talent[] = [
     yearsActive: null,
     portfolio: null,
     behance: "https://www.behance.net/Joeadeyemo",
-    profileImage:
-      "https://pps.services.adobe.com/api/profile/CFE42A62643257490A495F9D@AdobeID/image/649dec9a-bc87-4df7-9322-bdf860495af9/276",
     featuredImage:
-      "https://mir-s3-cdn-cf.behance.net/projects/max_808_webp/30ca96245571391.Y3JvcCw5NzcsNzY0LDAsMA.png",
+      "/images/talent/joseph-adeyemo-featured.png",
     email: null,
     phone: null,
     linkedin: null,
@@ -407,7 +405,7 @@ export const TALENT: Talent[] = [
     workedOn: [],
     yearsActive: 8,
     portfolio: "https://www.thejeremiahajayi.com",
-    profileImage: "https://static.wixstatic.com/media/256bbf_c6f17e12f6634350aa78e6ec6e158691~mv2.jpg",
+    profileImage: "/images/talent/jeremiah-ajayi-profile.jpg",
     email: null,
     phone: null,
     linkedin: "https://www.linkedin.com/in/jeremiah-ajayi/",
@@ -464,9 +462,9 @@ export const TALENT: Talent[] = [
     portfolio: "https://becoming.supply/",
     behance: "https://www.behance.net/creative47",
     profileImage:
-      "https://pps.services.adobe.com/api/profile/4EFD10BC5D8253DE0A495E39@AdobeID/image/42b6d74f-6d10-4df3-917f-ce14f7eb1c31/276",
+      "/images/talent/akinbinu-akintayo-profile.jpg",
     featuredImage:
-      "https://mir-s3-cdn-cf.behance.net/projects/max_808/aba92a183149991.Y3JvcCw4MDgsNjMyLDAsMA.png",
+      "/images/talent/akinbinu-akintayo-featured.png",
     email: null,
     phone: null,
     linkedin: "https://www.linkedin.com/in/akinbinuakintayo/",
@@ -496,7 +494,7 @@ export const TALENT: Talent[] = [
     yearsActive: null,
     portfolio: "https://ellajames.framer.website/",
     featuredImage:
-      "https://framerusercontent.com/images/NsQSsAEKrV8Wgn8FTxhxansFTw.png?width=2448&height=1980",
+      "/images/talent/ella-james-featured.png",
     email: "jamesogechi35@gmail.com",
     phone: null,
     linkedin: null,
@@ -558,9 +556,9 @@ export const TALENT: Talent[] = [
     yearsActive: 14,
     portfolio: "https://www.jaitekwani.com/",
     featuredImage:
-      "https://static.wixstatic.com/media/60dc6a_c1d2d808fa6e43d9b03bb3c7908f752e~mv2.jpg/v1/crop/x_250%2Cy_101%2Cw_302%2Ch_475/fill/w_178%2Ch_321%2Cal_c%2Cq_80%2Cusm_0.66_1.00_0.01%2Cenc_avif%2Cquality_auto/makeyourchoice-McDonalds-India.jpg",
+      "/images/talent/jai-tekwani-featured.jpg",
     profileImage:
-      "https://static.wixstatic.com/media/60dc6a_7b03b46d590d4578b130900ad14a36e1~mv2.jpeg/v1/fill/w_480%2Ch_480%2Cal_c%2Cq_80%2Cusm_0.66_1.00_0.01%2Cenc_avif%2Cquality_auto/JAI.jpeg",
+      "/images/talent/jai-tekwani-profile.jpeg",
     email: "jaiprakashtekwani@gmail.com",
     phone: null,
     linkedin: "https://www.linkedin.com/in/jai-tekwani/",
