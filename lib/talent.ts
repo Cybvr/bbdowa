@@ -380,6 +380,7 @@ export const TALENT: Talent[] = [
     yearsActive: null,
     portfolio: null,
     behance: "https://www.behance.net/Joeadeyemo",
+    profileImage: "/images/talent/joseph-adeyemo-profile.jpg",
     featuredImage:
       "/images/talent/joseph-adeyemo-featured.png",
     email: null,
