@@ -527,7 +527,7 @@ export const TALENT: Talent[] = [
     featuredImage: null,
     email: null,
     phone: "+234 704 525 6892",
-    linkedin: null,
+    linkedin: "https://www.linkedin.com/in/yomiko1/",
     workHistory: [
       { role: "Copywriter and Strategist", company: "Disrupt DNA (DDNA)", period: "Mar 2025–Jan 2026" },
       { role: "Writer & Communications Lead", company: "TRON: The Resurgence of Nigerian Art Education", period: "Apr 2026–Present", location: "Ilorin" },
