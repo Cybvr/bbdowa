@@ -127,14 +127,14 @@ const RULES = [
 export default function AgencyWorkflowPage() {
   return (
     <div className="flex-1">
-      <header className="flex min-h-[clamp(520px,72vh,820px)] items-center px-[clamp(24px,6vw,96px)] py-[clamp(64px,9vw,128px)]">
+      <header className="flex min-h-[clamp(360px,52vh,580px)] items-center px-[clamp(20px,3vw,48px)] py-[clamp(48px,7vw,88px)]">
         <h1 className="m-0 max-w-[14ch] text-[clamp(40px,5vw,68px)] uppercase leading-[0.9] tracking-[-0.05em]">
           Agency Workflow
         </h1>
       </header>
 
       <section
-        className="grid grid-cols-4 gap-px bg-foreground px-[clamp(24px,6vw,96px)] py-[38px] text-white max-[860px]:grid-cols-2 max-[860px]:gap-x-0 max-[860px]:gap-y-7 max-[560px]:grid-cols-1"
+        className="grid grid-cols-4 gap-px bg-foreground px-[clamp(20px,3vw,48px)] py-[38px] text-white max-[860px]:grid-cols-2 max-[860px]:gap-x-0 max-[860px]:gap-y-7 max-[560px]:grid-cols-1"
         aria-label="Modern agency principles"
       >
         {PRINCIPLES.map((principle, index) => (
@@ -152,7 +152,7 @@ export default function AgencyWorkflowPage() {
         ))}
       </section>
 
-      <main className="px-[clamp(24px,6vw,96px)] py-[clamp(64px,9vw,120px)]">
+      <main className="px-[clamp(20px,3vw,48px)] py-[clamp(52px,7vw,88px)]">
         <div className="mb-[clamp(54px,8vw,100px)] grid grid-cols-[0.8fr_1.2fr] gap-10 max-[860px]:grid-cols-1">
           <h2 className="m-0 text-[clamp(28px,4vw,48px)] uppercase leading-[0.95] tracking-[-0.04em]">
             How a Job Moves
@@ -197,7 +197,7 @@ export default function AgencyWorkflowPage() {
         ))}
       </main>
 
-      <section className="bg-primary px-[clamp(24px,6vw,96px)] py-[clamp(64px,8vw,110px)] text-white">
+      <section className="bg-primary px-[clamp(20px,3vw,48px)] py-[clamp(52px,7vw,88px)] text-white">
         <h2 className="mb-6 mt-0 max-w-[14ch] text-[clamp(30px,4vw,52px)] uppercase leading-[0.92] tracking-[-0.05em]">
           Working Agreements
         </h2>
@@ -217,7 +217,7 @@ export default function AgencyWorkflowPage() {
         </div>
       </section>
 
-      <section className="px-[clamp(24px,6vw,96px)] py-14">
+      <section className="px-[clamp(20px,3vw,48px)] py-14">
         <h2 className="mb-5 mt-0 text-[28px] uppercase tracking-[-0.04em]">
           Why the Team Stays Connected
         </h2>

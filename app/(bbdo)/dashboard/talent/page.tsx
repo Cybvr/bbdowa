@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "Talent" };
 
 export default function TalentPage() {
   return (
-    <main className="flex-1 px-[clamp(24px,6vw,96px)] pb-[100px] pt-[clamp(30px,4vw,56px)]">
+    <main className="flex-1 px-[clamp(20px,3vw,48px)] pb-[100px] pt-[clamp(30px,4vw,56px)]">
       <TalentDirectory
         talents={TALENT}
         categories={TALENT_CATEGORIES}

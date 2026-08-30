@@ -24,7 +24,7 @@ export default function BlogPage() {
   const [featured, ...posts] = BLOG_POSTS;
 
   return (
-    <main className="flex-1 px-[clamp(24px,6vw,96px)] pb-24 pt-[clamp(30px,4vw,56px)]">
+    <main className="flex-1 px-[clamp(20px,3vw,48px)] pb-24 pt-[clamp(30px,4vw,56px)]">
       <div className="flex flex-wrap items-baseline justify-between gap-4 border-b border-foreground pb-5">
         <h1 className="m-0 text-[clamp(36px,5vw,64px)] uppercase leading-[0.92] tracking-[-0.05em]">
           Blog

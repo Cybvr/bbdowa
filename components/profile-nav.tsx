@@ -103,7 +103,7 @@ export function ProfileNav({
               aria-expanded={open}
               aria-label={open ? "Close profile menu" : "Open profile menu"}
               onClick={() => setOpen((current) => !current)}
-              className="inline-flex h-9 w-9 items-center justify-center bg-white/10 text-white transition-colors hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-sm bg-white/10 text-white transition-colors hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
             >
               <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white text-[9px] font-extrabold tracking-[0.04em] text-primary">
                 {initials}
@@ -128,7 +128,7 @@ export function ProfileNav({
             </span>
             <div className="min-w-0">
               <p className="truncate text-[13px] font-extrabold">{name}</p>
-              <p className="truncate text-[11px] uppercase tracking-[0.08em] text-white/55">
+              <p className="truncate text-[11px] tracking-[0.08em] text-white/55">
                 {organization}
               </p>
             </div>
@@ -137,7 +137,7 @@ export function ProfileNav({
           <div className="p-1">
             {items.map((item) => {
               const itemClassName =
-                "flex min-h-9 w-full items-center gap-2 px-2 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-white hover:bg-primary focus-visible:bg-primary focus-visible:outline-none";
+                "flex min-h-9 w-full items-center gap-2 px-2 text-left text-[11px] font-semibold tracking-[0.08em] text-white hover:bg-primary focus-visible:bg-primary focus-visible:outline-none";
 
               return (
                 <div key={item.label} role="none">
@@ -175,7 +175,7 @@ export function ProfileNav({
                 onLogout?.();
                 closeMenu();
               }}
-              className="flex min-h-9 w-full items-center gap-2 px-2 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-white/75 hover:bg-primary hover:text-white focus-visible:bg-primary focus-visible:text-white focus-visible:outline-none"
+              className="flex min-h-9 w-full items-center gap-2 px-2 text-left text-[11px] font-semibold tracking-[0.08em] text-white/75 hover:bg-primary hover:text-white focus-visible:bg-primary focus-visible:text-white focus-visible:outline-none"
             >
               <LogOutIcon />
               {logoutLabel}

@@ -79,7 +79,7 @@ export default async function TalentDetailPage({ params }: Params) {
   const platforms = platformsFor(talent);
 
   return (
-    <main className="flex-1 px-[clamp(24px,6vw,96px)] pb-20 pt-[clamp(30px,4vw,56px)]">
+    <main className="flex-1 px-[clamp(20px,3vw,48px)] pb-20 pt-[clamp(30px,4vw,56px)]">
       <BackLink href="/dashboard/talent">Back to talent</BackLink>
 
       <div className="mt-8 grid items-start grid-cols-[minmax(0,1fr)_minmax(300px,0.72fr)] gap-[clamp(28px,5vw,72px)] max-[900px]:grid-cols-1">

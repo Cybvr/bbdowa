@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function ProductsPage() {
   return (
-    <main className="flex-1 px-[clamp(24px,6vw,96px)] pb-[100px] pt-[clamp(48px,7vw,96px)]">
+    <main className="flex-1 px-[clamp(20px,3vw,48px)] pb-[100px] pt-[clamp(36px,5vw,64px)]">
       <div className="mb-[clamp(40px,6vw,72px)] flex items-end justify-between gap-8 max-[720px]:flex-col max-[720px]:items-start">
         <h1 className="m-0 text-[clamp(40px,5vw,68px)] uppercase leading-[0.9] tracking-[-0.05em]">
           Products

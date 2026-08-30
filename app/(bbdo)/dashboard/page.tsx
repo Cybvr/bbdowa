@@ -5,15 +5,15 @@ export default function HomePage() {
   const latestPosts = BLOG_POSTS.slice(0, 3);
 
   return (
-    <main className="flex-1">
-      <section className="flex min-h-[clamp(150px,22vw,280px)] w-full items-end bg-primary px-[clamp(24px,6vw,96px)] pb-[clamp(24px,4vw,48px)] pt-[clamp(28px,4vw,56px)] text-white">
-        <h1 className="m-0 text-[clamp(30px,4vw,52px)] font-semibold leading-none tracking-[-0.045em]">
-          Welcome,
+    <main className="flex-1 px-[clamp(20px,3vw,48px)] pb-20 pt-[clamp(30px,4vw,56px)]">
+      <div className="mb-[clamp(44px,7vw,84px)] border-b border-foreground pb-5">
+        <h1 className="m-0 text-[clamp(32px,4vw,58px)] uppercase leading-[0.95] tracking-[-0.045em]">
+          Home
         </h1>
-      </section>
+      </div>
 
       <section
-        className="grid grid-cols-[minmax(0,0.9fr)_minmax(0,0.9fr)_minmax(260px,1fr)] gap-x-[clamp(24px,4vw,64px)] px-[clamp(24px,6vw,96px)] py-[clamp(48px,7vw,96px)] max-[820px]:grid-cols-1 max-[820px]:gap-y-0"
+        className="grid grid-cols-[minmax(0,0.9fr)_minmax(0,0.9fr)_minmax(260px,1fr)] gap-x-[clamp(24px,4vw,64px)] py-[clamp(24px,4vw,56px)] max-[820px]:grid-cols-1 max-[820px]:gap-y-0"
         aria-labelledby="home-introduction"
       >
         <h2 id="home-introduction" className="sr-only">

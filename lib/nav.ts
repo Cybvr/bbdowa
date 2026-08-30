@@ -1,5 +1,3 @@
-import { PRODUCTS, productHref } from "./products";
-
 export type NavLink = { label: string; href: string };
 
 export const MARKETING_NAV: NavLink[] = [
@@ -29,20 +27,10 @@ export type NavItem =
   | { kind: "menu"; label: string; match: string | string[]; items: NavLink[] };
 
 export const NAV_ITEMS: NavItem[] = [
-  { kind: "link", label: "Dashboard", href: "/dashboard" },
-  { kind: "link", label: "About", href: "/dashboard/about" },
+  { kind: "link", label: "Home", href: "/dashboard" },
   { kind: "link", label: "People", href: "/dashboard/people" },
-  { kind: "link", label: "Careers", href: "/dashboard/careers" },
   { kind: "link", label: "Projects", href: "/dashboard/projects" },
-  {
-    kind: "menu",
-    label: "Products",
-    match: "/dashboard/products",
-    items: [
-      { label: "All Products", href: "/dashboard/products" },
-      ...PRODUCTS.map((product) => ({ label: product.name, href: productHref(product.slug) })),
-    ],
-  },
+  { kind: "link", label: "Products", href: "/dashboard/products" },
   {
     kind: "menu",
     label: "Workflows",
@@ -52,6 +40,7 @@ export const NAV_ITEMS: NavItem[] = [
       { label: "Pitch", href: "/dashboard/workflows/pitch" },
     ],
   },
+  { kind: "link", label: "Careers", href: "/dashboard/careers" },
   {
     kind: "menu",
     label: "Resources",
@@ -61,4 +50,5 @@ export const NAV_ITEMS: NavItem[] = [
       { label: "Blog", href: "/dashboard/blog" },
     ],
   },
+  { kind: "link", label: "About", href: "/dashboard/about" },
 ];

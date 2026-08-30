@@ -36,7 +36,7 @@ export default async function ProductDetailPage({ params }: Params) {
   const date = productDate(product);
 
   return (
-    <main className="flex-1 px-[clamp(24px,6vw,96px)] pb-20 pt-[clamp(30px,4vw,56px)]">
+    <main className="flex-1 px-[clamp(20px,3vw,48px)] pb-20 pt-[clamp(30px,4vw,56px)]">
       <div className="flex flex-wrap items-baseline justify-between gap-4 border-b border-foreground pb-5">
         <div className="flex flex-col items-start gap-5">
           {/* eslint-disable-next-line @next/next/no-img-element */}
