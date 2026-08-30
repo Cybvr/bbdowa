@@ -7,3 +7,10 @@ next-env.d.ts
 .vercel
 .DS_Store
 /public/upload-latertofirebase/
+
+# stale build snapshots
+.next-stale-*/
+
+# pnpm (project uses npm)
+pnpm-lock.yaml
+pnpm-workspace.yaml

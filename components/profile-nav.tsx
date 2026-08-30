@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export type ProfileNavItem = {
   label: string;
@@ -65,124 +67,52 @@ export function ProfileNav({
   logoutLabel = "Log out",
   onLogout,
 }: ProfileNavProps) {
-  const [open, setOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-
-    const closeOnOutsideClick = (event: PointerEvent) => {
-      if (!menuRef.current?.contains(event.target as Node)) setOpen(false);
-    };
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
-    };
-
-    document.addEventListener("pointerdown", closeOnOutsideClick);
-    document.addEventListener("keydown", closeOnEscape);
-    return () => {
-      document.removeEventListener("pointerdown", closeOnOutsideClick);
-      document.removeEventListener("keydown", closeOnEscape);
-    };
-  }, [open]);
-
-  const closeMenu = () => setOpen(false);
-  const selectItem = (item: ProfileNavItem) => {
-    item.onSelect?.();
-    closeMenu();
-  };
-
   return (
-    <div ref={menuRef} className="relative shrink-0" data-profile-menu>
-      <TooltipProvider delayDuration={300}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              type="button"
-              aria-haspopup="menu"
-              aria-expanded={open}
-              aria-label={open ? "Close profile menu" : "Open profile menu"}
-              onClick={() => setOpen((current) => !current)}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-sm bg-white/10 text-white transition-colors hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-            >
-              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white text-[9px] font-extrabold tracking-[0.04em] text-primary">
-                {initials}
-              </span>
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">
-            {open ? "Close profile menu" : "Open profile menu"}
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-
-      {open ? (
-        <div
-          role="menu"
-          aria-label="Profile menu"
-          className="absolute right-0 top-[calc(100%+6px)] z-[1100] w-[232px] overflow-hidden border border-border bg-foreground text-white shadow-[0_16px_40px_rgba(0,0,0,0.24)]"
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label="Open profile menu"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary-foreground text-[11px] font-extrabold tracking-[0.04em] text-primary transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-foreground"
         >
-          <div className="flex items-center gap-2 border-b border-white/15 px-3 py-3">
-            <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[13px] font-extrabold text-primary">
+          {initials}
+        </button>
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>
+          <div className="flex items-center gap-2">
+            <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-[13px] font-extrabold text-primary-foreground">
               {initials}
             </span>
             <div className="min-w-0">
               <p className="truncate text-[13px] font-extrabold">{name}</p>
-              <p className="truncate text-[11px] tracking-[0.08em] text-white/55">
-                {organization}
-              </p>
+              <p className="truncate text-[11px] tracking-[0.08em] text-muted-foreground">{organization}</p>
             </div>
           </div>
-
-          <div className="p-1">
-            {items.map((item) => {
-              const itemClassName =
-                "flex min-h-9 w-full items-center gap-2 px-2 text-left text-[11px] font-semibold tracking-[0.08em] text-white hover:bg-primary focus-visible:bg-primary focus-visible:outline-none";
-
-              return (
-                <div key={item.label} role="none">
-                  {item.href ? (
-                    <Link
-                      href={item.href}
-                      role="menuitem"
-                      onClick={() => selectItem(item)}
-                      className={itemClassName}
-                    >
-                      {item.icon}
-                      {item.label}
-                    </Link>
-                  ) : (
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={() => selectItem(item)}
-                      className={itemClassName}
-                    >
-                      {item.icon}
-                      {item.label}
-                    </button>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="border-t border-white/15 p-1">
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => {
-                onLogout?.();
-                closeMenu();
-              }}
-              className="flex min-h-9 w-full items-center gap-2 px-2 text-left text-[11px] font-semibold tracking-[0.08em] text-white/75 hover:bg-primary hover:text-white focus-visible:bg-primary focus-visible:text-white focus-visible:outline-none"
-            >
-              <LogOutIcon />
-              {logoutLabel}
-            </button>
-          </div>
-        </div>
-      ) : null}
-    </div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {items.map((item) => (
+          <DropdownMenuItem key={item.label} asChild={Boolean(item.href)} onSelect={item.onSelect}>
+            {item.href ? (
+              <Link href={item.href}>
+                {item.icon}
+                {item.label}
+              </Link>
+            ) : (
+              <>
+                {item.icon}
+                <span>{item.label}</span>
+              </>
+            )}
+          </DropdownMenuItem>
+        ))}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={onLogout}>
+          <LogOutIcon />
+          {logoutLabel}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
