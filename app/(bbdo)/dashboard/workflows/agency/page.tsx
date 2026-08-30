@@ -128,7 +128,7 @@ export default function AgencyWorkflowPage() {
   return (
     <div className="flex-1">
       <header className="flex min-h-[clamp(520px,72vh,820px)] items-center px-[clamp(24px,6vw,96px)] py-[clamp(64px,9vw,128px)]">
-        <h1 className="m-0 max-w-[9ch] text-[clamp(64px,13vw,180px)] uppercase leading-[0.82] tracking-[-0.07em]">
+        <h1 className="m-0 max-w-[14ch] text-[clamp(40px,5vw,68px)] uppercase leading-[0.9] tracking-[-0.05em]">
           Agency Workflow
         </h1>
       </header>
@@ -154,7 +154,7 @@ export default function AgencyWorkflowPage() {
 
       <main className="px-[clamp(24px,6vw,96px)] py-[clamp(64px,9vw,120px)]">
         <div className="mb-[clamp(54px,8vw,100px)] grid grid-cols-[0.8fr_1.2fr] gap-10 max-[860px]:grid-cols-1">
-          <h2 className="m-0 text-[clamp(38px,6vw,82px)] uppercase leading-[0.9] tracking-[-0.06em]">
+          <h2 className="m-0 text-[clamp(28px,4vw,48px)] uppercase leading-[0.95] tracking-[-0.04em]">
             How a Job Moves
           </h2>
           <p className="m-0 max-w-[650px] text-[clamp(19px,2vw,28px)] leading-[1.25]">
@@ -172,7 +172,7 @@ export default function AgencyWorkflowPage() {
             <span className="text-[14px] font-extrabold text-primary">
               {String(index + 1).padStart(2, "0")}
             </span>
-            <h3 className="m-0 text-[clamp(34px,4.5vw,66px)] uppercase leading-[0.88] tracking-[-0.055em]">
+            <h3 className="m-0 text-[clamp(24px,3vw,40px)] uppercase leading-[0.95] tracking-[-0.04em]">
               {stage.title}
             </h3>
             <div className="max-[860px]:col-start-2">
@@ -198,7 +198,7 @@ export default function AgencyWorkflowPage() {
       </main>
 
       <section className="bg-primary px-[clamp(24px,6vw,96px)] py-[clamp(64px,8vw,110px)] text-white">
-        <h2 className="mb-6 mt-0 max-w-[8ch] text-[clamp(48px,8vw,110px)] uppercase leading-[0.84] tracking-[-0.065em]">
+        <h2 className="mb-6 mt-0 max-w-[14ch] text-[clamp(30px,4vw,52px)] uppercase leading-[0.92] tracking-[-0.05em]">
           Working Agreements
         </h2>
         <p className="mb-14 mt-0 max-w-[720px] text-[clamp(18px,1.8vw,25px)] leading-[1.35]">

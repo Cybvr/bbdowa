@@ -12,7 +12,7 @@ export default function ProductsPage() {
   return (
     <main className="flex-1 px-[clamp(24px,6vw,96px)] pb-[100px] pt-[clamp(48px,7vw,96px)]">
       <div className="mb-[clamp(40px,6vw,72px)] flex items-end justify-between gap-8 max-[720px]:flex-col max-[720px]:items-start">
-        <h1 className="m-0 text-[clamp(64px,13vw,180px)] uppercase leading-[0.82] tracking-[-0.07em]">
+        <h1 className="m-0 text-[clamp(40px,5vw,68px)] uppercase leading-[0.9] tracking-[-0.05em]">
           Products
         </h1>
         <p className="mb-2 mt-0 max-w-[28ch] text-[clamp(18px,2vw,26px)] leading-[1.2]">

@@ -12,7 +12,7 @@ export default function AboutPage() {
   return (
     <main className="flex-1 px-[clamp(24px,6vw,96px)] pb-20 pt-[clamp(30px,4vw,56px)]">
       <div className="flex flex-wrap items-baseline justify-between gap-4 border-b border-foreground pb-5">
-        <h1 className="m-0 text-[clamp(38px,6vw,86px)] uppercase leading-[0.9] tracking-[-0.06em]">
+        <h1 className="m-0 text-[clamp(32px,4vw,58px)] uppercase leading-[0.95] tracking-[-0.045em]">
           About
         </h1>
         <span className="text-[13px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground">
@@ -20,7 +20,7 @@ export default function AboutPage() {
         </span>
       </div>
 
-      <p className="mt-[clamp(30px,4vw,50px)] max-w-[24ch] text-[clamp(30px,4.6vw,62px)] uppercase leading-[0.98] tracking-[-0.055em]">
+      <p className="mt-[clamp(30px,4vw,50px)] max-w-[30ch] text-[clamp(24px,3.2vw,42px)] uppercase leading-[1] tracking-[-0.035em]">
         We make work that <em className="not-italic text-primary">moves</em> business, culture and
         people.
       </p>

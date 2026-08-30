@@ -45,7 +45,7 @@ export default async function ProductDetailPage({ params }: Params) {
             alt={product.name}
             className="block h-[clamp(64px,9vw,110px)] w-[clamp(180px,28vw,380px)] object-contain object-left mix-blend-multiply"
           />
-          <h1 className="m-0 text-[clamp(38px,6vw,86px)] uppercase leading-[0.9] tracking-[-0.06em]">
+          <h1 className="m-0 text-[clamp(32px,4vw,58px)] uppercase leading-[0.95] tracking-[-0.045em]">
             {product.name}
           </h1>
         </div>

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { DashboardHeader } from "@/components/dashboard-header";
-import { SiteFooter } from "@/components/site-footer";
+import { DashboardChrome } from "@/components/dashboard-chrome";
 
 export const metadata: Metadata = {
   title: {
@@ -14,9 +13,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col bg-background font-sans text-foreground antialiased">
-        <DashboardHeader />
-        {children}
-        <SiteFooter />
+        <DashboardChrome>{children}</DashboardChrome>
     </div>
   );
 }

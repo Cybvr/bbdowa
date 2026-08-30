@@ -26,7 +26,7 @@ export default function BlogPage() {
   return (
     <main className="flex-1 px-[clamp(24px,6vw,96px)] pb-24 pt-[clamp(30px,4vw,56px)]">
       <div className="flex flex-wrap items-baseline justify-between gap-4 border-b border-foreground pb-5">
-        <h1 className="m-0 text-[clamp(44px,7vw,104px)] uppercase leading-[0.86] tracking-[-0.06em]">
+        <h1 className="m-0 text-[clamp(36px,5vw,64px)] uppercase leading-[0.92] tracking-[-0.05em]">
           Blog
         </h1>
         <p className="m-0 max-w-[28ch] text-right text-[13px] font-extrabold uppercase leading-[1.25] tracking-[0.14em] text-muted-foreground max-[620px]:text-left">
@@ -43,7 +43,7 @@ export default function BlogPage() {
             </div>
             <h2
               id="featured-post"
-              className="m-0 max-w-[13ch] text-[clamp(42px,6.4vw,88px)] uppercase leading-[0.86] tracking-[-0.055em]"
+              className="m-0 max-w-[18ch] text-[clamp(28px,4vw,46px)] uppercase leading-[0.95] tracking-[-0.04em]"
             >
               {featured.title}
             </h2>

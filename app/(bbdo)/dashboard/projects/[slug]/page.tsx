@@ -61,7 +61,7 @@ export default async function ProjectDetailPage({ params }: Params) {
           </span>
           <h1
             id="project-name"
-            className="m-0 max-w-[11ch] text-[clamp(48px,7.5vw,96px)] uppercase leading-[0.86] tracking-[-0.04em]"
+            className="m-0 max-w-[16ch] text-[clamp(36px,5vw,60px)] uppercase leading-[0.92] tracking-[-0.04em]"
           >
             {project.name}
           </h1>

@@ -52,7 +52,7 @@ export default async function BlogEntryPage({ params }: Params) {
               <span>{post.category}</span>
               <span className="text-muted-foreground">{formatBlogDate(post.publishedAt)}</span>
             </div>
-            <h1 className="m-0 max-w-[14ch] text-[clamp(48px,8vw,118px)] uppercase leading-[0.84] tracking-[-0.065em]">
+            <h1 className="m-0 max-w-[18ch] text-[clamp(36px,5vw,64px)] uppercase leading-[0.92] tracking-[-0.05em]">
               {post.title}
             </h1>
           </div>

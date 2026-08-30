@@ -75,7 +75,7 @@ export default function ResourcesPage() {
   return (
     <main className="flex-1 px-[clamp(24px,6vw,96px)] pb-20 pt-[clamp(30px,4vw,56px)]">
       <div className="flex flex-wrap items-baseline justify-between gap-4 border-b border-foreground pb-5">
-        <h1 className="m-0 text-[clamp(38px,6vw,86px)] uppercase leading-[0.9] tracking-[-0.06em]">
+        <h1 className="m-0 text-[clamp(32px,4vw,58px)] uppercase leading-[0.95] tracking-[-0.045em]">
           Resources
         </h1>
         <span className="text-[13px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground">

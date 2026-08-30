@@ -7,7 +7,7 @@ export default function HomePage() {
   return (
     <main className="flex-1">
       <section className="flex min-h-[clamp(150px,22vw,280px)] w-full items-end bg-primary px-[clamp(24px,6vw,96px)] pb-[clamp(24px,4vw,48px)] pt-[clamp(28px,4vw,56px)] text-white">
-        <h1 className="m-0 text-[clamp(36px,5vw,76px)] font-semibold leading-none tracking-[-0.055em]">
+        <h1 className="m-0 text-[clamp(30px,4vw,52px)] font-semibold leading-none tracking-[-0.045em]">
           Welcome,
         </h1>
       </section>
@@ -22,7 +22,7 @@ export default function HomePage() {
 
         <article className="border-t-2 border-foreground py-5 max-[820px]:pb-8">
           <h3 className="m-0 text-[12px] uppercase tracking-[0.14em] text-primary">Mission</h3>
-          <p className="mb-0 mt-6 max-w-[20ch] text-[clamp(28px,3.5vw,52px)] uppercase leading-[0.98] tracking-[-0.045em]">
+          <p className="mb-0 mt-6 max-w-[20ch] text-[clamp(24px,3vw,40px)] uppercase leading-[1] tracking-[-0.035em]">
             We make work that moves business, culture and people.
           </p>
         </article>

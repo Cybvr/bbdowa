@@ -164,7 +164,7 @@ export default function PeoplePage() {
   return (
     <main className="flex-1 px-[clamp(24px,6vw,96px)] pb-20 pt-[clamp(30px,4vw,56px)]">
       <div className="flex flex-wrap items-baseline justify-between gap-4 border-b border-foreground pb-5">
-        <h1 className="m-0 text-[clamp(38px,6vw,86px)] uppercase leading-[0.9] tracking-[-0.06em]">
+        <h1 className="m-0 text-[clamp(32px,4vw,58px)] uppercase leading-[0.95] tracking-[-0.045em]">
           People
         </h1>
         <span className="text-[13px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground">
@@ -172,7 +172,7 @@ export default function PeoplePage() {
         </span>
       </div>
 
-      <p className="my-[clamp(34px,5vw,68px)] max-w-[25ch] text-[clamp(30px,4.6vw,68px)] uppercase leading-[0.96] tracking-[-0.04em]">
+      <p className="my-[clamp(34px,5vw,68px)] max-w-[32ch] text-[clamp(24px,3.2vw,44px)] uppercase leading-[1] tracking-[-0.035em]">
         We build each job around a small core team.{" "}
         <em className="not-italic text-primary">
           Specialists join when their input is needed
@@ -223,7 +223,7 @@ export default function PeoplePage() {
         <div className="grid grid-cols-[0.9fr_1.1fr] items-end gap-10 max-[720px]:grid-cols-1">
           <h2
             id="pod-title"
-            className="m-0 max-w-[9ch] text-[clamp(42px,6vw,82px)] uppercase leading-[0.9] tracking-[-0.04em]"
+            className="m-0 max-w-[12ch] text-[clamp(28px,4vw,48px)] uppercase leading-[0.95] tracking-[-0.035em]"
           >
             The client pod
           </h2>

@@ -91,7 +91,7 @@ export default async function TalentDetailPage({ params }: Params) {
             <span className="block text-[13px] font-extrabold uppercase tracking-[0.14em] text-primary">
               {talent.category}
             </span>
-            <h1 className="mb-0 mt-3 text-[clamp(38px,6vw,86px)] uppercase leading-[0.9] tracking-[-0.06em]">
+            <h1 className="mb-0 mt-3 text-[clamp(32px,4vw,58px)] uppercase leading-[0.95] tracking-[-0.045em]">
               {talent.name}
             </h1>
           </div>
