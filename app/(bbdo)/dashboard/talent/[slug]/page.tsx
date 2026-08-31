@@ -26,6 +26,7 @@ const META_CELL =
   "border-b border-border py-6 pr-6 [&:nth-child(3n+2)]:border-l [&:nth-child(3n+2)]:border-l-border [&:nth-child(3n+2)]:pl-6 [&:nth-child(3n)]:border-l [&:nth-child(3n)]:border-l-border [&:nth-child(3n)]:pl-6 max-[720px]:!border-l-0 max-[720px]:!pl-0";
 
 const HISTORY_ROW = "border-t border-border py-3.5";
+const AUDIENCE_VALUE = "mt-[6px] block text-[clamp(17px,1.6vw,22px)] leading-[1.2]";
 
 type TalentPlatform = {
   label: string;
@@ -147,6 +148,36 @@ export default async function TalentDetailPage({ params }: Params) {
           </strong>
         </div>
       </div>
+
+      <section className="mt-[clamp(28px,4vw,48px)] border-t border-foreground pt-5">
+        <h2 className="mb-1 mt-0 text-[12px] uppercase tracking-[0.14em] text-primary">
+          Audience profile
+        </h2>
+        <p className="mb-0 mt-2 max-w-[70ch] text-[13px] text-muted-foreground">
+          Public profile details are shown only when verified or supplied.
+        </p>
+        <div className="mt-5 grid grid-cols-4 gap-x-6 max-[900px]:grid-cols-2 max-[560px]:grid-cols-1">
+          <div className="border-b border-border py-5">
+            <span className={META_LABEL}>Follower count</span>
+            <strong className={AUDIENCE_VALUE}>{talent.followerCount ?? "Not provided"}</strong>
+            {talent.followerPlatform ? (
+              <span className="mt-1 block text-[12px] text-muted-foreground">{talent.followerPlatform}</span>
+            ) : null}
+          </div>
+          <div className="border-b border-border py-5">
+            <span className={META_LABEL}>Gender</span>
+            <strong className={AUDIENCE_VALUE}>{talent.gender ?? "Not provided"}</strong>
+          </div>
+          <div className="border-b border-border py-5">
+            <span className={META_LABEL}>Age</span>
+            <strong className={AUDIENCE_VALUE}>{talent.age ?? "Not provided"}</strong>
+          </div>
+          <div className="border-b border-border py-5">
+            <span className={META_LABEL}>Niche</span>
+            <strong className={AUDIENCE_VALUE}>{talent.niche ?? "Not provided"}</strong>
+          </div>
+        </div>
+      </section>
 
       <div className="mt-[clamp(28px,4vw,48px)] grid grid-cols-1 gap-[clamp(28px,4vw,48px)]">
         <section>

@@ -46,6 +46,12 @@ export type Talent = {
   /** Public professional history researched from the supplied profile and linked sources. */
   workHistory?: TalentWorkHistory[];
   linkedin?: string | null;
+  /** Optional public audience metadata; do not infer age or gender. */
+  followerCount?: string | null;
+  followerPlatform?: string | null;
+  gender?: string | null;
+  age?: number | null;
+  niche?: string | null;
   lastEngaged?: string | null;
   /** Creative officer's note on the craft. */
   craftNote: string;
@@ -57,6 +63,7 @@ export const TALENT: Talent[] = [
     name: "Isaac Fayemi",
     category: "Art",
     tags: ["Brand direction", "Visual systems", "Digital experiences"],
+    niche: "Brand direction",
     location: "Lagos",
     entity: "Freelancer",
     dayRate: "₦18k–₦20k",
@@ -85,6 +92,7 @@ export const TALENT: Talent[] = [
     name: "Bori Odekunle",
     category: "UX",
     tags: ["Product design", "Marketing design", "Design systems", "Framer"],
+    niche: "Product design",
     location: "Lagos",
     entity: "Freelancer",
     dayRate: "₦12k–₦16k",
@@ -121,6 +129,7 @@ export const TALENT: Talent[] = [
     name: "David Ubakaibeya",
     category: "UX",
     tags: ["Brand design", "Product design", "Web3", "Visual systems"],
+    niche: "Brand design",
     location: "Lagos",
     entity: "Freelancer",
     dayRate: "₦10k–₦14k",
@@ -146,6 +155,7 @@ export const TALENT: Talent[] = [
     name: "Obasola Akintola",
     category: "Art",
     tags: ["Brand identity", "Art direction", "Design production", "Community building"],
+    niche: "Brand identity",
     location: "Lagos",
     entity: "Freelancer",
     dayRate: "₦16k–₦20k",
@@ -178,6 +188,7 @@ export const TALENT: Talent[] = [
     name: "Peter Olowo",
     category: "Art",
     tags: ["Brand identity", "Campaign design", "Illustration", "Visual systems"],
+    niche: "Brand identity",
     location: "Lagos",
     entity: "Freelancer",
     dayRate: "₦8k–₦12k",
@@ -208,6 +219,7 @@ export const TALENT: Talent[] = [
     name: "Linda Ojo Taiwo",
     category: "UX",
     tags: ["Design engineering", "Product design", "Iconography", "Frontend development"],
+    niche: "Design engineering",
     location: "Lagos",
     entity: "Freelancer",
     dayRate: "₦14k–₦18k",
@@ -236,6 +248,7 @@ export const TALENT: Talent[] = [
     name: "Luke Bamtefa",
     category: "Art",
     tags: ["Brand design", "Illustration", "Campaign systems", "Visual storytelling"],
+    niche: "Brand design",
     location: "Lagos",
     entity: "Freelancer",
     dayRate: "₦11k–₦15k",
@@ -269,6 +282,7 @@ export const TALENT: Talent[] = [
     name: "AnjolaOluwa Aduroja",
     category: "Art",
     tags: ["Brand identity", "Art direction", "3D art", "Visual storytelling"],
+    niche: "Brand identity",
     location: "Ibadan",
     entity: "Studio",
     dayRate: "₦15k–₦19k",
@@ -301,6 +315,7 @@ export const TALENT: Talent[] = [
     name: "Dámilárẹ Folábí",
     category: "Art",
     tags: ["Brand art direction", "Luxury brand creative", "Textile design", "Visual storytelling"],
+    niche: "Brand art direction",
     location: "Lagos",
     entity: "Freelancer",
     dayRate: "₦13k–₦17k",
@@ -334,6 +349,7 @@ export const TALENT: Talent[] = [
     name: "Rukhyat Orekoya",
     category: "Art",
     tags: ["Illustration", "Brand design", "Character development", "Social campaigns"],
+    niche: "Illustration",
     location: "Lagos",
     entity: "Freelancer",
     dayRate: "₦9k–₦13k",
@@ -366,6 +382,7 @@ export const TALENT: Talent[] = [
     name: "Joseph Adeyemo",
     category: "Art",
     tags: ["Logo design", "Visual identity", "Social media design", "Illustration"],
+    niche: "Logo design",
     location: "Lagos",
     entity: "Freelancer",
     dayRate: "₦8k–₦10k",
@@ -394,6 +411,7 @@ export const TALENT: Talent[] = [
     name: "Jeremiah Ajayi",
     category: "Writing",
     tags: ["Product marketing", "Content strategy", "GTM messaging", "Sales enablement"],
+    niche: "Product marketing",
     location: "Nigeria",
     entity: "Freelancer",
     dayRate: "₦17k–₦20k",
@@ -424,6 +442,7 @@ export const TALENT: Talent[] = [
     name: "King Elisha",
     category: "Strategy",
     tags: ["Brand strategy", "Brand design", "Typography", "Visual identity"],
+    niche: "Brand strategy",
     location: "Lagos",
     entity: "Freelancer",
     dayRate: "₦12k–₦15k",
@@ -448,6 +467,7 @@ export const TALENT: Talent[] = [
     name: "Akinbinu Akintayo",
     category: "Art",
     tags: ["Brand design", "Web design", "Visual identity", "Framer"],
+    niche: "Brand design",
     location: "Nigeria",
     entity: "Freelancer",
     dayRate: "₦18k–₦20k",
@@ -481,6 +501,7 @@ export const TALENT: Talent[] = [
     name: "Ella James",
     category: "UX",
     tags: ["Brand design", "Product design", "Interaction design", "Website design", "UX mapping"],
+    niche: "Brand design",
     location: "Nigeria",
     entity: "Freelancer",
     dayRate: "₦16k–₦20k",
@@ -511,6 +532,7 @@ export const TALENT: Talent[] = [
     name: "Priscilla Ibiteye",
     category: "Writing",
     tags: ["Copywriting", "Content strategy", "Content creation", "Video editing", "Storytelling", "Community management"],
+    niche: "Copywriting",
     location: "Lagos, Nigeria",
     entity: "Freelancer",
     dayRate: "₦12k–₦16k",
@@ -543,6 +565,7 @@ export const TALENT: Talent[] = [
     name: "Jai Tekwani",
     category: "Strategy",
     tags: ["Brand strategy", "Consumer research", "Marketing strategy", "Positioning", "Campaign development"],
+    niche: "Brand strategy",
     location: "Remote",
     entity: "Freelancer",
     dayRate: "₦18k–₦20k",
@@ -579,6 +602,7 @@ export const TALENT: Talent[] = [
     name: "Niyi Fagbemi",
     category: "Film",
     tags: ["Documentary film", "Travel film", "Cinematography", "Drone cinematography", "Photography", "Visual storytelling"],
+    niche: "Documentary film",
     location: "Lagos, Nigeria",
     entity: "Freelancer",
     dayRate: "To confirm",
