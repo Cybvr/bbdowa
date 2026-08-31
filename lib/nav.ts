@@ -44,9 +44,10 @@ export const NAV_ITEMS: NavItem[] = [
   {
     kind: "menu",
     label: "Resources",
-    match: ["/dashboard/resources", "/dashboard/blog"],
+    match: ["/dashboard/resources", "/dashboard/blog", "/dashboard/brand"],
     items: [
       { label: "Resources", href: "/dashboard/resources" },
+      { label: "Brand", href: "/dashboard/brand" },
       { label: "Blog", href: "/dashboard/blog" },
     ],
   },
