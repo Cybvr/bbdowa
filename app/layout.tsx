@@ -1,5 +1,6 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Outfit, Roboto_Mono } from "next/font/google";
+import { PwaRegister } from "@/components/pwa-register";
 import "./globals.css";
 
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit", display: "swap" });
@@ -13,7 +14,11 @@ export const metadata: Metadata = {
   title: "BBDO West Africa",
   description:
     "BBDO West Africa is the Lagos studio of the BBDO network: strategy, creative, production and social for brands across the region.",
-  icons: { icon: "/favicon.png" },
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: "/favicon.png",
+    apple: "/pwa/apple-touch-icon.png",
+  },
   openGraph: {
     title: "BBDO West Africa",
     description:
@@ -22,12 +27,19 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  themeColor: "#e51b23",
+  width: "device-width",
+  initialScale: 1,
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body
         className={`${outfit.variable} ${robotoMono.variable} flex min-h-screen flex-col bg-white font-sans text-foreground antialiased`}
       >
+        <PwaRegister />
         {children}
       </body>
     </html>
