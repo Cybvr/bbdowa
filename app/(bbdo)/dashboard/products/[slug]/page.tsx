@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { BackLink } from "@/components/back-link";
 import { PRODUCTS, getProduct, productDate, productHref } from "@/lib/products";
 import { longDate } from "@/lib/format";
+import { getUserByName, userHref } from "@/lib/users";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -34,9 +36,14 @@ export default async function ProductDetailPage({ params }: Params) {
   if (!product) notFound();
 
   const date = productDate(product);
+  const ownerUser = product.owner ? getUserByName(product.owner.name) : undefined;
 
   return (
     <main className="flex-1 px-[clamp(20px,3vw,48px)] pb-20 pt-[clamp(30px,4vw,56px)]">
+      <BackLink href="/dashboard/products" className="mb-[26px]">
+        All products
+      </BackLink>
+
       <div className="flex flex-wrap items-baseline justify-between gap-4 border-b border-foreground pb-5">
         <div className="flex flex-col items-start gap-5">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -64,14 +71,30 @@ export default async function ProductDetailPage({ params }: Params) {
         <div className="flex min-h-[132px] items-center gap-[18px] p-6 pl-0">
           <div
             aria-hidden="true"
-            className="grid h-[72px] w-[72px] flex-none place-items-center rounded-full bg-primary text-[24px] font-black tracking-[-0.04em] text-white"
+            className="grid h-[72px] w-[72px] flex-none place-items-center overflow-hidden rounded-full bg-primary text-[24px] font-black tracking-[-0.04em] text-white"
           >
-            {product.owner ? product.owner.avatar : "—"}
+            {ownerUser?.profileImage ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={ownerUser.profileImage} alt="" className="h-full w-full object-cover" />
+            ) : product.owner ? (
+              product.owner.avatar
+            ) : (
+              "—"
+            )}
           </div>
           <div>
             <span className={META_LABEL}>Role</span>
             <strong className="mt-[5px] block text-[clamp(18px,1.7vw,24px)] leading-[1.15]">
-              <span>{product.owner ? product.owner.name : "Owner to be assigned"}</span>
+              {ownerUser ? (
+                <Link
+                  href={userHref(ownerUser)}
+                  className="text-foreground underline decoration-border underline-offset-4 hover:text-primary focus-visible:text-primary"
+                >
+                  {product.owner!.name}
+                </Link>
+              ) : (
+                <span>{product.owner ? product.owner.name : "Owner to be assigned"}</span>
+              )}
               <br />
               <span>{product.owner ? product.owner.role : "Product Owner"}</span>
             </strong>

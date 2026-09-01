@@ -1,4 +1,3 @@
-import Image from "next/image";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Brand" };
@@ -42,6 +41,63 @@ export default function BrandPage() {
         <span className="text-[13px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground">
           Colour, type, logo
         </span>
+      </div>
+
+      <div className="mt-[clamp(34px,4.5vw,56px)]">
+        <h2 className={SECTION_TITLE}>Logo</h2>
+        <div className="border-t border-foreground pt-5">
+          <div className="flex items-center justify-center border border-border bg-white p-[clamp(24px,5vw,64px)]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/bbdo-west-africa.png"
+              alt="BBDO West Africa logo"
+              className="h-auto w-full max-w-[420px]"
+            />
+          </div>
+          <a
+            href="/bbdo-west-africa.png"
+            download
+            className="mt-3 inline-block text-[13px] font-extrabold uppercase tracking-[0.1em] text-foreground no-underline hover:text-primary focus-visible:text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+          >
+            Primary PNG ↓
+          </a>
+        </div>
+        <div className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
+          <div>
+            <div className="flex items-center justify-center border border-border bg-white p-[clamp(24px,5vw,64px)]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/bbdo-west-africa.png"
+                alt="BBDO West Africa logo, black"
+                className="h-auto w-full max-w-[360px] [filter:brightness(0)]"
+              />
+            </div>
+            <a
+              href="/bbdo-west-africa.png"
+              download
+              className="mt-3 inline-block text-[13px] font-extrabold uppercase tracking-[0.1em] text-foreground no-underline hover:text-primary focus-visible:text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+            >
+              Black on white ↓
+            </a>
+          </div>
+          <div>
+            <div className="flex items-center justify-center border border-border bg-black p-[clamp(24px,5vw,64px)]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/bbdo-west-africa.png"
+                alt="BBDO West Africa logo, white"
+                className="h-auto w-full max-w-[360px] [filter:brightness(0)_invert(1)]"
+              />
+            </div>
+            <a
+              href="/bbdo-west-africa.png"
+              download
+              className="mt-3 inline-block text-[13px] font-extrabold uppercase tracking-[0.1em] text-foreground no-underline hover:text-primary focus-visible:text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+            >
+              White on black ↓
+            </a>
+          </div>
+        </div>
       </div>
 
       <div className="mt-[clamp(34px,4.5vw,56px)]">
@@ -93,28 +149,6 @@ export default function BrandPage() {
             </li>
           ))}
         </ul>
-      </div>
-
-      <div className="mt-[clamp(34px,4.5vw,56px)]">
-        <h2 className={SECTION_TITLE}>Logo</h2>
-        <div className="border-t border-foreground pt-5">
-          <div className="flex items-center justify-center border border-border bg-white p-[clamp(24px,5vw,64px)]">
-            <Image
-              src="/bbdo-west-africa.png"
-              alt="BBDO West Africa logo"
-              width={420}
-              height={120}
-              className="h-auto w-full max-w-[420px]"
-            />
-          </div>
-          <a
-            href="/bbdo-west-africa.png"
-            download
-            className="mt-3 inline-block text-[13px] font-extrabold uppercase tracking-[0.1em] text-foreground no-underline hover:text-primary focus-visible:text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
-          >
-            Download PNG ↓
-          </a>
-        </div>
       </div>
 
       <div className="mt-[clamp(34px,4.5vw,56px)]">

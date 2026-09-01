@@ -27,9 +27,9 @@ import { ProfileNav } from "@/components/profile-nav";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 const NAV_TEXT =
-  "flex min-h-[42px] w-full items-center gap-2.5 rounded-lg px-2.5 py-2 font-mono text-[13px] font-medium leading-none text-primary-foreground/85 no-underline transition-colors hover:bg-primary-foreground/12 hover:text-primary-foreground focus-visible:bg-primary-foreground/12 focus-visible:text-primary-foreground focus-visible:outline-none";
+  "flex min-h-[42px] w-full items-center gap-2.5 rounded-lg px-2.5 py-2 font-mono text-[13px] font-medium leading-none text-primary-foreground/85 no-underline transition-colors hover:bg-black/15 hover:text-primary-foreground focus-visible:bg-black/15 focus-visible:text-primary-foreground focus-visible:outline-none";
 
-const NAV_ACTIVE = "bg-background !text-foreground hover:bg-background";
+const NAV_ACTIVE = "bg-black/25 !text-primary-foreground hover:bg-black/25";
 
 const NAV_ICONS: Record<string, IconType> = {
   Home: LuHouse,
@@ -70,7 +70,9 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
     <ul className="m-0 flex list-none flex-col items-stretch gap-0.5 p-0">
       {NAV_ITEMS.map((item) => {
         if (item.kind === "link") {
-          const current = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const current =
+            pathname === item.href ||
+            (item.href !== "/dashboard" && pathname.startsWith(`${item.href}/`));
           return (
             <li key={item.label} className="w-full">
               <Link
