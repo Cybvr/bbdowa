@@ -21,8 +21,8 @@ export default function AboutPage() {
       </div>
 
       <p className="mt-[clamp(30px,4vw,50px)] max-w-[30ch] text-[clamp(24px,3.2vw,42px)] uppercase leading-[1] tracking-[-0.035em]">
-        We make work that <em className="not-italic text-primary">moves</em> business, culture and
-        people.
+        The most preferred <em className="not-italic text-primary">shapers of choice</em> across
+        the African continent.
       </p>
 
       <div className="mt-[clamp(34px,5vw,60px)] grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-x-10 gap-y-0 border-t border-foreground">
@@ -31,11 +31,14 @@ export default function AboutPage() {
             Who we are
           </h2>
           <p className="mb-3 mt-0 max-w-[42ch] text-[17px] leading-[1.4]">
-            BBDO West Africa is the Lagos studio of the BBDO network. We work across strategy,
-            creative, production and social, on brands sold across the region.
+            BBDO West Africa is the Lagos studio of the BBDO network and the hub for the West
+            African sub-region. We make culturally relevant, insightful and effective campaigns
+            that drive brand value and grow our clients&apos; businesses.
           </p>
           <p className="mb-3 mt-0 max-w-[42ch] text-[17px] leading-[1.4]">
-            Do Big Things is not a tagline for us. It is the size of the problem we take on.
+            We hold to the network tradition of The Work, The Work, The Work: creativity that
+            proves itself in market. Do Big Things is not a tagline for us. It is the size of the
+            problem we take on.
           </p>
         </section>
 
