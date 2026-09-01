@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Brand" };
+export const metadata: Metadata = {
+  title: "Brand",
+  description: "BBDO West Africa brand guidelines: Together, we make work that moves.",
+};
 
 const SECTIONS: { id: string; label: string }[] = [
   { id: "cover", label: "Cover" },
   { id: "about", label: "About" },
+  { id: "mantra", label: "Mantra" },
   { id: "tone-of-voice", label: "Tone of voice" },
   { id: "logo", label: "Logo" },
   { id: "colour", label: "Colour" },
@@ -15,13 +19,29 @@ const SECTIONS: { id: string; label: string }[] = [
 
 const ABOUT: string[] = [
   "BBDO West Africa is the Lagos studio of the BBDO network and the hub for the West African sub-region. We make culturally relevant, insightful and effective campaigns that drive brand value and grow our clients' businesses.",
-  "We hold to the network tradition of The Work, The Work, The Work: creativity that proves itself in market. This guide covers how the brand looks, sounds and behaves, so anyone in the building can use it without asking.",
+  "We hold to the network tradition of The Work, The Work, The Work: creativity that proves itself in market. Our West African expression of that promise is Together, we make work that moves. It joins the bantaba—where people gather, speak and decide—with the discipline of making creative work that changes something in business, culture or people.",
+  "This guide shows how that idea looks, sounds and behaves, so anyone in the building can put it to work without asking.",
+];
+
+const MANTRA: { phrase: string; meaning: string }[] = [
+  {
+    phrase: "Together",
+    meaning: "We bring the right people and perspectives into the conversation before we decide.",
+  },
+  {
+    phrase: "We make work",
+    meaning: "Conversation must become something real: an idea people can see, hear, use and share.",
+  },
+  {
+    phrase: "That moves",
+    meaning: "The work must change something—business, culture, behaviour or the people it reaches.",
+  },
 ];
 
 const VOICE: string[] = [
   "Our voice comes from the bantaba, the gathering place where a community meets to talk, tell stories and decide things together. We write the way people talk there. Everyone under the tree can follow the talk, so we use plain words and short sentences. If someone outside the industry would need a sentence explained, we rewrite it.",
-  "News travels through the bantaba as stories about people, so we start with what happened and who it happened to, and bring the numbers in after, as support. A gathering only works if people answer back: we ask questions we actually want answered, credit people by name, and write as we.",
-  "The bantaba exists so the community can decide together. Every piece of writing ends with a position or a next step the reader can act on.",
+  "News travels through the bantaba as stories about people, so we start with what happened and who it happened to, and bring the numbers in after as support. Together means the voice is never anonymous: we ask questions we actually want answered, credit people by name and write as we.",
+  "We make work means we leave the reader with something concrete. That moves means every piece ends with a position, decision or next step someone can act on.",
 ];
 
 const LOGO_RATIONALE: string[] = [
@@ -31,19 +51,20 @@ const LOGO_RATIONALE: string[] = [
 
 const PHOTOGRAPHY: string[] = [
   "Shoot people the way you would meet them at the bantaba: real, present and mid-conversation. We pick candid frames over staged ones, natural light over studio gloss, and streets, markets and compounds over seamless backdrops.",
-  "Faces carry the work. Get close, stay at eye level and let the subject look back at the camera. Crowds, hands and food are all fair game; empty stock scenery is not.",
+  "Together is visible in relationships: people exchanging ideas, building, rehearsing, serving, listening or moving through a place. Faces carry the work. Get close, stay at eye level and let the subject look back at the camera. Crowds, hands and food are all fair game; empty stock scenery is not.",
   "Colour in photographs stays true to life. No heavy filters, no desaturated moods, and no red casts that fight the brand red.",
 ];
 
 const PATTERNS: string[] = [
-  "Our patterns come from the letterforms. The round arch of the W, the triangle of the A and the diagonal cut between them repeat as tiles in black, white and red.",
-  "Use one pattern per surface, in one colour on one background. Type never sits directly on a pattern; give it a solid panel first.",
+  "The shapes carry the mantra. The round arches of the W gather to express Together. The triangle of the A builds to express We make work. The diagonal cut creates direction to express That moves.",
+  "Use one geometric pattern per surface, in one colour on one background. Supporting type never sits directly on a geometric pattern; give it a solid panel first.",
+  "The mantra may also become a typographic pattern. In that application the words are the texture, so no additional message sits on top.",
 ];
 
-const COLORS: { name: string; value: string; token: string }[] = [
-  { name: "Red", value: "#e51b23", token: "--red" },
-  { name: "Black", value: "#111111", token: "--black" },
-  { name: "White", value: "#ffffff", token: "--white" },
+const COLORS: { name: string; value: string; token: string; role: string }[] = [
+  { name: "Red", value: "#e51b23", token: "--red", role: "The move: action and emphasis" },
+  { name: "Black", value: "#111111", token: "--black", role: "The work: clarity and confidence" },
+  { name: "White", value: "#ffffff", token: "--white", role: "The together: room for every voice" },
 ];
 
 const TYPE: { name: string; usage: string; className: string }[] = [
@@ -52,7 +73,7 @@ const TYPE: { name: string; usage: string; className: string }[] = [
 ];
 
 const SCALE: { label: string; size: string; className: string }[] = [
-  { label: "Display", size: "clamp(32px, 4vw, 58px)", className: "text-[clamp(32px,4vw,58px)] uppercase leading-[0.95] tracking-[-0.045em]" },
+  { label: "Display", size: "clamp(32px, 4vw, 58px)", className: "text-[clamp(32px,4vw,58px)] uppercase leading-[0.95] tracking-[-0.04em]" },
   { label: "Heading", size: "clamp(19px, 2vw, 26px)", className: "text-[clamp(19px,2vw,26px)] leading-[1.2] tracking-[-0.02em]" },
   { label: "Body", size: "16px", className: "text-[16px] leading-[1.5]" },
   { label: "Label", size: "13px", className: "text-[13px] font-extrabold uppercase tracking-[0.16em]" },
@@ -78,11 +99,11 @@ export default function BrandPage() {
   return (
     <main className="flex-1 px-[clamp(20px,3vw,48px)] pb-20 pt-[clamp(30px,4vw,56px)]">
       <div className="flex flex-wrap items-baseline justify-between gap-4 border-b border-foreground pb-5">
-        <h1 className="m-0 text-[clamp(32px,4vw,58px)] uppercase leading-[0.95] tracking-[-0.045em]">
+        <h1 className="m-0 text-[clamp(32px,4vw,58px)] uppercase leading-[0.95] tracking-[-0.04em]">
           Brand
         </h1>
         <span className="text-[13px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground">
-          Colour, type, logo
+          Together, we make work that moves
         </span>
       </div>
 
@@ -114,13 +135,14 @@ export default function BrandPage() {
               className="h-auto w-full max-w-[260px] [filter:brightness(0)_invert(1)]"
             />
             <div>
-              <p className="m-0 text-[clamp(36px,5vw,72px)] uppercase leading-[0.95] tracking-[-0.045em] text-white">
-                Brand
+              <p className="m-0 max-w-[12ch] text-[clamp(38px,6vw,82px)] uppercase leading-[0.88] tracking-[-0.04em] text-white">
+                Together,
+                <br />we make work
                 <br />
-                <span className="text-primary">guidelines</span>
+                <span className="text-primary">that moves.</span>
               </p>
               <p className="mb-0 mt-5 text-[13px] font-extrabold uppercase tracking-[0.14em] text-white/60">
-                BBDO West Africa · Lagos · 2026
+                Brand guidelines · BBDO West Africa · 2026
               </p>
             </div>
           </div>
@@ -135,6 +157,34 @@ export default function BrandPage() {
               {paragraph}
             </p>
           ))}
+        </div>
+      </div>
+
+      <div id="mantra" className="mt-[clamp(34px,4.5vw,56px)] scroll-mt-24">
+        <h2 className={SECTION_TITLE}>{sectionTitle("mantra")}</h2>
+        <div className="border-t border-foreground pt-5">
+          <p className="mb-[clamp(28px,4vw,48px)] mt-0 max-w-[15ch] text-[clamp(34px,5vw,68px)] uppercase leading-[0.9] tracking-[-0.04em]">
+            Together, we make work <span className="text-primary">that moves.</span>
+          </p>
+          <div className="grid grid-cols-3 border-y border-foreground max-[760px]:grid-cols-1">
+            {MANTRA.map((part, index) => (
+              <article
+                key={part.phrase}
+                className={`min-h-[220px] py-[clamp(24px,3vw,40px)] ${
+                  index === 0
+                    ? "pr-[clamp(20px,3vw,40px)]"
+                    : "border-l border-border px-[clamp(20px,3vw,40px)] max-[760px]:border-l-0 max-[760px]:border-t max-[760px]:px-0"
+                }`}
+              >
+                <h3 className="m-0 text-[clamp(22px,2.5vw,34px)] uppercase leading-[0.95] tracking-[-0.03em]">
+                  {part.phrase}
+                </h3>
+                <p className="mb-0 mt-5 text-[16px] leading-[1.45] text-muted-foreground">
+                  {part.meaning}
+                </p>
+              </article>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -242,6 +292,9 @@ export default function BrandPage() {
               <p className={`m-0 ${META}`}>
                 {color.value} · var({color.token})
               </p>
+              <p className="mb-0 mt-2 text-[14px] leading-[1.35] text-muted-foreground">
+                {color.role}
+              </p>
             </li>
           ))}
         </ul>
@@ -281,6 +334,14 @@ export default function BrandPage() {
           <p className={`${PROSE} mt-5`}>
             Set headlines in uppercase Outfit with tight tracking. Body copy stays sentence case.
           </p>
+          <div className="mt-8 border-y border-foreground py-[clamp(24px,4vw,48px)]">
+            <p className="m-0 max-w-[14ch] text-[clamp(34px,5vw,64px)] uppercase leading-[0.9] tracking-[-0.04em]">
+              Together,
+              <br />we make work
+              <br />
+              <span className="text-primary">that moves.</span>
+            </p>
+          </div>
         </div>
       </div>
 
@@ -318,7 +379,7 @@ export default function BrandPage() {
                 </defs>
                 <rect width="100%" height="100%" fill="url(#pattern-arch)" />
               </svg>
-              <p className={`mb-0 mt-3 ${META}`}>Arch · from the W</p>
+              <p className={`mb-0 mt-3 ${META}`}>Arch · Together</p>
             </div>
             <div>
               <svg
@@ -339,7 +400,7 @@ export default function BrandPage() {
                 </defs>
                 <rect width="100%" height="100%" fill="url(#pattern-triangle)" />
               </svg>
-              <p className={`mb-0 mt-3 ${META}`}>Triangle · from the A</p>
+              <p className={`mb-0 mt-3 ${META}`}>Triangle · We make work</p>
             </div>
             <div>
               <div
@@ -350,9 +411,27 @@ export default function BrandPage() {
                   background: "repeating-linear-gradient(63deg, #111111 0 6px, #ffffff 6px 30px)",
                 }}
               />
-              <p className={`mb-0 mt-3 ${META}`}>Cut · from the diagonal</p>
+              <p className={`mb-0 mt-3 ${META}`}>Cut · That moves</p>
             </div>
           </div>
+          <div
+            className="mt-[clamp(28px,4vw,48px)] overflow-hidden bg-primary py-[clamp(22px,4vw,44px)] text-white"
+            role="img"
+            aria-label="Typographic pattern repeating Together, we make work that moves"
+          >
+            <div aria-hidden="true" className="space-y-1.5">
+              <p className="m-0 -translate-x-[4%] whitespace-nowrap text-[clamp(32px,6vw,76px)] font-black uppercase leading-[0.82] tracking-[-0.04em]">
+                Together · Together · Together
+              </p>
+              <p className="m-0 translate-x-[7%] whitespace-nowrap text-[clamp(32px,6vw,76px)] font-black uppercase leading-[0.82] tracking-[-0.04em] text-black">
+                We make work · We make work
+              </p>
+              <p className="m-0 -translate-x-[10%] whitespace-nowrap text-[clamp(32px,6vw,76px)] font-black uppercase leading-[0.82] tracking-[-0.04em]">
+                That moves · That moves · That moves
+              </p>
+            </div>
+          </div>
+          <p className={`mb-0 mt-3 ${META}`}>Typographic mantra pattern</p>
         </div>
       </div>
 
