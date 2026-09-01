@@ -6,16 +6,16 @@ import { useEffect, useState } from "react";
 import type { IconType } from "react-icons";
 import { FaBehance, FaGlobe, FaLinkedinIn } from "react-icons/fa";
 import { FiFilter, FiX } from "react-icons/fi";
-import type { Talent } from "@/lib/users";
-import { baseCity, rateFloorNgn, talentHref } from "@/lib/users";
+import type { Creator } from "@/lib/users";
+import { baseCity, rateFloorNgn, creatorHref } from "@/lib/users";
 
-const AVAILABILITY_DOT: Record<Talent["availability"], string> = {
+const AVAILABILITY_DOT: Record<Creator["availability"], string> = {
   open: "bg-[#1a9a4a]",
   busy: "bg-[#d94a3a]",
   unconfirmed: "bg-muted-foreground",
 };
 
-const AVAILABILITY_LABEL: Record<Talent["availability"], string> = {
+const AVAILABILITY_LABEL: Record<Creator["availability"], string> = {
   open: "Open for work",
   busy: "Busy",
   unconfirmed: "Unconfirmed",
@@ -47,12 +47,12 @@ function Avatar({ name, imageSrc, className = "" }: { name: string; imageSrc?: s
 
 type PlatformLink = { label: string; href: string | null; Icon: IconType };
 
-function platformLinks(talent: Talent): PlatformLink[] {
-  const portfolioIsBehance = talent.portfolio?.toLowerCase().includes("behance.net") ?? false;
+function platformLinks(creator: Creator): PlatformLink[] {
+  const portfolioIsBehance = creator.portfolio?.toLowerCase().includes("behance.net") ?? false;
   return [
-    { label: "Website", href: portfolioIsBehance ? null : talent.portfolio, Icon: FaGlobe },
-    { label: "LinkedIn", href: talent.linkedin ?? null, Icon: FaLinkedinIn },
-    { label: "Behance", href: talent.behance ?? (portfolioIsBehance ? talent.portfolio : null), Icon: FaBehance },
+    { label: "Website", href: portfolioIsBehance ? null : creator.portfolio, Icon: FaGlobe },
+    { label: "LinkedIn", href: creator.linkedin ?? null, Icon: FaLinkedinIn },
+    { label: "Behance", href: creator.behance ?? (portfolioIsBehance ? creator.portfolio : null), Icon: FaBehance },
   ];
 }
 
@@ -71,7 +71,7 @@ type DirectoryUrlState = {
   search: string;
   category: string;
   location: string;
-  availability: Talent["availability"] | "all";
+  availability: Creator["availability"] | "all";
   maxRate: number;
   page: number;
 };
@@ -150,8 +150,8 @@ type FilterControlsProps = {
   setCategory: (value: string) => void;
   location: string;
   setLocation: (value: string) => void;
-  availability: Talent["availability"] | "all";
-  setAvailability: (value: Talent["availability"] | "all") => void;
+  availability: Creator["availability"] | "all";
+  setAvailability: (value: Creator["availability"] | "all") => void;
   maxRate: number;
   setMaxRate: (value: number) => void;
   categories: string[];
@@ -183,7 +183,7 @@ function FilterControls({
         value={search}
         onChange={(event) => setSearch(event.target.value)}
         placeholder="Name, skill, company"
-        aria-label="Search talent"
+        aria-label="Search creators"
         className="min-h-[44px] w-full rounded-lg border border-border bg-card px-3 py-2.5 font-mono text-[13px] font-medium text-foreground placeholder:text-muted-foreground focus-visible:outline-none"
       />
       <select
@@ -214,7 +214,7 @@ function FilterControls({
       </select>
       <select
         value={availability}
-        onChange={(event) => setAvailability(event.target.value as Talent["availability"] | "all")}
+        onChange={(event) => setAvailability(event.target.value as Creator["availability"] | "all")}
         aria-label="Availability"
         className={`${SELECT} w-full`}
       >
@@ -252,12 +252,12 @@ function FilterControls({
   );
 }
 
-export function TalentDirectory({
-  talents,
+export function CreatorDirectory({
+  creators,
   categories,
   locations,
 }: {
-  talents: Talent[];
+  creators: Creator[];
   categories: string[];
   locations: string[];
 }) {
@@ -265,30 +265,30 @@ export function TalentDirectory({
   const [search, setSearch] = useState<string>("");
   const [category, setCategory] = useState<string>("all");
   const [location, setLocation] = useState<string>("all");
-  const [availability, setAvailability] = useState<Talent["availability"] | "all">("all");
+  const [availability, setAvailability] = useState<Creator["availability"] | "all">("all");
   const [maxRate, setMaxRate] = useState<number>(RATE_CAP);
   const [filterOpen, setFilterOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [urlStateInitialized, setUrlStateInitialized] = useState(false);
 
-  const visible = talents.filter((talent) => {
+  const visible = creators.filter((creator) => {
     const query = search.trim().toLowerCase();
     const searchable = [
-      talent.name,
-      talent.category,
-      talent.location,
-      ...talent.tags,
-      ...(talent.workHistory?.flatMap((entry) => [entry.role, entry.company]) ?? []),
+      creator.name,
+      creator.category,
+      creator.location,
+      ...creator.tags,
+      ...(creator.workHistory?.flatMap((entry) => [entry.role, entry.company]) ?? []),
     ]
       .join(" ")
       .toLowerCase();
 
     return (
       (!query || searchable.includes(query)) &&
-      (category === "all" || talent.category === category) &&
-      (location === "all" || baseCity(talent.location) === location) &&
-      (availability === "all" || talent.availability === availability) &&
-      (maxRate >= RATE_CAP || rateFloorNgn(talent) <= maxRate)
+      (category === "all" || creator.category === category) &&
+      (location === "all" || baseCity(creator.location) === location) &&
+      (availability === "all" || creator.availability === availability) &&
+      (maxRate >= RATE_CAP || rateFloorNgn(creator) <= maxRate)
     );
   });
 
@@ -341,7 +341,7 @@ export function TalentDirectory({
     setPage(1);
   };
 
-  const updateAvailability = (value: Talent["availability"] | "all") => {
+  const updateAvailability = (value: Creator["availability"] | "all") => {
     setAvailability(value);
     setPage(1);
   };
@@ -402,51 +402,51 @@ export function TalentDirectory({
           </p>
 
           <div className="flex flex-col gap-3">
-        {pageVisible.map((talent) => (
+        {pageVisible.map((creator) => (
           <article
-            key={talent.slug}
+            key={creator.slug}
             role="link"
             tabIndex={0}
-            onClick={() => router.push(talentHref(talent.slug))}
+            onClick={() => router.push(creatorHref(creator.slug))}
             onKeyDown={(event) => {
               if (event.key === "Enter" || event.key === " ") {
                 event.preventDefault();
-                router.push(talentHref(talent.slug));
+                router.push(creatorHref(creator.slug));
               }
             }}
             className="cursor-pointer rounded-2xl border border-border bg-background p-[clamp(16px,2.2vw,22px)] hover:border-foreground focus-visible:outline-none"
           >
             <div className="flex items-start gap-4 max-[640px]:flex-col max-[640px]:gap-3">
               <Link
-                href={talentHref(talent.slug)}
-                aria-label={talent.name}
+                href={creatorHref(creator.slug)}
+                aria-label={creator.name}
                 className="flex-none focus-visible:outline-none"
               >
-                <Avatar name={talent.name} imageSrc={talent.profileImage} className="h-12 w-12 text-[15px]" />
+                <Avatar name={creator.name} imageSrc={creator.profileImage} className="h-12 w-12 text-[15px]" />
               </Link>
 
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-3">
                   <h2 className="m-0 text-[18px] uppercase leading-none tracking-[-0.03em]">
                     <Link
-                      href={talentHref(talent.slug)}
+                      href={creatorHref(creator.slug)}
                       className="text-foreground no-underline hover:text-primary focus-visible:outline-none"
                     >
-                      {talent.name}
+                      {creator.name}
                     </Link>
                   </h2>
                   <span className="inline-flex items-center gap-1.5 text-[12px] font-extrabold uppercase tracking-[0.08em] text-muted-foreground">
-                    <span aria-hidden="true" className={`h-2.5 w-2.5 rounded-full ${AVAILABILITY_DOT[talent.availability]}`} />
-                    {AVAILABILITY_LABEL[talent.availability]}
+                    <span aria-hidden="true" className={`h-2.5 w-2.5 rounded-full ${AVAILABILITY_DOT[creator.availability]}`} />
+                    {AVAILABILITY_LABEL[creator.availability]}
                   </span>
                 </div>
                 <p className="mb-0 mt-1 text-[13px] text-muted-foreground">
-                  {talent.category} · {baseCity(talent.location)}
+                  {creator.category} · {baseCity(creator.location)}
                 </p>
               </div>
 
               <div className="flex flex-none items-center gap-2 max-[640px]:w-full">
-                {platformLinks(talent)
+                {platformLinks(creator)
                   .filter((platform) => platform.href)
                   .map(({ label, href, Icon }) => (
                     <a
@@ -454,7 +454,7 @@ export function TalentDirectory({
                       href={href!}
                       target="_blank"
                       rel="noreferrer"
-                      aria-label={`Open ${talent.name} on ${label}`}
+                      aria-label={`Open ${creator.name} on ${label}`}
                       title={label}
                       onClick={(event) => event.stopPropagation()}
                       className="grid h-9 w-9 flex-none place-items-center rounded-full border border-border text-foreground hover:border-foreground focus-visible:outline-none"
@@ -466,39 +466,39 @@ export function TalentDirectory({
             </div>
 
             <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2">
-              {talent.hideRate === false ? (
+              {creator.hideRate === false ? (
                 <Stat>
-                  <strong className="font-extrabold">{talent.dayRate}</strong> / day
+                  <strong className="font-extrabold">{creator.dayRate}</strong> / day
                 </Stat>
               ) : null}
-              {talent.yearsActive !== null && (
+              {creator.yearsActive !== null && (
                 <Stat>
-                  <strong className="font-extrabold">{talent.yearsActive}</strong> years active
+                  <strong className="font-extrabold">{creator.yearsActive}</strong> years active
                 </Stat>
               )}
-              <Stat>{talent.entity}</Stat>
-              {talent.workedOn.length > 0 && (
-                <Stat>Worked on {talent.workedOn.join(", ")}</Stat>
+              <Stat>{creator.entity}</Stat>
+              {creator.workedOn.length > 0 && (
+                <Stat>Worked on {creator.workedOn.join(", ")}</Stat>
               )}
             </div>
 
             <div className="mt-3 flex flex-wrap gap-1.5">
-              {talent.tags.slice(0, 6).map((tag) => (
+              {creator.tags.slice(0, 6).map((tag) => (
                 <span key={tag} className={PILL}>
                   {tag}
                 </span>
               ))}
-              {talent.tags.length > 6 && <span className={PILL}>+{talent.tags.length - 6}</span>}
+              {creator.tags.length > 6 && <span className={PILL}>+{creator.tags.length - 6}</span>}
             </div>
 
             <p className="mb-0 mt-3 line-clamp-1 max-w-[95ch] text-[14px] leading-[1.5] text-muted-foreground">
-              {talent.craftNote}
+              {creator.craftNote}
             </p>
           </article>
         ))}
           </div>
           {totalPages > 1 ? (
-            <nav aria-label="Talent pagination" className="mt-6 flex items-center justify-between gap-4 border-t border-border pt-4">
+            <nav aria-label="Creators pagination" className="mt-6 flex items-center justify-between gap-4 border-t border-border pt-4">
               <button
                 type="button"
                 disabled={currentPage === 1}
@@ -524,7 +524,7 @@ export function TalentDirectory({
       </div>
 
       {filterOpen ? (
-        <div className="fixed inset-0 z-50 min-[801px]:hidden" role="dialog" aria-modal="true" aria-label="Talent filters">
+        <div className="fixed inset-0 z-50 min-[801px]:hidden" role="dialog" aria-modal="true" aria-label="Creators filters">
           <button
             type="button"
             aria-label="Close filters"

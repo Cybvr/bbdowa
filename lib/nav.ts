@@ -1,4 +1,4 @@
-export type NavLink = { label: string; href: string };
+﻿export type NavLink = { label: string; href: string };
 
 export const MARKETING_NAV: NavLink[] = [
   { label: "The Work", href: "/#work" },
@@ -51,10 +51,10 @@ export const NAV_ITEMS: NavItem[] = [
   {
     kind: "menu",
     label: "Directory",
-    match: ["/dashboard/people", "/dashboard/talent"],
+    match: ["/dashboard/people", "/dashboard/creators"],
     items: [
       { label: "Team", href: "/dashboard/people" },
-      { label: "Talent", href: "/dashboard/talent" },
+      { label: "Creators", href: "/dashboard/creators" },
     ],
   },
   { kind: "link", label: "Updates", href: "/dashboard/blog" },

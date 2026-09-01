@@ -1,28 +1,12 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import type { IconType } from "react-icons";
-import {
-  LuBookOpen,
-  LuBriefcaseBusiness,
-  LuChevronDown,
-  LuCircle,
-  LuFolderKanban,
-  LuHouse,
-  LuInfo,
-  LuLayoutDashboard,
-  LuMenu,
-  LuNewspaper,
-  LuPackage,
-  LuPresentation,
-  LuSparkles,
-  LuUsers,
-  LuWorkflow,
-} from "react-icons/lu";
+import { LuChevronDown, LuMenu } from "react-icons/lu";
 import { IoGlobeOutline } from "react-icons/io5";
 import { NAV_ITEMS } from "@/lib/nav";
+import { NAV_ICON_SET } from "@/components/nav-icons";
 import { ProfileNav } from "@/components/profile-nav";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
@@ -31,35 +15,14 @@ const NAV_TEXT =
 
 const NAV_ACTIVE = "bg-black/25 !text-primary-foreground hover:bg-black/25";
 
-const NAV_ICONS: Record<string, IconType> = {
-  Home: LuHouse,
-  Dashboard: LuLayoutDashboard,
-  Assets: LuBookOpen,
-  Directory: LuUsers,
-  Team: LuUsers,
-  Talent: LuSparkles,
-  Updates: LuNewspaper,
-  Company: LuInfo,
-  About: LuInfo,
-  People: LuUsers,
-  Careers: LuBriefcaseBusiness,
-  Projects: LuFolderKanban,
-  Products: LuPackage,
-  Workflows: LuWorkflow,
-  Resources: LuBookOpen,
-  "Brand assets": LuBookOpen,
-  Blog: LuNewspaper,
-  Agency: LuWorkflow,
-  Pitch: LuPresentation,
-};
-
 function sentenceCase(label: string) {
   return label.charAt(0).toUpperCase() + label.slice(1).toLowerCase();
 }
 
 function NavIcon({ label }: { label: string }) {
-  const Icon = NAV_ICONS[label] ?? LuCircle;
-  return <Icon aria-hidden="true" className="h-[17px] w-[17px]" />;
+  const Icon = NAV_ICON_SET[label];
+  if (!Icon) return <span aria-hidden="true" className="h-[17px] w-[17px]" />;
+  return <Icon className="h-[17px] w-[17px]" />;
 }
 
 function NavList({ onNavigate }: { onNavigate?: () => void }) {
@@ -108,7 +71,7 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
               <LuChevronDown aria-hidden="true" className={`ml-auto h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
             </button>
             {open && (
-              <ul className="m-0 mt-1 w-full list-none rounded-lg bg-black/15 p-1">
+              <ul className="m-0 mt-1 w-full list-none rounded-lg p-1">
                 {item.items.map((entry) => {
                   const current = pathname === entry.href;
                   return (

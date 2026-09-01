@@ -1,4 +1,4 @@
-export type UserType = "team" | "talent";
+export type UserType = "team" | "creator";
 
 export type TeamUser = {
   type: "team";
@@ -10,24 +10,24 @@ export type TeamUser = {
   profileImage?: string | null;
 };
 
-export type TalentAvailability = "open" | "busy" | "unconfirmed";
+export type CreatorAvailability = "open" | "busy" | "unconfirmed";
 
-export type TalentClearance = "cleared" | "pending";
+export type CreatorClearance = "cleared" | "pending";
 
-export type TalentCategory = "Art" | "Writing" | "UX" | "Strategy" | "Film";
+export type CreatorCategory = "Art" | "Writing" | "UX" | "Strategy" | "Film";
 
-export type TalentWorkHistory = {
+export type CreatorWorkHistory = {
   role: string;
   company: string;
   period: string;
   location?: string;
 };
 
-export type Talent = {
-  type: "talent";
+export type Creator = {
+  type: "creator";
   slug: string;
   name: string;
-  category: TalentCategory;
+  category: CreatorCategory;
   tags: string[];
   location: string;
   entity: "Freelancer" | "Studio";
@@ -40,9 +40,9 @@ export type Talent = {
   hideRate?: boolean;
   /** Payment terms agreed with finance. */
   terms: string;
-  availability: TalentAvailability;
+  availability: CreatorAvailability;
   /** Cleared = signed off by MD, finance and creative. */
-  clearance: TalentClearance;
+  clearance: CreatorClearance;
   /** Who inside the agency brought them in and vouches for them. */
   vouchedBy: string;
   /** Agency work they have delivered on. Empty = not yet used. */
@@ -57,7 +57,7 @@ export type Talent = {
   /** Public work/project image used for the directory feature tile. */
   featuredImage?: string | null;
   /** Public professional history researched from the supplied profile and linked sources. */
-  workHistory?: TalentWorkHistory[];
+  workHistory?: CreatorWorkHistory[];
   linkedin?: string | null;
   /** Optional public audience metadata; do not infer age or gender. */
   followerCount?: string | null;
@@ -70,7 +70,7 @@ export type Talent = {
   craftNote: string;
 };
 
-export type User = TeamUser | Talent;
+export type User = TeamUser | Creator;
 
 const TEAM_RECORDS: Omit<TeamUser, "type">[] = [
   {
@@ -148,7 +148,7 @@ export const TEAM: TeamUser[] = TEAM_RECORDS.map((member) => ({
   ...member,
 }));
 
-const TALENT_RECORDS: Omit<Talent, "type">[] = [
+const CREATOR_RECORDS: Omit<Creator, "type">[] = [
   {
     slug: "isaac-afeyemi",
     name: "Isaac Fayemi",
@@ -718,35 +718,35 @@ const TALENT_RECORDS: Omit<Talent, "type">[] = [
   },
 ];
 
-export const TALENT: Talent[] = TALENT_RECORDS.map((talent) => ({
-  type: "talent" as const,
-  ...talent,
+export const CREATORS: Creator[] = CREATOR_RECORDS.map((creator) => ({
+  type: "creator" as const,
+  ...creator,
 }));
 
-export const USERS: User[] = [...TEAM, ...TALENT];
+export const USERS: User[] = [...TEAM, ...CREATORS];
 
-export const TALENT_CATEGORIES = [...new Set(TALENT.map((talent) => talent.category))].sort();
+export const CREATOR_CATEGORIES = [...new Set(CREATORS.map((creator) => creator.category))].sort();
 
 /** Working rate for comparing dollar quotes against naira budgets. Update when the rate moves. */
 export const NGN_PER_USD = 1500;
 
-export function rateFloorNgn(talent: Talent): number {
-  if (talent.rateMin === null) return Number.POSITIVE_INFINITY;
-  return talent.rateCurrency === "USD" ? talent.rateMin * NGN_PER_USD : talent.rateMin;
+export function rateFloorNgn(creator: Creator): number {
+  if (creator.rateMin === null) return Number.POSITIVE_INFINITY;
+  return creator.rateCurrency === "USD" ? creator.rateMin * NGN_PER_USD : creator.rateMin;
 }
 
 export function baseCity(location: string): string {
   return location.split(" /")[0];
 }
 
-export const TALENT_LOCATIONS = [...new Set(TALENT.map((talent) => baseCity(talent.location)))].sort();
+export const CREATOR_LOCATIONS = [...new Set(CREATORS.map((creator) => baseCity(creator.location)))].sort();
 
-export function getTalent(slug: string): Talent | undefined {
-  return TALENT.find((talent) => talent.slug === slug);
+export function getCreator(slug: string): Creator | undefined {
+  return CREATORS.find((creator) => creator.slug === slug);
 }
 
-export function talentHref(slug: string): string {
-  return `/dashboard/talent/${slug}`;
+export function creatorHref(slug: string): string {
+  return `/dashboard/creators/${slug}`;
 }
 
 export function getUser(slug: string): User | undefined {
@@ -758,7 +758,7 @@ export function getUserByName(name: string): User | undefined {
 }
 
 export function userHref(user: User): string {
-  return user.type === "talent" ? talentHref(user.slug) : `/dashboard/people/${user.slug}`;
+  return user.type === "creator" ? creatorHref(user.slug) : `/dashboard/people/${user.slug}`;
 }
 
 export function userInitials(user: User): string {

@@ -4,20 +4,20 @@ import type { IconType } from "react-icons";
 import { FaBehance, FaGlobe, FaLinkedinIn } from "react-icons/fa";
 import { FiArrowUpRight } from "react-icons/fi";
 import { BackLink } from "@/components/back-link";
-import { TALENT, getTalent, type Talent } from "@/lib/users";
+import { CREATORS, getCreator, type Creator } from "@/lib/users";
 import { longDate } from "@/lib/format";
 
 type Params = { params: Promise<{ slug: string }> };
 
 export function generateStaticParams() {
-  return TALENT.map((talent) => ({ slug: talent.slug }));
+  return CREATORS.map((creator) => ({ slug: creator.slug }));
 }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
-  const talent = getTalent(slug);
-  if (!talent) return { title: "Not found" };
-  return { title: `${talent.name} — Talent`, description: talent.craftNote };
+  const creator = getCreator(slug);
+  if (!creator) return { title: "Not found" };
+  return { title: `${creator.name} — Creator`, description: creator.craftNote };
 }
 
 const META_LABEL = "text-[11px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground";
@@ -28,41 +28,41 @@ const META_CELL =
 const HISTORY_ROW = "border-t border-border py-3.5";
 const AUDIENCE_VALUE = "mt-[6px] block text-[clamp(17px,1.6vw,22px)] leading-[1.2]";
 
-type TalentPlatform = {
+type CreatorPlatform = {
   label: string;
   href: string;
   Icon: IconType;
 };
 
-function platformsFor(talent: Talent): TalentPlatform[] {
-  const platforms: TalentPlatform[] = [];
-  if (talent.portfolio) {
-    const isBehance = talent.portfolio.toLowerCase().includes("behance.net");
+function platformsFor(creator: Creator): CreatorPlatform[] {
+  const platforms: CreatorPlatform[] = [];
+  if (creator.portfolio) {
+    const isBehance = creator.portfolio.toLowerCase().includes("behance.net");
     if (!isBehance) {
-      platforms.push({ label: "Website", href: talent.portfolio, Icon: FaGlobe });
+      platforms.push({ label: "Website", href: creator.portfolio, Icon: FaGlobe });
     }
-    if (isBehance && !talent.behance) {
-      platforms.push({ label: "Behance", href: talent.portfolio, Icon: FaBehance });
+    if (isBehance && !creator.behance) {
+      platforms.push({ label: "Behance", href: creator.portfolio, Icon: FaBehance });
     }
   }
-  if (talent.behance) {
-    platforms.push({ label: "Behance", href: talent.behance, Icon: FaBehance });
+  if (creator.behance) {
+    platforms.push({ label: "Behance", href: creator.behance, Icon: FaBehance });
   }
-  if (talent.linkedin) {
-    platforms.push({ label: "LinkedIn", href: talent.linkedin, Icon: FaLinkedinIn });
+  if (creator.linkedin) {
+    platforms.push({ label: "LinkedIn", href: creator.linkedin, Icon: FaLinkedinIn });
   }
   return platforms;
 }
 
-function ProfileMark({ talent, className }: { talent: Talent; className: string }) {
+function ProfileMark({ creator, className }: { creator: Creator; className: string }) {
   return (
     <span aria-hidden="true" className={`grid flex-none place-items-center overflow-hidden bg-border/60 ${className}`}>
-      {talent.profileImage ? (
+      {creator.profileImage ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={talent.profileImage} alt="" className="h-full w-full object-cover" />
+        <img src={creator.profileImage} alt="" className="h-full w-full object-cover" />
       ) : (
         <span className="font-black tracking-[-0.06em] text-foreground/25">
-          {talent.name
+          {creator.name
             .split(" ")
             .map((part) => part[0])
             .slice(0, 2)
@@ -73,78 +73,78 @@ function ProfileMark({ talent, className }: { talent: Talent; className: string 
   );
 }
 
-export default async function TalentDetailPage({ params }: Params) {
+export default async function CreatorDetailPage({ params }: Params) {
   const { slug } = await params;
-  const talent = getTalent(slug);
-  if (!talent) notFound();
-  const platforms = platformsFor(talent);
+  const creator = getCreator(slug);
+  if (!creator) notFound();
+  const platforms = platformsFor(creator);
 
   return (
     <main className="flex-1 px-[clamp(20px,3vw,48px)] pb-20 pt-[clamp(30px,4vw,56px)]">
-      <BackLink href="/dashboard/talent">Back to talent</BackLink>
+      <BackLink href="/dashboard/creators">Back to creators</BackLink>
 
       <div className="mt-8 grid items-start grid-cols-[minmax(0,1fr)_minmax(300px,0.72fr)] gap-[clamp(28px,5vw,72px)] max-[900px]:grid-cols-1">
         <div className="min-w-0">
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-foreground pb-5">
         <div className="flex items-center gap-[clamp(16px,2vw,28px)]">
-          <ProfileMark talent={talent} className="h-[clamp(64px,8vw,104px)] w-[clamp(64px,8vw,104px)] rounded-full text-[clamp(22px,2.6vw,36px)]" />
+          <ProfileMark creator={creator} className="h-[clamp(64px,8vw,104px)] w-[clamp(64px,8vw,104px)] rounded-full text-[clamp(22px,2.6vw,36px)]" />
           <div>
             <span className="block text-[13px] font-extrabold uppercase tracking-[0.14em] text-primary">
-              {talent.category}
+              {creator.category}
             </span>
             <h1 className="mb-0 mt-3 text-[clamp(32px,4vw,58px)] uppercase leading-[0.95] tracking-[-0.045em]">
-              {talent.name}
+              {creator.name}
             </h1>
           </div>
         </div>
         <span className="text-[13px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground">
-          {talent.availability}
+          {creator.availability}
         </span>
       </div>
 
       <p className="my-[clamp(28px,4vw,48px)] max-w-[850px] text-[clamp(19px,2vw,28px)] leading-[1.3]">
-        {talent.craftNote}
+        {creator.craftNote}
       </p>
 
       <div className="grid grid-cols-3 border-t border-foreground max-[720px]:grid-cols-1">
         <div className={META_CELL}>
           <span className={META_LABEL}>Day rate estimate</span>
-          <strong className={META_VALUE}>{talent.dayRate}</strong>
+          <strong className={META_VALUE}>{creator.dayRate}</strong>
         </div>
         <div className={META_CELL}>
           <span className={META_LABEL}>Terms</span>
-          <strong className={META_VALUE}>{talent.terms}</strong>
+          <strong className={META_VALUE}>{creator.terms}</strong>
         </div>
         <div className={META_CELL}>
           <span className={META_LABEL}>Clearance</span>
           <strong className={META_VALUE}>
-            {talent.clearance === "cleared" ? "Cleared to engage" : "Sign-off pending"}
+            {creator.clearance === "cleared" ? "Cleared to engage" : "Sign-off pending"}
           </strong>
         </div>
         <div className={META_CELL}>
           <span className={META_LABEL}>Location</span>
-          <strong className={META_VALUE}>{talent.location}</strong>
+          <strong className={META_VALUE}>{creator.location}</strong>
         </div>
         <div className={META_CELL}>
           <span className={META_LABEL}>Engages as</span>
-          <strong className={META_VALUE}>{talent.entity}</strong>
+          <strong className={META_VALUE}>{creator.entity}</strong>
         </div>
         <div className={META_CELL}>
           <span className={META_LABEL}>Years active</span>
-          <strong className={META_VALUE}>{talent.yearsActive ?? "Not provided"}</strong>
+          <strong className={META_VALUE}>{creator.yearsActive ?? "Not provided"}</strong>
         </div>
         <div className={META_CELL}>
           <span className={META_LABEL}>Vouched by</span>
-          <strong className={META_VALUE}>{talent.vouchedBy}</strong>
+          <strong className={META_VALUE}>{creator.vouchedBy}</strong>
         </div>
         <div className={META_CELL}>
           <span className={META_LABEL}>Last engaged</span>
-          <strong className={META_VALUE}>{longDate(talent.lastEngaged)}</strong>
+          <strong className={META_VALUE}>{longDate(creator.lastEngaged)}</strong>
         </div>
         <div className={META_CELL}>
           <span className={META_LABEL}>Engagements</span>
           <strong className={META_VALUE}>
-            {talent.workedOn.length ? talent.workedOn.join(", ") : "—"}
+            {creator.workedOn.length ? creator.workedOn.join(", ") : "—"}
           </strong>
         </div>
       </div>
@@ -159,22 +159,22 @@ export default async function TalentDetailPage({ params }: Params) {
         <div className="mt-5 grid grid-cols-4 gap-x-6 max-[900px]:grid-cols-2 max-[560px]:grid-cols-1">
           <div className="border-b border-border py-5">
             <span className={META_LABEL}>Follower count</span>
-            <strong className={AUDIENCE_VALUE}>{talent.followerCount ?? "Not provided"}</strong>
-            {talent.followerPlatform ? (
-              <span className="mt-1 block text-[12px] text-muted-foreground">{talent.followerPlatform}</span>
+            <strong className={AUDIENCE_VALUE}>{creator.followerCount ?? "Not provided"}</strong>
+            {creator.followerPlatform ? (
+              <span className="mt-1 block text-[12px] text-muted-foreground">{creator.followerPlatform}</span>
             ) : null}
           </div>
           <div className="border-b border-border py-5">
             <span className={META_LABEL}>Gender</span>
-            <strong className={AUDIENCE_VALUE}>{talent.gender ?? "Not provided"}</strong>
+            <strong className={AUDIENCE_VALUE}>{creator.gender ?? "Not provided"}</strong>
           </div>
           <div className="border-b border-border py-5">
             <span className={META_LABEL}>Age</span>
-            <strong className={AUDIENCE_VALUE}>{talent.age ?? "Not provided"}</strong>
+            <strong className={AUDIENCE_VALUE}>{creator.age ?? "Not provided"}</strong>
           </div>
           <div className="border-b border-border py-5">
             <span className={META_LABEL}>Niche</span>
-            <strong className={AUDIENCE_VALUE}>{talent.niche ?? "Not provided"}</strong>
+            <strong className={AUDIENCE_VALUE}>{creator.niche ?? "Not provided"}</strong>
           </div>
         </div>
       </section>
@@ -184,9 +184,9 @@ export default async function TalentDetailPage({ params }: Params) {
           <h2 className="mb-[18px] mt-0 text-[12px] uppercase tracking-[0.14em] text-primary">
             Work history
           </h2>
-          {talent.workHistory?.length ? (
+          {creator.workHistory?.length ? (
             <ul className="m-0 list-none p-0">
-              {talent.workHistory.map((entry) => (
+              {creator.workHistory.map((entry) => (
                 <li key={`${entry.company}-${entry.role}-${entry.period}`} className={HISTORY_ROW}>
                   <div className="flex items-start justify-between gap-5 max-[560px]:flex-col max-[560px]:gap-1">
                     <div>
@@ -213,7 +213,7 @@ export default async function TalentDetailPage({ params }: Params) {
             Tags
           </h2>
           <ul className="m-0 list-none p-0">
-            {talent.tags.map((tag) => (
+            {creator.tags.map((tag) => (
               <li
                 key={tag}
                 className="relative border-t border-border py-2.5 pl-[22px] text-[16px] leading-[1.35] before:absolute before:left-0 before:top-[17px] before:h-[7px] before:w-[7px] before:bg-primary before:content-['']"
@@ -235,7 +235,7 @@ export default async function TalentDetailPage({ params }: Params) {
                   href={href}
                   target="_blank"
                   rel="noreferrer"
-                  aria-label={`Open ${talent.name} on ${label}`}
+                  aria-label={`Open ${creator.name} on ${label}`}
                   className="group flex items-center justify-between gap-3 border border-border p-3 text-foreground no-underline transition-colors hover:border-foreground hover:bg-foreground hover:text-white focus-visible:outline-none"
                 >
                   <span className="flex items-center gap-3">
@@ -264,15 +264,15 @@ export default async function TalentDetailPage({ params }: Params) {
             Contact
           </h2>
           <ul className="m-0 list-none p-0 text-[16px] leading-[1.35]">
-            {talent.email ? (
+            {creator.email ? (
               <li className="border-t border-border py-2.5">
-                <a href={`mailto:${talent.email}`} className="text-foreground hover:text-primary">
-                  {talent.email}
+                <a href={`mailto:${creator.email}`} className="text-foreground hover:text-primary">
+                  {creator.email}
                 </a>
               </li>
             ) : null}
-            {talent.phone ? <li className="border-t border-border py-2.5">{talent.phone}</li> : null}
-            {!talent.email && !talent.phone ? (
+            {creator.phone ? <li className="border-t border-border py-2.5">{creator.phone}</li> : null}
+            {!creator.email && !creator.phone ? (
               <li className="border-t border-border py-2.5 text-muted-foreground">Public contact links not yet confirmed.</li>
             ) : null}
           </ul>
@@ -284,12 +284,12 @@ export default async function TalentDetailPage({ params }: Params) {
         <aside className="min-w-0 max-[900px]:order-first">
           <div className="border border-border bg-background">
             <div className="relative aspect-[4/5] overflow-hidden bg-transparent">
-              {talent.featuredImage ? (
+              {creator.featuredImage ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={talent.featuredImage} alt={`${talent.name} featured work`} className="h-full w-full object-cover" />
+                <img src={creator.featuredImage} alt={`${creator.name} featured work`} className="h-full w-full object-cover" />
               ) : (
                 <span className="grid h-full w-full place-items-center text-[clamp(64px,10vw,140px)] font-black tracking-[-0.08em] text-foreground/20">
-                  {talent.name
+                  {creator.name
                     .split(" ")
                     .map((part) => part[0])
                     .slice(0, 2)
@@ -303,7 +303,7 @@ export default async function TalentDetailPage({ params }: Params) {
                 Featured work
               </span>
               <span className="mt-1 block text-[13px] text-muted-foreground">
-                {talent.featuredImage ? "Public portfolio image" : "No verified project image yet"}
+                {creator.featuredImage ? "Public portfolio image" : "No verified project image yet"}
               </span>
             </div>
           </div>
