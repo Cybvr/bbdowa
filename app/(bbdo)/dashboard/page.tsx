@@ -12,9 +12,9 @@ export default function HomePage() {
         </h1>
       </div>
 
-      <section aria-labelledby="bantaba-heading" className="border-t-2 border-foreground py-5">
-        <h2 id="bantaba-heading" className="m-0 text-[12px] uppercase tracking-[0.14em] text-primary">
-          Bantaba
+      <section aria-labelledby="akwaaba-heading" className="border-t-2 border-foreground py-5">
+        <h2 id="akwaaba-heading" className="m-0 text-[12px] uppercase tracking-[0.14em] text-primary">
+          Akwaaba
         </h2>
         <p className="mb-0 mt-6 max-w-[30ch] text-[clamp(24px,3vw,40px)] uppercase leading-[1] tracking-[-0.035em]">
           Welcome to Bantaba, our shared home for agency information and working knowledge.
@@ -36,16 +36,18 @@ export default function HomePage() {
 
         <article className="border-t-2 border-foreground py-5 max-[820px]:pb-8">
           <h3 className="m-0 text-[12px] uppercase tracking-[0.14em] text-primary">Mission</h3>
-          <p className="mb-0 mt-6 max-w-[20ch] text-[clamp(24px,3vw,40px)] uppercase leading-[1] tracking-[-0.035em]">
-            We make work that moves business, culture and people.
+          <p className="mb-0 mt-6 max-w-[24ch] text-[clamp(24px,3vw,40px)] uppercase leading-[1] tracking-[-0.035em]">
+            Compelling commercial content that drives brand value and grows our clients&apos;
+            businesses.
           </p>
         </article>
 
         <article className="border-t-2 border-foreground py-5 max-[820px]:pb-8">
           <h3 className="m-0 text-[12px] uppercase tracking-[0.14em] text-primary">Vision</h3>
           <p className="mb-0 mt-6 max-w-[27ch] text-[clamp(19px,2vw,28px)] leading-[1.32]">
-            A Lagos studio connected to the BBDO network, bringing strategy, creative, production
-            and social together for brands across the region.
+            To become the most preferred shapers of choice across the African continent. From
+            Lagos, we develop culturally relevant, insightful and effective campaigns across the
+            West African sub-region, in the BBDO tradition of The Work, The Work, The Work.
           </p>
         </article>
 
