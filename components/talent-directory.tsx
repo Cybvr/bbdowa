@@ -235,7 +235,7 @@ function FilterControls({
           <option value="unconfirmed">Unconfirmed</option>
         </select>
       </label>
-      <label className="flex flex-col gap-3 border-2 border-foreground px-3 py-3 text-[11px] font-extrabold uppercase tracking-[0.12em]">
+      <label className="flex flex-col gap-3 text-[11px] font-extrabold uppercase tracking-[0.12em]">
         <span className="flex items-center justify-between text-muted-foreground">
           <span>₦0</span>
           <span>₦100k</span>
@@ -375,7 +375,7 @@ export function TalentDirectory({
   return (
     <>
       <div className="my-7 grid items-start gap-8 min-[801px]:grid-cols-[240px_minmax(0,1fr)] min-[801px]:gap-10">
-        <aside className="sticky top-6 hidden border border-border bg-background p-5 min-[801px]:block">
+        <aside className="sticky top-6 hidden bg-background min-[801px]:block">
           <h2 className="mb-5 mt-0 text-[13px] uppercase tracking-[0.14em]">Filter talent</h2>
           <FilterControls
             search={search}
@@ -544,7 +544,7 @@ export function TalentDirectory({
             onClick={() => setFilterOpen(false)}
             className="absolute inset-0 cursor-default bg-foreground/40"
           />
-          <aside className="absolute inset-y-0 left-0 w-[min(88vw,360px)] overflow-y-auto border-r border-border bg-background p-5 shadow-2xl">
+          <aside className="absolute inset-y-0 left-0 w-[min(88vw,360px)] overflow-y-auto bg-background shadow-2xl">
             <div className="mb-6 flex items-center justify-between gap-4">
               <h2 className="m-0 text-[13px] uppercase tracking-[0.14em]">Filter talent</h2>
               <button

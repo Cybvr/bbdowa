@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { MARKETING_NAV } from "@/lib/nav";
+import { ProfileNav } from "@/components/profile-nav";
 
 const LINK =
   "font-mono text-[11px] uppercase tracking-[0.16em] text-white no-underline hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white max-[760px]:flex max-[760px]:min-h-[48px] max-[760px]:items-center max-[760px]:text-[13px]";
@@ -51,6 +52,10 @@ export function Header() {
           ))}
         </ul>
       </nav>
+
+      <div className="shrink-0 max-[760px]:ml-auto">
+        <ProfileNav />
+      </div>
     </header>
   );
 }

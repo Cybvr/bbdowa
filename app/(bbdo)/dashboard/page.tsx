@@ -38,13 +38,13 @@ export default function HomePage() {
         <aside className="border-t-2 border-foreground py-5" aria-labelledby="latest-news">
           <div className="flex items-baseline justify-between gap-4">
             <h3 id="latest-news" className="m-0 text-[12px] uppercase tracking-[0.14em] text-primary">
-              Latest news
+              Latest updates
             </h3>
             <Link
               href="/dashboard/blog"
               className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-foreground underline underline-offset-4 hover:text-primary focus-visible:text-primary"
             >
-              All posts
+              All updates
             </Link>
           </div>
           <ul className="m-0 mt-4 list-none border-t border-border p-0">

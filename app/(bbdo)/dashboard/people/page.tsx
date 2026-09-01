@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-export const metadata: Metadata = { title: "People" };
+export const metadata: Metadata = { title: "Directory" };
 
 type Role = { title: string; people: string[] };
 
@@ -24,8 +24,7 @@ const BRANCHES: { name: string; roles: Role[] }[] = [
     name: "Creative & culture",
     roles: [
       { title: "Chief Creative Officer", people: ["Jide Pinheiro"] },
-      { title: "Creative Director", people: ["Emeka Otoba"] },
-      { title: "Art Directors", people: ["Stephen Ifebajo", "Lionel Agbakoba", "Nonso Malogo"] },
+      { title: "Art Directors", people: ["Stephen Ifebajo", "Lionel Agbakoba"] },
       { title: "Copywriter", people: ["Esther Felix"] },
     ],
   },
@@ -165,25 +164,31 @@ export default function PeoplePage() {
     <main className="flex-1 px-[clamp(20px,3vw,48px)] pb-20 pt-[clamp(30px,4vw,56px)]">
       <div className="flex flex-wrap items-baseline justify-between gap-4 border-b border-foreground pb-5">
         <h1 className="m-0 text-[clamp(32px,4vw,58px)] uppercase leading-[0.95] tracking-[-0.045em]">
-          People
+          Directory
         </h1>
         <span className="text-[13px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground">
           Operating model
         </span>
       </div>
 
-      <p className="my-[clamp(34px,5vw,68px)] max-w-[32ch] text-[clamp(24px,3.2vw,44px)] uppercase leading-[1] tracking-[-0.035em]">
-        We build each job around a small core team.{" "}
-        <em className="not-italic text-primary">
-          Specialists join when their input is needed
-        </em>{" "}
-        and stay involved through delivery.
-      </p>
-
       <section className="mt-[clamp(36px,5vw,68px)]" aria-label="Agency organogram">
         <div className="mx-auto w-[min(320px,100%)] bg-foreground px-[22px] py-[18px] text-center text-white max-[720px]:mb-6">
-          <strong className="block text-[18px] uppercase">Managing Director</strong>
-          <Person name="Colin Framer" onDark />
+          <strong className="block text-[18px] uppercase">Casers Group Chairman</strong>
+          <Person name="Enyi Odigbo" onDark />
+        </div>
+        <div
+          aria-hidden="true"
+          className="mx-auto h-8 w-px bg-foreground max-[720px]:hidden"
+        />
+        <div className="relative mx-auto grid w-[min(720px,100%)] grid-cols-2 gap-4 pt-8 before:absolute before:left-1/4 before:right-1/4 before:top-0 before:h-px before:bg-foreground before:content-[''] max-[720px]:mb-6 max-[720px]:grid-cols-1 max-[720px]:gap-3 max-[720px]:pt-0 max-[720px]:before:hidden">
+          <div className="relative bg-foreground px-[22px] py-[18px] text-center text-white before:absolute before:-top-8 before:left-1/2 before:h-8 before:w-px before:bg-foreground before:content-[''] max-[720px]:before:hidden">
+            <strong className="block text-[18px] uppercase">Managing Director</strong>
+            <Person name="Colin Framer" onDark />
+          </div>
+          <div className="relative bg-foreground px-[22px] py-[18px] text-center text-white before:absolute before:-top-8 before:left-1/2 before:h-8 before:w-px before:bg-foreground before:content-[''] max-[720px]:before:hidden">
+            <strong className="block text-[18px] uppercase">Interim Group Executive Lead — Nigeria</strong>
+            <Person name="Briand Ngondi" onDark />
+          </div>
         </div>
         <div
           aria-hidden="true"

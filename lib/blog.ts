@@ -7,15 +7,24 @@ export type BlogPost = {
   publishedAt: string;
   category: BlogCategory;
   sourceName: string;
-  sourceUrl: string;
+  sourceUrl?: string;
 };
 
 /**
  * Curated external coverage and documented work related to BBDO West Africa.
- * Keep excerpts short and paraphrased; the source URL is the canonical place
- * for the full article or campaign record.
+ * Keep excerpts short and paraphrased; when present, the source URL is the
+ * canonical place for the full article or campaign record.
  */
 export const BLOG_POSTS: BlogPost[] = [
+  {
+    slug: "briand-ngondi-interim-group-executive-lead-nigeria",
+    title: "Briand Ngondi appointed Interim Group Executive Lead for Nigeria",
+    excerpt:
+      "Briand Ngondi, currently overseeing WECA operations, will assume responsibility as Interim Group Executive Lead for Nigeria from 14 September 2026. His immediate mandate is to restore stability, strengthen delivery and rebuild confidence across the business.",
+    publishedAt: "2026-09-01",
+    category: "News",
+    sourceName: "BBDO West Africa",
+  },
   {
     slug: "bbdo-west-africa-strategy-lead-lagos",
     title: "BBDO West Africa is looking for a strategy lead in Lagos",

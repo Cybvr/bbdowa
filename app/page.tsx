@@ -22,7 +22,7 @@ export default function MarketingHomePage() {
       <main className="flex-1">
         <section
           aria-labelledby="welcome"
-          className="px-[clamp(20px,5vw,72px)] pb-[clamp(28px,4vw,44px)] pt-[clamp(24px,4vw,56px)]"
+          className="bg-primary px-[clamp(20px,5vw,72px)] pb-[clamp(28px,4vw,44px)] pt-[clamp(24px,4vw,56px)]"
         >
           <h1 id="welcome" className="sr-only">
             Akwaaba

@@ -73,14 +73,16 @@ export default async function BlogEntryPage({ params }: Params) {
               <span className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground">
                 Source: {post.sourceName}
               </span>
-              <a
-                href={post.sourceUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex min-h-[44px] items-center bg-primary px-4 text-[11px] font-extrabold uppercase tracking-[0.12em] text-white no-underline hover:bg-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
-              >
-                Read the full article ↗
-              </a>
+              {post.sourceUrl ? (
+                <a
+                  href={post.sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-[44px] items-center bg-primary px-4 text-[11px] font-extrabold uppercase tracking-[0.12em] text-white no-underline hover:bg-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+                >
+                  Read the full article ↗
+                </a>
+              ) : null}
             </div>
           </div>
         </div>

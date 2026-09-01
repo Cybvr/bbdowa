@@ -27,14 +27,18 @@ import { ProfileNav } from "@/components/profile-nav";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 const TOP_TEXT =
-  "flex min-h-[44px] w-full items-center gap-3 rounded-lg px-3 py-2.5 font-mono text-[14px] font-medium leading-none text-primary-foreground/85 no-underline transition-colors hover:bg-primary-foreground/12 hover:text-primary-foreground focus-visible:bg-primary-foreground/12 focus-visible:text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-primary-foreground";
+  "flex min-h-[42px] w-full items-center gap-2.5 rounded-lg px-2.5 py-2 font-mono text-[13px] font-medium leading-none text-primary-foreground/85 no-underline transition-colors hover:bg-primary-foreground/12 hover:text-primary-foreground focus-visible:bg-primary-foreground/12 focus-visible:text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-primary-foreground";
 
 const MENU_TEXT =
-  "flex min-h-[38px] w-full items-center gap-2 rounded-lg px-3 py-2 font-mono text-[13px] font-medium text-primary-foreground/85 no-underline transition-colors hover:bg-primary-foreground/12 hover:text-primary-foreground focus-visible:bg-primary-foreground/12 focus-visible:text-primary-foreground focus-visible:outline-none";
+  "flex min-h-[36px] w-full items-center gap-2 rounded-lg px-2.5 py-1.5 font-mono text-[12px] font-medium text-primary-foreground/85 no-underline transition-colors hover:bg-primary-foreground/12 hover:text-primary-foreground focus-visible:bg-primary-foreground/12 focus-visible:text-primary-foreground focus-visible:outline-none";
 
 const NAV_ICONS: Record<string, IconType> = {
   Home: LuHouse,
   Dashboard: LuLayoutDashboard,
+  Assets: LuBookOpen,
+  Directory: LuUsers,
+  Updates: LuNewspaper,
+  Company: LuInfo,
   About: LuInfo,
   People: LuUsers,
   Careers: LuBriefcaseBusiness,
@@ -42,6 +46,7 @@ const NAV_ICONS: Record<string, IconType> = {
   Products: LuPackage,
   Workflows: LuWorkflow,
   Resources: LuBookOpen,
+  "Brand assets": LuBookOpen,
   Blog: LuNewspaper,
   Agency: LuWorkflow,
   Pitch: LuPresentation,
@@ -61,7 +66,7 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
 
   return (
-    <ul className="m-0 flex list-none flex-col items-stretch gap-1 p-0">
+    <ul className="m-0 flex list-none flex-col items-stretch gap-0.5 p-0">
       {NAV_ITEMS.map((item) => {
         if (item.kind === "link") {
           const current = pathname === item.href;
@@ -170,7 +175,7 @@ export function DashboardHeader() {
       {/* Desktop sidebar */}
       <nav
         aria-label="Primary navigation"
-        className="hidden flex-col gap-6 overflow-y-auto rounded-2xl bg-primary p-4 nav:fixed nav:inset-y-4 nav:left-4 nav:flex nav:w-[224px]"
+        className="hidden flex-col gap-3 overflow-y-auto rounded-2xl bg-primary p-3 nav:fixed nav:inset-y-4 nav:left-4 nav:flex nav:w-[208px]"
       >
         <Logo />
         <NavList />
@@ -187,7 +192,7 @@ export function DashboardHeader() {
           >
             <LuMenu aria-hidden="true" className="h-6 w-6" />
           </SheetTrigger>
-          <SheetContent side="left" className="w-[min(300px,84vw)] gap-6 overflow-y-auto p-4">
+          <SheetContent side="left" className="w-[min(280px,84vw)] gap-3 overflow-y-auto p-3">
             <SheetTitle className="sr-only">Navigation</SheetTitle>
             <Logo />
             <NavList onNavigate={() => setMobileOpen(false)} />

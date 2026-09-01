@@ -12,7 +12,7 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen flex-1 flex-col nav:flex-row">
       <DashboardHeader />
-      <div className="min-w-0 flex-1 nav:ml-[248px]">{children}</div>
+      <div className="min-w-0 flex-1 nav:ml-[224px]">{children}</div>
     </div>
   );
 }

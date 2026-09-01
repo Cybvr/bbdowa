@@ -61,7 +61,11 @@ const GROUPS: { title: string; links: Resource[] }[] = [
   {
     title: "Internal",
     links: [
-      { label: "Microsoft Teams", meta: "Team link" },
+      {
+        label: "Microsoft Teams",
+        meta: "Team link",
+        href: "https://teams.microsoft.com/l/team/19%3AFC6ZMVMFoEbe1WWMY555j6wfpeaN-olxhL1bmLmnkHg1%40thread.tacv2/conversations?groupId=863aed4a-20d5-4a27-a83b-38c7a6e0dedb&tenantId=6aa7a9a2-4b93-43c4-8311-ec14d3acf30c",
+      },
       { label: "Company resources", meta: "Shared drive" },
     ],
   },

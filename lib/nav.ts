@@ -28,7 +28,6 @@ export type NavItem =
 
 export const NAV_ITEMS: NavItem[] = [
   { kind: "link", label: "Home", href: "/dashboard" },
-  { kind: "link", label: "People", href: "/dashboard/people" },
   { kind: "link", label: "Projects", href: "/dashboard/projects" },
   { kind: "link", label: "Products", href: "/dashboard/products" },
   {
@@ -40,16 +39,24 @@ export const NAV_ITEMS: NavItem[] = [
       { label: "Pitch", href: "/dashboard/workflows/pitch" },
     ],
   },
-  { kind: "link", label: "Careers", href: "/dashboard/careers" },
   {
     kind: "menu",
-    label: "Resources",
-    match: ["/dashboard/resources", "/dashboard/blog", "/dashboard/brand"],
+    label: "Assets",
+    match: ["/dashboard/brand", "/dashboard/resources"],
     items: [
+      { label: "Brand assets", href: "/dashboard/brand" },
       { label: "Resources", href: "/dashboard/resources" },
-      { label: "Brand", href: "/dashboard/brand" },
-      { label: "Blog", href: "/dashboard/blog" },
     ],
   },
-  { kind: "link", label: "About", href: "/dashboard/about" },
+  { kind: "link", label: "Directory", href: "/dashboard/people" },
+  { kind: "link", label: "Updates", href: "/dashboard/blog" },
+  {
+    kind: "menu",
+    label: "Company",
+    match: ["/dashboard/about", "/dashboard/careers"],
+    items: [
+      { label: "About", href: "/dashboard/about" },
+      { label: "Careers", href: "/dashboard/careers" },
+    ],
+  },
 ];
