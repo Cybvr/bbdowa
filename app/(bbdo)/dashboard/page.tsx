@@ -12,6 +12,20 @@ export default function HomePage() {
         </h1>
       </div>
 
+      <section aria-labelledby="bantaba-heading" className="border-t-2 border-foreground py-5">
+        <h2 id="bantaba-heading" className="m-0 text-[12px] uppercase tracking-[0.14em] text-primary">
+          Bantaba
+        </h2>
+        <p className="mb-0 mt-6 max-w-[30ch] text-[clamp(24px,3vw,40px)] uppercase leading-[1] tracking-[-0.035em]">
+          Welcome to Bantaba, our shared home for agency information and working knowledge.
+        </p>
+        <p className="mb-0 mt-5 max-w-[56ch] text-[17px] leading-[1.4]">
+          A bantaba is the traditional gathering place, often a large meeting tree, where community
+          members congregate for dialogue, storytelling and collective decision-making. This is
+          ours.
+        </p>
+      </section>
+
       <section
         className="grid grid-cols-[minmax(0,0.9fr)_minmax(0,0.9fr)_minmax(260px,1fr)] gap-x-[clamp(24px,4vw,64px)] py-[clamp(24px,4vw,56px)] max-[820px]:grid-cols-1 max-[820px]:gap-y-0"
         aria-labelledby="home-introduction"
