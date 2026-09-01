@@ -119,7 +119,7 @@ export function PitchChecklist() {
                     show(next, true);
                   }
                 }}
-                className={`grid w-full cursor-pointer grid-cols-[26px_1fr_auto] items-center gap-2.5 border-0 border-l-4 px-[clamp(20px,3vw,34px)] py-3 text-left text-[16px] font-semibold leading-[1.15] focus-visible:outline-[3px] focus-visible:-outline-offset-[3px] focus-visible:outline-primary max-[860px]:w-auto max-[860px]:flex-none max-[860px]:grid-cols-[auto_auto_auto] max-[860px]:gap-2 max-[860px]:whitespace-nowrap max-[860px]:border max-[860px]:border-border max-[860px]:border-l-4 max-[860px]:px-[13px] max-[860px]:py-[9px] max-[860px]:text-[13px] ${
+                className={`grid w-full cursor-pointer grid-cols-[26px_1fr_auto] items-center gap-2.5 border-0 border-l-4 px-[clamp(20px,3vw,34px)] py-3 text-left text-[16px] font-semibold leading-[1.15] focus-visible:outline-none max-[860px]:w-auto max-[860px]:flex-none max-[860px]:grid-cols-[auto_auto_auto] max-[860px]:gap-2 max-[860px]:whitespace-nowrap max-[860px]:border max-[860px]:border-border max-[860px]:border-l-4 max-[860px]:px-[13px] max-[860px]:py-[9px] max-[860px]:text-[13px] ${
                   selected
                     ? "border-l-primary bg-foreground text-white"
                     : "border-l-transparent bg-transparent text-foreground hover:bg-foreground/5 max-[860px]:border-l-border"
@@ -171,7 +171,7 @@ export function PitchChecklist() {
                         }}
                         className="peer absolute h-0 w-0 opacity-0"
                       />
-                      <span className="mt-[3px] grid h-[22px] w-[22px] place-items-center border-2 border-primary transition-colors duration-150 after:h-1.5 after:w-[11px] after:-rotate-45 after:scale-0 after:border-b-[3px] after:border-l-[3px] after:border-white after:transition-transform after:duration-150 after:content-[''] peer-checked:bg-primary peer-checked:after:scale-100 peer-focus-visible:outline-[3px] peer-focus-visible:outline-offset-[3px] peer-focus-visible:outline-foreground motion-reduce:transition-none motion-reduce:after:transition-none" />
+                      <span className="mt-[3px] grid h-[22px] w-[22px] place-items-center border-2 border-primary transition-colors duration-150 after:h-1.5 after:w-[11px] after:-rotate-45 after:scale-0 after:border-b-[3px] after:border-l-[3px] after:border-white after:transition-transform after:duration-150 after:content-[''] peer-checked:bg-primary peer-checked:after:scale-100 peer-focus-visible:outline-none motion-reduce:transition-none motion-reduce:after:transition-none" />
                       <span className="peer-checked:text-muted-foreground peer-checked:line-through peer-checked:decoration-primary">
                         {task}
                       </span>

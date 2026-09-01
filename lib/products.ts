@@ -81,8 +81,12 @@ export const PRODUCTS: Product[] = [
     slug: "talent-cloud",
     name: "Talent Cloud",
     avatar: "/images/products/talent-cloud.png",
-    status: "idea",
-    owner: null,
+    status: "active",
+    owner: {
+      name: "Jide Pinheiro",
+      role: "Product Owner",
+      avatar: "JP",
+    },
     users: ["Creative", "Production", "HR & Admin"],
     description:
       "A searchable directory of employees, freelancers, creators, directors and specialist partners.",
@@ -92,14 +96,18 @@ export const PRODUCTS: Product[] = [
     roadmap: ["Standardise profiles", "Import current shortlists", "Add availability and work samples"],
     reviewCadence: "Monthly",
     created: null,
-    targetDate: "2026-11-19",
+    targetDate: "2026-09-30",
   },
   {
     slug: "production-network",
     name: "Production Network",
     avatar: "/images/products/production-network.png",
-    status: "idea",
-    owner: null,
+    status: "active",
+    owner: {
+      name: "Tolu Badamassi",
+      role: "Product Owner",
+      avatar: "TB",
+    },
     users: ["Production", "Creative", "Client Service", "Finance"],
     description:
       "A managed directory of production companies, vendors, capabilities, costs and performance history.",
@@ -109,7 +117,7 @@ export const PRODUCTS: Product[] = [
     roadmap: ["Import the production shortlist", "Add rate cards", "Create post-project reviews"],
     reviewCadence: "Monthly",
     created: null,
-    targetDate: "2027-01-07",
+    targetDate: "2026-09-30",
   },
   {
     slug: "brand-brain",

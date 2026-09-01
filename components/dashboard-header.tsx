@@ -8,7 +8,6 @@ import {
   LuBookOpen,
   LuBriefcaseBusiness,
   LuChevronDown,
-  LuChevronRight,
   LuCircle,
   LuFolderKanban,
   LuHouse,
@@ -18,6 +17,7 @@ import {
   LuNewspaper,
   LuPackage,
   LuPresentation,
+  LuSparkles,
   LuUsers,
   LuWorkflow,
 } from "react-icons/lu";
@@ -26,17 +26,18 @@ import { NAV_ITEMS } from "@/lib/nav";
 import { ProfileNav } from "@/components/profile-nav";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
-const TOP_TEXT =
-  "flex min-h-[42px] w-full items-center gap-2.5 rounded-lg px-2.5 py-2 font-mono text-[13px] font-medium leading-none text-primary-foreground/85 no-underline transition-colors hover:bg-primary-foreground/12 hover:text-primary-foreground focus-visible:bg-primary-foreground/12 focus-visible:text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-primary-foreground";
+const NAV_TEXT =
+  "flex min-h-[42px] w-full items-center gap-2.5 rounded-lg px-2.5 py-2 font-mono text-[13px] font-medium leading-none text-primary-foreground/85 no-underline transition-colors hover:bg-primary-foreground/12 hover:text-primary-foreground focus-visible:bg-primary-foreground/12 focus-visible:text-primary-foreground focus-visible:outline-none";
 
-const MENU_TEXT =
-  "flex min-h-[36px] w-full items-center gap-2 rounded-lg px-2.5 py-1.5 font-mono text-[12px] font-medium text-primary-foreground/85 no-underline transition-colors hover:bg-primary-foreground/12 hover:text-primary-foreground focus-visible:bg-primary-foreground/12 focus-visible:text-primary-foreground focus-visible:outline-none";
+const NAV_ACTIVE = "bg-background !text-foreground hover:bg-background";
 
 const NAV_ICONS: Record<string, IconType> = {
   Home: LuHouse,
   Dashboard: LuLayoutDashboard,
   Assets: LuBookOpen,
   Directory: LuUsers,
+  Team: LuUsers,
+  Talent: LuSparkles,
   Updates: LuNewspaper,
   Company: LuInfo,
   About: LuInfo,
@@ -56,9 +57,9 @@ function sentenceCase(label: string) {
   return label.charAt(0).toUpperCase() + label.slice(1).toLowerCase();
 }
 
-function NavIcon({ label, small = false }: { label: string; small?: boolean }) {
+function NavIcon({ label }: { label: string }) {
   const Icon = NAV_ICONS[label] ?? LuCircle;
-  return <Icon aria-hidden="true" className={small ? "h-3.5 w-3.5" : "h-[17px] w-[17px]"} />;
+  return <Icon aria-hidden="true" className="h-[17px] w-[17px]" />;
 }
 
 function NavList({ onNavigate }: { onNavigate?: () => void }) {
@@ -69,14 +70,14 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
     <ul className="m-0 flex list-none flex-col items-stretch gap-0.5 p-0">
       {NAV_ITEMS.map((item) => {
         if (item.kind === "link") {
-          const current = pathname === item.href;
+          const current = pathname === item.href || pathname.startsWith(`${item.href}/`);
           return (
             <li key={item.label} className="w-full">
               <Link
                 href={item.href}
                 aria-current={current ? "page" : undefined}
                 onClick={onNavigate}
-                className={`${TOP_TEXT} ${current ? "bg-background !text-foreground hover:bg-background" : ""}`}
+                className={`${NAV_TEXT} ${current ? NAV_ACTIVE : ""}`}
               >
                 <NavIcon label={item.label} />
                 <span>{sentenceCase(item.label)}</span>
@@ -96,8 +97,8 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
               type="button"
               aria-expanded={open}
               onClick={() => setOpenMenu(open ? null : item.label)}
-              className={`cursor-pointer border-0 bg-transparent text-left ${TOP_TEXT} ${
-                sectionActive ? "bg-background !text-foreground hover:bg-background" : ""
+              className={`cursor-pointer border-0 text-left ${NAV_TEXT} ${
+                sectionActive ? NAV_ACTIVE : "bg-transparent"
               }`}
             >
               <NavIcon label={item.label} />
@@ -114,11 +115,10 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
                         href={entry.href}
                         aria-current={current ? "page" : undefined}
                         onClick={onNavigate}
-                        className={`${MENU_TEXT} ${current ? "bg-background !text-foreground" : ""}`}
+                        className={`${NAV_TEXT} ${current ? NAV_ACTIVE : ""}`}
                       >
-                        <NavIcon label={entry.label} small />
+                        <NavIcon label={entry.label} />
                         <span>{sentenceCase(entry.label)}</span>
-                        <LuChevronRight aria-hidden="true" className="ml-auto h-3.5 w-3.5 opacity-60" />
                       </Link>
                     </li>
                   );
@@ -140,7 +140,7 @@ function NavFooter({ onNavigate }: { onNavigate?: () => void }) {
         onClick={onNavigate}
         aria-label="Main site"
         title="Main site"
-        className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary-foreground/10 text-primary-foreground transition-colors hover:bg-primary-foreground/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-foreground"
+        className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary-foreground/10 text-primary-foreground transition-colors hover:bg-primary-foreground/20 focus-visible:outline-none"
       >
         <IoGlobeOutline aria-hidden="true" className="h-[18px] w-[18px]" />
       </Link>
@@ -188,7 +188,7 @@ export function DashboardHeader() {
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger
             aria-label="Open navigation"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-primary-foreground hover:bg-primary-foreground/12 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-foreground"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-primary-foreground hover:bg-primary-foreground/12 focus-visible:outline-none"
           >
             <LuMenu aria-hidden="true" className="h-6 w-6" />
           </SheetTrigger>

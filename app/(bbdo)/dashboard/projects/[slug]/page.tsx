@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PROJECTS, getProject } from "@/lib/projects";
+import { getUserByName, userHref } from "@/lib/users";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -29,12 +30,13 @@ export default async function ProjectDetailPage({ params }: Params) {
   if (!project) notFound();
 
   const provisional = project.placeholder ? "text-muted-foreground" : "";
+  const leadUser = getUserByName(project.lead);
 
   return (
     <main className="flex-1 px-[clamp(20px,3vw,48px)] pb-24 pt-[clamp(30px,4vw,56px)]">
       <Link
         href="/dashboard/projects"
-        className="mb-[26px] inline-flex min-h-[44px] items-center text-[12px] font-extrabold uppercase tracking-[0.1em] text-foreground no-underline before:mr-[9px] before:h-2.5 before:w-[18px] before:bg-primary before:content-[''] before:[clip-path:polygon(35%_0,35%_40%,100%_40%,100%_60%,35%_60%,35%_100%,0_50%)] hover:text-primary focus-visible:outline-[3px] focus-visible:outline-offset-4 focus-visible:outline-primary"
+        className="mb-[26px] inline-flex min-h-[44px] items-center text-[12px] font-extrabold uppercase tracking-[0.1em] text-foreground no-underline before:mr-[9px] before:h-2.5 before:w-[18px] before:bg-primary before:content-[''] before:[clip-path:polygon(35%_0,35%_40%,100%_40%,100%_60%,35%_60%,35%_100%,0_50%)] hover:text-primary focus-visible:outline-none"
       >
         All projects
       </Link>
@@ -124,7 +126,16 @@ export default async function ProjectDetailPage({ params }: Params) {
         <div className="flex min-h-[118px] flex-col justify-center gap-[7px] border-l border-border px-[clamp(18px,3vw,36px)] py-[22px] max-[760px]:min-h-[96px] max-[760px]:border-l-0 max-[760px]:border-t max-[760px]:border-t-border max-[760px]:px-0 max-[760px]:py-5">
           <span className={META_LABEL}>Project lead</span>
           <strong className={`${META_VALUE} ${project.lead ? "" : "text-muted-foreground"}`}>
-            {project.lead || "To be confirmed"}
+            {leadUser ? (
+              <Link
+                href={userHref(leadUser)}
+                className="text-foreground underline decoration-border underline-offset-4 hover:text-primary focus-visible:text-primary"
+              >
+                {project.lead}
+              </Link>
+            ) : (
+              project.lead || "To be confirmed"
+            )}
           </strong>
         </div>
       </section>

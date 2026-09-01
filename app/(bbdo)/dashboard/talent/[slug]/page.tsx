@@ -4,7 +4,7 @@ import type { IconType } from "react-icons";
 import { FaBehance, FaGlobe, FaLinkedinIn } from "react-icons/fa";
 import { FiArrowUpRight } from "react-icons/fi";
 import { BackLink } from "@/components/back-link";
-import { TALENT, getTalent, type Talent } from "@/lib/talent";
+import { TALENT, getTalent, type Talent } from "@/lib/users";
 import { longDate } from "@/lib/format";
 
 type Params = { params: Promise<{ slug: string }> };
@@ -236,7 +236,7 @@ export default async function TalentDetailPage({ params }: Params) {
                   target="_blank"
                   rel="noreferrer"
                   aria-label={`Open ${talent.name} on ${label}`}
-                  className="group flex items-center justify-between gap-3 border border-border p-3 text-foreground no-underline transition-colors hover:border-foreground hover:bg-foreground hover:text-white focus-visible:outline-[3px] focus-visible:outline-offset-[3px] focus-visible:outline-primary"
+                  className="group flex items-center justify-between gap-3 border border-border p-3 text-foreground no-underline transition-colors hover:border-foreground hover:bg-foreground hover:text-white focus-visible:outline-none"
                 >
                   <span className="flex items-center gap-3">
                     <span className="grid h-9 w-9 place-items-center bg-foreground text-white group-hover:bg-primary">

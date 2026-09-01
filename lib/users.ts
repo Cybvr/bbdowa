@@ -1,3 +1,15 @@
+export type UserType = "team" | "talent";
+
+export type TeamUser = {
+  type: "team";
+  slug: string;
+  name: string;
+  title: string;
+  department: string;
+  /** Public headshot; null/absent falls back to the placeholder avatar. */
+  profileImage?: string | null;
+};
+
 export type TalentAvailability = "open" | "busy" | "unconfirmed";
 
 export type TalentClearance = "cleared" | "pending";
@@ -12,6 +24,7 @@ export type TalentWorkHistory = {
 };
 
 export type Talent = {
+  type: "talent";
   slug: string;
   name: string;
   category: TalentCategory;
@@ -57,7 +70,85 @@ export type Talent = {
   craftNote: string;
 };
 
-export const TALENT: Talent[] = [
+export type User = TeamUser | Talent;
+
+const TEAM_RECORDS: Omit<TeamUser, "type">[] = [
+  {
+    slug: "enyi-odigbo",
+    name: "Enyi Odigbo",
+    title: "Casers Group Chairman",
+    department: "Leadership",
+    profileImage: "/images/team/enyi-odigbo.png",
+  },
+  {
+    slug: "colin-framer",
+    name: "Colin Framer",
+    title: "Managing Director",
+    department: "Leadership",
+  },
+  {
+    slug: "briand-ngondi",
+    name: "Briand Ngondi",
+    title: "Interim Group Executive Lead — Nigeria",
+    department: "Leadership",
+  },
+  {
+    slug: "samiat-basorun",
+    name: "Samiat Basorun",
+    title: "Account Manager",
+    department: "Client service",
+  },
+  {
+    slug: "jaiprakash-tekwani",
+    name: "Jaiprakash Tekwani",
+    title: "Strategy, Research & Measurement",
+    department: "Strategy & intelligence",
+    profileImage: "/images/talent/jai-tekwani-profile.jpeg",
+  },
+  {
+    slug: "jide-pinheiro",
+    name: "Jide Pinheiro",
+    title: "Chief Creative Officer",
+    department: "Creative & culture",
+  },
+  {
+    slug: "stephen-ifebajo",
+    name: "Stephen Ifebajo",
+    title: "Art Director",
+    department: "Creative & culture",
+  },
+  {
+    slug: "lionel-agbakoba",
+    name: "Lionel Agbakoba",
+    title: "Art Director",
+    department: "Creative & culture",
+  },
+  {
+    slug: "esther-felix",
+    name: "Esther Felix",
+    title: "Copywriter",
+    department: "Creative & culture",
+  },
+  {
+    slug: "linda-lysias-pepple",
+    name: "Linda Lysias-Pepple",
+    title: "Finance Manager",
+    department: "Agency operations",
+  },
+  {
+    slug: "tolu-badamassi",
+    name: "Tolu Badamassi",
+    title: "HR & Admin",
+    department: "Agency operations",
+  },
+];
+
+export const TEAM: TeamUser[] = TEAM_RECORDS.map((member) => ({
+  type: "team" as const,
+  ...member,
+}));
+
+const TALENT_RECORDS: Omit<Talent, "type">[] = [
   {
     slug: "isaac-afeyemi",
     name: "Isaac Fayemi",
@@ -627,6 +718,13 @@ export const TALENT: Talent[] = [
   },
 ];
 
+export const TALENT: Talent[] = TALENT_RECORDS.map((talent) => ({
+  type: "talent" as const,
+  ...talent,
+}));
+
+export const USERS: User[] = [...TEAM, ...TALENT];
+
 export const TALENT_CATEGORIES = [...new Set(TALENT.map((talent) => talent.category))].sort();
 
 /** Working rate for comparing dollar quotes against naira budgets. Update when the rate moves. */
@@ -649,4 +747,25 @@ export function getTalent(slug: string): Talent | undefined {
 
 export function talentHref(slug: string): string {
   return `/dashboard/talent/${slug}`;
+}
+
+export function getUser(slug: string): User | undefined {
+  return USERS.find((user) => user.slug === slug);
+}
+
+export function getUserByName(name: string): User | undefined {
+  return USERS.find((user) => user.name === name);
+}
+
+export function userHref(user: User): string {
+  return user.type === "talent" ? talentHref(user.slug) : `/dashboard/people/${user.slug}`;
+}
+
+export function userInitials(user: User): string {
+  return user.name
+    .split(/\s+/)
+    .map((part) => part.charAt(0))
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 }

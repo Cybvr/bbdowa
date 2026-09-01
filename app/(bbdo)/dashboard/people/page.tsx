@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getUserByName, userHref } from "@/lib/users";
 
 export const metadata: Metadata = { title: "Directory" };
 
@@ -46,7 +47,7 @@ const BRANCHES: { name: string; roles: Role[] }[] = [
     name: "Agency operations",
     roles: [
       { title: "Finance Manager", people: ["Linda Lysias-Pepple"] },
-      { title: "HR & Admin", people: ["Tolulope Badamassi"] },
+      { title: "HR & Admin", people: ["Tolu Badamassi"] },
     ],
   },
 ];
@@ -132,30 +133,47 @@ const CAPABILITIES = [
 ];
 
 function Person({ name, onDark = false }: { name: string; onDark?: boolean }) {
-  return (
-    <span
-      className={`mt-2 flex items-center gap-2 text-[12px] ${
-        onDark ? "justify-center text-white/80 text-[14px]" : "text-muted-foreground"
-      }`}
-    >
+  const user = getUserByName(name);
+  const className = `mt-2 flex items-center gap-2 text-[12px] no-underline ${
+    onDark
+      ? "justify-center text-[14px] text-white/80 hover:text-white focus-visible:text-white"
+      : "text-muted-foreground hover:text-primary focus-visible:text-primary"
+  }`;
+  const content = (
+    <>
       <span
         className={`relative inline-block h-[26px] w-[26px] flex-none overflow-hidden rounded-full border ${
           onDark ? "border-white/40 bg-white" : "border-border bg-background"
         }`}
       >
-        <span
-          className={`absolute left-1/2 top-1 h-2 w-2 -translate-x-1/2 rounded-full ${
-            onDark ? "bg-foreground" : "bg-muted-foreground"
-          }`}
-        />
-        <span
-          className={`absolute bottom-[3px] left-1/2 h-[9px] w-4 -translate-x-1/2 rounded-b-[4px] rounded-t-[10px] ${
-            onDark ? "bg-foreground" : "bg-muted-foreground"
-          }`}
-        />
+        {user?.profileImage ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={user.profileImage} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <>
+            <span
+              className={`absolute left-1/2 top-1 h-2 w-2 -translate-x-1/2 rounded-full ${
+                onDark ? "bg-foreground" : "bg-muted-foreground"
+              }`}
+            />
+            <span
+              className={`absolute bottom-[3px] left-1/2 h-[9px] w-4 -translate-x-1/2 rounded-b-[4px] rounded-t-[10px] ${
+                onDark ? "bg-foreground" : "bg-muted-foreground"
+              }`}
+            />
+          </>
+        )}
       </span>
       <span>{name}</span>
-    </span>
+    </>
+  );
+
+  return user ? (
+    <Link href={userHref(user)} className={className}>
+      {content}
+    </Link>
+  ) : (
+    <span className={className}>{content}</span>
   );
 }
 

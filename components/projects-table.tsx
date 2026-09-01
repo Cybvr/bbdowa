@@ -6,6 +6,7 @@ import { useState } from "react";
 import type { Project } from "@/lib/projects";
 import { projectHref } from "@/lib/projects";
 import { plural } from "@/lib/format";
+import { getUserByName, userHref } from "@/lib/users";
 
 const FILTERS = [
   { key: "all", label: "All" },
@@ -67,7 +68,7 @@ export function ProjectsTable({ projects }: { projects: Project[] }) {
                     move(FILTERS.length - 1);
                   }
                 }}
-                className={`min-h-[44px] cursor-pointer border-2 px-[18px] py-2.5 text-[12px] font-extrabold uppercase tracking-[0.1em] hover:border-primary hover:bg-primary hover:text-white focus-visible:outline-[3px] focus-visible:outline-offset-[3px] focus-visible:outline-primary ${
+                className={`min-h-[44px] cursor-pointer border-2 px-[18px] py-2.5 text-[12px] font-extrabold uppercase tracking-[0.1em] hover:border-primary hover:bg-primary hover:text-white focus-visible:outline-none ${
                   selected ? "border-foreground bg-foreground text-white" : "border-foreground bg-transparent text-foreground"
                 }`}
               >
@@ -101,6 +102,7 @@ export function ProjectsTable({ projects }: { projects: Project[] }) {
               <tbody>
                 {visible.map((project) => {
                   const href = projectHref(project.slug);
+                  const leadUser = getUserByName(project.lead);
                   return (
                     <tr
                       key={project.slug}
@@ -122,7 +124,7 @@ export function ProjectsTable({ projects }: { projects: Project[] }) {
                           <div>
                             <Link
                               href={href}
-                              className="text-[clamp(20px,2vw,29px)] font-extrabold leading-none tracking-[-0.025em] text-foreground no-underline after:ml-2 after:inline-block after:h-2.5 after:w-[18px] after:bg-primary after:align-middle after:content-[''] after:[clip-path:polygon(0_40%,65%_40%,65%_0,100%_50%,65%_100%,65%_60%,0_60%)] hover:text-primary focus-visible:text-primary focus-visible:outline-[3px] focus-visible:outline-offset-4 focus-visible:outline-primary"
+                              className="text-[clamp(20px,2vw,29px)] font-extrabold leading-none tracking-[-0.025em] text-foreground no-underline after:ml-2 after:inline-block after:h-2.5 after:w-[18px] after:bg-primary after:align-middle after:content-[''] after:[clip-path:polygon(0_40%,65%_40%,65%_0,100%_50%,65%_100%,65%_60%,0_60%)] hover:text-primary focus-visible:text-primary focus-visible:outline-none"
                             >
                               {project.name}
                             </Link>
@@ -146,7 +148,18 @@ export function ProjectsTable({ projects }: { projects: Project[] }) {
                           {project.status}
                         </span>
                       </td>
-                      <td className={`${TD} max-[900px]:hidden`}>{project.lead || "—"}</td>
+                      <td className={`${TD} max-[900px]:hidden`}>
+                        {leadUser ? (
+                          <Link
+                            href={userHref(leadUser)}
+                            className="text-foreground underline decoration-border underline-offset-4 hover:text-primary focus-visible:text-primary"
+                          >
+                            {project.lead}
+                          </Link>
+                        ) : (
+                          project.lead || "—"
+                        )}
+                      </td>
                     </tr>
                   );
                 })}

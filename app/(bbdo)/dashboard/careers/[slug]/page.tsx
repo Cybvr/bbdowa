@@ -128,7 +128,7 @@ export default async function CareerDetailPage({ params }: Params) {
             {isOpen ? (
               <Link
                 href={`/dashboard/careers/apply?role=${job.slug}`}
-                className="mt-8 inline-flex min-h-[48px] items-center bg-primary px-5 py-3 font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-white no-underline hover:bg-foreground focus-visible:outline-[3px] focus-visible:outline-offset-[3px] focus-visible:outline-primary"
+                className="mt-8 inline-flex min-h-[48px] items-center bg-primary px-5 py-3 font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-white no-underline hover:bg-foreground focus-visible:outline-none"
               >
                 Apply now
               </Link>

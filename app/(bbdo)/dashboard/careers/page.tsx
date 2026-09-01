@@ -63,7 +63,7 @@ export default function CareersPage() {
                 </span>
               </>
             );
-            const className = `${GRID} items-center border-b border-border py-6 max-[720px]:grid-cols-2 max-[720px]:gap-x-5 max-[720px]:gap-y-[18px] ${job.status === "open" ? "group text-foreground no-underline transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-[3px] focus-visible:outline-offset-[-3px] focus-visible:outline-primary" : "text-muted-foreground opacity-55"}`;
+            const className = `${GRID} items-center border-b border-border py-6 max-[720px]:grid-cols-2 max-[720px]:gap-x-5 max-[720px]:gap-y-[18px] ${job.status === "open" ? "group text-foreground no-underline transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-none" : "text-muted-foreground opacity-55"}`;
 
             return job.status === "open" ? (
               <Link key={job.slug} href={jobHref(job.slug)} id={job.slug} className={className}>

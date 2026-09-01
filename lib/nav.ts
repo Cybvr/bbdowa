@@ -48,7 +48,15 @@ export const NAV_ITEMS: NavItem[] = [
       { label: "Resources", href: "/dashboard/resources" },
     ],
   },
-  { kind: "link", label: "Directory", href: "/dashboard/people" },
+  {
+    kind: "menu",
+    label: "Directory",
+    match: ["/dashboard/people", "/dashboard/talent"],
+    items: [
+      { label: "Team", href: "/dashboard/people" },
+      { label: "Talent", href: "/dashboard/talent" },
+    ],
+  },
   { kind: "link", label: "Updates", href: "/dashboard/blog" },
   {
     kind: "menu",
