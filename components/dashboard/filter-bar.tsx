@@ -58,7 +58,7 @@ export function FilterBar<TabKey extends string, SortKey extends string>({
       <div className="flex flex-wrap items-center gap-3">
         {tabs && tabs.length > 0 && onTabChange ? (
           <div
-            className="flex flex-wrap gap-1.5 rounded-lg border border-border p-1"
+            className="flex h-9 items-center gap-1 rounded-lg border border-border p-1"
             role="tablist"
             aria-label={tabsLabel}
           >
@@ -92,7 +92,7 @@ export function FilterBar<TabKey extends string, SortKey extends string>({
                       move(tabs.length - 1);
                     }
                   }}
-                  className={`min-h-[36px] cursor-pointer rounded-md border-0 px-3 py-1.5 text-[13px] font-medium focus-visible:outline-none ${
+                  className={`flex h-full cursor-pointer items-center rounded-md border-0 px-3 text-[13px] font-medium focus-visible:outline-none ${
                     selected
                       ? "bg-foreground text-background"
                       : "bg-transparent text-muted-foreground hover:text-foreground"
