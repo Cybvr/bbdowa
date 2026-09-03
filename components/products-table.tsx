@@ -32,7 +32,7 @@ function dateValue(product: Product): number {
 
 const TH =
   "whitespace-nowrap border-b border-border pb-3 pl-0 pr-4 pt-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground";
-const TD = "border-b border-border pb-4 pl-0 pr-4 pt-4 align-middle text-[15px] leading-[1.3]";
+const TD = "border-b border-border pb-4 pl-0 pr-4 pt-4 align-middle text-[13px] leading-[1.35]";
 
 export function ProductsTable({ products }: { products: Product[] }) {
   const router = useRouter();

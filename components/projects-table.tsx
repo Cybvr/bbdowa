@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import type { Project } from "@/lib/projects";
-import { projectHref } from "@/lib/projects";
+import { projectHref, projectLiveDateLabel } from "@/lib/projects";
 import { plural } from "@/lib/format";
 import { getUserByName, userHref } from "@/lib/users";
 import { Badge, EmptyState } from "@/components/dashboard/ui";
@@ -32,7 +32,7 @@ function liveTime(project: Project): number {
 
 const TH =
   "whitespace-nowrap border-b border-border pb-3 pl-0 pr-4 pt-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground";
-const TD = "border-b border-border py-4 pl-0 pr-4 align-middle text-[15px] leading-[1.3]";
+const TD = "border-b border-border py-4 pl-0 pr-4 align-middle text-[13px] leading-[1.35]";
 
 export function ProjectsTable({ projects }: { projects: Project[] }) {
   const router = useRouter();
@@ -86,9 +86,8 @@ export function ProjectsTable({ projects }: { projects: Project[] }) {
                 <tr>
                   <th className={TH}>Project</th>
                   <th className={`${TH} max-[720px]:hidden`}>Client</th>
-                  <th className={`${TH} max-[1024px]:hidden`}>Fee</th>
-                  <th className={`${TH} max-[1024px]:hidden`}>Target</th>
-                  <th className={`${TH} max-[1024px]:hidden`}>Result so far</th>
+                  <th className={`${TH} max-[1024px]:hidden`}>Category</th>
+                  <th className={`${TH} max-[1024px]:hidden`}>Date</th>
                   <th className={TH}>Status</th>
                   <th className={`${TH} max-[900px]:hidden`}>Lead</th>
                 </tr>
@@ -118,25 +117,20 @@ export function ProjectsTable({ projects }: { projects: Project[] }) {
                           <div>
                             <Link
                               href={href}
-                              className="text-[16px] font-semibold leading-tight text-foreground no-underline hover:text-primary focus-visible:text-primary focus-visible:outline-none"
+                              className="text-[14px] font-semibold leading-tight text-foreground no-underline hover:text-primary focus-visible:text-primary focus-visible:outline-none"
                             >
                               {project.name}
                             </Link>
-                            <span className="mt-[5px] hidden text-[12px] leading-[1.35] text-muted-foreground max-[720px]:block">
+                            <span className="mt-[5px] hidden text-[13px] leading-[1.35] text-muted-foreground max-[720px]:block">
                               {project.client} · {project.category}
                             </span>
                           </div>
                         </div>
                       </td>
                       <td className={`${TD} max-[720px]:hidden`}>{project.client}</td>
-                      <td className={`${TD} max-[1024px]:hidden ${project.fee === "To be confirmed" ? "text-muted-foreground" : ""}`}>
-                        {project.fee}
-                      </td>
-                      <td className={`${TD} max-[1024px]:hidden ${project.target === "To be confirmed" ? "text-muted-foreground" : ""}`}>
-                        {project.target}
-                      </td>
-                      <td className={`${TD} max-[1024px]:hidden ${project.result === "To be confirmed" ? "text-muted-foreground" : ""}`}>
-                        {project.result}
+                      <td className={`${TD} max-[1024px]:hidden text-muted-foreground`}>{project.category}</td>
+                      <td className={`${TD} max-[1024px]:hidden whitespace-nowrap text-muted-foreground`}>
+                        {projectLiveDateLabel(project)}
                       </td>
                       <td className={TD}>
                         <Badge tone={project.status === "live" ? "active" : "neutral"}>{project.status}</Badge>
