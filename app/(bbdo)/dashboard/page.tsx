@@ -9,6 +9,25 @@ import {
   projectsWithTrackedTarget,
 } from "@/lib/projects";
 import { PageHeader, Panel, SectionHeading, StatItem, StatRow, TextLink } from "@/components/dashboard/ui";
+import { NAV_ICON_SET, type NavIconComponent } from "@/components/nav-icons";
+
+type ActionTile = {
+  label: string;
+  href: string;
+  description: string;
+  Icon: NavIconComponent;
+};
+
+const ACTIONS: ActionTile[] = [
+  { label: "Projects", href: "/dashboard/projects", description: "Live campaigns and targets", Icon: NAV_ICON_SET.Projects },
+  { label: "Products", href: "/dashboard/products", description: "Client brands and lines", Icon: NAV_ICON_SET.Products },
+  { label: "Workflows", href: "/dashboard/workflows/agency", description: "Agency and pitch playbooks", Icon: NAV_ICON_SET.Workflows },
+  { label: "Assets", href: "/dashboard/brand", description: "Brand kit and resources", Icon: NAV_ICON_SET.Assets },
+  { label: "Directory", href: "/dashboard/people", description: "Team and creators", Icon: NAV_ICON_SET.Directory },
+  { label: "Updates", href: "/dashboard/blog", description: "Latest agency news", Icon: NAV_ICON_SET.Updates },
+  { label: "Careers", href: "/dashboard/careers", description: "Open roles and referrals", Icon: NAV_ICON_SET.Careers },
+  { label: "About", href: "/dashboard/about", description: "Who we are and how we work", Icon: NAV_ICON_SET.About },
+];
 
 export default function HomePage() {
   const latestPosts = BLOG_POSTS.slice(0, 3);
@@ -57,6 +76,24 @@ export default function HomePage() {
             detail={<TextLink href="/dashboard/projects">View projects</TextLink>}
           />
         </StatRow>
+      </section>
+
+      <section className="mt-10" aria-labelledby="jump-in-heading">
+        <SectionHeading id="jump-in-heading">Jump in</SectionHeading>
+        <ul className="m-0 grid list-none grid-cols-2 gap-3 p-0 sm:grid-cols-4">
+          {ACTIONS.map(({ label, href, description, Icon }) => (
+            <li key={href}>
+              <Link
+                href={href}
+                className="group flex h-full flex-col gap-2.5 rounded-xl border border-border bg-background p-4 text-foreground no-underline hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              >
+                <Icon className="h-6 w-6 shrink-0 text-muted-foreground group-hover:text-foreground" />
+                <span className="text-[14px] font-semibold leading-none">{label}</span>
+                <span className="text-[12px] leading-[1.35] text-muted-foreground">{description}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
       </section>
 
       <section className="mt-10 grid grid-cols-1 gap-5 lg:grid-cols-3" aria-labelledby="home-introduction">
