@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PageHeader, SectionHeading } from "@/components/dashboard/ui";
 
 export const metadata: Metadata = {
   title: "Brand",
@@ -24,18 +25,9 @@ const ABOUT: string[] = [
 ];
 
 const MANTRA: { phrase: string; meaning: string }[] = [
-  {
-    phrase: "Together",
-    meaning: "We bring the right people and perspectives into the conversation before we decide.",
-  },
-  {
-    phrase: "We make work",
-    meaning: "Conversation must become something real: an idea people can see, hear, use and share.",
-  },
-  {
-    phrase: "That moves",
-    meaning: "The work must change something—business, culture, behaviour or the people it reaches.",
-  },
+  { phrase: "Together", meaning: "We bring the right people and perspectives into the conversation before we decide." },
+  { phrase: "We make work", meaning: "Conversation must become something real: an idea people can see, hear, use and share." },
+  { phrase: "That moves", meaning: "The work must change something—business, culture, behaviour or the people it reaches." },
 ];
 
 const VOICE: string[] = [
@@ -85,10 +77,8 @@ const LOGO_RULES: string[] = [
   "Do not recolour, stretch, outline, or add effects to the logo.",
 ];
 
-const META = "text-[13px] font-extrabold uppercase tracking-[0.1em] text-muted-foreground";
-const SECTION_TITLE = "mb-1 mt-0 text-[13px] font-extrabold uppercase tracking-[0.16em] text-primary";
-const SUB_TITLE = "mb-3 mt-0 text-[13px] font-extrabold uppercase tracking-[0.16em] text-muted-foreground";
-const PROSE = "mb-4 mt-0 max-w-[68ch] text-[clamp(16px,1.5vw,20px)] leading-[1.5]";
+const META = "text-[13px] text-muted-foreground";
+const PROSE = "mb-4 mt-0 max-w-[68ch] text-[15px] leading-[1.55]";
 
 function sectionTitle(id: string) {
   const index = SECTIONS.findIndex((section) => section.id === id);
@@ -97,24 +87,17 @@ function sectionTitle(id: string) {
 
 export default function BrandPage() {
   return (
-    <main className="flex-1 px-[clamp(20px,3vw,48px)] pb-20 pt-[clamp(30px,4vw,56px)]">
-      <div className="flex flex-wrap items-baseline justify-between gap-4 border-b border-foreground pb-5">
-        <h1 className="m-0 text-[clamp(32px,4vw,58px)] uppercase leading-[0.95] tracking-[-0.04em]">
-          Brand
-        </h1>
-        <span className="text-[13px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground">
-          Together, we make work that moves
-        </span>
-      </div>
+    <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
+      <PageHeader title="Brand" meta="Together, we make work that moves" />
 
-      <div className="grid grid-cols-[180px_minmax(0,1fr)] gap-x-[clamp(28px,4vw,64px)] max-[820px]:grid-cols-1">
-        <nav aria-label="Contents" className="max-[820px]:mt-[clamp(20px,2.5vw,32px)]">
-          <ol className="sticky top-24 m-0 mt-[clamp(34px,4.5vw,56px)] flex list-none flex-col gap-y-2 p-0 max-[820px]:static max-[820px]:mt-0">
+      <div className="mt-8 grid grid-cols-1 gap-x-10 lg:grid-cols-[180px_minmax(0,1fr)]">
+        <nav aria-label="Contents">
+          <ol className="sticky top-8 m-0 flex list-none flex-col gap-y-2 p-0 max-[1024px]:static">
             {SECTIONS.map((section, index) => (
               <li key={section.id}>
                 <a
                   href={`#${section.id}`}
-                  className="text-[15px] leading-[1.4] text-foreground no-underline hover:text-primary focus-visible:text-primary"
+                  className="text-[14px] leading-[1.4] text-muted-foreground no-underline hover:text-primary focus-visible:text-primary"
                 >
                   {index + 1}. {section.label}
                 </a>
@@ -124,317 +107,226 @@ export default function BrandPage() {
         </nav>
 
         <div>
-      <div id="cover" className="mt-[clamp(34px,4.5vw,56px)] scroll-mt-24">
-        <h2 className={SECTION_TITLE}>{sectionTitle("cover")}</h2>
-        <div className="border-t border-foreground pt-5">
-          <div className="flex min-h-[clamp(360px,50vw,560px)] flex-col justify-between bg-black p-[clamp(24px,4vw,56px)]">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/bbdo-west-africa.png"
-              alt="BBDO West Africa logo"
-              className="h-auto w-full max-w-[260px] [filter:brightness(0)_invert(1)]"
-            />
-            <div>
-              <p className="m-0 max-w-[12ch] text-[clamp(38px,6vw,82px)] uppercase leading-[0.88] tracking-[-0.04em] text-white">
+          <div id="cover" className="scroll-mt-8">
+            <SectionHeading>{sectionTitle("cover")}</SectionHeading>
+            {/* Brand exhibit: the studio's actual marketing world, shown as reference material, not dashboard chrome. */}
+            <div className="flex min-h-[clamp(320px,45vw,480px)] flex-col justify-between rounded-xl bg-black p-[clamp(24px,4vw,56px)]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/bbdo-west-africa.png"
+                alt="BBDO West Africa logo"
+                className="h-auto w-full max-w-[220px] [filter:brightness(0)_invert(1)]"
+              />
+              <div>
+                <p className="m-0 max-w-[12ch] text-[clamp(34px,5.5vw,72px)] uppercase leading-[0.88] tracking-[-0.04em] text-white">
+                  Together,
+                  <br />we make work
+                  <br />
+                  <span className="text-primary">that moves.</span>
+                </p>
+                <p className="mb-0 mt-5 text-[12px] font-semibold uppercase tracking-[0.12em] text-white/60">
+                  Brand guidelines · BBDO West Africa · 2026
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div id="about" className="mt-12 scroll-mt-8">
+            <SectionHeading>{sectionTitle("about")}</SectionHeading>
+            {ABOUT.map((paragraph) => (
+              <p key={paragraph} className={PROSE}>{paragraph}</p>
+            ))}
+          </div>
+
+          <div id="mantra" className="mt-12 scroll-mt-8">
+            <SectionHeading>{sectionTitle("mantra")}</SectionHeading>
+            <p className="mb-6 mt-0 max-w-[15ch] text-[clamp(28px,4vw,44px)] uppercase leading-[0.95] tracking-[-0.03em]">
+              Together, we make work <span className="text-primary">that moves.</span>
+            </p>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+              {MANTRA.map((part) => (
+                <article key={part.phrase} className="rounded-xl border border-border p-5">
+                  <h3 className="m-0 text-[18px] font-semibold leading-tight tracking-tight">{part.phrase}</h3>
+                  <p className="mb-0 mt-3 text-[14px] leading-[1.45] text-muted-foreground">{part.meaning}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+
+          <div id="tone-of-voice" className="mt-12 scroll-mt-8">
+            <SectionHeading>{sectionTitle("tone-of-voice")}</SectionHeading>
+            {VOICE.map((paragraph) => (
+              <p key={paragraph} className={PROSE}>{paragraph}</p>
+            ))}
+          </div>
+
+          <div id="logo" className="mt-12 scroll-mt-8">
+            <SectionHeading>{sectionTitle("logo")}</SectionHeading>
+            <div className="flex items-center justify-center rounded-xl border border-border bg-white p-[clamp(24px,5vw,64px)]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/bbdo-west-africa.png" alt="BBDO West Africa logo" className="h-auto w-full max-w-[380px]" />
+            </div>
+            <a
+              href="/bbdo-west-africa.png"
+              download
+              className="mt-3 inline-block text-[13px] font-semibold text-foreground no-underline hover:text-primary focus-visible:text-primary"
+            >
+              Primary PNG ↓
+            </a>
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <div className="flex items-center justify-center rounded-xl border border-border bg-white p-[clamp(24px,5vw,64px)]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/bbdo-west-africa.png" alt="BBDO West Africa logo, black" className="h-auto w-full max-w-[320px] [filter:brightness(0)]" />
+                </div>
+                <a href="/bbdo-west-africa.png" download className="mt-3 inline-block text-[13px] font-semibold text-foreground no-underline hover:text-primary focus-visible:text-primary">
+                  Black on white ↓
+                </a>
+              </div>
+              <div>
+                <div className="flex items-center justify-center rounded-xl border border-border bg-black p-[clamp(24px,5vw,64px)]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/bbdo-west-africa.png" alt="BBDO West Africa logo, white" className="h-auto w-full max-w-[320px] [filter:brightness(0)_invert(1)]" />
+                </div>
+                <a href="/bbdo-west-africa.png" download className="mt-3 inline-block text-[13px] font-semibold text-foreground no-underline hover:text-primary focus-visible:text-primary">
+                  White on black ↓
+                </a>
+              </div>
+            </div>
+            <div className="mt-8">
+              <h3 className="mb-3 mt-0 text-[13px] font-semibold text-muted-foreground">Rationale</h3>
+              {LOGO_RATIONALE.map((paragraph) => (
+                <p key={paragraph} className={PROSE}>{paragraph}</p>
+              ))}
+            </div>
+            <div className="mt-8">
+              <h3 className="mb-3 mt-0 text-[13px] font-semibold text-muted-foreground">Usage</h3>
+              <ul className="m-0 list-none p-0">
+                {LOGO_RULES.map((rule) => (
+                  <li key={rule} className="border-b border-border py-3 text-[15px] leading-[1.4]">
+                    {rule}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          <div id="colour" className="mt-12 scroll-mt-8">
+            <SectionHeading>{sectionTitle("colour")}</SectionHeading>
+            <ul className="m-0 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-3">
+              {COLORS.map((color) => (
+                <li key={color.token}>
+                  <div className="h-[100px] rounded-xl border border-border" style={{ background: color.value }} />
+                  <p className="mb-0 mt-3 text-[18px] font-semibold leading-tight tracking-tight">{color.name}</p>
+                  <p className={`m-0 ${META}`}>{color.value} · var({color.token})</p>
+                  <p className="mb-0 mt-2 text-[14px] leading-[1.35] text-muted-foreground">{color.role}</p>
+                </li>
+              ))}
+            </ul>
+            <p className={`${PROSE} mt-5`}>
+              Red is for emphasis only: one accent per view, never as a page background.
+            </p>
+          </div>
+
+          <div id="type" className="mt-12 scroll-mt-8">
+            <SectionHeading>{sectionTitle("type")}</SectionHeading>
+            <h3 className="mb-3 mt-0 text-[13px] font-semibold text-muted-foreground">Typefaces</h3>
+            <ul className="m-0 list-none p-0">
+              {TYPE.map((face) => (
+                <li key={face.name} className="border-b border-border py-3">
+                  <p className={`m-0 text-[20px] leading-tight tracking-tight ${face.className}`}>{face.name}</p>
+                  <p className={`m-0 ${META}`}>{face.usage}</p>
+                </li>
+              ))}
+            </ul>
+            <h3 className="mb-3 mt-8 text-[13px] font-semibold text-muted-foreground">Scale</h3>
+            <ul className="m-0 list-none p-0">
+              {SCALE.map((step) => (
+                <li key={step.label} className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-border py-3">
+                  <span className={step.className}>{step.label}</span>
+                  <span className={META}>{step.size}</span>
+                </li>
+              ))}
+            </ul>
+            <p className={`${PROSE} mt-5`}>
+              Set headlines in uppercase Outfit with tight tracking. Body copy stays sentence case.
+            </p>
+            <div className="mt-6 rounded-xl border border-border py-[clamp(24px,4vw,48px)] text-center">
+              <p className="m-0 max-w-[14ch] mx-auto text-[clamp(30px,4.5vw,56px)] uppercase leading-[0.9] tracking-[-0.04em]">
                 Together,
                 <br />we make work
                 <br />
                 <span className="text-primary">that moves.</span>
               </p>
-              <p className="mb-0 mt-5 text-[13px] font-extrabold uppercase tracking-[0.14em] text-white/60">
-                Brand guidelines · BBDO West Africa · 2026
-              </p>
             </div>
           </div>
-        </div>
-      </div>
 
-      <div id="about" className="mt-[clamp(34px,4.5vw,56px)] scroll-mt-24">
-        <h2 className={SECTION_TITLE}>{sectionTitle("about")}</h2>
-        <div className="border-t border-foreground pt-5">
-          {ABOUT.map((paragraph) => (
-            <p key={paragraph} className={PROSE}>
-              {paragraph}
-            </p>
-          ))}
-        </div>
-      </div>
-
-      <div id="mantra" className="mt-[clamp(34px,4.5vw,56px)] scroll-mt-24">
-        <h2 className={SECTION_TITLE}>{sectionTitle("mantra")}</h2>
-        <div className="border-t border-foreground pt-5">
-          <p className="mb-[clamp(28px,4vw,48px)] mt-0 max-w-[15ch] text-[clamp(34px,5vw,68px)] uppercase leading-[0.9] tracking-[-0.04em]">
-            Together, we make work <span className="text-primary">that moves.</span>
-          </p>
-          <div className="grid grid-cols-3 border-y border-foreground max-[760px]:grid-cols-1">
-            {MANTRA.map((part, index) => (
-              <article
-                key={part.phrase}
-                className={`min-h-[220px] py-[clamp(24px,3vw,40px)] ${
-                  index === 0
-                    ? "pr-[clamp(20px,3vw,40px)]"
-                    : "border-l border-border px-[clamp(20px,3vw,40px)] max-[760px]:border-l-0 max-[760px]:border-t max-[760px]:px-0"
-                }`}
-              >
-                <h3 className="m-0 text-[clamp(22px,2.5vw,34px)] uppercase leading-[0.95] tracking-[-0.03em]">
-                  {part.phrase}
-                </h3>
-                <p className="mb-0 mt-5 text-[16px] leading-[1.45] text-muted-foreground">
-                  {part.meaning}
-                </p>
-              </article>
+          <div id="photography" className="mt-12 scroll-mt-8">
+            <SectionHeading>{sectionTitle("photography")}</SectionHeading>
+            {PHOTOGRAPHY.map((paragraph) => (
+              <p key={paragraph} className={PROSE}>{paragraph}</p>
             ))}
           </div>
-        </div>
-      </div>
 
-      <div id="tone-of-voice" className="mt-[clamp(34px,4.5vw,56px)] scroll-mt-24">
-        <h2 className={SECTION_TITLE}>{sectionTitle("tone-of-voice")}</h2>
-        <div className="border-t border-foreground pt-5">
-          {VOICE.map((paragraph) => (
-            <p key={paragraph} className={PROSE}>
-              {paragraph}
-            </p>
-          ))}
-        </div>
-      </div>
-
-      <div id="logo" className="mt-[clamp(34px,4.5vw,56px)] scroll-mt-24">
-        <h2 className={SECTION_TITLE}>{sectionTitle("logo")}</h2>
-        <div className="border-t border-foreground pt-5">
-          <div className="flex items-center justify-center border border-border bg-white p-[clamp(24px,5vw,64px)]">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/bbdo-west-africa.png"
-              alt="BBDO West Africa logo"
-              className="h-auto w-full max-w-[420px]"
-            />
-          </div>
-          <a
-            href="/bbdo-west-africa.png"
-            download
-            className="mt-3 inline-block text-[13px] font-extrabold uppercase tracking-[0.1em] text-foreground no-underline hover:text-primary focus-visible:text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
-          >
-            Primary PNG ↓
-          </a>
-        </div>
-        <div className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
-          <div>
-            <div className="flex items-center justify-center border border-border bg-white p-[clamp(24px,5vw,64px)]">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/bbdo-west-africa.png"
-                alt="BBDO West Africa logo, black"
-                className="h-auto w-full max-w-[360px] [filter:brightness(0)]"
-              />
+          <div id="patterns" className="mt-12 scroll-mt-8">
+            <SectionHeading>{sectionTitle("patterns")}</SectionHeading>
+            {PATTERNS.map((paragraph) => (
+              <p key={paragraph} className={PROSE}>{paragraph}</p>
+            ))}
+            <div className="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div>
+                <svg className="h-[140px] w-full rounded-xl border border-border" role="img" aria-label="Arch pattern">
+                  <defs>
+                    <pattern id="pattern-arch" width="48" height="48" patternUnits="userSpaceOnUse">
+                      <rect width="48" height="48" fill="#ffffff" />
+                      <path d="M0 48 a24 24 0 0 1 48 0 Z" fill="#111111" />
+                    </pattern>
+                  </defs>
+                  <rect width="100%" height="100%" fill="url(#pattern-arch)" />
+                </svg>
+                <p className={`mb-0 mt-3 ${META}`}>Arch · Together</p>
+              </div>
+              <div>
+                <svg className="h-[140px] w-full rounded-xl border border-border" role="img" aria-label="Triangle pattern">
+                  <defs>
+                    <pattern id="pattern-triangle" width="48" height="48" patternUnits="userSpaceOnUse">
+                      <rect width="48" height="48" fill="#ffffff" />
+                      <path d="M24 8 L44 44 L4 44 Z" fill="#e51b23" />
+                    </pattern>
+                  </defs>
+                  <rect width="100%" height="100%" fill="url(#pattern-triangle)" />
+                </svg>
+                <p className={`mb-0 mt-3 ${META}`}>Triangle · We make work</p>
+              </div>
+              <div>
+                <div
+                  className="h-[140px] w-full rounded-xl border border-border"
+                  role="img"
+                  aria-label="Cut pattern"
+                  style={{ background: "repeating-linear-gradient(63deg, #111111 0 6px, #ffffff 6px 30px)" }}
+                />
+                <p className={`mb-0 mt-3 ${META}`}>Cut · That moves</p>
+              </div>
             </div>
-            <a
-              href="/bbdo-west-africa.png"
-              download
-              className="mt-3 inline-block text-[13px] font-extrabold uppercase tracking-[0.1em] text-foreground no-underline hover:text-primary focus-visible:text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+            <div
+              className="mt-6 overflow-hidden rounded-xl bg-primary py-[clamp(22px,4vw,44px)] text-white"
+              role="img"
+              aria-label="Typographic pattern repeating Together, we make work that moves"
             >
-              Black on white ↓
-            </a>
-          </div>
-          <div>
-            <div className="flex items-center justify-center border border-border bg-black p-[clamp(24px,5vw,64px)]">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/bbdo-west-africa.png"
-                alt="BBDO West Africa logo, white"
-                className="h-auto w-full max-w-[360px] [filter:brightness(0)_invert(1)]"
-              />
-            </div>
-            <a
-              href="/bbdo-west-africa.png"
-              download
-              className="mt-3 inline-block text-[13px] font-extrabold uppercase tracking-[0.1em] text-foreground no-underline hover:text-primary focus-visible:text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
-            >
-              White on black ↓
-            </a>
-          </div>
-        </div>
-        <div className="mt-8">
-          <h3 className={SUB_TITLE}>Rationale</h3>
-          {LOGO_RATIONALE.map((paragraph) => (
-            <p key={paragraph} className={PROSE}>
-              {paragraph}
-            </p>
-          ))}
-        </div>
-        <div className="mt-8">
-          <h3 className={SUB_TITLE}>Usage</h3>
-          <ul className="m-0 list-none p-0">
-            {LOGO_RULES.map((rule) => (
-              <li
-                key={rule}
-                className="border-b border-border py-[15px] text-[clamp(16px,1.5vw,20px)] leading-[1.4]"
-              >
-                {rule}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-
-      <div id="colour" className="mt-[clamp(34px,4.5vw,56px)] scroll-mt-24">
-        <h2 className={SECTION_TITLE}>{sectionTitle("colour")}</h2>
-        <ul className="m-0 grid list-none grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4 border-t border-foreground p-0 pt-5">
-          {COLORS.map((color) => (
-            <li key={color.token}>
-              <div
-                className="h-[120px] border border-border"
-                style={{ background: color.value }}
-              />
-              <p className="mb-0 mt-3 text-[clamp(19px,2vw,26px)] leading-[1.2] tracking-[-0.02em]">
-                {color.name}
-              </p>
-              <p className={`m-0 ${META}`}>
-                {color.value} · var({color.token})
-              </p>
-              <p className="mb-0 mt-2 text-[14px] leading-[1.35] text-muted-foreground">
-                {color.role}
-              </p>
-            </li>
-          ))}
-        </ul>
-        <p className={`${PROSE} mt-5`}>
-          Red is for emphasis only: one accent per view, never as a page background.
-        </p>
-      </div>
-
-      <div id="type" className="mt-[clamp(34px,4.5vw,56px)] scroll-mt-24">
-        <h2 className={SECTION_TITLE}>{sectionTitle("type")}</h2>
-        <div className="border-t border-foreground pt-5">
-          <h3 className={SUB_TITLE}>Typefaces</h3>
-          <ul className="m-0 list-none p-0">
-            {TYPE.map((face) => (
-              <li key={face.name} className="border-b border-border py-[15px]">
-                <p
-                  className={`m-0 text-[clamp(19px,2vw,26px)] leading-[1.2] tracking-[-0.02em] ${face.className}`}
-                >
-                  {face.name}
+              <div aria-hidden="true" className="space-y-1.5">
+                <p className="m-0 -translate-x-[4%] whitespace-nowrap text-[clamp(28px,5.5vw,68px)] font-black uppercase leading-[0.82] tracking-[-0.04em]">
+                  Together · Together · Together
                 </p>
-                <p className={`m-0 ${META}`}>{face.usage}</p>
-              </li>
-            ))}
-          </ul>
-          <h3 className={`${SUB_TITLE} mt-8`}>Scale</h3>
-          <ul className="m-0 list-none p-0">
-            {SCALE.map((step) => (
-              <li
-                key={step.label}
-                className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-border py-[15px]"
-              >
-                <span className={step.className}>{step.label}</span>
-                <span className={META}>{step.size}</span>
-              </li>
-            ))}
-          </ul>
-          <p className={`${PROSE} mt-5`}>
-            Set headlines in uppercase Outfit with tight tracking. Body copy stays sentence case.
-          </p>
-          <div className="mt-8 border-y border-foreground py-[clamp(24px,4vw,48px)]">
-            <p className="m-0 max-w-[14ch] text-[clamp(34px,5vw,64px)] uppercase leading-[0.9] tracking-[-0.04em]">
-              Together,
-              <br />we make work
-              <br />
-              <span className="text-primary">that moves.</span>
-            </p>
+                <p className="m-0 translate-x-[7%] whitespace-nowrap text-[clamp(28px,5.5vw,68px)] font-black uppercase leading-[0.82] tracking-[-0.04em] text-black">
+                  We make work · We make work
+                </p>
+                <p className="m-0 -translate-x-[10%] whitespace-nowrap text-[clamp(28px,5.5vw,68px)] font-black uppercase leading-[0.82] tracking-[-0.04em]">
+                  That moves · That moves · That moves
+                </p>
+              </div>
+            </div>
+            <p className={`mb-0 mt-3 ${META}`}>Typographic mantra pattern</p>
           </div>
-        </div>
-      </div>
-
-      <div id="photography" className="mt-[clamp(34px,4.5vw,56px)] scroll-mt-24">
-        <h2 className={SECTION_TITLE}>{sectionTitle("photography")}</h2>
-        <div className="border-t border-foreground pt-5">
-          {PHOTOGRAPHY.map((paragraph) => (
-            <p key={paragraph} className={PROSE}>
-              {paragraph}
-            </p>
-          ))}
-        </div>
-      </div>
-
-      <div id="patterns" className="mt-[clamp(34px,4.5vw,56px)] scroll-mt-24">
-        <h2 className={SECTION_TITLE}>{sectionTitle("patterns")}</h2>
-        <div className="border-t border-foreground pt-5">
-          {PATTERNS.map((paragraph) => (
-            <p key={paragraph} className={PROSE}>
-              {paragraph}
-            </p>
-          ))}
-          <div className="mt-2 grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4">
-            <div>
-              <svg
-                className="h-[160px] w-full border border-border"
-                role="img"
-                aria-label="Arch pattern"
-              >
-                <defs>
-                  <pattern id="pattern-arch" width="48" height="48" patternUnits="userSpaceOnUse">
-                    <rect width="48" height="48" fill="#ffffff" />
-                    <path d="M0 48 a24 24 0 0 1 48 0 Z" fill="#111111" />
-                  </pattern>
-                </defs>
-                <rect width="100%" height="100%" fill="url(#pattern-arch)" />
-              </svg>
-              <p className={`mb-0 mt-3 ${META}`}>Arch · Together</p>
-            </div>
-            <div>
-              <svg
-                className="h-[160px] w-full border border-border"
-                role="img"
-                aria-label="Triangle pattern"
-              >
-                <defs>
-                  <pattern
-                    id="pattern-triangle"
-                    width="48"
-                    height="48"
-                    patternUnits="userSpaceOnUse"
-                  >
-                    <rect width="48" height="48" fill="#ffffff" />
-                    <path d="M24 8 L44 44 L4 44 Z" fill="#e51b23" />
-                  </pattern>
-                </defs>
-                <rect width="100%" height="100%" fill="url(#pattern-triangle)" />
-              </svg>
-              <p className={`mb-0 mt-3 ${META}`}>Triangle · We make work</p>
-            </div>
-            <div>
-              <div
-                className="h-[160px] w-full border border-border"
-                role="img"
-                aria-label="Cut pattern"
-                style={{
-                  background: "repeating-linear-gradient(63deg, #111111 0 6px, #ffffff 6px 30px)",
-                }}
-              />
-              <p className={`mb-0 mt-3 ${META}`}>Cut · That moves</p>
-            </div>
-          </div>
-          <div
-            className="mt-[clamp(28px,4vw,48px)] overflow-hidden bg-primary py-[clamp(22px,4vw,44px)] text-white"
-            role="img"
-            aria-label="Typographic pattern repeating Together, we make work that moves"
-          >
-            <div aria-hidden="true" className="space-y-1.5">
-              <p className="m-0 -translate-x-[4%] whitespace-nowrap text-[clamp(32px,6vw,76px)] font-black uppercase leading-[0.82] tracking-[-0.04em]">
-                Together · Together · Together
-              </p>
-              <p className="m-0 translate-x-[7%] whitespace-nowrap text-[clamp(32px,6vw,76px)] font-black uppercase leading-[0.82] tracking-[-0.04em] text-black">
-                We make work · We make work
-              </p>
-              <p className="m-0 -translate-x-[10%] whitespace-nowrap text-[clamp(32px,6vw,76px)] font-black uppercase leading-[0.82] tracking-[-0.04em]">
-                That moves · That moves · That moves
-              </p>
-            </div>
-          </div>
-          <p className={`mb-0 mt-3 ${META}`}>Typographic mantra pattern</p>
-        </div>
-      </div>
-
         </div>
       </div>
     </main>

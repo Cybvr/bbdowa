@@ -5,6 +5,7 @@ import { BackLink } from "@/components/back-link";
 import { PRODUCTS, getProduct, productDate, productHref } from "@/lib/products";
 import { longDate } from "@/lib/format";
 import { getUserByName, userHref } from "@/lib/users";
+import { Badge, MetaGrid, MetaItem, SectionHeading } from "@/components/dashboard/ui";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -19,16 +20,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   return { title: product.name, description: product.description };
 }
 
-const BRIEF_SECTION =
-  "border-b border-foreground pb-[clamp(28px,4vw,48px)] pl-0 pr-[clamp(24px,4vw,52px)] pt-[clamp(28px,4vw,48px)] [&:nth-child(even)]:border-l [&:nth-child(even)]:border-l-border [&:nth-child(even)]:pl-[clamp(24px,4vw,52px)] [&:nth-child(even)]:pr-0 max-[720px]:border-l-0 max-[720px]:px-0 max-[720px]:[&:nth-child(even)]:border-l-0 max-[720px]:[&:nth-child(even)]:px-0";
-const BRIEF_HEADING =
-  "mb-[18px] mt-0 text-[12px] uppercase tracking-[0.14em] text-primary";
-const BRIEF_BODY = "m-0 max-w-[640px] text-[clamp(20px,2vw,28px)] leading-[1.28]";
 const BRIEF_ITEM =
-  "relative border-t border-border py-2.5 pl-[22px] text-[16px] leading-[1.35] before:absolute before:left-0 before:top-[17px] before:h-[7px] before:w-[7px] before:bg-primary before:content-['']";
-const META_LABEL = "text-[11px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground";
-const META_ITEM =
-  "flex min-h-[132px] flex-col justify-center gap-2 border-l border-border p-6 max-[720px]:border-l-0 max-[720px]:border-t max-[720px]:border-t-border max-[720px]:pl-0";
+  "relative border-t border-border py-2.5 pl-4 text-[14px] leading-[1.4] before:absolute before:left-0 before:top-[16px] before:h-1.5 before:w-1.5 before:rounded-full before:bg-primary before:content-['']";
 
 export default async function ProductDetailPage({ params }: Params) {
   const { slug } = await params;
@@ -39,110 +32,99 @@ export default async function ProductDetailPage({ params }: Params) {
   const ownerUser = product.owner ? getUserByName(product.owner.name) : undefined;
 
   return (
-    <main className="flex-1 px-[clamp(20px,3vw,48px)] pb-20 pt-[clamp(30px,4vw,56px)]">
-      <BackLink href="/dashboard/products" className="mb-[26px]">
+    <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
+      <BackLink href="/dashboard/products" className="mb-5">
         All products
       </BackLink>
 
-      <div className="flex flex-wrap items-baseline justify-between gap-4 border-b border-foreground pb-5">
-        <div className="flex flex-col items-start gap-5">
+      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-5">
+        <div className="flex flex-col items-start gap-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={product.avatar}
             alt={product.name}
-            className="block h-[clamp(64px,9vw,110px)] w-[clamp(180px,28vw,380px)] object-contain object-left mix-blend-multiply"
+            className="block h-14 w-[160px] object-contain object-left mix-blend-multiply"
           />
-          <h1 className="m-0 text-[clamp(32px,4vw,58px)] uppercase leading-[0.95] tracking-[-0.045em]">
-            {product.name}
-          </h1>
+          <h1 className="m-0 text-[26px] font-bold leading-tight tracking-tight sm:text-[32px]">{product.name}</h1>
         </div>
-        <span className="text-[13px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground">
-          {product.status}
-        </span>
+        <Badge tone={product.status === "active" ? "active" : "neutral"}>{product.status}</Badge>
       </div>
 
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-8 border-b border-foreground py-[clamp(28px,4vw,48px)]">
-        <p className="m-0 max-w-[850px] text-[clamp(19px,2vw,28px)] leading-[1.3]">
-          {product.description}
-        </p>
-        <p className="m-0 max-w-[850px] text-[clamp(15px,1.4vw,18px)] font-semibold leading-[1.4] text-primary">
+      <div className="border-b border-border py-6">
+        <p className="m-0 max-w-[850px] text-[17px] leading-[1.4]">{product.description}</p>
+        <p className="m-0 mt-3 max-w-[850px] text-[14px] font-semibold leading-[1.4] text-primary">
           {product.valueLine}
         </p>
       </div>
 
-      <div className="mt-[clamp(28px,4vw,48px)] grid grid-cols-[minmax(260px,1.2fr)_1fr_1fr] border-y border-foreground max-[720px]:grid-cols-1">
-        <div className="flex min-h-[132px] items-center gap-[18px] p-6 pl-0">
-          <div
-            aria-hidden="true"
-            className="grid h-[72px] w-[72px] flex-none place-items-center overflow-hidden rounded-full bg-primary text-[24px] font-black tracking-[-0.04em] text-white"
-          >
-            {ownerUser?.profileImage ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={ownerUser.profileImage} alt="" className="h-full w-full object-cover" />
-            ) : product.owner ? (
-              product.owner.avatar
-            ) : (
-              "—"
-            )}
-          </div>
-          <div>
-            <span className={META_LABEL}>Role</span>
-            <strong className="mt-[5px] block text-[clamp(18px,1.7vw,24px)] leading-[1.15]">
-              {ownerUser ? (
-                <Link
-                  href={userHref(ownerUser)}
-                  className="text-foreground underline decoration-border underline-offset-4 hover:text-primary focus-visible:text-primary"
-                >
-                  {product.owner!.name}
-                </Link>
-              ) : (
-                <span>{product.owner ? product.owner.name : "Owner to be assigned"}</span>
-              )}
-              <br />
-              <span>{product.owner ? product.owner.role : "Product Owner"}</span>
-            </strong>
-          </div>
-        </div>
-        <div className={META_ITEM}>
-          <span className={META_LABEL}>{product.created ? "Date created" : "Target date"}</span>
-          <strong className="text-[clamp(18px,1.7vw,24px)] leading-[1.15]">
+      <div className="mt-6">
+        <MetaGrid>
+          <MetaItem label="Role">
+            <span className="flex items-center gap-3">
+              <span
+                aria-hidden="true"
+                className="grid h-9 w-9 flex-none place-items-center overflow-hidden rounded-full bg-primary text-[13px] font-bold text-white"
+              >
+                {ownerUser?.profileImage ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={ownerUser.profileImage} alt="" className="h-full w-full object-cover" />
+                ) : product.owner ? (
+                  product.owner.avatar
+                ) : (
+                  "—"
+                )}
+              </span>
+              <span>
+                {ownerUser ? (
+                  <Link
+                    href={userHref(ownerUser)}
+                    className="text-foreground underline decoration-border underline-offset-4 hover:text-primary focus-visible:text-primary"
+                  >
+                    {product.owner!.name}
+                  </Link>
+                ) : (
+                  <span className={product.owner ? "" : "text-muted-foreground"}>
+                    {product.owner ? product.owner.name : "Owner to be assigned"}
+                  </span>
+                )}
+                <br />
+                <span className="text-[13px] font-normal text-muted-foreground">
+                  {product.owner ? product.owner.role : "Product Owner"}
+                </span>
+              </span>
+            </span>
+          </MetaItem>
+          <MetaItem label={product.created ? "Date created" : "Target date"}>
             {date ? <time dateTime={date}>{longDate(date)}</time> : <time>Not scheduled</time>}
-          </strong>
-        </div>
-        <div className={META_ITEM}>
-          <span className={META_LABEL}>Project link</span>
-          <Link
-            href={productHref(product.slug)}
-            className="text-[clamp(18px,1.7vw,24px)] font-bold leading-[1.15] text-foreground underline underline-offset-[5px] hover:text-primary focus-visible:text-primary"
-          >
-            {product.slug}
-          </Link>
-        </div>
+          </MetaItem>
+          <MetaItem label="Project link">
+            <Link
+              href={productHref(product.slug)}
+              className="text-foreground underline decoration-border underline-offset-4 hover:text-primary focus-visible:text-primary"
+            >
+              {product.slug}
+            </Link>
+          </MetaItem>
+        </MetaGrid>
       </div>
 
-      <section
-        className="mt-[clamp(48px,7vw,88px)] grid grid-cols-2 border-t border-foreground max-[720px]:grid-cols-1"
-        aria-label="Product brief"
-      >
-        <article className={BRIEF_SECTION}>
-          <h2 className={BRIEF_HEADING}>Objective</h2>
-          <p className={BRIEF_BODY}>{product.objective}</p>
+      <section className="mt-10 grid grid-cols-2 gap-x-8 gap-y-8 max-[720px]:grid-cols-1" aria-label="Product brief">
+        <article>
+          <SectionHeading>Objective</SectionHeading>
+          <p className="m-0 max-w-[64ch] text-[15px] leading-[1.5]">{product.objective}</p>
         </article>
-        <article className={BRIEF_SECTION}>
-          <h2 className={BRIEF_HEADING}>Users</h2>
+        <article>
+          <SectionHeading>Users</SectionHeading>
           <div className="flex flex-wrap gap-2">
             {product.users.map((user) => (
-              <span
-                key={user}
-                className="border border-foreground px-[9px] py-1.5 text-[11px] font-extrabold uppercase tracking-[0.08em]"
-              >
+              <span key={user} className="rounded-md border border-border px-2 py-1 text-[12px] font-medium">
                 {user}
               </span>
             ))}
           </div>
         </article>
-        <article className={BRIEF_SECTION}>
-          <h2 className={BRIEF_HEADING}>Goals</h2>
+        <article>
+          <SectionHeading>Goals</SectionHeading>
           <ul className="m-0 list-none p-0">
             {product.goals.map((goal) => (
               <li key={goal} className={BRIEF_ITEM}>
@@ -151,8 +133,8 @@ export default async function ProductDetailPage({ params }: Params) {
             ))}
           </ul>
         </article>
-        <article className={BRIEF_SECTION}>
-          <h2 className={BRIEF_HEADING}>KPIs</h2>
+        <article>
+          <SectionHeading>KPIs</SectionHeading>
           <ul className="m-0 list-none p-0">
             {product.kpis.map((kpi) => (
               <li key={kpi} className={BRIEF_ITEM}>
@@ -161,8 +143,8 @@ export default async function ProductDetailPage({ params }: Params) {
             ))}
           </ul>
         </article>
-        <article className={BRIEF_SECTION}>
-          <h2 className={BRIEF_HEADING}>Roadmap</h2>
+        <article>
+          <SectionHeading>Roadmap</SectionHeading>
           <ul className="m-0 list-none p-0">
             {product.roadmap.map((step) => (
               <li key={step} className={BRIEF_ITEM}>
@@ -171,9 +153,9 @@ export default async function ProductDetailPage({ params }: Params) {
             ))}
           </ul>
         </article>
-        <article className={BRIEF_SECTION}>
-          <h2 className={BRIEF_HEADING}>Review cadence</h2>
-          <p className={BRIEF_BODY}>{product.reviewCadence}</p>
+        <article>
+          <SectionHeading>Review cadence</SectionHeading>
+          <p className="m-0 text-[15px] leading-[1.5]">{product.reviewCadence}</p>
         </article>
       </section>
     </main>

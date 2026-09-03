@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BackLink } from "@/components/back-link";
 import { getJob, JOBS } from "@/lib/jobs";
+import { Badge, SectionHeading } from "@/components/dashboard/ui";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -24,38 +25,34 @@ export default async function CareerDetailPage({ params }: Params) {
   const isOpen = job.status === "open";
 
   return (
-    <main className="flex-1 px-[clamp(20px,3vw,48px)] pb-20 pt-[clamp(30px,4vw,56px)]">
-      <BackLink href="/dashboard/careers">Back to careers</BackLink>
+    <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
+      <BackLink href="/dashboard/careers" className="mb-5">
+        Back to careers
+      </BackLink>
 
-      <div className="mt-8 max-w-[1050px]">
-        <div className="flex flex-wrap items-end justify-between gap-6 border-b-2 border-foreground pb-6">
+      <div className="max-w-[1050px]">
+        <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-6">
           <div>
-            <span className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-primary">
-              {job.department}
-            </span>
-            <h1 className="mb-0 mt-4 max-w-[18ch] text-[clamp(34px,6vw,76px)] leading-[0.95] tracking-[-0.04em]">
+            <span className="text-[13px] font-semibold text-primary">{job.department}</span>
+            <h1 className="mb-0 mt-2 max-w-[18ch] text-[26px] font-bold leading-tight tracking-tight sm:text-[34px]">
               {job.title}
             </h1>
           </div>
-          <span className={`px-3 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-white ${isOpen ? "bg-primary" : "bg-foreground"}`}>
-            {job.status}
-          </span>
+          <Badge tone={isOpen ? "active" : "neutral"}>{job.status}</Badge>
         </div>
 
-        <div className="mt-[clamp(28px,5vw,56px)] grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(240px,0.42fr)]">
+        <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(240px,0.42fr)]">
           <div>
-            <p className="mb-0 max-w-[62ch] text-[clamp(20px,2vw,28px)] leading-[1.35]">
+            <p className="mb-0 max-w-[62ch] text-[18px] leading-[1.4]">
               {job.summary ?? `A ${job.title.toLowerCase()} role in ${job.department}, based in ${job.location}.`}
             </p>
             {job.description ? (
               <section className="mt-10 max-w-[70ch]" aria-labelledby="job-description">
-                <h2 id="job-description" className="mb-3 mt-0 text-[12px] font-extrabold uppercase tracking-[0.14em] text-primary">
-                  Job description
-                </h2>
-                <p className="mb-0 text-[17px] leading-[1.5] text-muted-foreground">{job.description}</p>
+                <SectionHeading id="job-description">Job description</SectionHeading>
+                <p className="mb-0 text-[15px] leading-[1.55] text-muted-foreground">{job.description}</p>
               </section>
             ) : (
-              <p className="mb-0 mt-8 max-w-[62ch] text-[17px] leading-[1.5] text-muted-foreground">
+              <p className="mb-0 mt-8 max-w-[62ch] text-[15px] leading-[1.55] text-muted-foreground">
                 The detailed brief for this role is being finalised. This page keeps the role, team and
                 application status clear while the full responsibilities are confirmed.
               </p>
@@ -64,18 +61,14 @@ export default async function CareerDetailPage({ params }: Params) {
             {job.qualifications && job.responsibilities ? (
               <div className="mt-10 grid gap-10 border-t border-border pt-8 md:grid-cols-2">
                 <section aria-labelledby="qualifications">
-                  <h2 id="qualifications" className="mb-4 mt-0 text-[12px] font-extrabold uppercase tracking-[0.14em] text-primary">
-                    Qualifications
-                  </h2>
-                  <ul className="m-0 grid gap-3 pl-5 text-[16px] leading-[1.45]">
+                  <SectionHeading id="qualifications">Qualifications</SectionHeading>
+                  <ul className="m-0 grid gap-2.5 pl-5 text-[15px] leading-[1.45]">
                     {job.qualifications.map((item) => <li key={item}>{item}</li>)}
                   </ul>
                 </section>
                 <section aria-labelledby="responsibilities">
-                  <h2 id="responsibilities" className="mb-4 mt-0 text-[12px] font-extrabold uppercase tracking-[0.14em] text-primary">
-                    Responsibilities
-                  </h2>
-                  <ul className="m-0 grid gap-3 pl-5 text-[16px] leading-[1.45]">
+                  <SectionHeading id="responsibilities">Responsibilities</SectionHeading>
+                  <ul className="m-0 grid gap-2.5 pl-5 text-[15px] leading-[1.45]">
                     {job.responsibilities.map((item) => <li key={item}>{item}</li>)}
                   </ul>
                 </section>
@@ -84,10 +77,8 @@ export default async function CareerDetailPage({ params }: Params) {
 
             {job.about ? (
               <section className="mt-10 border-t border-border pt-8" aria-labelledby="about-us">
-                <h2 id="about-us" className="mb-4 mt-0 text-[12px] font-extrabold uppercase tracking-[0.14em] text-primary">
-                  About us
-                </h2>
-                <div className="grid gap-4 text-[16px] leading-[1.5] text-muted-foreground">
+                <SectionHeading id="about-us">About us</SectionHeading>
+                <div className="grid gap-3 text-[15px] leading-[1.55] text-muted-foreground">
                   {job.about.map((paragraph) => <p key={paragraph} className="m-0">{paragraph}</p>)}
                 </div>
               </section>
@@ -97,38 +88,38 @@ export default async function CareerDetailPage({ params }: Params) {
           <aside className="border-t border-border pt-5">
             <dl className="m-0 grid gap-5">
               <div>
-                <dt className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Department</dt>
-                <dd className="mb-0 mt-1 text-[18px]">{job.department}</dd>
+                <dt className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Department</dt>
+                <dd className="mb-0 mt-1 text-[16px]">{job.department}</dd>
               </div>
               <div>
-                <dt className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Location</dt>
-                <dd className="mb-0 mt-1 text-[18px]">{job.location}</dd>
+                <dt className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Location</dt>
+                <dd className="mb-0 mt-1 text-[16px]">{job.location}</dd>
               </div>
               <div>
-                <dt className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Work mode</dt>
-                <dd className="mb-0 mt-1 text-[18px]">{job.workMode}</dd>
+                <dt className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Work mode</dt>
+                <dd className="mb-0 mt-1 text-[16px]">{job.workMode}</dd>
               </div>
               <div>
-                <dt className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Status</dt>
-                <dd className="mb-0 mt-1 text-[18px] capitalize">{job.status}</dd>
+                <dt className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Status</dt>
+                <dd className="mb-0 mt-1 text-[16px] capitalize">{job.status}</dd>
               </div>
               {job.schedule ? (
                 <div>
-                  <dt className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Schedule</dt>
-                  <dd className="mb-0 mt-1 text-[18px]">{job.schedule}</dd>
+                  <dt className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Schedule</dt>
+                  <dd className="mb-0 mt-1 text-[16px]">{job.schedule}</dd>
                 </div>
               ) : null}
               {job.salary ? (
                 <div>
-                  <dt className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Salary</dt>
-                  <dd className="mb-0 mt-1 text-[18px]">{job.salary}</dd>
+                  <dt className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Salary</dt>
+                  <dd className="mb-0 mt-1 text-[16px]">{job.salary}</dd>
                 </div>
               ) : null}
             </dl>
             {isOpen ? (
               <Link
                 href={`/dashboard/careers/apply?role=${job.slug}`}
-                className="mt-8 inline-flex min-h-[48px] items-center bg-primary px-5 py-3 font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-white no-underline hover:bg-foreground focus-visible:outline-none"
+                className="mt-8 inline-flex min-h-[44px] items-center rounded-lg bg-primary px-5 py-3 text-[13px] font-semibold text-white no-underline hover:bg-primary/90 focus-visible:outline-none"
               >
                 Apply now
               </Link>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { CREATORS, TEAM, userHref } from "@/lib/users";
 import { UserGraph, type GraphLink, type GraphNode } from "@/components/user-graph";
+import { PageHeader } from "@/components/dashboard/ui";
 
 export const metadata: Metadata = { title: "Users graph" };
 
@@ -52,16 +53,9 @@ export default function UsersGraphPage() {
   const userCount = TEAM.length + CREATORS.length;
 
   return (
-    <main className="flex min-h-[calc(100vh-0px)] flex-1 flex-col px-[clamp(20px,3vw,48px)] pb-10 pt-[clamp(30px,4vw,56px)]">
-      <div className="flex flex-wrap items-baseline justify-between gap-4 border-b border-foreground pb-5">
-        <h1 className="m-0 text-[clamp(32px,4vw,58px)] uppercase leading-[0.95] tracking-[-0.04em]">
-          Graph
-        </h1>
-        <span className="text-[13px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground">
-          {userCount} users · click a node to open a profile
-        </span>
-      </div>
-      <div className="mt-6 min-h-[520px] flex-1 border border-border bg-white">
+    <main className="flex min-h-[calc(100vh-0px)] flex-1 flex-col px-5 pb-10 pt-8 sm:px-8">
+      <PageHeader title="Graph" meta={`${userCount} users · click a node to open a profile`} />
+      <div className="mt-6 min-h-[520px] flex-1 overflow-hidden rounded-xl border border-border bg-background">
         <UserGraph nodes={nodes} links={links} />
       </div>
     </main>

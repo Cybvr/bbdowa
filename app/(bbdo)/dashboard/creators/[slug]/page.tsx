@@ -6,6 +6,7 @@ import { FiArrowUpRight } from "react-icons/fi";
 import { BackLink } from "@/components/back-link";
 import { CREATORS, getCreator, type Creator } from "@/lib/users";
 import { longDate } from "@/lib/format";
+import { MetaGrid, MetaItem, SectionHeading } from "@/components/dashboard/ui";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -20,53 +21,31 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   return { title: `${creator.name} — Creator`, description: creator.craftNote };
 }
 
-const META_LABEL = "text-[11px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground";
-const META_VALUE = "mt-[6px] block text-[clamp(17px,1.6vw,22px)] leading-[1.2]";
-const META_CELL =
-  "border-b border-border py-6 pr-6 [&:nth-child(3n+2)]:border-l [&:nth-child(3n+2)]:border-l-border [&:nth-child(3n+2)]:pl-6 [&:nth-child(3n)]:border-l [&:nth-child(3n)]:border-l-border [&:nth-child(3n)]:pl-6 max-[720px]:!border-l-0 max-[720px]:!pl-0";
+const HISTORY_ROW = "border-t border-border py-3";
 
-const HISTORY_ROW = "border-t border-border py-3.5";
-const AUDIENCE_VALUE = "mt-[6px] block text-[clamp(17px,1.6vw,22px)] leading-[1.2]";
-
-type CreatorPlatform = {
-  label: string;
-  href: string;
-  Icon: IconType;
-};
+type CreatorPlatform = { label: string; href: string; Icon: IconType };
 
 function platformsFor(creator: Creator): CreatorPlatform[] {
   const platforms: CreatorPlatform[] = [];
   if (creator.portfolio) {
     const isBehance = creator.portfolio.toLowerCase().includes("behance.net");
-    if (!isBehance) {
-      platforms.push({ label: "Website", href: creator.portfolio, Icon: FaGlobe });
-    }
-    if (isBehance && !creator.behance) {
-      platforms.push({ label: "Behance", href: creator.portfolio, Icon: FaBehance });
-    }
+    if (!isBehance) platforms.push({ label: "Website", href: creator.portfolio, Icon: FaGlobe });
+    if (isBehance && !creator.behance) platforms.push({ label: "Behance", href: creator.portfolio, Icon: FaBehance });
   }
-  if (creator.behance) {
-    platforms.push({ label: "Behance", href: creator.behance, Icon: FaBehance });
-  }
-  if (creator.linkedin) {
-    platforms.push({ label: "LinkedIn", href: creator.linkedin, Icon: FaLinkedinIn });
-  }
+  if (creator.behance) platforms.push({ label: "Behance", href: creator.behance, Icon: FaBehance });
+  if (creator.linkedin) platforms.push({ label: "LinkedIn", href: creator.linkedin, Icon: FaLinkedinIn });
   return platforms;
 }
 
 function ProfileMark({ creator, className }: { creator: Creator; className: string }) {
   return (
-    <span aria-hidden="true" className={`grid flex-none place-items-center overflow-hidden bg-border/60 ${className}`}>
+    <span aria-hidden="true" className={`grid flex-none place-items-center overflow-hidden bg-muted ${className}`}>
       {creator.profileImage ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={creator.profileImage} alt="" className="h-full w-full object-cover" />
       ) : (
-        <span className="font-black tracking-[-0.06em] text-foreground/25">
-          {creator.name
-            .split(" ")
-            .map((part) => part[0])
-            .slice(0, 2)
-            .join("")}
+        <span className="font-bold text-muted-foreground">
+          {creator.name.split(" ").map((part) => part[0]).slice(0, 2).join("")}
         </span>
       )}
     </span>
@@ -80,228 +59,171 @@ export default async function CreatorDetailPage({ params }: Params) {
   const platforms = platformsFor(creator);
 
   return (
-    <main className="flex-1 px-[clamp(20px,3vw,48px)] pb-20 pt-[clamp(30px,4vw,56px)]">
-      <BackLink href="/dashboard/creators">Back to creators</BackLink>
+    <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
+      <BackLink href="/dashboard/creators" className="mb-5">
+        Back to creators
+      </BackLink>
 
-      <div className="mt-8 grid items-start grid-cols-[minmax(0,1fr)_minmax(300px,0.72fr)] gap-[clamp(28px,5vw,72px)] max-[900px]:grid-cols-1">
+      <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(280px,0.65fr)]">
         <div className="min-w-0">
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-foreground pb-5">
-        <div className="flex items-center gap-[clamp(16px,2vw,28px)]">
-          <ProfileMark creator={creator} className="h-[clamp(64px,8vw,104px)] w-[clamp(64px,8vw,104px)] rounded-full text-[clamp(22px,2.6vw,36px)]" />
-          <div>
-            <span className="block text-[13px] font-extrabold uppercase tracking-[0.14em] text-primary">
-              {creator.category}
-            </span>
-            <h1 className="mb-0 mt-3 text-[clamp(32px,4vw,58px)] uppercase leading-[0.95] tracking-[-0.045em]">
-              {creator.name}
-            </h1>
-          </div>
-        </div>
-        <span className="text-[13px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground">
-          {creator.availability}
-        </span>
-      </div>
-
-      <p className="my-[clamp(28px,4vw,48px)] max-w-[850px] text-[clamp(19px,2vw,28px)] leading-[1.3]">
-        {creator.craftNote}
-      </p>
-
-      <div className="grid grid-cols-3 border-t border-foreground max-[720px]:grid-cols-1">
-        <div className={META_CELL}>
-          <span className={META_LABEL}>Day rate estimate</span>
-          <strong className={META_VALUE}>{creator.dayRate}</strong>
-        </div>
-        <div className={META_CELL}>
-          <span className={META_LABEL}>Terms</span>
-          <strong className={META_VALUE}>{creator.terms}</strong>
-        </div>
-        <div className={META_CELL}>
-          <span className={META_LABEL}>Clearance</span>
-          <strong className={META_VALUE}>
-            {creator.clearance === "cleared" ? "Cleared to engage" : "Sign-off pending"}
-          </strong>
-        </div>
-        <div className={META_CELL}>
-          <span className={META_LABEL}>Location</span>
-          <strong className={META_VALUE}>{creator.location}</strong>
-        </div>
-        <div className={META_CELL}>
-          <span className={META_LABEL}>Engages as</span>
-          <strong className={META_VALUE}>{creator.entity}</strong>
-        </div>
-        <div className={META_CELL}>
-          <span className={META_LABEL}>Years active</span>
-          <strong className={META_VALUE}>{creator.yearsActive ?? "Not provided"}</strong>
-        </div>
-        <div className={META_CELL}>
-          <span className={META_LABEL}>Vouched by</span>
-          <strong className={META_VALUE}>{creator.vouchedBy}</strong>
-        </div>
-        <div className={META_CELL}>
-          <span className={META_LABEL}>Last engaged</span>
-          <strong className={META_VALUE}>{longDate(creator.lastEngaged)}</strong>
-        </div>
-        <div className={META_CELL}>
-          <span className={META_LABEL}>Engagements</span>
-          <strong className={META_VALUE}>
-            {creator.workedOn.length ? creator.workedOn.join(", ") : "—"}
-          </strong>
-        </div>
-      </div>
-
-      <section className="mt-[clamp(28px,4vw,48px)] border-t border-foreground pt-5">
-        <h2 className="mb-1 mt-0 text-[12px] uppercase tracking-[0.14em] text-primary">
-          Audience profile
-        </h2>
-        <p className="mb-0 mt-2 max-w-[70ch] text-[13px] text-muted-foreground">
-          Public profile details are shown only when verified or supplied.
-        </p>
-        <div className="mt-5 grid grid-cols-4 gap-x-6 max-[900px]:grid-cols-2 max-[560px]:grid-cols-1">
-          <div className="border-b border-border py-5">
-            <span className={META_LABEL}>Follower count</span>
-            <strong className={AUDIENCE_VALUE}>{creator.followerCount ?? "Not provided"}</strong>
-            {creator.followerPlatform ? (
-              <span className="mt-1 block text-[12px] text-muted-foreground">{creator.followerPlatform}</span>
-            ) : null}
-          </div>
-          <div className="border-b border-border py-5">
-            <span className={META_LABEL}>Gender</span>
-            <strong className={AUDIENCE_VALUE}>{creator.gender ?? "Not provided"}</strong>
-          </div>
-          <div className="border-b border-border py-5">
-            <span className={META_LABEL}>Age</span>
-            <strong className={AUDIENCE_VALUE}>{creator.age ?? "Not provided"}</strong>
-          </div>
-          <div className="border-b border-border py-5">
-            <span className={META_LABEL}>Niche</span>
-            <strong className={AUDIENCE_VALUE}>{creator.niche ?? "Not provided"}</strong>
-          </div>
-        </div>
-      </section>
-
-      <div className="mt-[clamp(28px,4vw,48px)] grid grid-cols-1 gap-[clamp(28px,4vw,48px)]">
-        <section>
-          <h2 className="mb-[18px] mt-0 text-[12px] uppercase tracking-[0.14em] text-primary">
-            Work history
-          </h2>
-          {creator.workHistory?.length ? (
-            <ul className="m-0 list-none p-0">
-              {creator.workHistory.map((entry) => (
-                <li key={`${entry.company}-${entry.role}-${entry.period}`} className={HISTORY_ROW}>
-                  <div className="flex items-start justify-between gap-5 max-[560px]:flex-col max-[560px]:gap-1">
-                    <div>
-                      <strong className="block text-[18px] leading-[1.15]">{entry.role}</strong>
-                      <span className="mt-1 block text-[15px] text-muted-foreground">{entry.company}</span>
-                    </div>
-                    <span className="text-right text-[13px] font-extrabold uppercase tracking-[0.08em] text-muted-foreground max-[560px]:text-left">
-                      {entry.period}
-                      {entry.location ? <span className="block font-medium tracking-normal">{entry.location}</span> : null}
-                    </span>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="m-0 border-t border-border py-3.5 text-[15px] text-muted-foreground">
-              Public work history not yet confirmed.
-            </p>
-          )}
-        </section>
-        <div className="grid grid-cols-1 gap-[clamp(28px,4vw,48px)]">
-        <section>
-          <h2 className="mb-[18px] mt-0 text-[12px] uppercase tracking-[0.14em] text-primary">
-            Tags
-          </h2>
-          <ul className="m-0 list-none p-0">
-            {creator.tags.map((tag) => (
-              <li
-                key={tag}
-                className="relative border-t border-border py-2.5 pl-[22px] text-[16px] leading-[1.35] before:absolute before:left-0 before:top-[17px] before:h-[7px] before:w-[7px] before:bg-primary before:content-['']"
-              >
-                {tag}
-              </li>
-            ))}
-          </ul>
-        </section>
-        <section className="border border-border p-5">
-          <h2 className="mb-[18px] mt-0 text-[12px] uppercase tracking-[0.14em] text-primary">
-            Platforms
-          </h2>
-          {platforms.length ? (
-            <div className="grid grid-cols-1 gap-2">
-              {platforms.map(({ label, href, Icon }) => (
-                <a
-                  key={label}
-                  href={href}
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label={`Open ${creator.name} on ${label}`}
-                  className="group flex items-center justify-between gap-3 border border-border p-3 text-foreground no-underline transition-colors hover:border-foreground hover:bg-foreground hover:text-white focus-visible:outline-none"
-                >
-                  <span className="flex items-center gap-3">
-                    <span className="grid h-9 w-9 place-items-center bg-foreground text-white group-hover:bg-primary">
-                      <Icon aria-hidden="true" className="h-[17px] w-[17px]" />
-                    </span>
-                    <span>
-                      <strong className="block text-[15px] leading-none">{label}</strong>
-                      <span className="mt-1 block text-[11px] uppercase tracking-[0.1em] text-muted-foreground group-hover:text-white/70">
-                        Open profile
-                      </span>
-                    </span>
-                  </span>
-                  <FiArrowUpRight aria-hidden="true" className="h-4 w-4 flex-none" />
-                </a>
-              ))}
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-5">
+            <div className="flex items-center gap-4">
+              <ProfileMark creator={creator} className="h-16 w-16 rounded-full text-[18px] sm:h-20 sm:w-20" />
+              <div>
+                <span className="block text-[13px] font-semibold text-primary">{creator.category}</span>
+                <h1 className="mb-0 mt-1.5 text-[24px] font-bold leading-tight tracking-tight sm:text-[30px]">
+                  {creator.name}
+                </h1>
+              </div>
             </div>
-          ) : (
-            <p className="m-0 border-t border-border pt-3.5 text-[15px] text-muted-foreground">
-              Public platform links not yet confirmed.
+            <span className="text-[13px] font-medium text-muted-foreground">{creator.availability}</span>
+          </div>
+
+          <p className="my-6 max-w-[850px] text-[17px] leading-[1.4]">{creator.craftNote}</p>
+
+          <MetaGrid>
+            <MetaItem label="Day rate estimate">{creator.dayRate}</MetaItem>
+            <MetaItem label="Terms">{creator.terms}</MetaItem>
+            <MetaItem label="Clearance">{creator.clearance === "cleared" ? "Cleared to engage" : "Sign-off pending"}</MetaItem>
+            <MetaItem label="Location">{creator.location}</MetaItem>
+            <MetaItem label="Engages as">{creator.entity}</MetaItem>
+            <MetaItem label="Years active">{creator.yearsActive ?? "Not provided"}</MetaItem>
+            <MetaItem label="Vouched by">{creator.vouchedBy}</MetaItem>
+            <MetaItem label="Last engaged">{longDate(creator.lastEngaged)}</MetaItem>
+            <MetaItem label="Engagements">{creator.workedOn.length ? creator.workedOn.join(", ") : "—"}</MetaItem>
+          </MetaGrid>
+
+          <section className="mt-10">
+            <SectionHeading>Audience profile</SectionHeading>
+            <p className="mb-4 mt-[-8px] max-w-[70ch] text-[13px] text-muted-foreground">
+              Public profile details are shown only when verified or supplied.
             </p>
-          )}
-        </section>
-        <section>
-          <h2 className="mb-[18px] mt-0 text-[12px] uppercase tracking-[0.14em] text-primary">
-            Contact
-          </h2>
-          <ul className="m-0 list-none p-0 text-[16px] leading-[1.35]">
-            {creator.email ? (
-              <li className="border-t border-border py-2.5">
-                <a href={`mailto:${creator.email}`} className="text-foreground hover:text-primary">
-                  {creator.email}
-                </a>
-              </li>
-            ) : null}
-            {creator.phone ? <li className="border-t border-border py-2.5">{creator.phone}</li> : null}
-            {!creator.email && !creator.phone ? (
-              <li className="border-t border-border py-2.5 text-muted-foreground">Public contact links not yet confirmed.</li>
-            ) : null}
-          </ul>
-        </section>
-        </div>
-      </div>
+            <div className="grid grid-cols-2 gap-x-6 sm:grid-cols-4">
+              <div className="border-b border-border py-4">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Follower count</span>
+                <strong className="mt-1.5 block text-[16px] leading-tight">{creator.followerCount ?? "Not provided"}</strong>
+                {creator.followerPlatform ? <span className="mt-1 block text-[12px] text-muted-foreground">{creator.followerPlatform}</span> : null}
+              </div>
+              <div className="border-b border-border py-4">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Gender</span>
+                <strong className="mt-1.5 block text-[16px] leading-tight">{creator.gender ?? "Not provided"}</strong>
+              </div>
+              <div className="border-b border-border py-4">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Age</span>
+                <strong className="mt-1.5 block text-[16px] leading-tight">{creator.age ?? "Not provided"}</strong>
+              </div>
+              <div className="border-b border-border py-4">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Niche</span>
+                <strong className="mt-1.5 block text-[16px] leading-tight">{creator.niche ?? "Not provided"}</strong>
+              </div>
+            </div>
+          </section>
+
+          <div className="mt-10 grid grid-cols-1 gap-10">
+            <section>
+              <SectionHeading>Work history</SectionHeading>
+              {creator.workHistory?.length ? (
+                <ul className="m-0 list-none p-0">
+                  {creator.workHistory.map((entry) => (
+                    <li key={`${entry.company}-${entry.role}-${entry.period}`} className={HISTORY_ROW}>
+                      <div className="flex items-start justify-between gap-5 max-[560px]:flex-col max-[560px]:gap-1">
+                        <div>
+                          <strong className="block text-[16px] font-semibold leading-[1.15]">{entry.role}</strong>
+                          <span className="mt-1 block text-[14px] text-muted-foreground">{entry.company}</span>
+                        </div>
+                        <span className="text-right text-[13px] font-medium text-muted-foreground max-[560px]:text-left">
+                          {entry.period}
+                          {entry.location ? <span className="block font-normal">{entry.location}</span> : null}
+                        </span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="m-0 border-t border-border py-3 text-[14px] text-muted-foreground">
+                  Public work history not yet confirmed.
+                </p>
+              )}
+            </section>
+
+            <div className="grid grid-cols-1 gap-10">
+              <section>
+                <SectionHeading>Tags</SectionHeading>
+                <div className="flex flex-wrap gap-1.5">
+                  {creator.tags.map((tag) => (
+                    <span key={tag} className="rounded-full bg-muted px-2.5 py-1 text-[12px] text-foreground">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </section>
+              <section>
+                <SectionHeading>Platforms</SectionHeading>
+                {platforms.length ? (
+                  <div className="grid grid-cols-1 gap-2">
+                    {platforms.map(({ label, href, Icon }) => (
+                      <a
+                        key={label}
+                        href={href}
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label={`Open ${creator.name} on ${label}`}
+                        className="group flex items-center justify-between gap-3 rounded-lg border border-border p-3 text-foreground no-underline transition-colors hover:border-foreground hover:bg-muted focus-visible:outline-none"
+                      >
+                        <span className="flex items-center gap-3">
+                          <span className="grid h-9 w-9 place-items-center rounded-full bg-foreground text-background group-hover:bg-primary">
+                            <Icon aria-hidden="true" className="h-4 w-4" />
+                          </span>
+                          <span>
+                            <strong className="block text-[14px] font-semibold leading-none">{label}</strong>
+                            <span className="mt-1 block text-[12px] text-muted-foreground">Open profile</span>
+                          </span>
+                        </span>
+                        <FiArrowUpRight aria-hidden="true" className="h-4 w-4 flex-none text-muted-foreground group-hover:text-foreground" />
+                      </a>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="m-0 border-t border-border pt-3 text-[14px] text-muted-foreground">
+                    Public platform links not yet confirmed.
+                  </p>
+                )}
+              </section>
+              <section>
+                <SectionHeading>Contact</SectionHeading>
+                <ul className="m-0 list-none p-0 text-[15px] leading-[1.35]">
+                  {creator.email ? (
+                    <li className="border-t border-border py-2.5">
+                      <a href={`mailto:${creator.email}`} className="text-foreground hover:text-primary">
+                        {creator.email}
+                      </a>
+                    </li>
+                  ) : null}
+                  {creator.phone ? <li className="border-t border-border py-2.5">{creator.phone}</li> : null}
+                  {!creator.email && !creator.phone ? (
+                    <li className="border-t border-border py-2.5 text-muted-foreground">Public contact links not yet confirmed.</li>
+                  ) : null}
+                </ul>
+              </section>
+            </div>
+          </div>
         </div>
 
         <aside className="min-w-0 max-[900px]:order-first">
-          <div className="border border-border bg-background">
-            <div className="relative aspect-[4/5] overflow-hidden bg-transparent">
+          <div className="overflow-hidden rounded-xl border border-border">
+            <div className="relative aspect-[4/5] bg-muted">
               {creator.featuredImage ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={creator.featuredImage} alt={`${creator.name} featured work`} className="h-full w-full object-cover" />
               ) : (
-                <span className="grid h-full w-full place-items-center text-[clamp(64px,10vw,140px)] font-black tracking-[-0.08em] text-foreground/20">
-                  {creator.name
-                    .split(" ")
-                    .map((part) => part[0])
-                    .slice(0, 2)
-                    .join("")}
+                <span className="grid h-full w-full place-items-center text-[64px] font-bold text-muted-foreground/40">
+                  {creator.name.split(" ").map((part) => part[0]).slice(0, 2).join("")}
                 </span>
               )}
-              <span className="absolute right-4 top-4 h-3 w-3 rounded-full bg-primary" aria-hidden="true" />
+              <span className="absolute right-3 top-3 h-2.5 w-2.5 rounded-full bg-primary" aria-hidden="true" />
             </div>
             <div className="border-t border-border p-4">
-              <span className="block text-[11px] font-extrabold uppercase tracking-[0.14em] text-primary">
-                Featured work
-              </span>
+              <span className="block text-[12px] font-semibold text-primary">Featured work</span>
               <span className="mt-1 block text-[13px] text-muted-foreground">
                 {creator.featuredImage ? "Public portfolio image" : "No verified project image yet"}
               </span>

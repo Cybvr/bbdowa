@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PROJECTS, getProject } from "@/lib/projects";
 import { getUserByName, userHref } from "@/lib/users";
+import { BackLink } from "@/components/back-link";
+import { Badge, MetaGrid, MetaItem, SectionHeading } from "@/components/dashboard/ui";
+import Link from "next/link";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -17,12 +19,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   return { title: project.name, description: project.summary };
 }
 
-const SECTION = "grid grid-cols-[minmax(150px,0.55fr)_minmax(0,1.45fr)] gap-[clamp(28px,6vw,88px)] border-b border-foreground py-[clamp(36px,6vw,72px)] max-[760px]:grid-cols-1 max-[760px]:gap-5";
-const SECTION_HEADING =
-  "m-0 text-[clamp(22px,2.4vw,34px)] uppercase leading-none tracking-[-0.025em] text-primary";
-const BODY = "m-0 max-w-[70ch] text-[clamp(20px,2.1vw,29px)] leading-[1.42]";
-const META_LABEL = "text-[11px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground";
-const META_VALUE = "text-[clamp(18px,1.8vw,24px)] leading-[1.2]";
+const SECTION = "border-b border-border py-6";
+const BODY = "m-0 max-w-[70ch] text-[15px] leading-[1.55]";
 
 export default async function ProjectDetailPage({ params }: Params) {
   const { slug } = await params;
@@ -33,62 +31,48 @@ export default async function ProjectDetailPage({ params }: Params) {
   const leadUser = getUserByName(project.lead);
 
   return (
-    <main className="flex-1 px-[clamp(20px,3vw,48px)] pb-24 pt-[clamp(30px,4vw,56px)]">
-      <Link
-        href="/dashboard/projects"
-        className="mb-[26px] inline-flex min-h-[44px] items-center text-[12px] font-extrabold uppercase tracking-[0.1em] text-foreground no-underline before:mr-[9px] before:h-2.5 before:w-[18px] before:bg-primary before:content-[''] before:[clip-path:polygon(35%_0,35%_40%,100%_40%,100%_60%,35%_60%,35%_100%,0_50%)] hover:text-primary focus-visible:outline-none"
-      >
+    <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
+      <BackLink href="/dashboard/projects" className="mb-5">
         All projects
-      </Link>
+      </BackLink>
 
       <section
-        className="grid grid-cols-[minmax(260px,0.82fr)_minmax(0,1.35fr)] items-end gap-[clamp(34px,6vw,88px)] max-[760px]:grid-cols-1 max-[760px]:items-start"
+        className="grid grid-cols-[minmax(220px,0.7fr)_minmax(0,1.3fr)] items-start gap-8 lg:gap-12 max-[720px]:grid-cols-1"
         aria-labelledby="project-name"
       >
-        <div className="relative aspect-[4/3] max-w-[560px] overflow-hidden rounded-lg bg-foreground max-[760px]:w-[min(100%,460px)]">
+        <div className="relative aspect-[4/3] max-w-[440px] overflow-hidden rounded-xl bg-muted">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={project.image}
-            alt={project.imageAlt}
-            className="block h-full w-full object-cover"
-          />
+          <img src={project.image} alt={project.imageAlt} className="block h-full w-full object-cover" />
         </div>
-        <div className="pb-1">
-          <span
-            className={`mb-5 inline-block px-2.5 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.12em] text-white ${
-              project.status === "live" ? "bg-primary" : "bg-foreground"
-            }`}
-          >
-            {project.status}
-          </span>
-          <h1
-            id="project-name"
-            className="m-0 max-w-[16ch] text-[clamp(36px,5vw,60px)] uppercase leading-[0.92] tracking-[-0.04em]"
-          >
+        <div>
+          <Badge tone={project.status === "live" ? "active" : "neutral"}>{project.status}</Badge>
+          <h1 id="project-name" className="m-0 mt-3 max-w-[20ch] text-[28px] font-bold leading-tight tracking-tight sm:text-[36px]">
             {project.name}
           </h1>
-          <p className="mb-0 mt-[26px] max-w-[60ch] text-[clamp(18px,2vw,25px)] leading-[1.38] text-muted-foreground">
+          <p className="mb-0 mt-3 max-w-[60ch] text-[16px] leading-[1.45] text-muted-foreground">
             {project.summary}
           </p>
         </div>
       </section>
 
       {project.media.length > 0 && (
-        <section className="mt-[clamp(42px,6vw,72px)] border-t-2 border-foreground pt-6" aria-labelledby="project-media">
-          <div className="mb-5 flex items-baseline justify-between gap-5">
-            <h2 id="project-media" className="m-0 text-[12px] uppercase tracking-[0.14em] text-primary">
-              Project media
-            </h2>
-            <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
-              {project.media.length} {project.media.length === 1 ? "asset" : "assets"}
-            </span>
-          </div>
+        <section className="mt-10 border-t border-border pt-6" aria-labelledby="project-media">
+          <SectionHeading
+            id="project-media"
+            action={
+              <span className="text-[12px] text-muted-foreground">
+                {project.media.length} {project.media.length === 1 ? "asset" : "assets"}
+              </span>
+            }
+          >
+            Project media
+          </SectionHeading>
           <div className="grid grid-cols-2 gap-4 max-[760px]:grid-cols-1">
             {project.media.map((media) =>
               media.kind === "video" ? (
                 <video
                   key={media.src}
-                  className="block aspect-video h-full w-full rounded-lg bg-foreground object-cover"
+                  className="block aspect-video h-full w-full rounded-xl bg-muted object-cover"
                   controls
                   preload="metadata"
                   poster={media.poster}
@@ -103,7 +87,7 @@ export default async function ProjectDetailPage({ params }: Params) {
                   key={media.src}
                   src={media.src}
                   alt={media.alt}
-                  className="block aspect-video h-full w-full rounded-lg bg-foreground object-cover"
+                  className="block aspect-video h-full w-full rounded-xl bg-muted object-cover"
                 />
               ),
             )}
@@ -111,76 +95,56 @@ export default async function ProjectDetailPage({ params }: Params) {
         </section>
       )}
 
-      <section
-        className="mt-[clamp(42px,6vw,72px)] grid grid-cols-3 border-b border-foreground border-t-2 border-t-foreground max-[760px]:grid-cols-1"
-        aria-label="Project information"
-      >
-        <div className="flex min-h-[118px] flex-col justify-center gap-[7px] py-[22px] pl-0 pr-[clamp(18px,3vw,36px)] max-[760px]:min-h-[96px] max-[760px]:px-0 max-[760px]:py-5">
-          <span className={META_LABEL}>Client</span>
-          <strong className={META_VALUE}>{project.client}</strong>
-        </div>
-        <div className="flex min-h-[118px] flex-col justify-center gap-[7px] border-l border-border px-[clamp(18px,3vw,36px)] py-[22px] max-[760px]:min-h-[96px] max-[760px]:border-l-0 max-[760px]:border-t max-[760px]:border-t-border max-[760px]:px-0 max-[760px]:py-5">
-          <span className={META_LABEL}>Category</span>
-          <strong className={META_VALUE}>{project.category}</strong>
-        </div>
-        <div className="flex min-h-[118px] flex-col justify-center gap-[7px] border-l border-border px-[clamp(18px,3vw,36px)] py-[22px] max-[760px]:min-h-[96px] max-[760px]:border-l-0 max-[760px]:border-t max-[760px]:border-t-border max-[760px]:px-0 max-[760px]:py-5">
-          <span className={META_LABEL}>Project lead</span>
-          <strong className={`${META_VALUE} ${project.lead ? "" : "text-muted-foreground"}`}>
-            {leadUser ? (
-              <Link
-                href={userHref(leadUser)}
-                className="text-foreground underline decoration-border underline-offset-4 hover:text-primary focus-visible:text-primary"
-              >
-                {project.lead}
-              </Link>
-            ) : (
-              project.lead || "To be confirmed"
-            )}
-          </strong>
-        </div>
-        <div className="flex min-h-[118px] flex-col justify-center gap-[7px] border-t border-border py-[22px] pl-0 pr-[clamp(18px,3vw,36px)] max-[760px]:min-h-[96px] max-[760px]:px-0 max-[760px]:py-5">
-          <span className={META_LABEL}>Fee</span>
-          <strong className={`${META_VALUE} ${project.fee === "To be confirmed" ? "text-muted-foreground" : ""}`}>
-            {project.fee}
-          </strong>
-        </div>
-        <div className="flex min-h-[118px] flex-col justify-center gap-[7px] border-l border-t border-border px-[clamp(18px,3vw,36px)] py-[22px] max-[760px]:min-h-[96px] max-[760px]:border-l-0 max-[760px]:px-0 max-[760px]:py-5">
-          <span className={META_LABEL}>Target</span>
-          <strong className={`${META_VALUE} ${project.target === "To be confirmed" ? "text-muted-foreground" : ""}`}>
-            {project.target}
-          </strong>
-        </div>
-        <div className="flex min-h-[118px] flex-col justify-center gap-[7px] border-l border-t border-border px-[clamp(18px,3vw,36px)] py-[22px] max-[760px]:min-h-[96px] max-[760px]:border-l-0 max-[760px]:px-0 max-[760px]:py-5">
-          <span className={META_LABEL}>Result so far</span>
-          <strong className={`${META_VALUE} ${project.result === "To be confirmed" ? "text-muted-foreground" : ""}`}>
-            {project.result}
-          </strong>
-        </div>
+      <section className="mt-10" aria-label="Project information">
+        <MetaGrid>
+          <MetaItem label="Client">{project.client}</MetaItem>
+          <MetaItem label="Category">{project.category}</MetaItem>
+          <MetaItem label="Project lead">
+            <span className={project.lead ? "" : "text-muted-foreground"}>
+              {leadUser ? (
+                <Link
+                  href={userHref(leadUser)}
+                  className="text-foreground underline decoration-border underline-offset-4 hover:text-primary focus-visible:text-primary"
+                >
+                  {project.lead}
+                </Link>
+              ) : (
+                project.lead || "To be confirmed"
+              )}
+            </span>
+          </MetaItem>
+          <MetaItem label="Fee">
+            <span className={project.fee === "To be confirmed" ? "text-muted-foreground" : ""}>{project.fee}</span>
+          </MetaItem>
+          <MetaItem label="Target">
+            <span className={project.target === "To be confirmed" ? "text-muted-foreground" : ""}>{project.target}</span>
+          </MetaItem>
+          <MetaItem label="Result so far">
+            <span className={project.result === "To be confirmed" ? "text-muted-foreground" : ""}>{project.result}</span>
+          </MetaItem>
+        </MetaGrid>
       </section>
 
-      <section
-        className="mt-[clamp(64px,9vw,120px)] border-t-2 border-foreground"
-        aria-label="Project case study"
-      >
+      <section className="mt-12" aria-label="Project case study">
         <article className={SECTION}>
-          <h2 className={SECTION_HEADING}>Challenge</h2>
+          <SectionHeading>Challenge</SectionHeading>
           <p className={`${BODY} ${provisional}`}>{project.challenge}</p>
         </article>
         <article className={SECTION}>
-          <h2 className={SECTION_HEADING}>Insight</h2>
+          <SectionHeading>Insight</SectionHeading>
           <p className={`${BODY} ${provisional}`}>{project.insight}</p>
         </article>
         <article className={SECTION}>
-          <h2 className={SECTION_HEADING}>Strategy</h2>
+          <SectionHeading>Strategy</SectionHeading>
           <p className={`${BODY} ${provisional}`}>{project.strategy}</p>
         </article>
         <article className={SECTION}>
-          <h2 className={SECTION_HEADING}>Platform</h2>
+          <SectionHeading>Platform</SectionHeading>
           <ul className="m-0 flex flex-wrap gap-2 p-0 list-none">
             {project.platform.map((channel) => (
               <li
                 key={channel}
-                className="border border-foreground px-3 py-[9px] text-[12px] font-extrabold uppercase tracking-[0.08em]"
+                className="rounded-md border border-border px-2.5 py-1 text-[13px] font-medium"
               >
                 {channel}
               </li>
@@ -188,11 +152,11 @@ export default async function ProjectDetailPage({ params }: Params) {
           </ul>
         </article>
         <article className={SECTION}>
-          <h2 className={SECTION_HEADING}>Execution</h2>
+          <SectionHeading>Execution</SectionHeading>
           <p className={`${BODY} ${provisional}`}>{project.execution}</p>
         </article>
-        <article className={SECTION}>
-          <h2 className={SECTION_HEADING}>Outcome</h2>
+        <article className={`${SECTION} border-b-0`}>
+          <SectionHeading>Outcome</SectionHeading>
           <p className={`${BODY} ${provisional}`}>{project.outcome}</p>
         </article>
       </section>

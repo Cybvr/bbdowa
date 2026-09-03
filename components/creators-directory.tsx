@@ -243,7 +243,7 @@ function FilterControls({
         <button
           type="button"
           onClick={onClear}
-          className="min-h-[44px] cursor-pointer border-2 border-border bg-transparent px-3 py-2.5 text-left text-[11px] font-extrabold uppercase tracking-[0.12em] text-muted-foreground hover:border-foreground hover:text-foreground focus-visible:outline-none"
+          className="min-h-[40px] cursor-pointer rounded-lg border border-border bg-transparent px-3 py-2 text-left text-[13px] font-medium text-muted-foreground hover:border-foreground hover:text-foreground focus-visible:outline-none"
         >
           Clear filters ({activeFilterCount})
         </button>
@@ -387,17 +387,17 @@ export function CreatorDirectory({
             <button
               type="button"
               onClick={() => setFilterOpen(true)}
-              className="inline-flex min-h-[44px] items-center gap-2 border-2 border-foreground bg-transparent px-4 py-2.5 text-[11px] font-extrabold uppercase tracking-[0.12em] hover:bg-foreground hover:text-white focus-visible:outline-none"
+              className="inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-border bg-transparent px-3.5 py-2 text-[13px] font-medium hover:border-foreground focus-visible:outline-none"
             >
               <FiFilter aria-hidden="true" className="h-4 w-4" />
               Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
             </button>
-            <span className="text-[12px] font-extrabold uppercase tracking-[0.12em] text-primary">
+            <span className="text-[13px] font-medium text-muted-foreground">
               {visible.length} {visible.length === 1 ? "person" : "people"}
             </span>
           </div>
 
-          <p aria-live="polite" className="mb-5 mt-0 hidden text-[12px] font-extrabold uppercase tracking-[0.14em] text-primary min-[801px]:block">
+          <p aria-live="polite" className="mb-5 mt-0 hidden text-[13px] font-medium text-muted-foreground min-[801px]:block">
             {visible.length} {visible.length === 1 ? "person" : "people"}
           </p>
 
@@ -427,7 +427,7 @@ export function CreatorDirectory({
 
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-3">
-                  <h2 className="m-0 text-[18px] uppercase leading-none tracking-[-0.03em]">
+                  <h2 className="m-0 text-[17px] font-semibold leading-none tracking-tight">
                     <Link
                       href={creatorHref(creator.slug)}
                       className="text-foreground no-underline hover:text-primary focus-visible:outline-none"
@@ -435,8 +435,8 @@ export function CreatorDirectory({
                       {creator.name}
                     </Link>
                   </h2>
-                  <span className="inline-flex items-center gap-1.5 text-[12px] font-extrabold uppercase tracking-[0.08em] text-muted-foreground">
-                    <span aria-hidden="true" className={`h-2.5 w-2.5 rounded-full ${AVAILABILITY_DOT[creator.availability]}`} />
+                  <span className="inline-flex items-center gap-1.5 text-[12px] font-medium text-muted-foreground">
+                    <span aria-hidden="true" className={`h-2 w-2 rounded-full ${AVAILABILITY_DOT[creator.availability]}`} />
                     {AVAILABILITY_LABEL[creator.availability]}
                   </span>
                 </div>
@@ -503,18 +503,18 @@ export function CreatorDirectory({
                 type="button"
                 disabled={currentPage === 1}
                 onClick={() => setPage((value) => Math.max(1, value - 1))}
-                className="min-h-[44px] cursor-pointer border-2 border-border bg-transparent px-4 py-2.5 text-[11px] font-extrabold uppercase tracking-[0.12em] text-muted-foreground hover:border-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                className="min-h-[40px] cursor-pointer rounded-lg border border-border bg-transparent px-3.5 py-2 text-[13px] font-medium text-muted-foreground hover:border-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Previous
               </button>
-              <span className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-muted-foreground">
+              <span className="text-[13px] font-medium text-muted-foreground">
                 Page {currentPage} of {totalPages}
               </span>
               <button
                 type="button"
                 disabled={currentPage === totalPages}
                 onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
-                className="min-h-[44px] cursor-pointer border-2 border-border bg-transparent px-4 py-2.5 text-[11px] font-extrabold uppercase tracking-[0.12em] text-muted-foreground hover:border-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                className="min-h-[40px] cursor-pointer rounded-lg border border-border bg-transparent px-3.5 py-2 text-[13px] font-medium text-muted-foreground hover:border-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Next
               </button>
@@ -537,7 +537,7 @@ export function CreatorDirectory({
                 type="button"
                 aria-label="Close filters"
                 onClick={() => setFilterOpen(false)}
-                className="grid h-11 w-11 cursor-pointer place-items-center border-2 border-foreground bg-transparent hover:bg-foreground hover:text-white focus-visible:outline-none"
+                className="grid h-10 w-10 cursor-pointer place-items-center rounded-lg border border-border bg-transparent hover:border-foreground focus-visible:outline-none"
               >
                 <FiX aria-hidden="true" className="h-5 w-5" />
               </button>

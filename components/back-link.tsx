@@ -1,7 +1,8 @@
 import Link from "next/link";
+import { LuArrowLeft } from "react-icons/lu";
 
 const BASE =
-  "inline-flex min-h-[44px] items-center text-[12px] font-extrabold uppercase tracking-[0.1em] text-foreground no-underline before:mr-[9px] before:h-2.5 before:w-[18px] before:bg-primary before:content-[''] before:[clip-path:polygon(35%_0,35%_40%,100%_40%,100%_60%,35%_60%,35%_100%,0_50%)] hover:text-primary focus-visible:outline-none";
+  "inline-flex min-h-[36px] items-center gap-1.5 text-[13px] font-medium text-muted-foreground no-underline hover:text-foreground focus-visible:text-foreground focus-visible:outline-none";
 
 export function BackLink({
   href,
@@ -14,6 +15,7 @@ export function BackLink({
 }) {
   return (
     <Link href={href} className={`${BASE} ${className}`}>
+      <LuArrowLeft aria-hidden="true" className="h-3.5 w-3.5" />
       {children}
     </Link>
   );

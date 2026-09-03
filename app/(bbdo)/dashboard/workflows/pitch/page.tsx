@@ -1,16 +1,13 @@
 import type { Metadata } from "next";
 import { PitchChecklist } from "@/components/pitch-checklist";
+import { PageHeader } from "@/components/dashboard/ui";
 
 export const metadata: Metadata = { title: "Pitch Workflow" };
 
 export default function PitchWorkflowPage() {
   return (
-    <div className="flex-1">
-      <header className="flex min-h-[clamp(360px,52vh,580px)] items-center px-[clamp(20px,3vw,48px)] py-[clamp(48px,7vw,88px)]">
-        <h1 className="m-0 max-w-[14ch] text-[clamp(40px,5vw,68px)] uppercase leading-[0.9] tracking-[-0.05em]">
-          Pitch Workflow
-        </h1>
-      </header>
+    <div className="flex-1 px-5 pt-8 sm:px-8">
+      <PageHeader title="Pitch Workflow" description="Every pitch runs on the same checklist, stage by stage." />
       <PitchChecklist />
     </div>
   );
