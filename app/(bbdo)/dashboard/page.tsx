@@ -1,8 +1,19 @@
 import Link from "next/link";
 import { BLOG_POSTS } from "@/lib/blog";
+import {
+  PROJECTS,
+  projectHref,
+  projectLiveDateLabel,
+  projectsDueFrom,
+  projectsLiveNow,
+  projectsWithTrackedTarget,
+} from "@/lib/projects";
 
 export default function HomePage() {
   const latestPosts = BLOG_POSTS.slice(0, 3);
+  const liveNow = projectsLiveNow(PROJECTS);
+  const dueSoon = projectsDueFrom(PROJECTS, new Date());
+  const trackedTargets = projectsWithTrackedTarget(PROJECTS);
 
   return (
     <main className="flex-1 px-[clamp(20px,3vw,48px)] pb-20 pt-[clamp(30px,4vw,56px)]">
@@ -24,6 +35,54 @@ export default function HomePage() {
           members congregate for dialogue, storytelling and collective decision-making. This is
           ours.
         </p>
+      </section>
+
+      <section
+        className="grid grid-cols-3 border-t-2 border-foreground py-[clamp(24px,4vw,44px)] max-[720px]:grid-cols-1"
+        aria-labelledby="wins-heading"
+      >
+        <h2 id="wins-heading" className="sr-only">
+          This month
+        </h2>
+        <div className="flex flex-col gap-[7px] pr-[clamp(18px,3vw,36px)] max-[720px]:border-b max-[720px]:border-border max-[720px]:py-4">
+          <span className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-primary">Live now</span>
+          <strong className="text-[clamp(30px,3.6vw,48px)] leading-none tracking-[-0.03em]">{liveNow.length}</strong>
+          <span className="text-[13px] leading-[1.35] text-muted-foreground">
+            {liveNow.length > 0 ? liveNow.map((project) => project.name).join(", ") : "No campaigns are live yet"}
+          </span>
+        </div>
+        <div className="flex flex-col gap-[7px] border-l border-border px-[clamp(18px,3vw,36px)] max-[720px]:border-l-0 max-[720px]:border-b max-[720px]:border-b-border max-[720px]:py-4">
+          <span className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-primary">Due next</span>
+          {dueSoon.length > 0 ? (
+            <ul className="m-0 list-none p-0">
+              {dueSoon.map((project) => (
+                <li key={project.slug} className="text-[15px] leading-[1.4]">
+                  <Link
+                    href={projectHref(project.slug)}
+                    className="text-foreground no-underline hover:text-primary focus-visible:text-primary"
+                  >
+                    {project.name}
+                  </Link>{" "}
+                  <span className="text-muted-foreground">{projectLiveDateLabel(project)}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <span className="text-[13px] leading-[1.35] text-muted-foreground">Nothing scheduled yet</span>
+          )}
+        </div>
+        <div className="flex flex-col gap-[7px] border-l border-border pl-[clamp(18px,3vw,36px)] max-[720px]:border-l-0 max-[720px]:py-4">
+          <span className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-primary">Targets tracked</span>
+          <strong className="text-[clamp(30px,3.6vw,48px)] leading-none tracking-[-0.03em]">
+            {trackedTargets.length}/{PROJECTS.length}
+          </strong>
+          <Link
+            href="/dashboard/projects"
+            className="text-[13px] text-foreground underline underline-offset-4 hover:text-primary focus-visible:text-primary"
+          >
+            View projects
+          </Link>
+        </div>
       </section>
 
       <section

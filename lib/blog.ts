@@ -36,6 +36,36 @@ export const BLOG_POSTS: BlogPost[] = [
     sourceUrl: "https://ng.linkedin.com/jobs/view/strategy-lead-at-bbdo-west-africa-4364470451",
   },
   {
+    slug: "wpp-outcome-based-agency-pricing",
+    title: "WPP moves agency pay away from hourly billing",
+    excerpt:
+      "WPP has told analysts it is shifting compensation away from time-and-materials toward pay tied to client outcomes, with 20 to 25 percent of net sales already on performance-based terms.",
+    publishedAt: "2026-03",
+    category: "Industry",
+    sourceName: "Digiday",
+    sourceUrl: "https://digiday.com/media-buying/wpp-is-betting-its-future-on-getting-paid-for-outcomes/",
+  },
+  {
+    slug: "mckinsey-outcome-based-fees",
+    title: "McKinsey ties a quarter of its fees to results",
+    excerpt:
+      "McKinsey UK managing partner Michael Birshan says about 25 percent of the firm's global fees now come from outcome-based pricing, as clients increasingly ask to pay for a result instead of a defined scope of hours.",
+    publishedAt: "2025-11",
+    category: "Industry",
+    sourceName: "Yahoo Finance",
+    sourceUrl: "https://finance.yahoo.com/sectors/technology/articles/ai-forcing-mckinsey-bcg-bain-093300265.html",
+  },
+  {
+    slug: "forrester-agency-jobs-2026",
+    title: "Forrester predicts 15 percent of agency jobs disappear in 2026",
+    excerpt:
+      "Forrester forecasts that 15 percent of agency jobs will be eliminated in 2026 alone, with clerical, business-development and market-research roles absorbing most of the losses as AI tools take on that work.",
+    publishedAt: "2025-10",
+    category: "Industry",
+    sourceName: "The Drum",
+    sourceUrl: "https://www.thedrum.com/news/forrester-predicts-15-agency-job-losses-2026-the-agencies-agents-era-over",
+  },
+  {
     slug: "bbdo-west-africa-cannes-lions-young-creatives-2023",
     title: "BBDO West Africa team selected for Nigeria’s Cannes Lions delegation",
     excerpt:

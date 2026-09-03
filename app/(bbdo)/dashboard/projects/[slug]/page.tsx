@@ -138,6 +138,24 @@ export default async function ProjectDetailPage({ params }: Params) {
             )}
           </strong>
         </div>
+        <div className="flex min-h-[118px] flex-col justify-center gap-[7px] border-t border-border py-[22px] pl-0 pr-[clamp(18px,3vw,36px)] max-[760px]:min-h-[96px] max-[760px]:px-0 max-[760px]:py-5">
+          <span className={META_LABEL}>Fee</span>
+          <strong className={`${META_VALUE} ${project.fee === "To be confirmed" ? "text-muted-foreground" : ""}`}>
+            {project.fee}
+          </strong>
+        </div>
+        <div className="flex min-h-[118px] flex-col justify-center gap-[7px] border-l border-t border-border px-[clamp(18px,3vw,36px)] py-[22px] max-[760px]:min-h-[96px] max-[760px]:border-l-0 max-[760px]:px-0 max-[760px]:py-5">
+          <span className={META_LABEL}>Target</span>
+          <strong className={`${META_VALUE} ${project.target === "To be confirmed" ? "text-muted-foreground" : ""}`}>
+            {project.target}
+          </strong>
+        </div>
+        <div className="flex min-h-[118px] flex-col justify-center gap-[7px] border-l border-t border-border px-[clamp(18px,3vw,36px)] py-[22px] max-[760px]:min-h-[96px] max-[760px]:border-l-0 max-[760px]:px-0 max-[760px]:py-5">
+          <span className={META_LABEL}>Result so far</span>
+          <strong className={`${META_VALUE} ${project.result === "To be confirmed" ? "text-muted-foreground" : ""}`}>
+            {project.result}
+          </strong>
+        </div>
       </section>
 
       <section

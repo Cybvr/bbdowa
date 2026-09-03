@@ -21,6 +21,9 @@ export type Project = {
   liveAt?: ProjectLiveDate;
   status: ProjectStatus;
   lead: string;
+  fee: string;
+  target: string;
+  result: string;
   image: string;
   imageAlt: string;
   media: ProjectMedia[];
@@ -45,6 +48,9 @@ export const PROJECTS: Project[] = [
     liveAt: { date: "2026-08-01" },
     status: "live",
     lead: "Samiat Basorun",
+    fee: "To be confirmed",
+    target: "To be confirmed",
+    result: "To be confirmed",
     image: "/images/projects/project-placeholder.svg",
     imageAlt: "",
     media: [],
@@ -80,6 +86,9 @@ export const PROJECTS: Project[] = [
     liveAt: { date: "2026-01-15" },
     status: "live",
     lead: "Samiat Basorun",
+    fee: "To be confirmed",
+    target: "To be confirmed",
+    result: "To be confirmed",
     image: "/media/projects/betano/make-we-bet-betano.png",
     imageAlt: "Two people linking pinky fingers during a sports conversation",
     media: [],
@@ -107,6 +116,9 @@ export const PROJECTS: Project[] = [
     liveAt: { date: "2026-03-15" },
     status: "pitch",
     lead: "Samiat Basorun",
+    fee: "To be confirmed",
+    target: "To be confirmed",
+    result: "To be confirmed",
     image: "/images/projects/project-placeholder.svg",
     imageAlt: "",
     media: [],
@@ -128,6 +140,9 @@ export const PROJECTS: Project[] = [
     liveAt: { date: "2026-08-19" },
     status: "pitch",
     lead: "Samiat Basorun",
+    fee: "To be confirmed",
+    target: "To be confirmed",
+    result: "To be confirmed",
     image: "/images/projects/project-placeholder.svg",
     imageAlt: "",
     media: [],
@@ -149,6 +164,9 @@ export const PROJECTS: Project[] = [
     liveAt: { date: "2026-08-15" },
     status: "pitch",
     lead: "Enyi Odigbo",
+    fee: "To be confirmed",
+    target: "To be confirmed",
+    result: "To be confirmed",
     image: "/images/projects/project-placeholder.svg",
     imageAlt: "",
     media: [],
@@ -170,6 +188,9 @@ export const PROJECTS: Project[] = [
     liveAt: { date: "2026-05-15" },
     status: "pitch",
     lead: "Jide Pinheiro",
+    fee: "To be confirmed",
+    target: "To be confirmed",
+    result: "To be confirmed",
     image: "/images/projects/project-placeholder.svg",
     imageAlt: "",
     media: [],
@@ -191,6 +212,9 @@ export const PROJECTS: Project[] = [
     liveAt: { date: "2021-04-15" },
     status: "completed",
     lead: "",
+    fee: "To be confirmed",
+    target: "To be confirmed",
+    result: "To be confirmed",
     image: "/images/projects/project-placeholder.svg",
     imageAlt: "",
     media: [],
@@ -213,6 +237,9 @@ export const PROJECTS: Project[] = [
     liveAt: { date: "2021-07-15" },
     status: "completed",
     lead: "",
+    fee: "To be confirmed",
+    target: "To be confirmed",
+    result: "To be confirmed",
     image: "/media/projects/guinness/beerable-guinness.jpg",
     imageAlt: "Guinness responsible-drinking campaign artwork",
     media: [
@@ -263,6 +290,9 @@ export const PROJECTS: Project[] = [
     liveAt: { date: "2016-08-05" },
     status: "completed",
     lead: "",
+    fee: "To be confirmed",
+    target: "To be confirmed",
+    result: "To be confirmed",
     image: "/media/projects/visa/rio-2016-visa.jpg",
     imageAlt: "Rio 2016 Visa campaign artwork",
     media: [
@@ -301,6 +331,9 @@ export const PROJECTS: Project[] = [
     liveAt: { date: "2020-06-15" },
     status: "completed",
     lead: "",
+    fee: "To be confirmed",
+    target: "To be confirmed",
+    result: "To be confirmed",
     image: "/media/projects/google/football-google-poster.jpg",
     imageAlt: "Football Google campaign film still",
     media: [
@@ -336,6 +369,9 @@ export const PROJECTS: Project[] = [
     liveAt: { date: "2019-09-15" },
     status: "completed",
     lead: "",
+    fee: "To be confirmed",
+    target: "To be confirmed",
+    result: "To be confirmed",
     image: "/media/projects/orijin/live-orijinal-orijin-poster.jpg",
     imageAlt: "Live Orijinal Orijin campaign film still",
     media: [
@@ -365,6 +401,9 @@ export const PROJECTS: Project[] = [
     liveAt: { date: "2018-07-15" },
     status: "completed",
     lead: "",
+    fee: "To be confirmed",
+    target: "To be confirmed",
+    result: "To be confirmed",
     image: "/media/projects/pringles/cool-days-pringles.jpg",
     imageAlt: "Cool Days Pringles campaign artwork",
     media: [
@@ -393,6 +432,9 @@ export const PROJECTS: Project[] = [
     liveAt: { date: "2020-04-15" },
     status: "completed",
     lead: "",
+    fee: "To be confirmed",
+    target: "To be confirmed",
+    result: "To be confirmed",
     image: "/media/projects/chicken-republic/easter-chicken-republic.jpg",
     imageAlt: "Easter Chicken Republic campaign artwork",
     media: [
@@ -426,6 +468,9 @@ export const PROJECTS: Project[] = [
     liveAt: { date: "2026-02-15" },
     status: "completed",
     lead: "Samiat Basorun",
+    fee: "To be confirmed",
+    target: "To be confirmed",
+    result: "To be confirmed",
     image: "/images/projects/project-placeholder.svg",
     imageAlt: "",
     media: [],
@@ -458,6 +503,22 @@ export function sortProjectsByLatestLive(projects: Project[]): Project[] {
     if (liveStatus !== 0) return liveStatus;
     return liveSortValue(b) - liveSortValue(a);
   });
+}
+
+export function projectsLiveNow(projects: Project[]): Project[] {
+  return projects.filter((project) => project.status === "live");
+}
+
+export function projectsDueFrom(projects: Project[], from: Date, limit = 3): Project[] {
+  const fromTime = from.getTime();
+  return projects
+    .filter((project) => project.liveAt && liveSortValue(project) >= fromTime)
+    .sort((a, b) => liveSortValue(a) - liveSortValue(b))
+    .slice(0, limit);
+}
+
+export function projectsWithTrackedTarget(projects: Project[]): Project[] {
+  return projects.filter((project) => project.target.toLowerCase() !== "to be confirmed");
 }
 
 export function projectLiveDateLabel(project: Project): string {

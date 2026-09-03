@@ -65,6 +65,9 @@ export default async function ProductDetailPage({ params }: Params) {
         <p className="m-0 max-w-[850px] text-[clamp(19px,2vw,28px)] leading-[1.3]">
           {product.description}
         </p>
+        <p className="m-0 max-w-[850px] text-[clamp(15px,1.4vw,18px)] font-semibold leading-[1.4] text-primary">
+          {product.valueLine}
+        </p>
       </div>
 
       <div className="mt-[clamp(28px,4vw,48px)] grid grid-cols-[minmax(260px,1.2fr)_1fr_1fr] border-y border-foreground max-[720px]:grid-cols-1">

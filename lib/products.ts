@@ -13,6 +13,7 @@ export type Product = {
   status: ProductStatus;
   owner: ProductOwner | null;
   users: string[];
+  valueLine: string;
   description: string;
   objective: string;
   goals: string[];
@@ -35,6 +36,7 @@ export const PRODUCTS: Product[] = [
       avatar: "SI",
     },
     users: ["Everyone"],
+    valueLine: "Turns research spend into reusable IP — pitches and case work start from an existing deck instead of zero.",
     description:
       "Bi-weekly conversations into a long-term competitive edge. Every two weeks, a scheduled presenter explores an industry from the idea bank. Style is the presenter’s choice—deck, document, video or talk track—and every presentation becomes an agency asset.",
     objective:
@@ -67,6 +69,7 @@ export const PRODUCTS: Product[] = [
     status: "idea",
     owner: null,
     users: ["New Business", "Strategy", "Creative", "Client Service"],
+    valueLine: "Cuts duplicated pitch prep across teams once live.",
     description:
       "A single home for pitch workflows, credentials, research, templates and reusable presentation material.",
     objective: "Help teams prepare stronger pitches with less duplicated effort.",
@@ -88,6 +91,7 @@ export const PRODUCTS: Product[] = [
       avatar: "JP",
     },
     users: ["Creative", "Production", "HR & Admin"],
+    valueLine: "Reduces time spent re-sourcing talent the agency already knows.",
     description:
       "A searchable directory of employees, freelancers, creators, directors and specialist partners.",
     objective: "Make the right internal and external talent easier to find and engage.",
@@ -109,6 +113,7 @@ export const PRODUCTS: Product[] = [
       avatar: "TB",
     },
     users: ["Production", "Creative", "Client Service", "Finance"],
+    valueLine: "Keeps vendor rates and performance history in one place instead of renegotiating blind.",
     description:
       "A managed directory of production companies, vendors, capabilities, costs and performance history.",
     objective: "Improve production sourcing, comparison and decision-making.",
@@ -126,6 +131,7 @@ export const PRODUCTS: Product[] = [
     status: "idea",
     owner: null,
     users: ["Everyone"],
+    valueLine: "Stops teams rebuilding decks and assets that already exist.",
     description:
       "The trusted source for BBDO templates, standards, case studies, showreels and approved assets.",
     objective: "Make approved brand knowledge and materials easy to find and reuse.",
@@ -143,6 +149,7 @@ export const PRODUCTS: Product[] = [
     status: "idea",
     owner: null,
     users: ["Leadership", "Client Service", "New Business"],
+    valueLine: "Surfaces account risk before it becomes a lost account.",
     description:
       "A current view of clients, pitches, opportunities, account health, risks and next actions.",
     objective: "Give agency leadership a shared picture of commercial relationships and opportunities.",
@@ -160,6 +167,7 @@ export const PRODUCTS: Product[] = [
     status: "idea",
     owner: null,
     users: ["Creative", "Strategy", "Client Service", "New Business"],
+    valueLine: "Turns finished work into reusable proof for new business.",
     description:
       "A searchable archive of completed work, results, learnings and reusable campaign assets.",
     objective: "Turn completed work into reusable institutional knowledge.",
@@ -177,6 +185,7 @@ export const PRODUCTS: Product[] = [
     status: "idea",
     owner: null,
     users: ["Strategy", "Creative", "Social"],
+    valueLine: "Feeds briefs from a shared signal pool instead of one person's feed.",
     description:
       "A living view of cultural movements, audience behaviours, platform shifts and emerging opportunities.",
     objective: "Help teams spot and apply relevant cultural signals earlier.",

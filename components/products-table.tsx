@@ -22,7 +22,8 @@ export function ProductsTable({ products }: { products: Product[] }) {
             <th className={TH}>Name</th>
             <th className={TH}>Status</th>
             <th className={TH}>Owner</th>
-            <th className={TH}>Users</th>
+            <th className={`${TH} max-[900px]:hidden`}>Value</th>
+            <th className={`${TH} max-[720px]:hidden`}>Users</th>
             <th className={TH}>Created / target date</th>
           </tr>
         </thead>
@@ -75,7 +76,10 @@ export function ProductsTable({ products }: { products: Product[] }) {
                     "—"
                   )}
                 </td>
-                <td className={TD}>
+                <td className={`${TD} max-[900px]:hidden`}>
+                  <span className="block max-w-[36ch] text-muted-foreground">{product.valueLine}</span>
+                </td>
+                <td className={`${TD} max-[720px]:hidden`}>
                   <span className="flex flex-wrap gap-1.5">
                     {product.users.map((user) => (
                       <span

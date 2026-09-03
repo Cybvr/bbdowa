@@ -93,8 +93,9 @@ export function ProjectsTable({ projects }: { projects: Project[] }) {
                 <tr>
                   <th className={TH}>Project</th>
                   <th className={`${TH} max-[720px]:hidden`}>Client</th>
-                  <th className={`${TH} max-[720px]:hidden`}>Category</th>
-                  <th className={TH}>Year</th>
+                  <th className={`${TH} max-[1024px]:hidden`}>Fee</th>
+                  <th className={`${TH} max-[1024px]:hidden`}>Target</th>
+                  <th className={`${TH} max-[1024px]:hidden`}>Result so far</th>
                   <th className={TH}>Status</th>
                   <th className={`${TH} max-[900px]:hidden`}>Lead</th>
                 </tr>
@@ -135,9 +136,14 @@ export function ProjectsTable({ projects }: { projects: Project[] }) {
                         </div>
                       </td>
                       <td className={`${TD} max-[720px]:hidden`}>{project.client}</td>
-                      <td className={`${TD} max-[720px]:hidden`}>{project.category}</td>
-                      <td className={`${TD} whitespace-nowrap [font-variant-numeric:tabular-nums]`}>
-                        {project.year ?? "—"}
+                      <td className={`${TD} max-[1024px]:hidden ${project.fee === "To be confirmed" ? "text-muted-foreground" : ""}`}>
+                        {project.fee}
+                      </td>
+                      <td className={`${TD} max-[1024px]:hidden ${project.target === "To be confirmed" ? "text-muted-foreground" : ""}`}>
+                        {project.target}
+                      </td>
+                      <td className={`${TD} max-[1024px]:hidden ${project.result === "To be confirmed" ? "text-muted-foreground" : ""}`}>
+                        {project.result}
                       </td>
                       <td className={TD}>
                         <span
