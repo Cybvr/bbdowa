@@ -28,6 +28,39 @@ export default function AboutPage() {
       <div className="mt-[clamp(34px,5vw,60px)] grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-x-10 gap-y-0 border-t border-foreground">
         <section className="pb-[30px] pt-[26px]">
           <h2 className="mb-3 mt-0 text-[13px] font-extrabold uppercase tracking-[0.16em] text-primary">
+            Akwaaba
+          </h2>
+          <p className="mb-3 mt-0 max-w-[42ch] text-[17px] leading-[1.4]">
+            Welcome to Bantaba, our shared home for agency information and working knowledge. A
+            bantaba is the traditional gathering place, often a large meeting tree, where community
+            members congregate for dialogue, storytelling and collective decision-making. This is
+            ours.
+          </p>
+        </section>
+
+        <section className="pb-[30px] pt-[26px]">
+          <h2 className="mb-3 mt-0 text-[13px] font-extrabold uppercase tracking-[0.16em] text-primary">
+            Mission
+          </h2>
+          <p className="mb-3 mt-0 max-w-[42ch] text-[17px] leading-[1.4]">
+            Compelling commercial content that drives brand value and grows our clients&apos;
+            businesses.
+          </p>
+        </section>
+
+        <section className="pb-[30px] pt-[26px]">
+          <h2 className="mb-3 mt-0 text-[13px] font-extrabold uppercase tracking-[0.16em] text-primary">
+            Vision
+          </h2>
+          <p className="mb-3 mt-0 max-w-[42ch] text-[17px] leading-[1.4]">
+            To become the most preferred shapers of choice across the African continent. From Lagos,
+            we develop culturally relevant, insightful and effective campaigns across the West
+            African sub-region, in the BBDO tradition of The Work, The Work, The Work.
+          </p>
+        </section>
+
+        <section className="pb-[30px] pt-[26px]">
+          <h2 className="mb-3 mt-0 text-[13px] font-extrabold uppercase tracking-[0.16em] text-primary">
             Who we are
           </h2>
           <p className="mb-3 mt-0 max-w-[42ch] text-[17px] leading-[1.4]">
