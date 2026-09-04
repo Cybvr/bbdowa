@@ -49,6 +49,11 @@ import {
   ArrowRight,
   TrendingUp,
   Menu,
+  Bold,
+  Italic,
+  List,
+  Heading2,
+  Pilcrow,
 } from "lucide-react";
 
 function TabPageHeader({ title }: { title: string }) {
@@ -174,24 +179,18 @@ const FONT_STACKS: Record<string, { heading: string; body: string }> = {
   "Archivo & Archivo Narrow": { heading: "'Archivo', sans-serif", body: "'Archivo Narrow', sans-serif" },
 };
 
-function renderInline(text: string, keyPrefix: string) {
-  return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
-    part.startsWith("**") && part.endsWith("**") ? (
-      <strong key={`${keyPrefix}-${i}`} className="font-semibold text-foreground">
-        {part.slice(2, -2)}
-      </strong>
-    ) : (
-      <React.Fragment key={`${keyPrefix}-${i}`}>{part}</React.Fragment>
-    )
-  );
+function escapeHtml(s: string) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-function StrategyDoc({ markdown }: { markdown: string }) {
-  const lines = markdown.replace(/\r\n/g, "\n").split("\n");
-  const blocks: React.ReactNode[] = [];
-  let i = 0;
-  let key = 0;
+function inlineToHtml(text: string) {
+  return escapeHtml(text).replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+}
 
+function markdownToHtml(markdown: string) {
+  const lines = markdown.replace(/\r\n/g, "\n").split("\n");
+  const out: string[] = [];
+  let i = 0;
   while (i < lines.length) {
     const line = lines[i];
     if (line.trim() === "") {
@@ -199,56 +198,92 @@ function StrategyDoc({ markdown }: { markdown: string }) {
       continue;
     }
     if (line.startsWith("# ")) {
-      blocks.push(
-        <h1 key={key} className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-          {renderInline(line.slice(2), `b${key}`)}
-        </h1>
-      );
-      key++;
+      out.push(`<h1>${inlineToHtml(line.slice(2))}</h1>`);
       i++;
       continue;
     }
     if (line.startsWith("## ")) {
-      blocks.push(
-        <h2
-          key={key}
-          className="text-xs font-mono uppercase tracking-widest text-primary font-semibold pt-5"
-        >
-          {renderInline(line.slice(3), `b${key}`)}
-        </h2>
-      );
-      key++;
+      out.push(`<h2>${inlineToHtml(line.slice(3))}</h2>`);
       i++;
       continue;
     }
     if (line.startsWith("- ")) {
       const items: string[] = [];
       while (i < lines.length && lines[i].startsWith("- ")) {
-        items.push(lines[i].slice(2));
+        items.push(`<li>${inlineToHtml(lines[i].slice(2))}</li>`);
         i++;
       }
-      blocks.push(
-        <ul key={key} className="list-disc pl-5 space-y-1.5">
-          {items.map((it, idx) => (
-            <li key={idx} className="text-sm text-muted-foreground leading-relaxed">
-              {renderInline(it, `b${key}-${idx}`)}
-            </li>
-          ))}
-        </ul>
-      );
-      key++;
+      out.push(`<ul>${items.join("")}</ul>`);
       continue;
     }
-    blocks.push(
-      <p key={key} className="text-sm text-muted-foreground leading-relaxed">
-        {renderInline(line, `b${key}`)}
-      </p>
-    );
-    key++;
+    out.push(`<p>${inlineToHtml(line)}</p>`);
     i++;
   }
+  return out.join("");
+}
 
-  return <div className="max-w-3xl space-y-4">{blocks}</div>;
+function StrategyEditor({ markdown }: { markdown: string }) {
+  const editorRef = useRef<HTMLDivElement>(null);
+  const [initialHtml] = useState(() => markdownToHtml(markdown));
+
+  const exec = (command: string, value?: string) => {
+    editorRef.current?.focus();
+    document.execCommand(command, false, value);
+  };
+
+  const ToolButton = ({
+    onRun,
+    label,
+    children,
+  }: {
+    onRun: () => void;
+    label: string;
+    children: React.ReactNode;
+  }) => (
+    <button
+      type="button"
+      title={label}
+      aria-label={label}
+      onMouseDown={(e) => e.preventDefault()}
+      onClick={onRun}
+      className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition"
+    >
+      {children}
+    </button>
+  );
+
+  return (
+    <div className="lg:flex-1 lg:overflow-y-auto lg:min-h-0 -mx-4 sm:-mx-6 bg-muted px-4 sm:px-6 py-6">
+      <div className="mx-auto w-full max-w-[720px] space-y-3">
+        <div className="sticky top-0 z-10 flex flex-wrap items-center gap-0.5 rounded-lg border border-border bg-background/95 backdrop-blur px-1.5 py-1 shadow-sm">
+          <ToolButton label="Heading" onRun={() => exec("formatBlock", "H2")}>
+            <Heading2 className="w-4 h-4" />
+          </ToolButton>
+          <ToolButton label="Body text" onRun={() => exec("formatBlock", "P")}>
+            <Pilcrow className="w-4 h-4" />
+          </ToolButton>
+          <span className="mx-1 h-5 w-px bg-border" />
+          <ToolButton label="Bold" onRun={() => exec("bold")}>
+            <Bold className="w-4 h-4" />
+          </ToolButton>
+          <ToolButton label="Italic" onRun={() => exec("italic")}>
+            <Italic className="w-4 h-4" />
+          </ToolButton>
+          <ToolButton label="Bulleted list" onRun={() => exec("insertUnorderedList")}>
+            <List className="w-4 h-4" />
+          </ToolButton>
+        </div>
+        <div
+          ref={editorRef}
+          contentEditable
+          suppressContentEditableWarning
+          spellCheck={false}
+          dangerouslySetInnerHTML={{ __html: initialHtml }}
+          className="strategy-doc min-h-[65vh] rounded-xl border border-border bg-background px-6 sm:px-10 py-8 sm:py-12 shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+        />
+      </div>
+    </div>
+  );
 }
 
 export default function OneUtilityClientPage() {
@@ -302,6 +337,7 @@ export default function OneUtilityClientPage() {
   const [scope, setScope] = useState(defaultPreset.scope);
   const [footprint, setFootprint] = useState(defaultPreset.footprint);
   const [aesthetic, setAesthetic] = useState(defaultPreset.aesthetic);
+  const [brandArchetype, setBrandArchetype] = useState("The Everyman");
   const [toneVal, setToneVal] = useState(defaultPreset.toneVal);
   const [toneLabel, setToneLabel] = useState(defaultPreset.toneText);
   const [statusNotification, setStatusNotification] = useState<string | null>(null);
@@ -473,17 +509,18 @@ export default function OneUtilityClientPage() {
     return (red * 299 + green * 587 + blue * 114) / 1000 > 150 ? "#0f172a" : "#f8fafc";
   };
 
+  const selectedFonts = FONT_STACKS[fontPairing] ?? FONT_STACKS[fontOptions[0]];
+
   return (
     <div
       className="min-h-screen lg:h-screen flex flex-col gap-2 overflow-x-hidden overflow-y-auto lg:overflow-hidden bg-card p-2 text-foreground antialiased font-sans"
       style={
-        primaryColor
-          ? ({
-              "--primary": primaryColor,
-              "--ring": primaryColor,
-              "--primary-foreground": getContrastTextColor(primaryColor),
-            } as React.CSSProperties)
-          : undefined
+        {
+          "--primary": primaryColor,
+          "--ring": primaryColor,
+          "--primary-foreground": getContrastTextColor(primaryColor),
+          "--font-sans": selectedFonts.body,
+        } as React.CSSProperties
       }
     >
       {/* Toast Notification */}
@@ -880,9 +917,7 @@ export default function OneUtilityClientPage() {
 
                 {/* CAMPAIGN SUB-TAB: STRATEGY */}
                 {campaignSubTab === "strategy" && (
-                  <div className="lg:flex-1 lg:overflow-y-auto lg:min-h-0 pr-1">
-                    <StrategyDoc markdown={strategyMarkdown} />
-                  </div>
+                  <StrategyEditor markdown={strategyMarkdown} />
                 )}
 
                 {/* CAMPAIGN SUB-TAB: CREATIVES */}
@@ -1185,13 +1220,6 @@ export default function OneUtilityClientPage() {
                 </li>
               </ul>
 
-              <div className="bg-card rounded-xl p-5 border border-border space-y-3 shadow-sm">
-                <span className="text-xs font-mono text-primary uppercase block">Production readiness checklist</span>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm text-muted-foreground font-mono border-t border-border pt-3">
-                  <div><span className="text-muted-foreground block text-sm">MANDATORIES</span><span className="text-foreground">Legal, accessibility, localisation and approvals</span></div>
-                </div>
-              </div>
-
             </div>
           </div>
         )}
@@ -1265,6 +1293,37 @@ export default function OneUtilityClientPage() {
                     />
                   </div>
 
+                  <div className="space-y-1.5">
+                    <label htmlFor="brandArchetype" className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-primary" /> Brand archetype
+                    </label>
+                    <select
+                      id="brandArchetype"
+                      value={brandArchetype}
+                      onChange={(e) => setBrandArchetype(e.target.value)}
+                      className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm text-foreground outline-none transition"
+                    >
+                      {[
+                        "The Everyman",
+                        "The Caregiver",
+                        "The Ruler",
+                        "The Creator",
+                        "The Innocent",
+                        "The Sage",
+                        "The Explorer",
+                        "The Hero",
+                        "The Outlaw",
+                        "The Magician",
+                        "The Lover",
+                        "The Jester",
+                      ].map((a) => (
+                        <option key={a} value={a}>
+                          {a}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
 
 
                   {/* 4-Stage Utility Progress Model */}
@@ -1300,7 +1359,7 @@ export default function OneUtilityClientPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <span className="text-sm text-muted-foreground block uppercase font-mono">Client palette</span>
+                    <span className="text-sm text-muted-foreground block uppercase font-mono">Colors</span>
                     <p className="text-sm text-muted-foreground">Click a swatch to pick a colour.</p>
                     <div className="flex flex-wrap items-stretch gap-2 pt-1">
                       {palette.map((hex, i) => (
@@ -1343,7 +1402,7 @@ export default function OneUtilityClientPage() {
 
                   <div className="space-y-1.5 pt-2">
                     <label htmlFor="fontPairing" className="text-sm text-muted-foreground block uppercase font-mono">
-                      Typography pairing
+                      Typography
                     </label>
                     <select
                       id="fontPairing"

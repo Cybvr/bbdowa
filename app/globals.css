@@ -121,3 +121,41 @@
     font-weight: 700 !important;
   }
 }
+
+/* Word-doc styling for the Strategy WYSIWYG editor */
+.strategy-doc {
+  color: var(--foreground);
+  font-size: 0.95rem;
+  line-height: 1.75;
+}
+.strategy-doc h1 {
+  font-size: 1.65rem;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  margin: 0 0 0.6em;
+}
+.strategy-doc h2 {
+  font-family: var(--font-roboto-mono), monospace;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--primary);
+  margin: 1.7em 0 0.5em;
+}
+.strategy-doc p {
+  color: var(--muted-foreground);
+  margin: 0 0 0.9em;
+}
+.strategy-doc ul {
+  margin: 0 0 0.9em;
+  padding-left: 1.25rem;
+  list-style: disc;
+}
+.strategy-doc li {
+  color: var(--muted-foreground);
+  margin-bottom: 0.35em;
+}
+.strategy-doc strong {
+  color: var(--foreground);
+  font-weight: 600;
+}
