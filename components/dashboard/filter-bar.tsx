@@ -1,10 +1,24 @@
 "use client";
 
 /**
- * Shared filter bar for dashboard list pages: status tabs, search and
- * sort-by, plus a live result count. Purely presentational and controlled —
- * each table owns its own filter/sort/search state and passes it down.
+ * Shared filter bar for dashboard list pages. Search stays inline because it is
+ * the most-used control; status, category and sort live behind a right-aligned
+ * filter button that opens a sheet. Purely presentational and controlled — each
+ * table owns its own filter/sort/search state and passes it down.
  */
+
+import type { ReactNode } from "react";
+import { useState } from "react";
+import { Check, Filter } from "lucide-react";
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 export type FilterTab<TabKey extends string> = {
   key: TabKey;
@@ -17,7 +31,7 @@ export type SortOption<SortKey extends string> = {
 };
 
 export type SelectFilter = {
-  /** Accessible label for the select. */
+  /** Accessible label for the group. */
   label: string;
   value: string;
   onChange: (value: string) => void;
@@ -27,16 +41,56 @@ export type SelectFilter = {
 const FIELD =
   "h-9 appearance-none rounded-lg border border-border bg-background px-3 text-[13px] text-foreground focus-visible:outline-none";
 
+function OptionRow({
+  selected,
+  onSelect,
+  children,
+}: {
+  selected: boolean;
+  onSelect: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={selected}
+      onClick={onSelect}
+      className={`flex h-10 w-full cursor-pointer items-center justify-between gap-2 rounded-lg border px-3 text-left text-[13px] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
+        selected
+          ? "border-foreground bg-muted font-semibold text-foreground"
+          : "border-border text-muted-foreground hover:text-foreground"
+      }`}
+    >
+      <span className="truncate">{children}</span>
+      {selected ? <Check className="h-4 w-4 shrink-0" aria-hidden="true" /> : null}
+    </button>
+  );
+}
+
+function OptionGroup({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="space-y-2">
+      <h3 className="m-0 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {label}
+      </h3>
+      <div role="radiogroup" aria-label={label} className="grid gap-1.5">
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export function FilterBar<TabKey extends string, SortKey extends string>({
   panelId,
   tabs,
   activeTab,
   onTabChange,
-  tabsLabel = "Filter",
+  tabsLabel = "Status",
   search,
   onSearchChange,
   searchPlaceholder = "Search",
-  searchClassName = "w-[220px]",
+  searchClassName = "min-w-[140px] flex-1 sm:max-w-[280px]",
   filters,
   sortOptions,
   activeSort,
@@ -58,116 +112,133 @@ export function FilterBar<TabKey extends string, SortKey extends string>({
   onSortChange?: (key: SortKey) => void;
   resultCount?: string;
 }) {
-  const move = (index: number) => {
-    if (!tabs || !onTabChange) return;
-    const next = tabs[(index + tabs.length) % tabs.length];
-    onTabChange(next.key);
-    document.getElementById(`${panelId}-tab-${next.key}`)?.focus();
+  const [open, setOpen] = useState(false);
+
+  const hasStatus = Boolean(tabs && tabs.length > 0 && onTabChange);
+  const hasSort = Boolean(sortOptions && sortOptions.length > 0 && onSortChange);
+  const hasFilters = hasStatus || hasSort || Boolean(filters && filters.length > 0);
+
+  // The first entry of each group is its neutral default, so anything else is a
+  // narrowing the user chose and worth surfacing on the trigger.
+  const activeCount =
+    (hasStatus && activeTab !== tabs![0].key ? 1 : 0) +
+    (hasSort && activeSort !== sortOptions![0].key ? 1 : 0) +
+    (filters ?? []).filter((filter) => filter.value !== filter.options[0]?.value).length;
+
+  const reset = () => {
+    if (hasStatus) onTabChange!(tabs![0].key);
+    if (hasSort) onSortChange!(sortOptions![0].key);
+    filters?.forEach((filter) => {
+      if (filter.options[0]) filter.onChange(filter.options[0].value);
+    });
   };
 
   return (
-    <div className="my-6 flex flex-wrap items-center justify-between gap-3">
-      <div className="flex flex-wrap items-center gap-3">
-        {tabs && tabs.length > 0 && onTabChange ? (
-          <div
-            className="flex h-9 items-center gap-1 rounded-lg border border-border p-1"
-            role="tablist"
-            aria-label={tabsLabel}
-          >
-            {tabs.map((tab, index) => {
-              const selected = activeTab === tab.key;
-              return (
-                <button
-                  key={tab.key}
-                  type="button"
-                  role="tab"
-                  id={`${panelId}-tab-${tab.key}`}
-                  aria-controls={panelId}
-                  aria-selected={selected}
-                  tabIndex={selected ? 0 : -1}
-                  onClick={() => onTabChange(tab.key)}
-                  onKeyDown={(event) => {
-                    if (event.key === "ArrowRight") {
-                      event.preventDefault();
-                      move(index + 1);
-                    }
-                    if (event.key === "ArrowLeft") {
-                      event.preventDefault();
-                      move(index - 1);
-                    }
-                    if (event.key === "Home") {
-                      event.preventDefault();
-                      move(0);
-                    }
-                    if (event.key === "End") {
-                      event.preventDefault();
-                      move(tabs.length - 1);
-                    }
-                  }}
-                  className={`flex h-full cursor-pointer items-center rounded-md border-0 px-3 text-[13px] font-medium focus-visible:outline-none ${
-                    selected
-                      ? "bg-foreground text-background"
-                      : "bg-transparent text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              );
-            })}
-          </div>
+    <div className="my-6 flex flex-wrap items-center gap-3">
+      {onSearchChange ? (
+        <input
+          type="search"
+          value={search}
+          onChange={(event) => onSearchChange(event.target.value)}
+          placeholder={searchPlaceholder}
+          aria-label={searchPlaceholder}
+          className={`${FIELD} ${searchClassName} max-w-full placeholder:text-muted-foreground`}
+        />
+      ) : null}
+
+      <div className="ml-auto flex items-center gap-3">
+        {resultCount ? (
+          <p aria-live="polite" className="m-0 text-[13px] font-medium text-muted-foreground">
+            {resultCount}
+          </p>
         ) : null}
 
-        {onSearchChange ? (
-          <input
-            type="search"
-            value={search}
-            onChange={(event) => onSearchChange(event.target.value)}
-            placeholder={searchPlaceholder}
-            aria-label={searchPlaceholder}
-            className={`${FIELD} ${searchClassName} max-w-full placeholder:text-muted-foreground`}
-          />
-        ) : null}
-
-        {filters?.map((filter) => (
-          <select
-            key={filter.label}
-            value={filter.value}
-            onChange={(event) => filter.onChange(event.target.value)}
-            aria-label={filter.label}
-            className={`${FIELD} cursor-pointer pr-2`}
-          >
-            {filter.options.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        ))}
-
-        {sortOptions && sortOptions.length > 0 && onSortChange ? (
-          <label className="flex items-center gap-2 text-[13px] text-muted-foreground">
-            Sort by
-            <select
-              value={activeSort}
-              onChange={(event) => onSortChange(event.target.value as SortKey)}
-              aria-label="Sort by"
-              className={`${FIELD} cursor-pointer pr-2`}
+        {hasFilters ? (
+          <Sheet open={open} onOpenChange={setOpen}>
+            <SheetTrigger
+              aria-controls={panelId}
+              aria-label={activeCount > 0 ? `Filters, ${activeCount} active` : "Filters"}
+              className="flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-border bg-background px-3 text-[13px] font-medium text-foreground transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
             >
-              {sortOptions.map((option) => (
-                <option key={option.key} value={option.key}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
+              <Filter className="h-4 w-4" aria-hidden="true" />
+              <span className="hidden sm:inline">Filters</span>
+              {activeCount > 0 ? (
+                <span className="grid h-5 min-w-5 place-items-center rounded-full bg-foreground px-1 text-[11px] font-semibold text-background">
+                  {activeCount}
+                </span>
+              ) : null}
+            </SheetTrigger>
+
+            <SheetContent
+              side="right"
+              aria-describedby={undefined}
+              className="[&>button]:bg-muted [&>button]:text-foreground [&>button]:opacity-100"
+            >
+              <SheetHeader className="border-b border-border">
+                <SheetTitle>Filters</SheetTitle>
+              </SheetHeader>
+
+              <div className="flex-1 space-y-5 overflow-y-auto px-4">
+                {hasStatus ? (
+                  <OptionGroup label={tabsLabel}>
+                    {tabs!.map((tab) => (
+                      <OptionRow
+                        key={tab.key}
+                        selected={activeTab === tab.key}
+                        onSelect={() => onTabChange!(tab.key)}
+                      >
+                        {tab.label}
+                      </OptionRow>
+                    ))}
+                  </OptionGroup>
+                ) : null}
+
+                {filters?.map((filter) => (
+                  <OptionGroup key={filter.label} label={filter.label}>
+                    {filter.options.map((option) => (
+                      <OptionRow
+                        key={option.value}
+                        selected={filter.value === option.value}
+                        onSelect={() => filter.onChange(option.value)}
+                      >
+                        {option.label}
+                      </OptionRow>
+                    ))}
+                  </OptionGroup>
+                ))}
+
+                {hasSort ? (
+                  <OptionGroup label="Sort by">
+                    {sortOptions!.map((option) => (
+                      <OptionRow
+                        key={option.key}
+                        selected={activeSort === option.key}
+                        onSelect={() => onSortChange!(option.key)}
+                      >
+                        {option.label}
+                      </OptionRow>
+                    ))}
+                  </OptionGroup>
+                ) : null}
+              </div>
+
+              <SheetFooter className="flex-row items-center gap-2 border-t border-border">
+                <button
+                  type="button"
+                  onClick={reset}
+                  disabled={activeCount === 0}
+                  className="h-10 flex-1 cursor-pointer rounded-lg border border-border bg-background text-[13px] font-medium text-foreground transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-45"
+                >
+                  Reset
+                </button>
+                <SheetClose className="h-10 flex-1 cursor-pointer rounded-lg bg-foreground text-[13px] font-semibold text-background transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
+                  {resultCount ? `Show ${resultCount}` : "Done"}
+                </SheetClose>
+              </SheetFooter>
+            </SheetContent>
+          </Sheet>
         ) : null}
       </div>
-
-      {resultCount ? (
-        <p aria-live="polite" className="m-0 text-[13px] font-medium text-muted-foreground">
-          {resultCount}
-        </p>
-      ) : null}
     </div>
   );
 }

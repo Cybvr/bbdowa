@@ -67,7 +67,7 @@ export function ClientsDirectory({ clients, campaigns }: { clients: ClientUser[]
         tabs={FILTERS}
         activeTab={filter}
         onTabChange={setFilter}
-        tabsLabel="Filter clients by status"
+        tabsLabel="Status"
         search={search}
         onSearchChange={setSearch}
         searchPlaceholder="Search clients"
@@ -77,7 +77,7 @@ export function ClientsDirectory({ clients, campaigns }: { clients: ClientUser[]
         resultCount={plural(visibleClients.length, "client")}
       />
 
-      <section id="client-panel" role="tabpanel" aria-labelledby={`client-panel-tab-${filter}`}>
+      <section id="client-panel" aria-label="Clients">
         {visibleClients.length > 0 ? (
           <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2 lg:grid-cols-3">
             {visibleClients.map((client) => {

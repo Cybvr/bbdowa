@@ -73,13 +73,12 @@ export function CampaignsTable({ campaigns }: { campaigns: Campaign[] }) {
         tabs={STATUS_TABS}
         activeTab={status}
         onTabChange={setStatus}
-        tabsLabel="Filter campaigns by status"
+        tabsLabel="Status"
         search={search}
         onSearchChange={setSearch}
         searchPlaceholder="Search campaigns"
-        searchClassName="w-[150px]"
         filters={[
-          { label: "Filter by category", value: category, onChange: setCategory, options: categoryOptions },
+          { label: "Category", value: category, onChange: setCategory, options: categoryOptions },
         ]}
         sortOptions={SORTS}
         activeSort={sort}
@@ -87,7 +86,7 @@ export function CampaignsTable({ campaigns }: { campaigns: Campaign[] }) {
         resultCount={plural(visible.length, "campaign")}
       />
 
-      <section id="campaign-panel" role="tabpanel" aria-labelledby={`campaign-panel-tab-${status}`}>
+      <section id="campaign-panel" aria-label="Campaigns">
         {visible.length > 0 ? (
           <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2 lg:grid-cols-3">
             {visible.map((campaign) => (

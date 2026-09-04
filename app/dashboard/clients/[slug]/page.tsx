@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
@@ -55,7 +55,7 @@ function ClientWorkspaceHero({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="relative h-[350px] overflow-hidden rounded-2xl border border-border bg-muted">
+    <div className="relative h-[220px] overflow-hidden rounded-2xl border border-border bg-muted sm:h-[350px]">
       {children ?? (
         <ImageWithFallback
           src="/images/bbdowa-red-pattern-placeholder.png"
@@ -65,7 +65,7 @@ function ClientWorkspaceHero({
       )}
       <div className="absolute inset-x-0 top-0 bg-gradient-to-b from-black/65 to-transparent px-5 py-5 text-white sm:px-6">
         <nav aria-label="Breadcrumb">
-          <ol className="m-0 flex list-none items-center gap-1.5 p-0 text-xs text-white/75">
+          <ol className="m-0 flex list-none flex-wrap items-center gap-x-1.5 gap-y-0.5 p-0 text-xs text-white/75">
             <li>
               <Link href="/dashboard/clients" className="transition hover:text-white">
                 All
@@ -456,12 +456,7 @@ function OneUtilityClientWorkspace({
     }))
   );
   // Page accent follows the client's primary brand colour.
-  const [primaryColor, setPrimaryColor] = useState<string>(workspace.primaryColor);
-  const handleAccentChange = (color: string) => {
-    setPrimaryColor(color);
-    setPalette((prev) => [color, ...prev.slice(1)]);
-    setDesignDirty(true);
-  };
+  const [primaryColor] = useState<string>(workspace.primaryColor);
   const collaborators = [
     { name: "Jide Pinheiro", initials: "JP", color: "#0B3B2E" },
     { name: "Amara Obi", initials: "AO", color: "#B45309" },
@@ -667,9 +662,50 @@ function OneUtilityClientWorkspace({
 
   const selectedFonts = FONT_STACKS[fontPairing] ?? FONT_STACKS[fontOptions[0]];
 
+  const workspaceTabs: {
+    view: OneUtilityWorkspaceView;
+    label: string;
+    href: string;
+    onSelect?: () => void;
+  }[] = [
+    {
+      view: "campaign",
+      label: "Campaigns",
+      href: `/dashboard/clients/${slug}/campaigns`,
+      onSelect: () => {
+        setActiveMainTab("campaign");
+        setCampaignView("home");
+      },
+    },
+    { view: "brand", label: "DNA", href: `/dashboard/clients/${slug}/brand-dna` },
+    { view: "moodboard", label: "Moodboard", href: `/dashboard/clients/${slug}/moodboard` },
+    { view: "creators", label: "Creators", href: `/dashboard/clients/${slug}/creators` },
+    { view: "media", label: "Media", href: `/dashboard/clients/${slug}/media` },
+  ];
+
+  const campaignSubTabs: { id: typeof campaignSubTab; label: string }[] = [
+    { id: "overview", label: "Overview" },
+    { id: "case-study", label: "Case study" },
+    { id: "strategy", label: "Strategy" },
+    { id: "creative", label: "Creatives" },
+    { id: "marketing", label: "Marketing" },
+  ];
+
+  // The tab strip scrolls horizontally on narrow screens. Without this it opens
+  // at scrollLeft 0, which can leave the active tab off-screen.
+  const activeTabRef = useRef<HTMLAnchorElement>(null);
+  useEffect(() => {
+    activeTabRef.current?.scrollIntoView({ block: "nearest", inline: "center" });
+  }, [activeMainTab]);
+
+  const activeSubTabRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    activeSubTabRef.current?.scrollIntoView({ block: "nearest", inline: "center" });
+  }, [campaignSubTab]);
+
   return (
     <div
-      className="utility-workspace min-h-screen p-2 text-foreground antialiased font-sans [&_h1]:[font-family:var(--workspace-font-heading)] [&_h2]:[font-family:var(--workspace-font-heading)] [&_h3]:[font-family:var(--workspace-font-heading)] [&_h4]:[font-family:var(--workspace-font-heading)] [&_h5]:[font-family:var(--workspace-font-heading)] [&_h6]:[font-family:var(--workspace-font-heading)]"
+      className="utility-workspace min-h-screen overflow-x-hidden px-0 py-2 text-foreground antialiased font-sans sm:p-2 [&_h1]:[font-family:var(--workspace-font-heading)] [&_h2]:[font-family:var(--workspace-font-heading)] [&_h3]:[font-family:var(--workspace-font-heading)] [&_h4]:[font-family:var(--workspace-font-heading)] [&_h5]:[font-family:var(--workspace-font-heading)] [&_h6]:[font-family:var(--workspace-font-heading)]"
       style={
         {
           "--primary": primaryColor,
@@ -683,7 +719,7 @@ function OneUtilityClientWorkspace({
     >
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 bg-card border border-border text-card-foreground px-5 py-4 rounded-xl shadow-2xl z-50 text-sm font-sans max-w-sm flex items-start gap-3">
+        <div className="fixed inset-x-4 bottom-4 z-50 flex items-start gap-3 rounded-xl border border-border bg-card px-5 py-4 font-sans text-sm text-card-foreground shadow-2xl sm:inset-x-auto sm:bottom-6 sm:right-6 sm:max-w-sm">
           <Info className="w-5 h-5 text-primary shrink-0 mt-0.5" />
           <div className="whitespace-pre-line leading-relaxed">{toastMessage}</div>
         </div>
@@ -694,81 +730,53 @@ function OneUtilityClientWorkspace({
         <main className="order-1">
 
           {/* TOP-LEVEL VIEW TABS */}
-          <div className="mx-3 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-card px-3 py-3 sm:mx-5 sm:px-4">
-            <div className="flex min-w-0 items-center gap-3">
-              <Link
-                href="/dashboard/clients"
-                aria-label="Back to clients"
-                className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Link>
-              <Link
-                href={`/dashboard/clients/${slug}/overview`}
-                onClick={() => setActiveMainTab("overview")}
-                aria-label={`${clientName} overview`}
-                className="flex h-12 w-14 shrink-0 items-center justify-center"
-              >
-                <ImageWithFallback
-                  src={clientProfileImage}
-                  alt=""
-                  className="h-full w-full object-contain"
-                  fallbackClassName="h-full w-full rounded-md"
-                />
-              </Link>
-              <nav aria-label="Client workspace" className="flex min-w-0 items-center gap-2 overflow-x-auto">
-              <Link
-                href={`/dashboard/clients/${slug}/campaigns`}
-                onClick={() => {
-                  setActiveMainTab("campaign");
-                  setCampaignView("home");
-                }}
-                className={`relative flex items-center px-3 pb-3 pt-1 text-sm font-semibold transition whitespace-nowrap ${activeMainTab === "campaign"
-                  ? "text-primary after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:bg-primary"
-                  : "text-muted-foreground hover:text-foreground"
-                  }`}
-              >
-                Campaigns
-              </Link>
-              <Link
-                href={`/dashboard/clients/${slug}/brand-dna`}
-                className={`relative flex items-center px-3 pb-3 pt-1 text-sm font-semibold transition whitespace-nowrap ${activeMainTab === "brand"
-                  ? "text-primary after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:bg-primary"
-                  : "text-muted-foreground hover:text-foreground"
-                  }`}
-              >
-                DNA
-              </Link>
-              <Link
-                href={`/dashboard/clients/${slug}/moodboard`}
-                className={`relative flex items-center px-3 pb-3 pt-1 text-sm font-semibold transition whitespace-nowrap ${activeMainTab === "moodboard"
-                  ? "text-primary after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:bg-primary"
-                  : "text-muted-foreground hover:text-foreground"
-                  }`}
-              >
-                Moodboard
-              </Link>
-              <Link
-                href={`/dashboard/clients/${slug}/creators`}
-                className={`relative flex items-center px-3 pb-3 pt-1 text-sm font-semibold transition whitespace-nowrap ${activeMainTab === "creators"
-                  ? "text-primary after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:bg-primary"
-                  : "text-muted-foreground hover:text-foreground"
-                  }`}
-              >
-                Creators
-              </Link>
-              <Link
-                href={`/dashboard/clients/${slug}/media`}
-                className={`relative flex items-center px-3 pb-3 pt-1 text-sm font-semibold transition whitespace-nowrap ${activeMainTab === "media"
-                  ? "text-primary after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:bg-primary"
-                  : "text-muted-foreground hover:text-foreground"
-                  }`}
-              >
-                Media
-              </Link>
-              </nav>
-            </div>
-            <div className="ml-auto flex items-center gap-2 py-2 sm:gap-3">
+          <div className="mx-4 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl bg-card px-2 py-2 sm:mx-5 sm:flex-nowrap sm:gap-x-3 sm:px-4">
+            <Link
+              href="/dashboard/clients"
+              aria-label="Back to clients"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Link>
+            <Link
+              href={`/dashboard/clients/${slug}/overview`}
+              onClick={() => setActiveMainTab("overview")}
+              aria-label={`${clientName} overview`}
+              className="flex h-10 w-12 shrink-0 items-center justify-center sm:h-12 sm:w-14"
+            >
+              <ImageWithFallback
+                src={clientProfileImage}
+                alt=""
+                className="h-full w-full object-contain"
+                fallbackClassName="h-full w-full rounded-md"
+              />
+            </Link>
+            <nav
+              aria-label="Client workspace"
+              className="no-scrollbar order-4 -mx-2 w-full min-w-0 overflow-x-auto px-2 sm:order-none sm:mx-0 sm:w-auto sm:flex-1 sm:px-0"
+            >
+              <div className="flex items-center gap-1">
+                {workspaceTabs.map((tab) => {
+                  const isActive = activeMainTab === tab.view;
+                  return (
+                    <Link
+                      key={tab.view}
+                      href={tab.href}
+                      onClick={tab.onSelect}
+                      ref={isActive ? activeTabRef : undefined}
+                      aria-current={isActive ? "page" : undefined}
+                      className={`relative flex shrink-0 items-center whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold transition ${isActive
+                        ? "text-primary after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:bg-primary"
+                        : "text-muted-foreground hover:text-foreground"
+                        }`}
+                    >
+                      {tab.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            </nav>
+            <div className="order-3 ml-auto flex shrink-0 items-center gap-2 sm:order-none sm:gap-3">
               <div className="hidden items-center -space-x-2 pr-1 sm:flex" aria-label="Collaborators on this campaign">
                 {collaborators.map((c) => (
                   <span
@@ -781,23 +789,8 @@ function OneUtilityClientWorkspace({
                   </span>
                 ))}
               </div>
-              <label
-                title="Change accent color"
-                aria-label="Change accent color"
-                className="relative flex cursor-pointer items-center gap-1 rounded-md border border-border bg-secondary px-2 py-1.5 text-secondary-foreground transition hover:bg-secondary/90"
-              >
-                <Palette className="w-4 h-4" style={{ color: primaryColor }} />
-                <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
-                <input
-                  type="color"
-                  value={primaryColor}
-                  onChange={(e) => handleAccentChange(e.target.value)}
-                  aria-label="Change accent color"
-                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                />
-              </label>
-              <button onClick={handleShareCampaign} aria-label="Share" className="flex items-center gap-2 rounded-md bg-primary px-2.5 py-1.5 text-sm font-medium text-primary-foreground transition hover:opacity-90 sm:px-3.5">
-                <Share2 className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Share</span>
+              <button onClick={handleShareCampaign} aria-label="Share" className="flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground transition hover:opacity-90 sm:h-9 sm:px-3.5">
+                <Share2 className="w-4 h-4 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">Share</span>
               </button>
             </div>
           </div>
@@ -849,11 +842,11 @@ function OneUtilityClientWorkspace({
                 <div className="px-4 py-4 sm:px-6">
                   <div className="mx-auto w-full max-w-5xl space-y-4">
                     <div className="flex flex-wrap items-center justify-between gap-3 shrink-0 border-b border-border pb-3">
-                      <div className="flex items-center gap-2 min-w-0">
+                      <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto sm:flex-1">
                         <button
                           onClick={() => setCampaignView("home")}
                           aria-label="Back to campaigns"
-                          className="grid h-8 w-8 flex-none place-items-center rounded-md border border-border text-foreground hover:text-primary hover:bg-muted transition"
+                          className="grid h-10 w-10 flex-none place-items-center rounded-md border border-border text-foreground transition hover:bg-muted hover:text-primary sm:h-8 sm:w-8"
                         >
                           <ChevronLeft className="w-4 h-4" />
                         </button>
@@ -867,56 +860,35 @@ function OneUtilityClientWorkspace({
                       </div>
 
                       {/* CAMPAIGN SUB-TABS */}
-                      <div className="flex items-center gap-1 text-sm shrink-0">
-                        <button
-                          onClick={() => setCampaignSubTab("overview")}
-                          className={`px-2.5 py-1.5 rounded-md font-medium transition ${campaignSubTab === "overview"
-                            ? "text-foreground font-semibold"
-                            : "text-muted-foreground hover:text-foreground"
-                            }`}
-                        >
-                          Overview
-                        </button>
-                        <span className="text-muted-foreground/50">›</span>
-                        <button
-                          onClick={() => setCampaignSubTab("case-study")}
-                          className={`px-2.5 py-1.5 rounded-md font-medium transition ${campaignSubTab === "case-study"
-                            ? "text-foreground font-semibold"
-                            : "text-muted-foreground hover:text-foreground"
-                            }`}
-                        >
-                          Case study
-                        </button>
-                        <span className="text-muted-foreground/50">›</span>
-                        <button
-                          onClick={() => setCampaignSubTab("strategy")}
-                          className={`px-2.5 py-1.5 rounded-md font-medium transition ${campaignSubTab === "strategy"
-                            ? "text-foreground font-semibold"
-                            : "text-muted-foreground hover:text-foreground"
-                            }`}
-                        >
-                          Strategy
-                        </button>
-                        <span className="text-muted-foreground/50">›</span>
-                        <button
-                          onClick={() => setCampaignSubTab("creative")}
-                          className={`px-2.5 py-1.5 rounded-md font-medium transition ${campaignSubTab === "creative"
-                            ? "text-foreground font-semibold"
-                            : "text-muted-foreground hover:text-foreground"
-                            }`}
-                        >
-                          Creatives
-                        </button>
-                        <span className="text-muted-foreground/50">›</span>
-                        <button
-                          onClick={() => setCampaignSubTab("marketing")}
-                          className={`px-2.5 py-1.5 rounded-md font-medium transition ${campaignSubTab === "marketing"
-                            ? "text-foreground font-semibold"
-                            : "text-muted-foreground hover:text-foreground"
-                            }`}
-                        >
-                          Marketing
-                        </button>
+                      <div
+                        role="tablist"
+                        aria-label="Campaign sections"
+                        className="no-scrollbar -mx-4 flex w-full items-center gap-1 overflow-x-auto px-4 text-sm sm:mx-0 sm:w-auto sm:px-0"
+                      >
+                        {campaignSubTabs.map((tab, index) => {
+                          const isActive = campaignSubTab === tab.id;
+                          return (
+                            <React.Fragment key={tab.id}>
+                              {index > 0 && (
+                                <span aria-hidden="true" className="hidden shrink-0 text-muted-foreground/50 sm:inline">
+                                  ›
+                                </span>
+                              )}
+                              <button
+                                role="tab"
+                                aria-selected={isActive}
+                                ref={isActive ? activeSubTabRef : undefined}
+                                onClick={() => setCampaignSubTab(tab.id)}
+                                className={`shrink-0 whitespace-nowrap rounded-md px-3 py-2 font-medium transition ${isActive
+                                  ? "bg-muted font-semibold text-foreground sm:bg-transparent"
+                                  : "text-muted-foreground hover:text-foreground"
+                                  }`}
+                              >
+                                {tab.label}
+                              </button>
+                            </React.Fragment>
+                          );
+                        })}
                       </div>
                     </div>
 
@@ -1483,7 +1455,7 @@ function OneUtilityClientWorkspace({
                           onChange={(e) => updateTone(parseInt(e.target.value, 10))}
                           className="w-full accent-primary bg-muted h-1.5 rounded-lg cursor-pointer"
                         />
-                        <div className="flex justify-between text-sm text-muted-foreground font-mono">
+                        <div className="flex justify-between gap-1 font-mono text-[10px] text-muted-foreground sm:text-sm">
                           <span>Direct</span>
                           <span>Conversational</span>
                           <span>Expressive</span>

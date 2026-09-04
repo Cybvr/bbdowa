@@ -68,7 +68,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
         tabs={FILTERS}
         activeTab={filter}
         onTabChange={setFilter}
-        tabsLabel="Filter products by status"
+        tabsLabel="Status"
         search={search}
         onSearchChange={setSearch}
         searchPlaceholder="Search products"
@@ -78,7 +78,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
         resultCount={plural(visible.length, "product")}
       />
 
-      <section id="product-panel" role="tabpanel" aria-labelledby={`product-panel-tab-${filter}`}>
+      <section id="product-panel" aria-label="Products">
       {visible.length > 0 ? (
       <div className="overflow-x-auto">
       <table className="w-full border-collapse">

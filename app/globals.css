@@ -159,3 +159,23 @@
   color: var(--foreground);
   font-weight: 600;
 }
+
+/* Horizontal tab strips scroll by swipe on touch; the native scrollbar
+   reads as a broken UI control on mobile, so hide the chrome only. */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* iOS Safari zooms the viewport when a focused field is under 16px. The
+   workspace fields are 14px by design, so lift them on small screens only. */
+@media (max-width: 640px) {
+  .utility-workspace input,
+  .utility-workspace select,
+  .utility-workspace textarea {
+    font-size: 16px;
+  }
+}
