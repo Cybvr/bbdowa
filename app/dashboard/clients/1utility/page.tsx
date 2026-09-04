@@ -29,14 +29,12 @@ import {
   Palette,
   Smartphone,
   Store,
-  Users,
   Info,
   Globe,
   Layers,
   Feather,
   ScanLine,
   Box,
-  MessageSquareMore,
   Download,
   Link as LinkIcon,
   PanelLeftClose,
@@ -261,7 +259,7 @@ export default function OneUtilityClientPage() {
     "overview" | "campaign" | "brand"
   >("campaign");
   const [campaignView, setCampaignView] = useState<"home" | "editor">("home");
-  const [campaignSubTab, setCampaignSubTab] = useState<"overview" | "strategy" | "creative">("overview");
+  const [campaignSubTab, setCampaignSubTab] = useState<"overview" | "strategy" | "creative" | "marketing">("overview");
   const [campaigns, setCampaigns] = useState<CampaignListItem[]>([
     { id: "utility-bank", title: defaultPreset.name, status: "In progress" },
   ]);
@@ -803,6 +801,17 @@ export default function OneUtilityClientPage() {
                     >
                       Creatives
                     </button>
+                    <span className="text-muted-foreground/50">›</span>
+                    <button
+                      onClick={() => setCampaignSubTab("marketing")}
+                      className={`px-2.5 py-1.5 rounded-md font-medium transition ${
+                        campaignSubTab === "marketing"
+                          ? "text-foreground font-semibold"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      Marketing
+                    </button>
                   </div>
                 </div>
 
@@ -912,16 +921,6 @@ export default function OneUtilityClientPage() {
                       <CopySelect label="CTA" value={phase.printCta} onChange={(v) => updateCopy("printCta", v)} options={ctaOptions} />
                     </CopyGroup>
 
-                    <CopyGroup icon={<Store className="w-3.5 h-3.5" />} title="Retail & field" open={activeSection === "retail"} onToggle={() => toggleSection("retail")}>
-                      <CopyField label="Activation title" value={phase.activationTitle} onChange={(v) => updateCopy("activationTitle", v)} />
-                      <CopyField label="Activation body" value={phase.activationBody} onChange={(v) => updateCopy("activationBody", v)} textarea />
-                    </CopyGroup>
-
-                    <CopyGroup icon={<Users className="w-3.5 h-3.5" />} title="Experiential, creators & PR" open={activeSection === "experiential"} onToggle={() => toggleSection("experiential")}>
-                      <CopyField label="Experience title" value={phase.experienceTitle} onChange={(v) => updateCopy("experienceTitle", v)} />
-                      <CopyField label="Experience body" value={phase.experienceBody} onChange={(v) => updateCopy("experienceBody", v)} textarea />
-                      <CopyField label="PR angle" value={phase.prPitchAngle} onChange={(v) => updateCopy("prPitchAngle", v)} textarea />
-                    </CopyGroup>
                   </div>
 
                   {/* RIGHT: LIVE PREVIEW WINDOW */}
@@ -1084,107 +1083,62 @@ export default function OneUtilityClientPage() {
                         </div>
                       </div>
                     )}
-                    {activeSection === "retail" && (
-                    <div className="space-y-6">
-                  <div className="grid grid-cols-1 gap-6">
-                    <div className="rounded-2xl p-6 bg-card border border-border space-y-3 flex flex-col justify-between shadow-sm">
-                      <div className="space-y-2">
-                        <span className="text-xs font-mono text-primary flex items-center gap-1.5">
-                          <Store className="w-3.5 h-3.5" /> Lead activation concept
-                        </span>
-                        <h4 className="text-xl font-bold text-foreground">{phase.activationTitle}</h4>
-                        <p className="text-sm text-muted-foreground leading-relaxed font-light">
-                          {phase.activationBody}
-                        </p>
-                      </div>
-                      <div className="text-sm text-muted-foreground font-mono pt-4 border-t border-border">
-                        Production scope: layout, staffing, assets & measurement
-                      </div>
-                    </div>
-
-                    <div className="rounded-2xl p-6 bg-card border border-border space-y-3 flex flex-col justify-between shadow-sm">
-                      <div className="space-y-2">
-                        <span className="text-xs font-mono text-primary flex items-center gap-1.5">
-                          <Box className="w-3.5 h-3.5" /> Modular activation unit
-                        </span>
-                        <h4 className="text-xl font-bold text-foreground">Field & Partner Toolkit</h4>
-                        <p className="text-sm text-muted-foreground leading-relaxed font-light">
-                          A scalable physical system for promoters, branches, product education or audience onboarding.
-                        </p>
-                      </div>
-                      <div className="text-sm text-muted-foreground font-mono pt-4 border-t border-border">
-                        Includes: key visual, scripts, setup guide & reporting
-                      </div>
-                    </div>
-
-                    <div className="rounded-2xl p-6 bg-muted border border-border text-foreground space-y-3 flex flex-col justify-between shadow-sm">
-                      <div className="space-y-2">
-                        <span className="text-xs font-mono tracking-widest text-muted-foreground uppercase block">
-                          POST-EXPERIENCE FOLLOW-UP
-                        </span>
-                        <h4 className="text-xl font-bold text-foreground">Keep the campaign moving.</h4>
-                        <p className="text-sm text-muted-foreground leading-relaxed">
-                          A QR-enabled takeaway connecting the physical touchpoint to product information, sign-up or the next useful action.
-                        </p>
-                      </div>
-                      <div className="text-xs font-mono text-muted-foreground pt-3 border-t border-border flex justify-between">
-                        <span>Digital fallback</span>
-                        <span>Consent-aware capture</span>
-                      </div>
-                    </div>
+                  </div>
                   </div>
                 </div>
-                    )}
+                )}
 
-                    {activeSection === "experiential" && (
-                    <div className="space-y-6">
-                  <div className="grid grid-cols-1 gap-6">
-                    <div className="rounded-2xl p-6 bg-card border border-border space-y-4 shadow-sm">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-mono text-primary flex items-center gap-2">
-                          <Users className="w-4 h-4" /> Live Culture Activation
-                        </span>
-                        <span className="text-xs font-mono text-muted-foreground">
-                          {marketAudience.toUpperCase()}
-                        </span>
-                      </div>
-                      <h3 className="text-xl font-bold text-foreground">{phase.experienceTitle}</h3>
-                      <p className="text-sm text-muted-foreground leading-relaxed font-light">
-                        {phase.experienceBody}
-                      </p>
-                    </div>
-
-                    <div className="rounded-2xl p-6 bg-card border border-border space-y-4 shadow-sm">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-mono text-primary flex items-center gap-2">
-                          <MessageSquareMore className="w-4 h-4" /> Creator & press system
-                        </span>
-                        <span className="text-sm bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded">
-                          Audience-fit shortlist
-                        </span>
-                      </div>
-                      <div className="space-y-3 text-sm text-muted-foreground">
-                        <div className="p-3 bg-muted rounded-lg border border-border space-y-1">
-                          <span className="text-sm text-primary font-mono">CREATOR BRIEF</span>
-                          <p className="font-semibold text-foreground">
-                            One non-negotiable message, room for creator-native expression
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            Define the audience, format, disclosure, brand-safety boundaries, deliverables and measurement before outreach.
+                {/* CAMPAIGN SUB-TAB: MARKETING */}
+                {campaignSubTab === "marketing" && (
+                  <div className="lg:flex-1 lg:overflow-y-auto lg:min-h-0 pr-1 py-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div className="rounded-2xl p-6 bg-card border border-border space-y-3 flex flex-col justify-between shadow-sm">
+                        <div className="space-y-2">
+                          <span className="text-xs font-mono text-primary flex items-center gap-1.5">
+                            <Store className="w-3.5 h-3.5" /> Lead activation concept
+                          </span>
+                          <h4 className="text-xl font-bold text-foreground">{phase.activationTitle}</h4>
+                          <p className="text-sm text-muted-foreground leading-relaxed font-light">
+                            {phase.activationBody}
                           </p>
                         </div>
-                        <div className="p-3 bg-muted rounded-lg border border-border space-y-1">
-                          <span className="text-sm text-primary font-mono">PRESS RELEASE ANGLE</span>
-                          <p className="text-sm text-foreground">“{phase.prPitchAngle}”</p>
+                        <div className="text-sm text-muted-foreground font-mono pt-4 border-t border-border">
+                          Production scope: layout, staffing, assets & measurement
+                        </div>
+                      </div>
+
+                      <div className="rounded-2xl p-6 bg-card border border-border space-y-3 flex flex-col justify-between shadow-sm">
+                        <div className="space-y-2">
+                          <span className="text-xs font-mono text-primary flex items-center gap-1.5">
+                            <Box className="w-3.5 h-3.5" /> Modular activation unit
+                          </span>
+                          <h4 className="text-xl font-bold text-foreground">Field & Partner Toolkit</h4>
+                          <p className="text-sm text-muted-foreground leading-relaxed font-light">
+                            A scalable physical system for promoters, branches, product education or audience onboarding.
+                          </p>
+                        </div>
+                        <div className="text-sm text-muted-foreground font-mono pt-4 border-t border-border">
+                          Includes: key visual, scripts, setup guide & reporting
+                        </div>
+                      </div>
+
+                      <div className="rounded-2xl p-6 bg-muted border border-border text-foreground space-y-3 flex flex-col justify-between shadow-sm">
+                        <div className="space-y-2">
+                          <span className="text-xs font-mono tracking-widest text-muted-foreground uppercase block">
+                            POST-EXPERIENCE FOLLOW-UP
+                          </span>
+                          <h4 className="text-xl font-bold text-foreground">Keep the campaign moving.</h4>
+                          <p className="text-sm text-muted-foreground leading-relaxed">
+                            A QR-enabled takeaway connecting the physical touchpoint to product information, sign-up or the next useful action.
+                          </p>
+                        </div>
+                        <div className="text-xs font-mono text-muted-foreground pt-3 border-t border-border flex justify-between">
+                          <span>Digital fallback</span>
+                          <span>Consent-aware capture</span>
                         </div>
                       </div>
                     </div>
                   </div>
-                  </div>
-                    )}
-                  </div>
-                  </div>
-                </div>
                 )}
               </div>
             </div>
