@@ -62,10 +62,14 @@ function ClientWorkspaceHero({
           className="h-full w-full object-cover"
         />
       )}
-      <div className="pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-black/65 to-transparent px-5 py-5 text-white sm:px-6">
+      <div className="absolute inset-x-0 top-0 bg-gradient-to-b from-black/65 to-transparent px-5 py-5 text-white sm:px-6">
         <nav aria-label="Breadcrumb">
           <ol className="m-0 flex list-none items-center gap-1.5 p-0 text-xs text-white/75">
-            <li>All</li>
+            <li>
+              <Link href="/dashboard/clients" className="transition hover:text-white">
+                All
+              </Link>
+            </li>
             <li aria-hidden="true"><ChevronRight className="h-3 w-3" /></li>
             <li>{clientName}</li>
             <li aria-hidden="true"><ChevronRight className="h-3 w-3" /></li>
@@ -1148,7 +1152,7 @@ function OneUtilityClientWorkspace({
                   {workspace.overviewVideo ? (
                     <video
                       className="h-full w-full object-cover"
-                      controls
+                      muted
                       preload="metadata"
                       poster={campaignImageFor(activeCampaignId)}
                       aria-label={`${clientName} campaign film`}
