@@ -321,6 +321,7 @@ function OneUtilityClientWorkspace({
   >(initialView);
   const [campaignView, setCampaignView] = useState<"home" | "editor">("home");
   const [campaignSubTab, setCampaignSubTab] = useState<"overview" | "strategy" | "creative" | "marketing">("overview");
+  const [selectedGalleryItem, setSelectedGalleryItem] = useState<{ src: string; title: string; category: string } | null>(null);
   const [campaigns, setCampaigns] = useState<CampaignListItem[]>(() =>
     initialClientCampaigns.length > 0
       ? initialClientCampaigns.map((campaign) => ({
@@ -935,86 +936,140 @@ function OneUtilityClientWorkspace({
                   <StrategyEditor markdown={workspace.strategyMarkdown} />
                 )}
 
-                {/* CAMPAIGN SUB-TAB: CREATIVES */}
+                {/* CAMPAIGN SUB-TAB: CREATIVES GALLERY */}
                 {campaignSubTab === "creative" && (
-                <div className="grid grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)] gap-6 lg:gap-8 lg:flex-1 lg:min-h-0">
-                  {/* LEFT: EDITABLE COPY */}
-                  <div className="border-t border-border lg:overflow-y-auto lg:min-h-0 lg:pr-1">
+                  <div className="lg:flex-1 lg:overflow-y-auto lg:min-h-0 py-2 space-y-6">
+                    <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-border">
+                      <div>
+                        <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+                          <Palette className="w-4 h-4 text-primary" /> Creative Gallery
+                        </h3>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Campaign key visuals, photography assets, and production media.
+                        </p>
+                      </div>
+                      <span className="text-xs font-mono bg-muted px-2.5 py-1 rounded-full text-muted-foreground border border-border">
+                        5 Assets
+                      </span>
+                    </div>
 
-                    <CopyGroup icon={<Smartphone className="w-3.5 h-3.5" />} title="Social & digital" open={activeSection === "social"} onToggle={() => toggleSection("social")}>
-                      <CopyField label="Title" value={phase.socialTitle} onChange={(v) => updateCopy("socialTitle", v)} />
-                      <CopyField label="Caption" value={phase.socialBody} onChange={(v) => updateCopy("socialBody", v)} textarea />
-                      <CopySelect label="CTA" value={phase.socialCta} onChange={(v) => updateCopy("socialCta", v)} options={ctaOptions} />
-                    </CopyGroup>
-
-                    <CopyGroup icon={<Film className="w-3.5 h-3.5" />} title="Film" open={activeSection === "film"} onToggle={() => toggleSection("film")}>
-                      <CopyField label="Title" value={phase.filmTitle} onChange={(v) => updateCopy("filmTitle", v)} />
-                      <CopyField label="Description" value={phase.filmDesc} onChange={(v) => updateCopy("filmDesc", v)} textarea />
-                      <CopySelect label="CTA" value={phase.filmCta} onChange={(v) => updateCopy("filmCta", v)} options={ctaOptions} />
-                    </CopyGroup>
-
-                    <CopyGroup icon={<Mic className="w-3.5 h-3.5" />} title="Audio" open={activeSection === "audio"} onToggle={() => toggleSection("audio")}>
-                      <CopyField label="Title" value={phase.audioTitle} onChange={(v) => updateCopy("audioTitle", v)} />
-                      <CopyField label="Description" value={phase.audioDesc} onChange={(v) => updateCopy("audioDesc", v)} textarea />
-                      <CopySelect label="CTA" value={phase.audioCta} onChange={(v) => updateCopy("audioCta", v)} options={ctaOptions} />
-                    </CopyGroup>
-
-                    <CopyGroup icon={<Megaphone className="w-3.5 h-3.5" />} title="OOH" open={activeSection === "ooh"} onToggle={() => toggleSection("ooh")}>
-                      <CopyField label="Title" value={phase.oohTitle} onChange={(v) => updateCopy("oohTitle", v)} />
-                      <CopyField label="Description" value={phase.oohDesc} onChange={(v) => updateCopy("oohDesc", v)} textarea />
-                      <CopySelect label="CTA" value={phase.oohCta} onChange={(v) => updateCopy("oohCta", v)} options={ctaOptions} />
-                    </CopyGroup>
-
-                    <CopyGroup icon={<Newspaper className="w-3.5 h-3.5" />} title="Print" open={activeSection === "print"} onToggle={() => toggleSection("print")}>
-                      <CopyField label="Title" value={phase.printTitle} onChange={(v) => updateCopy("printTitle", v)} />
-                      <CopyField label="Description" value={phase.printDesc} onChange={(v) => updateCopy("printDesc", v)} textarea />
-                      <CopySelect label="CTA" value={phase.printCta} onChange={(v) => updateCopy("printCta", v)} options={ctaOptions} />
-                    </CopyGroup>
-
-                  </div>
-
-                  {/* RIGHT: LIVE PREVIEW WINDOW */}
-                  <div className="lg:min-h-0 lg:overflow-y-auto rounded-2xl border border-border bg-muted/30 p-4 sm:p-6 flex items-center justify-center">
-                    {creativePreview ? (
-                      <article className="w-full max-w-md overflow-hidden rounded-2xl border border-border bg-card shadow-xl">
-                        {/* Every channel uses a produced campaign image; editable copy stays as delivery metadata. */}
-                        <div className={`relative overflow-hidden ${creativePreview.aspect}`}>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={creativePreview.src}
-                            alt={creativePreview.alt}
-                            className="h-full w-full object-cover"
-                          />
-                          <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-3 bg-gradient-to-b from-black/60 to-transparent p-4">
+                    {/* GALLERY GRID */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                      {[
+                        {
+                          id: "jack-daniels-hero",
+                          title: "Jack Daniel's Old No. 7 — Tennessee Whiskey",
+                          category: "Featured Hero Visual",
+                          src: "/images/jack-daniels.png",
+                          aspect: "aspect-[4/3]",
+                          featured: true,
+                        },
+                        {
+                          id: "creative-social",
+                          title: "Social & Digital Campaign Key Visual",
+                          category: "Social & Digital",
+                          src: workspace.creativePreviews.social.src,
+                          aspect: "aspect-square",
+                          featured: false,
+                        },
+                        {
+                          id: "creative-film",
+                          title: "Commercial Film Spot Visual",
+                          category: "Film / Commercial",
+                          src: workspace.creativePreviews.film.src,
+                          aspect: "aspect-video",
+                          featured: false,
+                        },
+                        {
+                          id: "creative-ooh",
+                          title: "Out-of-Home Billboard & Transit Asset",
+                          category: "OOH & Transit",
+                          src: workspace.creativePreviews.ooh.src,
+                          aspect: "aspect-[16/9]",
+                          featured: false,
+                        },
+                        {
+                          id: "creative-print",
+                          title: "Print & Editorial Campaign Spread",
+                          category: "Print & Magazine",
+                          src: workspace.creativePreviews.print.src,
+                          aspect: "aspect-[3/4]",
+                          featured: false,
+                        },
+                      ].map((item) => (
+                        <div
+                          key={item.id}
+                          onClick={() => setSelectedGalleryItem({ src: item.src, title: item.title, category: item.category })}
+                          className={`group relative overflow-hidden rounded-2xl border border-border bg-card shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col ${
+                            item.featured ? "md:col-span-2 lg:col-span-2" : ""
+                          }`}
+                        >
+                          <div className={`relative w-full overflow-hidden bg-muted/40 ${item.featured ? "h-80 sm:h-96" : item.aspect}`}>
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
-                              src={clientProfileImage}
-                              alt={clientName}
-                              className="h-6 w-auto brightness-0 invert"
+                              src={item.src}
+                              alt={item.title}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                             />
-                            <span className="rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-mono font-semibold tracking-wider text-[#1B3FC2]">
-                              {creativePreview.format}
-                            </span>
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent opacity-90 group-hover:opacity-95 transition-opacity" />
+
+                            {item.featured && (
+                              <span className="absolute top-3 left-3 bg-primary text-primary-foreground text-[10px] font-mono font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-md flex items-center gap-1">
+                                <Sparkles className="w-3 h-3" /> Featured Visual
+                              </span>
+                            )}
+
+                            <div className="absolute bottom-0 inset-x-0 p-5 text-white space-y-1">
+                              <span className="text-[10px] font-mono font-semibold uppercase tracking-wider text-white/75 block">
+                                {item.category}
+                              </span>
+                              <h4 className="text-base sm:text-lg font-bold leading-tight text-white group-hover:text-primary-foreground transition-colors">
+                                {item.title}
+                              </h4>
+                            </div>
                           </div>
                         </div>
-                        <div className="space-y-3 p-5">
-                          <div className="space-y-1">
-                            <p className="text-[10px] font-mono font-semibold tracking-[0.16em] text-[#1B3FC2]">
-                              {creativePreview.format}
-                            </p>
-                            <h3 className="text-xl font-bold leading-tight text-foreground">{creativePreview.title}</h3>
-                            <p className="text-sm leading-relaxed text-muted-foreground">{creativePreview.description}</p>
+                      ))}
+                    </div>
+
+                    {/* LIGHTBOX MODAL */}
+                    {selectedGalleryItem && (
+                      <div
+                        className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6"
+                        onClick={() => setSelectedGalleryItem(null)}
+                      >
+                        <div
+                          className="relative max-w-4xl w-full bg-card rounded-2xl overflow-hidden border border-border shadow-2xl flex flex-col max-h-[90vh]"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-muted/40">
+                            <div>
+                              <span className="text-xs font-mono text-primary font-medium block">
+                                {selectedGalleryItem.category}
+                              </span>
+                              <h3 className="text-base font-bold text-foreground">
+                                {selectedGalleryItem.title}
+                              </h3>
+                            </div>
+                            <button
+                              onClick={() => setSelectedGalleryItem(null)}
+                              className="grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition"
+                            >
+                              ✕
+                            </button>
                           </div>
-                          <span className="inline-flex rounded-lg bg-[#1B3FC2] px-3 py-2 text-sm font-semibold text-white">
-                            {creativePreview.cta}
-                          </span>
+                          <div className="p-4 flex-1 overflow-auto flex items-center justify-center bg-black/90">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={selectedGalleryItem.src}
+                              alt={selectedGalleryItem.title}
+                              className="max-h-[72vh] w-auto object-contain rounded-lg shadow-lg"
+                            />
+                          </div>
                         </div>
-                      </article>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">Choose a creative channel to preview its campaign image.</p>
+                      </div>
                     )}
                   </div>
-                </div>
                 )}
 
                 {/* CAMPAIGN SUB-TAB: MARKETING */}

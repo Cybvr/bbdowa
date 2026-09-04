@@ -16,6 +16,14 @@ export type SortOption<SortKey extends string> = {
   label: string;
 };
 
+export type SelectFilter = {
+  /** Accessible label for the select. */
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: { value: string; label: string }[];
+};
+
 const FIELD =
   "h-9 appearance-none rounded-lg border border-border bg-background px-3 text-[13px] text-foreground focus-visible:outline-none";
 
@@ -28,6 +36,8 @@ export function FilterBar<TabKey extends string, SortKey extends string>({
   search,
   onSearchChange,
   searchPlaceholder = "Search",
+  searchClassName = "w-[220px]",
+  filters,
   sortOptions,
   activeSort,
   onSortChange,
@@ -41,6 +51,8 @@ export function FilterBar<TabKey extends string, SortKey extends string>({
   search?: string;
   onSearchChange?: (value: string) => void;
   searchPlaceholder?: string;
+  searchClassName?: string;
+  filters?: SelectFilter[];
   sortOptions?: SortOption<SortKey>[];
   activeSort?: SortKey;
   onSortChange?: (key: SortKey) => void;
@@ -112,9 +124,25 @@ export function FilterBar<TabKey extends string, SortKey extends string>({
             onChange={(event) => onSearchChange(event.target.value)}
             placeholder={searchPlaceholder}
             aria-label={searchPlaceholder}
-            className={`${FIELD} w-[220px] max-w-full placeholder:text-muted-foreground`}
+            className={`${FIELD} ${searchClassName} max-w-full placeholder:text-muted-foreground`}
           />
         ) : null}
+
+        {filters?.map((filter) => (
+          <select
+            key={filter.label}
+            value={filter.value}
+            onChange={(event) => filter.onChange(event.target.value)}
+            aria-label={filter.label}
+            className={`${FIELD} cursor-pointer pr-2`}
+          >
+            {filter.options.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        ))}
 
         {sortOptions && sortOptions.length > 0 && onSortChange ? (
           <label className="flex items-center gap-2 text-[13px] text-muted-foreground">
