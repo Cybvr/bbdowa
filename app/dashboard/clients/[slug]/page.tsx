@@ -3,6 +3,7 @@
 import React, { useState, useRef } from "react";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
+import { Badge } from "@/components/ui/badge";
 import { EmptyThumbnail, ImageWithFallback } from "@/components/empty-thumbnail";
 import { CAMPAIGNS } from "@/lib/campaigns";
 import type { Campaign, CampaignStatus } from "@/lib/campaigns";
@@ -111,6 +112,7 @@ import {
   List,
   Heading2,
   Pilcrow,
+  CircleDollarSign,
   Save,
   X,
 } from "lucide-react";
@@ -1548,9 +1550,17 @@ function OneUtilityClientWorkspace({
                           />
                         </div>
                         <div className="space-y-1 p-4">
-                          <span className="text-xs font-medium text-primary">{creator.category}</span>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Badge variant="secondary">{creator.category}</Badge>
+                            <Badge variant="outline">{creator.availability}</Badge>
+                          </div>
                           <h2 className="text-base font-semibold text-foreground">{creator.name}</h2>
-                          <p className="text-sm text-muted-foreground">{creator.availability}</p>
+                          {!creator.hideRate && creator.rateMin !== null && (
+                            <p className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                              <CircleDollarSign className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+                              {creator.dayRate}
+                            </p>
+                          )}
                         </div>
                       </Link>
                     ))}
