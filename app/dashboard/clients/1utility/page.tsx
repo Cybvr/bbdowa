@@ -50,6 +50,7 @@ import {
   ChevronLeft,
   ArrowRight,
   TrendingUp,
+  Menu,
 } from "lucide-react";
 
 function InstagramIcon({ className }: { className?: string }) {
@@ -95,23 +96,23 @@ function CopyField({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="flex items-center justify-between text-xs font-medium text-foreground">
+      <label className="flex items-center justify-between text-sm font-medium text-foreground">
         <span>{label}</span>
-        {hint && <span className="text-[10px] text-muted-foreground font-mono">{hint}</span>}
+        {hint && <span className="text-sm text-muted-foreground font-mono">{hint}</span>}
       </label>
       {textarea ? (
         <textarea
           rows={rows ?? 2}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground outline-none transition resize-y"
+          className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none transition resize-y"
         />
       ) : (
         <input
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground outline-none transition"
+          className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none transition"
         />
       )}
     </div>
@@ -132,11 +133,11 @@ function CopySelect({
   const opts = options.includes(value) ? options : [value, ...options];
   return (
     <div className="space-y-1.5">
-      <label className="text-xs font-medium text-foreground">{label}</label>
+      <label className="text-sm font-medium text-foreground">{label}</label>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-xs text-foreground outline-none transition"
+        className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm text-foreground outline-none transition"
       >
         {opts.map((o) => (
           <option key={o} value={o}>
@@ -182,6 +183,16 @@ function CopyGroup({
     </div>
   );
 }
+
+const FONT_STACKS: Record<string, { heading: string; body: string }> = {
+  "Outfit Display & Jakarta Sans": { heading: "'Outfit', sans-serif", body: "'Plus Jakarta Sans', sans-serif" },
+  "Inter & Inter": { heading: "'Inter', sans-serif", body: "'Inter', sans-serif" },
+  "Playfair Display & Source Sans": { heading: "'Playfair Display', serif", body: "'Source Sans 3', sans-serif" },
+  "Space Grotesk & IBM Plex Sans": { heading: "'Space Grotesk', sans-serif", body: "'IBM Plex Sans', sans-serif" },
+  "Clash Display & General Sans": { heading: "'Space Grotesk', sans-serif", body: "'Inter', sans-serif" },
+  "DM Serif Display & DM Sans": { heading: "'DM Serif Display', serif", body: "'DM Sans', sans-serif" },
+  "Archivo & Archivo Narrow": { heading: "'Archivo', sans-serif", body: "'Archivo Narrow', sans-serif" },
+};
 
 function VisualLabel({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
   return (
@@ -308,6 +319,12 @@ export default function OneUtilityClientPage() {
   const removePaletteColor = (index: number) =>
     setPalette((prev) => prev.filter((_, i) => i !== index));
 
+  // Campaign overview state
+  const [campaignOwners, setCampaignOwners] = useState("Jide Pinheiro, Amara Obi");
+  const [campaignStart, setCampaignStart] = useState("2026-08-01");
+  const [campaignEnd, setCampaignEnd] = useState("2026-10-31");
+  const [campaignDeadline, setCampaignDeadline] = useState("2026-07-25");
+
   // Settings state
   const [brandUrl, setBrandUrl] = useState(defaultPreset.url);
   const [scope, setScope] = useState(defaultPreset.scope);
@@ -319,7 +336,7 @@ export default function OneUtilityClientPage() {
 
   // Brand DNA: editable core value proposition
   const [valueProp, setValueProp] = useState(valuePropositionData.coreHeadline);
-  const [progressStages, setProgressStages] = useState(valuePropositionData.progressModel);
+  const progressStages = valuePropositionData.progressModel;
 
   // Page accent (primary) override — default blue (#2563eb)
   const [primaryColor, setPrimaryColor] = useState<string>("#2563eb");
@@ -499,41 +516,49 @@ export default function OneUtilityClientPage() {
     >
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 bg-card border border-border text-card-foreground px-5 py-4 rounded-xl shadow-2xl z-50 text-xs font-sans max-w-sm flex items-start gap-3">
+        <div className="fixed bottom-6 right-6 bg-card border border-border text-card-foreground px-5 py-4 rounded-xl shadow-2xl z-50 text-sm font-sans max-w-sm flex items-start gap-3">
           <Info className="w-5 h-5 text-primary shrink-0 mt-0.5" />
           <div className="whitespace-pre-line leading-relaxed">{toastMessage}</div>
         </div>
       )}
 
       {/* TOP HEADER: CLIENT IDENTIFIER */}
-      <header className="min-h-16 rounded-xl bg-background px-4 py-3 sm:px-6 flex flex-wrap items-center justify-between gap-3 shrink-0 z-30">
+      <header className="min-h-16 rounded-xl bg-black text-white px-4 py-3 sm:px-6 flex flex-wrap items-center justify-between gap-3 shrink-0 z-30">
         <div className="flex items-center gap-3 min-w-0">
-          <DashboardSidebarSheet />
+          <DashboardSidebarSheet trigger={
+            <button
+              type="button"
+              aria-label="Open navigation menu"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border-0 bg-transparent text-white hover:bg-white/10 focus-visible:outline-none transition cursor-pointer"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+          } />
           <Link
             href="/dashboard"
             aria-label="BBDO West Africa dashboard"
-            className="flex shrink-0 items-center min-w-0 hover:opacity-85 transition"
+            className="hidden sm:flex shrink-0 items-center min-w-0 hover:opacity-85 transition"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/bbdo-west-africa.png"
               alt="BBDO West Africa"
-              className="block h-5 sm:h-6 w-auto max-w-full"
+              className="block h-5 sm:h-6 w-auto max-w-full brightness-0 invert"
             />
           </Link>
-          <span className="text-border text-sm">/</span>
+          <span className="hidden sm:inline text-white/30 text-sm">/</span>
           <img
             src="/images/one-utility-logo.svg"
             alt={clientName}
             className="h-6 w-6 shrink-0 object-contain"
           />
-          <span className="text-sm font-semibold tracking-tight text-foreground">
+          <span className="text-sm font-semibold tracking-tight text-white">
             {clientName}
           </span>
           {activeMainTab === "campaign" && campaignView === "editor" && (
             <>
-              <span className="text-muted-foreground/50 text-xs font-mono">/</span>
-              <span className="text-xs font-medium text-muted-foreground truncate">
+              <span className="text-white/30 text-xs font-mono">/</span>
+              <span className="text-sm font-medium text-white/60 truncate">
                 {projectName}
               </span>
             </>
@@ -541,29 +566,23 @@ export default function OneUtilityClientPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           {/* Collaborators */}
-          <div className="hidden sm:flex items-center gap-2 pr-1">
-            <div className="flex items-center -space-x-2" aria-label="Collaborators on this campaign">
-              {collaborators.map((c) => (
-                <span
-                  key={c.name}
-                  title={c.name}
-                  className="grid h-7 w-7 place-items-center rounded-full border-2 border-background text-[10px] font-semibold text-white"
-                  style={{ backgroundColor: c.color }}
-                >
-                  {c.initials}
-                </span>
-              ))}
-            </div>
-            <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              3 editing
-            </span>
+          <div className="hidden sm:flex items-center -space-x-2 pr-1" aria-label="Collaborators on this campaign">
+            {collaborators.map((c) => (
+              <span
+                key={c.name}
+                title={c.name}
+                className="grid h-7 w-7 place-items-center rounded-full border-2 border-black text-sm font-semibold text-white"
+                style={{ backgroundColor: c.color }}
+              >
+                {c.initials}
+              </span>
+            ))}
           </div>
 
           {/* Accent color */}
           <label
             title="Change accent color"
-            className="relative flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-secondary-foreground bg-secondary hover:bg-secondary/90 rounded-md border border-border transition cursor-pointer"
+            className="relative flex items-center gap-2 px-2.5 py-1.5 text-sm font-medium text-secondary-foreground bg-secondary hover:bg-secondary/90 rounded-md border border-border transition cursor-pointer"
           >
             <span
               className="h-3.5 w-3.5 rounded-full border border-border"
@@ -579,17 +598,17 @@ export default function OneUtilityClientPage() {
             />
           </label>
 
-          <button onClick={handleShareCampaign} className="px-3.5 py-1.5 text-xs font-medium text-secondary-foreground bg-secondary hover:bg-secondary/90 rounded-md border border-border transition flex items-center gap-2">
+          <button onClick={handleShareCampaign} className="px-3.5 py-1.5 text-sm font-medium text-secondary-foreground bg-secondary hover:bg-secondary/90 rounded-md border border-border transition flex items-center gap-2">
             <LinkIcon className="w-3.5 h-3.5" /> Share
           </button>
-          <button onClick={handleExportCampaign} className="px-3.5 py-1.5 text-xs font-medium text-primary-foreground bg-primary hover:opacity-90 rounded-md transition flex items-center gap-2">
+          <button onClick={handleExportCampaign} className="px-3.5 py-1.5 text-sm font-medium text-primary-foreground bg-primary hover:opacity-90 rounded-md transition flex items-center gap-2">
             <Download className="w-3.5 h-3.5" /> Export
           </button>
           <ProfileNav />
         </div>
       </header>
 
-      <div className="flex flex-col lg:flex-row flex-1 min-h-0 gap-2 overflow-hidden">
+      <div className="flex flex-col lg:flex-row lg:flex-1 lg:min-h-0 gap-2 lg:overflow-hidden">
       {/* RIGHT SIDEBAR: WORKSPACE ASSISTANT */}
       <aside
         className={`order-2 rounded-xl bg-background flex flex-col shrink-0 z-20 overflow-visible lg:overflow-hidden transition-all ${
@@ -599,7 +618,7 @@ export default function OneUtilityClientPage() {
         {/* Chat Header / Collapse Toggle */}
         <div className="flex items-center justify-between gap-2 p-3 border-b border-border shrink-0">
           {chatOpen && (
-            <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+            <span className="text-sm font-semibold text-foreground flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-primary" /> Workspace assistant
             </span>
           )}
@@ -634,7 +653,7 @@ export default function OneUtilityClientPage() {
                 </span>
               )}
               <div
-                className={`max-w-[85%] rounded-xl px-3 py-2 text-xs ${
+                className={`max-w-[85%] rounded-xl px-3 py-2 text-sm ${
                   msg.role === "user"
                     ? "rounded-tr-sm bg-primary text-primary-foreground font-medium shadow"
                     : "rounded-tl-sm border border-border bg-muted/60 text-foreground"
@@ -656,7 +675,7 @@ export default function OneUtilityClientPage() {
               onChange={(e) => setChatInput(e.target.value)}
               placeholder="Ask the workspace assistant..."
               autoComplete="off"
-              className="flex-1 min-w-0 bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground outline-none transition"
+              className="flex-1 min-w-0 bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none transition"
             />
             <button
               type="submit"
@@ -672,13 +691,13 @@ export default function OneUtilityClientPage() {
       </aside>
 
       {/* MAIN CANVAS: TABS + CONTENT */}
-      <main className="order-1 flex-1 min-h-[760px] lg:min-h-0 rounded-xl bg-background flex flex-col overflow-hidden">
+      <main className="order-1 lg:flex-1 lg:min-h-0 rounded-xl bg-background flex flex-col lg:overflow-hidden">
 
         {/* TOP-LEVEL VIEW TABS: OVERVIEW | CAMPAIGNS | BRAND DNA */}
-        <div className="min-h-12 border-b border-border px-4 sm:px-6 flex items-center justify-center gap-1 bg-card/60 shrink-0">
+        <div className="min-h-12 border-b border-border px-4 sm:px-6 flex items-center justify-start sm:justify-center gap-1 bg-card/60 shrink-0 overflow-x-auto">
           <button
             onClick={() => setActiveMainTab("overview")}
-            className={`px-4 py-2.5 text-xs font-semibold border-b-2 flex items-center gap-2 transition whitespace-nowrap ${
+            className={`px-4 py-2.5 text-sm font-semibold border-b-2 flex items-center gap-2 transition whitespace-nowrap ${
               activeMainTab === "overview"
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
@@ -691,7 +710,7 @@ export default function OneUtilityClientPage() {
               setActiveMainTab("campaign");
               setCampaignView("home");
             }}
-            className={`px-4 py-2.5 text-xs font-semibold border-b-2 flex items-center gap-2 transition whitespace-nowrap ${
+            className={`px-4 py-2.5 text-sm font-semibold border-b-2 flex items-center gap-2 transition whitespace-nowrap ${
               activeMainTab === "campaign"
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
@@ -701,7 +720,7 @@ export default function OneUtilityClientPage() {
           </button>
           <button
             onClick={() => setActiveMainTab("brand")}
-            className={`px-4 py-2.5 text-xs font-semibold border-b-2 flex items-center gap-2 transition whitespace-nowrap ${
+            className={`px-4 py-2.5 text-sm font-semibold border-b-2 flex items-center gap-2 transition whitespace-nowrap ${
               activeMainTab === "brand"
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
@@ -714,13 +733,13 @@ export default function OneUtilityClientPage() {
         {/* CAMPAIGN VIEW */}
         {activeMainTab === "campaign" && (
           campaignView === "home" ? (
-            <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6">
+            <div className="lg:flex-1 lg:overflow-y-auto px-4 py-4 sm:px-6">
               <div className="w-full max-w-5xl mx-auto space-y-4 pb-8">
                 <div className="flex items-center justify-between gap-3 pb-3 border-b border-border">
                   <TabPageHeader title="Campaigns" />
                   <button
                     onClick={handleNewCampaign}
-                    className="px-3 py-1.5 text-xs font-medium text-primary-foreground bg-primary hover:opacity-90 rounded-md transition flex items-center gap-1.5"
+                    className="px-3 py-1.5 text-sm font-medium text-primary-foreground bg-primary hover:opacity-90 rounded-md transition flex items-center gap-1.5"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     New campaign
@@ -740,13 +759,13 @@ export default function OneUtilityClientPage() {
                           alt={campaign.title}
                           className="w-full h-full object-cover transition duration-300 group-hover:scale-105"
                         />
-                        <span className="absolute top-3 left-3 rounded-md bg-background/90 backdrop-blur-sm px-2 py-0.5 text-[10px] font-mono uppercase tracking-wide text-primary font-semibold border border-border">
+                        <span className="absolute top-3 left-3 rounded-md bg-background/90 backdrop-blur-sm px-2 py-0.5 text-xs font-mono uppercase tracking-wide text-primary font-semibold border border-border">
                           {campaign.status}
                         </span>
                       </div>
                       <div className="pt-3 flex flex-col flex-1 justify-between space-y-1">
                         <span className="block text-sm font-semibold text-foreground group-hover:text-primary transition">{campaign.title}</span>
-                        <span className="block text-xs text-muted-foreground">Open campaign workspace</span>
+                        <span className="block text-sm text-muted-foreground">Open campaign workspace</span>
                       </div>
                     </button>
                   ))}
@@ -754,10 +773,10 @@ export default function OneUtilityClientPage() {
               </div>
             </div>
           ) : (
-          <div className="flex flex-col flex-1 overflow-hidden">
+          <div className="flex flex-col lg:flex-1 lg:overflow-hidden">
             {/* TAB CONTENT AREA */}
-            <div className="flex-1 overflow-hidden px-4 py-4 sm:px-6 flex flex-col" id="canvasScrollArea">
-              <div className="w-full max-w-5xl mx-auto flex flex-col flex-1 min-h-0 gap-4">
+            <div className="lg:flex-1 lg:overflow-hidden px-4 py-4 sm:px-6 flex flex-col" id="canvasScrollArea">
+              <div className="w-full max-w-5xl mx-auto flex flex-col lg:flex-1 lg:min-h-0 gap-4">
                 <div className="flex flex-wrap items-center justify-between gap-3 shrink-0 border-b border-border pb-3">
                   <div className="flex items-center gap-2 min-w-0">
                     <button
@@ -772,12 +791,12 @@ export default function OneUtilityClientPage() {
                       value={projectName}
                       onChange={(e) => handleProjectNameChange(e.target.value)}
                       aria-label="Campaign title"
-                      className="bg-transparent border-b border-transparent hover:border-border focus:border-primary px-1 py-0.5 text-sm font-semibold tracking-tight text-foreground outline-none transition placeholder:text-muted-foreground"
+                      className="min-w-0 flex-1 bg-transparent border-b border-transparent hover:border-border focus:border-primary px-1 py-0.5 text-sm font-semibold tracking-tight text-foreground outline-none transition placeholder:text-muted-foreground"
                     />
                   </div>
 
                   {/* CAMPAIGN SUB-TABS: OVERVIEW > STRATEGY > CREATIVES */}
-                  <div className="flex items-center gap-1 text-xs shrink-0">
+                  <div className="flex items-center gap-1 text-sm shrink-0">
                     <button
                       onClick={() => setCampaignSubTab("overview")}
                       className={`px-2.5 py-1.5 rounded-md font-medium transition ${
@@ -815,7 +834,7 @@ export default function OneUtilityClientPage() {
 
                 {/* CAMPAIGN SUB-TAB: OVERVIEW */}
                 {campaignSubTab === "overview" && (
-                  <div className="flex-1 overflow-y-auto pr-1 min-h-0 py-4">
+                  <div className="lg:flex-1 lg:overflow-y-auto lg:min-h-0 pr-1 py-4">
                     <div className="space-y-4 max-w-2xl">
                       <div className="space-y-1.5">
                         <label htmlFor="campaignScopeOverview" className="text-xs font-mono text-primary uppercase tracking-widest font-semibold flex items-center gap-1.5">
@@ -825,7 +844,7 @@ export default function OneUtilityClientPage() {
                           id="campaignScopeOverview"
                           value={scope}
                           onChange={(e) => setScope(e.target.value)}
-                          className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-xs text-foreground outline-none transition"
+                          className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm text-foreground outline-none transition"
                         >
                           <option value="integrated">Integrated launch (film, social, OOH, radio, activation)</option>
                           <option value="social">Social, creators & performance</option>
@@ -833,22 +852,62 @@ export default function OneUtilityClientPage() {
                           <option value="activation">Retail, pop-up & field toolkit</option>
                         </select>
                       </div>
+
+                      <CopyField
+                        label="Owners"
+                        hint="People accountable"
+                        value={campaignOwners}
+                        onChange={setCampaignOwners}
+                      />
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div className="space-y-1.5">
+                          <label htmlFor="campaignStart" className="text-sm font-medium text-foreground">Campaign start</label>
+                          <input
+                            type="date"
+                            id="campaignStart"
+                            value={campaignStart}
+                            onChange={(e) => setCampaignStart(e.target.value)}
+                            className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm text-foreground outline-none transition"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label htmlFor="campaignEnd" className="text-sm font-medium text-foreground">Campaign end</label>
+                          <input
+                            type="date"
+                            id="campaignEnd"
+                            value={campaignEnd}
+                            onChange={(e) => setCampaignEnd(e.target.value)}
+                            className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm text-foreground outline-none transition"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label htmlFor="campaignDeadline" className="text-sm font-medium text-foreground">Deadline</label>
+                          <input
+                            type="date"
+                            id="campaignDeadline"
+                            value={campaignDeadline}
+                            onChange={(e) => setCampaignDeadline(e.target.value)}
+                            className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm text-foreground outline-none transition"
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
 
                 {/* CAMPAIGN SUB-TAB: STRATEGY */}
                 {campaignSubTab === "strategy" && (
-                  <div className="flex-1 overflow-y-auto pr-1 min-h-0">
+                  <div className="lg:flex-1 lg:overflow-y-auto lg:min-h-0 pr-1">
                     <StrategyDoc markdown={strategyMarkdown} />
                   </div>
                 )}
 
                 {/* CAMPAIGN SUB-TAB: CREATIVES */}
                 {campaignSubTab === "creative" && (
-                <div className="grid grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)] gap-8 flex-1 min-h-0">
+                <div className="grid grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)] gap-6 lg:gap-8 lg:flex-1 lg:min-h-0">
                   {/* LEFT: EDITABLE COPY */}
-                  <div className="border-t border-border overflow-y-auto min-h-0 lg:pr-1">
+                  <div className="border-t border-border lg:overflow-y-auto lg:min-h-0 lg:pr-1">
 
                     <CopyGroup icon={<Smartphone className="w-3.5 h-3.5" />} title="Social & digital" open={activeSection === "social"} onToggle={() => toggleSection("social")}>
                       <CopyField label="Title" value={phase.socialTitle} onChange={(v) => updateCopy("socialTitle", v)} />
@@ -893,7 +952,7 @@ export default function OneUtilityClientPage() {
                   </div>
 
                   {/* RIGHT: LIVE PREVIEW WINDOW */}
-                  <div className="min-h-0 overflow-y-auto rounded-2xl border border-border bg-muted/30 p-6 flex items-center justify-center">
+                  <div className="lg:min-h-0 lg:overflow-y-auto rounded-2xl border border-border bg-muted/30 p-4 sm:p-6 flex items-center justify-center">
                     <div className="w-full max-w-sm space-y-6">
                     {activeSection === "social" && (
                     <div className="space-y-6">
@@ -908,28 +967,28 @@ export default function OneUtilityClientPage() {
                         style={campaignPreviewBackground}
                       >
                         <div className="relative z-10 flex items-center justify-between">
-                          <span className="text-xs font-medium text-foreground">
+                          <span className="text-sm font-medium text-foreground">
                             {preset.socialAccount}
                           </span>
-                          <span className="text-[10px] bg-muted px-2 py-0.5 rounded text-muted-foreground">
+                          <span className="text-sm bg-muted px-2 py-0.5 rounded text-muted-foreground">
                             Sponsored
                           </span>
                         </div>
 
                         <div className="relative z-10 text-center space-y-3 my-auto">
-                          <span className="text-[10px] tracking-widest text-primary uppercase font-mono block">
+                          <span className="text-sm tracking-widest text-primary uppercase font-mono block">
                             Phase: {currentPhase.toUpperCase()}
                           </span>
                           <h3 className="text-3xl text-foreground font-bold leading-snug">
                             {phase.socialTitle}
                           </h3>
-                          <p className="text-xs text-muted-foreground font-light max-w-xs mx-auto">
+                          <p className="text-sm text-muted-foreground font-light max-w-xs mx-auto">
                             {phase.socialBody}
                           </p>
                         </div>
 
                         <div className="relative z-10 text-center">
-                          <button className="w-full py-2.5 bg-primary text-primary-foreground font-semibold text-xs rounded-xl uppercase hover:opacity-90 transition">
+                          <button className="w-full py-2.5 bg-primary text-primary-foreground font-semibold text-sm rounded-xl uppercase hover:opacity-90 transition">
                             {phase.socialCta}
                           </button>
                         </div>
@@ -946,7 +1005,7 @@ export default function OneUtilityClientPage() {
                           className="w-full aspect-video rounded-2xl border border-border bg-cover bg-center relative overflow-hidden shadow-2xl flex flex-col justify-between p-5"
                           style={campaignPreviewBackground}
                         >
-                          <div className="relative z-10 flex justify-between items-center text-[10px] font-mono text-muted-foreground">
+                          <div className="relative z-10 flex justify-between items-center text-xs font-mono text-muted-foreground">
                             <span>0:00 / 0:30</span>
                             <span>TVC</span>
                           </div>
@@ -955,8 +1014,8 @@ export default function OneUtilityClientPage() {
                           </span>
                           <div className="relative z-10 space-y-1">
                             <h4 className="text-base font-bold text-foreground leading-snug">{phase.filmTitle}</h4>
-                            <p className="text-[11px] text-muted-foreground line-clamp-2">{phase.filmDesc}</p>
-                            <span className="inline-block mt-2 px-3 py-1.5 bg-primary text-primary-foreground font-semibold text-[11px] rounded-lg">
+                            <p className="text-sm text-muted-foreground line-clamp-2">{phase.filmDesc}</p>
+                            <span className="inline-block mt-2 px-3 py-1.5 bg-primary text-primary-foreground font-semibold text-sm rounded-lg">
                               {phase.filmCta}
                             </span>
                           </div>
@@ -968,13 +1027,13 @@ export default function OneUtilityClientPage() {
                       <div className="space-y-3">
                         <VisualLabel icon={<Mic className="w-3.5 h-3.5" />}>Audio / radio</VisualLabel>
                         <div className="w-full rounded-2xl border border-border bg-card p-5 shadow-sm space-y-4">
-                          <div className="flex justify-between items-center text-[10px] font-mono text-muted-foreground">
+                          <div className="flex justify-between items-center text-xs font-mono text-muted-foreground">
                             <span>RADIO SPOT</span>
                             <span>0:30</span>
                           </div>
                           <div className="space-y-1">
                             <h4 className="text-base font-bold text-foreground leading-snug">{phase.audioTitle}</h4>
-                            <p className="text-[11px] text-muted-foreground">{phase.audioDesc}</p>
+                            <p className="text-sm text-muted-foreground">{phase.audioDesc}</p>
                           </div>
                           <div className="flex items-center gap-3">
                             <span className="grid h-10 w-10 flex-none place-items-center rounded-full bg-primary text-primary-foreground">
@@ -992,7 +1051,7 @@ export default function OneUtilityClientPage() {
                               )}
                             </div>
                           </div>
-                          <span className="inline-block px-3 py-1.5 bg-primary text-primary-foreground font-semibold text-[11px] rounded-lg">
+                          <span className="inline-block px-3 py-1.5 bg-primary text-primary-foreground font-semibold text-sm rounded-lg">
                             {phase.audioCta}
                           </span>
                         </div>
@@ -1011,7 +1070,7 @@ export default function OneUtilityClientPage() {
                             <span className="text-primary">{preset.oohFormat}</span>
                           </div>
                           <div className="max-w-2xl space-y-2">
-                            <span className="text-xs uppercase tracking-widest text-primary font-mono">
+                            <span className="text-sm uppercase tracking-widest text-primary font-mono">
                               {preset.client}
                             </span>
                             <h2 className="text-3xl sm:text-5xl font-extrabold text-foreground tracking-tight leading-none">
@@ -1020,10 +1079,10 @@ export default function OneUtilityClientPage() {
                             <p className="text-sm text-muted-foreground font-light">{phase.oohDesc}</p>
                           </div>
                           <div className="flex items-center justify-between gap-2">
-                            <span className="text-[11px] text-muted-foreground font-mono">
+                            <span className="text-sm text-muted-foreground font-mono">
                               {marketAudience.toUpperCase()}
                             </span>
-                            <span className="inline-block px-3 py-1.5 bg-primary text-primary-foreground font-semibold text-[11px] rounded-lg">
+                            <span className="inline-block px-3 py-1.5 bg-primary text-primary-foreground font-semibold text-sm rounded-lg">
                               {phase.oohCta}
                             </span>
                           </div>
@@ -1039,13 +1098,13 @@ export default function OneUtilityClientPage() {
                           style={campaignPreviewBackground}
                         >
                           <div className="space-y-2">
-                            <span className="text-[10px] uppercase tracking-widest text-primary font-mono block">
+                            <span className="text-sm uppercase tracking-widest text-primary font-mono block">
                               {preset.client}
                             </span>
                             <h4 className="text-2xl font-extrabold text-foreground leading-tight">
                               {phase.printTitle}
                             </h4>
-                            <p className="text-xs text-muted-foreground leading-relaxed">
+                            <p className="text-sm text-muted-foreground leading-relaxed">
                               {phase.printDesc}
                             </p>
                           </div>
@@ -1054,7 +1113,7 @@ export default function OneUtilityClientPage() {
                               <span key={i} className="h-1.5 rounded-sm bg-muted-foreground" />
                             ))}
                           </div>
-                          <span className="inline-block px-3 py-1.5 bg-primary text-primary-foreground font-semibold text-[11px] rounded-lg self-start">
+                          <span className="inline-block px-3 py-1.5 bg-primary text-primary-foreground font-semibold text-sm rounded-lg self-start">
                             {phase.printCta}
                           </span>
                         </div>
@@ -1070,11 +1129,11 @@ export default function OneUtilityClientPage() {
                           <Store className="w-3.5 h-3.5" /> Lead activation concept
                         </span>
                         <h4 className="text-xl font-bold text-foreground">{phase.activationTitle}</h4>
-                        <p className="text-xs text-muted-foreground leading-relaxed font-light">
+                        <p className="text-sm text-muted-foreground leading-relaxed font-light">
                           {phase.activationBody}
                         </p>
                       </div>
-                      <div className="text-[10px] text-muted-foreground font-mono pt-4 border-t border-border">
+                      <div className="text-sm text-muted-foreground font-mono pt-4 border-t border-border">
                         Production scope: layout, staffing, assets & measurement
                       </div>
                     </div>
@@ -1085,26 +1144,26 @@ export default function OneUtilityClientPage() {
                           <Box className="w-3.5 h-3.5" /> Modular activation unit
                         </span>
                         <h4 className="text-xl font-bold text-foreground">Field & Partner Toolkit</h4>
-                        <p className="text-xs text-muted-foreground leading-relaxed font-light">
+                        <p className="text-sm text-muted-foreground leading-relaxed font-light">
                           A scalable physical system for promoters, branches, product education or audience onboarding.
                         </p>
                       </div>
-                      <div className="text-[10px] text-muted-foreground font-mono pt-4 border-t border-border">
+                      <div className="text-sm text-muted-foreground font-mono pt-4 border-t border-border">
                         Includes: key visual, scripts, setup guide & reporting
                       </div>
                     </div>
 
                     <div className="rounded-2xl p-6 bg-muted border border-border text-foreground space-y-3 flex flex-col justify-between shadow-sm">
                       <div className="space-y-2">
-                        <span className="text-[9px] font-mono tracking-widest text-muted-foreground uppercase block">
+                        <span className="text-xs font-mono tracking-widest text-muted-foreground uppercase block">
                           POST-EXPERIENCE FOLLOW-UP
                         </span>
                         <h4 className="text-xl font-bold text-foreground">Keep the campaign moving.</h4>
-                        <p className="text-xs text-muted-foreground leading-relaxed">
+                        <p className="text-sm text-muted-foreground leading-relaxed">
                           A QR-enabled takeaway connecting the physical touchpoint to product information, sign-up or the next useful action.
                         </p>
                       </div>
-                      <div className="text-[10px] font-mono text-muted-foreground pt-3 border-t border-border flex justify-between">
+                      <div className="text-xs font-mono text-muted-foreground pt-3 border-t border-border flex justify-between">
                         <span>Digital fallback</span>
                         <span>Consent-aware capture</span>
                       </div>
@@ -1117,7 +1176,7 @@ export default function OneUtilityClientPage() {
                     <div className="space-y-6">
                       <div className="flex items-center justify-between">
                         <VisualLabel icon={<Users className="w-3.5 h-3.5" />}>Experiential, creators & PR</VisualLabel>
-                        <span className="text-[10px] text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20">
+                        <span className="text-sm text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20">
                           Earned / shared plan
                         </span>
                       </div>
@@ -1127,12 +1186,12 @@ export default function OneUtilityClientPage() {
                         <span className="text-xs font-mono text-primary flex items-center gap-2">
                           <Users className="w-4 h-4" /> Live Culture Activation
                         </span>
-                        <span className="text-[10px] font-mono text-muted-foreground">
+                        <span className="text-xs font-mono text-muted-foreground">
                           {marketAudience.toUpperCase()}
                         </span>
                       </div>
                       <h3 className="text-xl font-bold text-foreground">{phase.experienceTitle}</h3>
-                      <p className="text-xs text-muted-foreground leading-relaxed font-light">
+                      <p className="text-sm text-muted-foreground leading-relaxed font-light">
                         {phase.experienceBody}
                       </p>
                     </div>
@@ -1142,23 +1201,23 @@ export default function OneUtilityClientPage() {
                         <span className="text-xs font-mono text-primary flex items-center gap-2">
                           <MessageSquareMore className="w-4 h-4" /> Creator & press system
                         </span>
-                        <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded">
+                        <span className="text-sm bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded">
                           Audience-fit shortlist
                         </span>
                       </div>
-                      <div className="space-y-3 text-xs text-muted-foreground">
+                      <div className="space-y-3 text-sm text-muted-foreground">
                         <div className="p-3 bg-muted rounded-lg border border-border space-y-1">
-                          <span className="text-[10px] text-primary font-mono">CREATOR BRIEF</span>
+                          <span className="text-sm text-primary font-mono">CREATOR BRIEF</span>
                           <p className="font-semibold text-foreground">
                             One non-negotiable message, room for creator-native expression
                           </p>
-                          <p className="text-[11px] text-muted-foreground">
+                          <p className="text-sm text-muted-foreground">
                             Define the audience, format, disclosure, brand-safety boundaries, deliverables and measurement before outreach.
                           </p>
                         </div>
                         <div className="p-3 bg-muted rounded-lg border border-border space-y-1">
-                          <span className="text-[10px] text-primary font-mono">PRESS RELEASE ANGLE</span>
-                          <p className="text-xs text-foreground">“{phase.prPitchAngle}”</p>
+                          <span className="text-sm text-primary font-mono">PRESS RELEASE ANGLE</span>
+                          <p className="text-sm text-foreground">“{phase.prPitchAngle}”</p>
                         </div>
                       </div>
                     </div>
@@ -1177,7 +1236,7 @@ export default function OneUtilityClientPage() {
 
         {/* OVERVIEW VIEW */}
         {activeMainTab === "overview" && (
-          <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6">
+          <div className="lg:flex-1 lg:overflow-y-auto px-4 py-4 sm:px-6">
             <div className="w-full max-w-5xl mx-auto space-y-4 pb-8">
               <div className="flex items-center justify-between gap-3 pb-3 border-b border-border">
                 <TabPageHeader title="Overview" />
@@ -1216,9 +1275,8 @@ export default function OneUtilityClientPage() {
 
               <div className="bg-card rounded-xl p-5 border border-border space-y-3 shadow-sm">
                 <span className="text-xs font-mono text-primary uppercase block">Production readiness checklist</span>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs text-muted-foreground font-mono border-t border-border pt-3">
-                  <div><span className="text-muted-foreground block text-[10px]">MANDATORIES</span><span className="text-foreground">Legal, accessibility, localisation and approvals</span></div>
-                  <div><span className="text-muted-foreground block text-[10px]">PREFLIGHT</span><span className="text-foreground">Owners, deadlines, QA, trafficking and reporting</span></div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm text-muted-foreground font-mono border-t border-border pt-3">
+                  <div><span className="text-muted-foreground block text-sm">MANDATORIES</span><span className="text-foreground">Legal, accessibility, localisation and approvals</span></div>
                 </div>
               </div>
 
@@ -1228,7 +1286,7 @@ export default function OneUtilityClientPage() {
 
         {/* BRAND DNA VIEW */}
         {activeMainTab === "brand" && (
-          <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6">
+          <div className="lg:flex-1 lg:overflow-y-auto px-4 py-4 sm:px-6">
             <div className="w-full max-w-5xl mx-auto space-y-4 pb-8">
               <div className="flex items-center justify-between gap-3 pb-3 border-b border-border">
                 <TabPageHeader title="Brand DNA" />
@@ -1239,14 +1297,14 @@ export default function OneUtilityClientPage() {
                 {/* BUSINESS OVERVIEW */}
                 <section className="space-y-5 bg-card border border-border rounded-2xl p-6 shadow-sm">
                   <div className="border-b border-border pb-3">
-                    <span className="text-[10px] font-mono uppercase tracking-widest text-primary font-semibold">
+                    <span className="text-xs font-mono uppercase tracking-widest text-primary font-semibold">
                       Client Profile
                     </span>
                     <h2 className="text-base font-semibold text-foreground mt-0.5">Business Overview</h2>
                   </div>
 
                   <div className="p-4 rounded-xl bg-muted border border-border space-y-2">
-                    <span className="text-[10px] text-muted-foreground block uppercase font-mono">Client wordmark</span>
+                    <span className="text-sm text-muted-foreground block uppercase font-mono">Client wordmark</span>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src="/images/one-utility-logo.svg"
@@ -1256,13 +1314,13 @@ export default function OneUtilityClientPage() {
                   </div>
 
                   {statusNotification && (
-                    <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg text-xs text-primary">
+                    <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg text-sm text-primary">
                       {statusNotification}
                     </div>
                   )}
 
                   <div className="space-y-1.5">
-                    <label htmlFor="brandUrl" className="text-xs font-medium text-foreground flex items-center gap-1.5">
+                    <label htmlFor="brandUrl" className="text-sm font-medium text-foreground flex items-center gap-1.5">
                       <Globe className="w-3.5 h-3.5 text-primary" /> Website
                     </label>
                     <div className="relative">
@@ -1275,7 +1333,7 @@ export default function OneUtilityClientPage() {
                       />
                       <button
                         onClick={handleSimulateScrape}
-                        className="absolute right-1 top-1 bottom-1 px-2.5 bg-secondary text-secondary-foreground hover:bg-secondary/90 text-xs rounded border border-border transition flex items-center gap-1"
+                        className="absolute right-1 top-1 bottom-1 px-2.5 bg-secondary text-secondary-foreground hover:bg-secondary/90 text-sm rounded border border-border transition flex items-center gap-1"
                       >
                         <ScanLine className="w-3 h-3" /> Read
                       </button>
@@ -1283,7 +1341,7 @@ export default function OneUtilityClientPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label htmlFor="footprintInput" className="text-xs font-medium text-foreground flex items-center gap-1.5">
+                    <label htmlFor="footprintInput" className="text-sm font-medium text-foreground flex items-center gap-1.5">
                       <Globe className="w-3.5 h-3.5 text-primary" /> Target Audience
                     </label>
                     <input
@@ -1291,105 +1349,52 @@ export default function OneUtilityClientPage() {
                       id="footprintInput"
                       value={footprint}
                       onChange={(e) => setFootprint(e.target.value)}
-                      className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-xs text-foreground outline-none transition"
+                      className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm text-foreground outline-none transition"
                     />
                   </div>
 
 
 
-                  {/* 4-Stage Utility Progress Model Inputs */}
-                  <div className="pt-4 border-t border-border space-y-3.5">
+                  {/* 4-Stage Utility Progress Model */}
+                  <div className="pt-4 border-t border-border space-y-3">
                     <span className="text-xs font-mono uppercase tracking-wider text-foreground font-semibold flex items-center gap-2">
-                      <TrendingUp className="w-4 h-4 text-primary" /> The 4-Stage Progress Mode
+                      <TrendingUp className="w-4 h-4 text-primary" /> The 4-Stage Progress Model
                     </span>
-                    {progressStages.map((item, idx) => (
-                      <div key={item.stage} className="space-y-1.5">
-                        <label
-                          htmlFor={`progress-stage-${idx}`}
-                          className="flex items-center justify-between text-xs font-medium text-foreground"
-                        >
-                          <span className="flex items-center gap-1.5">
-                            <span className="font-mono text-primary font-semibold">{item.stage}</span>
-                            <span className="text-muted-foreground">— {item.label}</span>
+                    <ol className="space-y-2.5">
+                      {progressStages.map((item, idx) => (
+                        <li key={item.stage} className="flex gap-3">
+                          <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-md bg-primary/10 text-primary font-mono text-xs font-bold">
+                            {idx + 1}
                           </span>
-                          <span className="text-[10px] font-mono text-muted-foreground">0{idx + 1}</span>
-                        </label>
-                        <input
-                          type="text"
-                          id={`progress-stage-${idx}`}
-                          value={item.desc}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setProgressStages((prev) =>
-                              prev.map((s, i) => (i === idx ? { ...s, desc: val } : s))
-                            );
-                          }}
-                          className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-xs text-foreground outline-none transition"
-                        />
-                      </div>
-                    ))}
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-foreground">
+                              {item.stage} <span className="text-muted-foreground font-normal">— {item.label}</span>
+                            </p>
+                            <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
+                          </div>
+                        </li>
+                      ))}
+                    </ol>
                   </div>
                 </section>
 
                 {/* IDENTITY (DESIGN SYSTEM, PALETTE, AESTHETIC, TONE) */}
                 <section className="space-y-5 bg-card border border-border rounded-2xl p-6 shadow-sm">
                   <div className="border-b border-border pb-3">
-                    <span className="text-[10px] font-mono uppercase tracking-widest text-primary font-semibold">
+                    <span className="text-xs font-mono uppercase tracking-widest text-primary font-semibold">
                       Identity
                     </span>
                     <h2 className="text-base font-semibold text-foreground mt-0.5">Design & Palette</h2>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label htmlFor="aestheticSelect" className="text-xs font-medium text-foreground flex items-center gap-1.5">
-                      <Palette className="w-3.5 h-3.5 text-primary" /> Aesthetic direction
-                    </label>
-                    <select
-                      id="aestheticSelect"
-                      value={aesthetic}
-                      onChange={(e) => setAesthetic(e.target.value)}
-                      className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-xs text-foreground outline-none transition"
-                    >
-                      <option value="brand">Brand-led & adaptive</option>
-                      <option value="culture">Bold cultural energy</option>
-                      <option value="trust">Trusted corporate clarity</option>
-                      <option value="product">Product and demonstration-led</option>
-                      <option value="editorial">Editorial storytelling</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label htmlFor="toneSlider" className="text-xs font-medium text-foreground flex items-center justify-between">
-                      <span className="flex items-center gap-1.5">
-                        <Feather className="w-3.5 h-3.5 text-primary" /> Tone dial
-                      </span>
-                      <span className="text-[11px] text-primary">{toneLabel}</span>
-                    </label>
-                    <input
-                      type="range"
-                      id="toneSlider"
-                      min="1"
-                      max="4"
-                      value={toneVal}
-                      onChange={(e) => updateTone(parseInt(e.target.value, 10))}
-                      className="w-full accent-primary bg-muted h-1.5 rounded-lg cursor-pointer"
-                    />
-                    <div className="flex justify-between text-[10px] text-muted-foreground font-mono">
-                      <span>Direct</span>
-                      <span>Conversational</span>
-                      <span>Expressive</span>
-                      <span>Premium</span>
-                    </div>
-                  </div>
-
                   <div className="space-y-2">
-                    <span className="text-[10px] text-muted-foreground block uppercase font-mono">Client palette</span>
-                    <p className="text-[11px] text-muted-foreground">Click a swatch to pick a colour.</p>
+                    <span className="text-sm text-muted-foreground block uppercase font-mono">Client palette</span>
+                    <p className="text-sm text-muted-foreground">Click a swatch to pick a colour.</p>
                     <div className="flex flex-wrap items-stretch gap-2 pt-1">
                       {palette.map((hex, i) => (
                         <div key={i} className="group relative flex-1 min-w-[64px]">
                           <label
-                            className="relative flex h-16 items-center justify-center rounded-lg border border-border text-[10px] font-mono font-bold cursor-pointer"
+                            className="relative flex h-16 items-center justify-center rounded-lg border border-border text-xs font-mono font-bold cursor-pointer"
                             style={{ backgroundColor: hex, color: getContrastTextColor(hex) }}
                           >
                             {hex.toUpperCase()}
@@ -1406,7 +1411,7 @@ export default function OneUtilityClientPage() {
                               type="button"
                               onClick={() => removePaletteColor(i)}
                               aria-label="Remove colour"
-                              className="absolute -right-1.5 -top-1.5 hidden h-4 w-4 place-items-center rounded-full bg-foreground text-[10px] leading-none text-background group-hover:grid"
+                              className="absolute -right-1.5 -top-1.5 hidden h-4 w-4 place-items-center rounded-full bg-foreground text-sm leading-none text-background group-hover:grid"
                             >
                               ×
                             </button>
@@ -1425,7 +1430,7 @@ export default function OneUtilityClientPage() {
                   </div>
 
                   <div className="space-y-1.5 pt-2">
-                    <label htmlFor="fontPairing" className="text-[10px] text-muted-foreground block uppercase font-mono">
+                    <label htmlFor="fontPairing" className="text-sm text-muted-foreground block uppercase font-mono">
                       Typography pairing
                     </label>
                     <select
@@ -1440,6 +1445,62 @@ export default function OneUtilityClientPage() {
                         </option>
                       ))}
                     </select>
+                    <div className="rounded-lg border border-border bg-muted/40 p-4 space-y-1.5">
+                      <p
+                        className="text-2xl font-bold leading-tight text-foreground"
+                        style={{ fontFamily: (FONT_STACKS[fontPairing] ?? FONT_STACKS[fontOptions[0]]).heading }}
+                      >
+                        One Bill. No Leap of Faith.
+                      </p>
+                      <p
+                        className="text-sm text-muted-foreground leading-relaxed"
+                        style={{ fontFamily: (FONT_STACKS[fontPairing] ?? FONT_STACKS[fontOptions[0]]).body }}
+                      >
+                        OneUtility puts you in control of the essentials that keep life running, giving you peace of mind. 1234567890
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5 pt-2 border-t border-border">
+                    <label htmlFor="aestheticSelect" className="text-sm font-medium text-foreground flex items-center gap-1.5 pt-3">
+                      <Palette className="w-3.5 h-3.5 text-primary" /> Aesthetic direction
+                    </label>
+                    <select
+                      id="aestheticSelect"
+                      value={aesthetic}
+                      onChange={(e) => setAesthetic(e.target.value)}
+                      className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm text-foreground outline-none transition"
+                    >
+                      <option value="brand">Brand-led & adaptive</option>
+                      <option value="culture">Bold cultural energy</option>
+                      <option value="trust">Trusted corporate clarity</option>
+                      <option value="product">Product and demonstration-led</option>
+                      <option value="editorial">Editorial storytelling</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label htmlFor="toneSlider" className="text-sm font-medium text-foreground flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Feather className="w-3.5 h-3.5 text-primary" /> Tone dial
+                      </span>
+                      <span className="text-sm text-primary">{toneLabel}</span>
+                    </label>
+                    <input
+                      type="range"
+                      id="toneSlider"
+                      min="1"
+                      max="4"
+                      value={toneVal}
+                      onChange={(e) => updateTone(parseInt(e.target.value, 10))}
+                      className="w-full accent-primary bg-muted h-1.5 rounded-lg cursor-pointer"
+                    />
+                    <div className="flex justify-between text-sm text-muted-foreground font-mono">
+                      <span>Direct</span>
+                      <span>Conversational</span>
+                      <span>Expressive</span>
+                      <span>Premium</span>
+                    </div>
                   </div>
                 </section>
               </div>
