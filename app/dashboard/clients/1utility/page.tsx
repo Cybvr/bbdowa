@@ -523,7 +523,7 @@ export default function OneUtilityClientPage() {
       )}
 
       {/* TOP HEADER: CLIENT IDENTIFIER */}
-      <header className="min-h-16 rounded-xl bg-black text-white px-4 py-3 sm:px-6 flex items-center justify-between gap-3 shrink-0 z-30">
+      <header className="h-14 sm:h-16 rounded-xl bg-black text-white px-3 py-2 sm:px-6 sm:py-3 flex flex-nowrap items-center justify-between gap-2 sm:gap-3 shrink-0 z-30">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <DashboardSidebarSheet trigger={
             <button
