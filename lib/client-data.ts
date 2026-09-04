@@ -188,7 +188,7 @@ export const valuePropositionData = {
 export const defaultPreset: PresetData = {
   client: "1Utilitybank",
   category: "Finance",
-  name: "World built around you*",
+  name: "World built around you",
   url: "oneutilitymfb.com",
   scope: "integrated",
   footprint:

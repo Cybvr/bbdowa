@@ -53,24 +53,6 @@ import {
   Menu,
 } from "lucide-react";
 
-function InstagramIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
-      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-      <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
-    </svg>
-  );
-}
-
 function TabPageHeader({ title }: { title: string }) {
   return (
     <h1 className="text-sm font-semibold tracking-tight text-foreground">
@@ -193,14 +175,6 @@ const FONT_STACKS: Record<string, { heading: string; body: string }> = {
   "DM Serif Display & DM Sans": { heading: "'DM Serif Display', serif", body: "'DM Sans', sans-serif" },
   "Archivo & Archivo Narrow": { heading: "'Archivo', sans-serif", body: "'Archivo Narrow', sans-serif" },
 };
-
-function VisualLabel({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
-  return (
-    <span className="text-xs font-mono text-primary flex items-center gap-1.5">
-      {icon} {children}
-    </span>
-  );
-}
 
 function renderInline(text: string, keyPrefix: string) {
   return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
@@ -855,7 +829,6 @@ export default function OneUtilityClientPage() {
 
                       <CopyField
                         label="Owners"
-                        hint="People accountable"
                         value={campaignOwners}
                         onChange={setCampaignOwners}
                       />
@@ -956,12 +929,8 @@ export default function OneUtilityClientPage() {
                     <div className="w-full max-w-sm space-y-6">
                     {activeSection === "social" && (
                     <div className="space-y-6">
-                      <VisualLabel icon={<Smartphone className="w-3.5 h-3.5" />}>Social</VisualLabel>
                     {/* Social post mockup */}
                     <div className="space-y-3">
-                      <span className="text-xs font-mono text-primary flex items-center gap-1.5">
-                        <InstagramIcon className="w-3.5 h-3.5" /> Social post
-                      </span>
                       <div
                         className="w-full aspect-square rounded-3xl border border-border bg-cover bg-center relative overflow-hidden shadow-2xl flex flex-col justify-between p-6 group"
                         style={campaignPreviewBackground}
@@ -1000,7 +969,6 @@ export default function OneUtilityClientPage() {
 
                     {activeSection === "film" && (
                       <div className="space-y-3">
-                        <VisualLabel icon={<Film className="w-3.5 h-3.5" />}>Film / TVC</VisualLabel>
                         <div
                           className="w-full aspect-video rounded-2xl border border-border bg-cover bg-center relative overflow-hidden shadow-2xl flex flex-col justify-between p-5"
                           style={campaignPreviewBackground}
@@ -1025,7 +993,6 @@ export default function OneUtilityClientPage() {
 
                     {activeSection === "audio" && (
                       <div className="space-y-3">
-                        <VisualLabel icon={<Mic className="w-3.5 h-3.5" />}>Audio / radio</VisualLabel>
                         <div className="w-full rounded-2xl border border-border bg-card p-5 shadow-sm space-y-4">
                           <div className="flex justify-between items-center text-xs font-mono text-muted-foreground">
                             <span>RADIO SPOT</span>
@@ -1060,7 +1027,6 @@ export default function OneUtilityClientPage() {
 
                     {activeSection === "ooh" && (
                       <div className="space-y-3">
-                        <VisualLabel icon={<Megaphone className="w-3.5 h-3.5" />}>Out of home</VisualLabel>
                         <div
                           className="w-full aspect-[16/7] rounded-2xl border border-border bg-cover bg-center p-8 sm:p-12 flex flex-col justify-between relative shadow-sm overflow-hidden"
                           style={campaignPreviewBackground}
@@ -1092,7 +1058,6 @@ export default function OneUtilityClientPage() {
 
                     {activeSection === "print" && (
                       <div className="space-y-3">
-                        <VisualLabel icon={<Newspaper className="w-3.5 h-3.5" />}>Press & print</VisualLabel>
                         <div
                           className="w-full aspect-[3/4] rounded-2xl border border-border bg-cover bg-center p-6 shadow-sm flex flex-col justify-between overflow-hidden"
                           style={campaignPreviewBackground}
@@ -1121,7 +1086,6 @@ export default function OneUtilityClientPage() {
                     )}
                     {activeSection === "retail" && (
                     <div className="space-y-6">
-                      <VisualLabel icon={<Store className="w-3.5 h-3.5" />}>Retail & field</VisualLabel>
                   <div className="grid grid-cols-1 gap-6">
                     <div className="rounded-2xl p-6 bg-card border border-border space-y-3 flex flex-col justify-between shadow-sm">
                       <div className="space-y-2">
@@ -1174,12 +1138,6 @@ export default function OneUtilityClientPage() {
 
                     {activeSection === "experiential" && (
                     <div className="space-y-6">
-                      <div className="flex items-center justify-between">
-                        <VisualLabel icon={<Users className="w-3.5 h-3.5" />}>Experiential, creators & PR</VisualLabel>
-                        <span className="text-sm text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20">
-                          Earned / shared plan
-                        </span>
-                      </div>
                   <div className="grid grid-cols-1 gap-6">
                     <div className="rounded-2xl p-6 bg-card border border-border space-y-4 shadow-sm">
                       <div className="flex items-center justify-between">
