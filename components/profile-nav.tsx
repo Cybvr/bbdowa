@@ -79,7 +79,7 @@ export function ProfileNav({
         </button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align="end" className="w-64">
         <DropdownMenuLabel>
           <div className="flex items-center gap-2">
             <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-[13px] font-extrabold text-primary-foreground">

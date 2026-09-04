@@ -4,6 +4,7 @@ import { PROJECTS, getProject } from "@/lib/projects";
 import { getUserByName, userHref } from "@/lib/users";
 import { BackLink } from "@/components/back-link";
 import { Badge, MetaGrid, MetaItem, SectionHeading } from "@/components/dashboard/ui";
+import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 
 type Params = { params: Promise<{ slug: string }> };
@@ -52,6 +53,25 @@ export default async function ProjectDetailPage({ params }: Params) {
           <p className="mb-0 mt-3 max-w-[60ch] text-[16px] leading-[1.45] text-muted-foreground">
             {project.summary}
           </p>
+          {project.externalLinks && project.externalLinks.length > 0 && (
+            <nav className="mt-5" aria-label={`${project.name} online`}>
+              <ul className="m-0 flex list-none flex-wrap gap-2 p-0">
+                {project.externalLinks.map((externalLink) => (
+                  <li key={externalLink.href}>
+                    <a
+                      href={externalLink.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex min-h-10 items-center gap-1.5 rounded-md border border-border px-3 py-2 text-[13px] font-semibold text-foreground transition-colors hover:border-primary hover:text-primary focus-visible:border-primary focus-visible:text-primary focus-visible:outline-none"
+                    >
+                      {externalLink.label}
+                      <ArrowUpRight aria-hidden="true" className="size-3.5" strokeWidth={2} />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          )}
         </div>
       </section>
 

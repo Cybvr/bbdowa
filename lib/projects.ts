@@ -11,6 +11,11 @@ export type ProjectLiveDate = {
   date: string;
 };
 
+export type ProjectExternalLink = {
+  label: string;
+  href: string;
+};
+
 export type Project = {
   slug: string;
   name: string;
@@ -27,6 +32,7 @@ export type Project = {
   image: string;
   imageAlt: string;
   media: ProjectMedia[];
+  externalLinks?: ProjectExternalLink[];
   summary: string;
   challenge: string;
   insight: string;
@@ -122,6 +128,14 @@ export const PROJECTS: Project[] = [
     image: "/images/projects/project-placeholder.svg",
     imageAlt: "",
     media: [],
+    externalLinks: [
+      { label: "Website", href: "https://proforcedefence.com/" },
+      { label: "LinkedIn", href: "https://www.linkedin.com/company/proforce-limited/" },
+      { label: "Instagram", href: "https://www.instagram.com/proforcedefence/" },
+      { label: "Facebook", href: "https://www.facebook.com/proforceofficial" },
+      { label: "X", href: "https://x.com/Proforcedefence" },
+      { label: "YouTube", href: "https://www.youtube.com/c/PROFORCEofficial" },
+    ],
     summary: "Project details will be added when the case-study content is supplied.",
     challenge: "Challenge details coming soon.",
     insight: "Insight details coming soon.",
@@ -146,6 +160,12 @@ export const PROJECTS: Project[] = [
     image: "/images/projects/project-placeholder.svg",
     imageAlt: "",
     media: [],
+    externalLinks: [
+      { label: "Website", href: "https://oneutilitymfb.com/" },
+      { label: "LinkedIn", href: "https://www.linkedin.com/company/1ubank/" },
+      { label: "Instagram", href: "https://www.instagram.com/1ubanksupport/" },
+      { label: "Facebook", href: "https://www.facebook.com/1UBank" },
+    ],
     summary: "Project details will be added when the case-study content is supplied.",
     challenge: "Challenge details coming soon.",
     insight: "Insight details coming soon.",
@@ -218,6 +238,12 @@ export const PROJECTS: Project[] = [
     image: "/images/projects/project-placeholder.svg",
     imageAlt: "",
     media: [],
+    externalLinks: [
+      { label: "Website", href: "https://www.myverveworld.com/" },
+      { label: "LinkedIn", href: "https://www.linkedin.com/company/verve-international-ltd/" },
+      { label: "Instagram", href: "https://www.instagram.com/vervecard/" },
+      { label: "X", href: "https://x.com/vervecard" },
+    ],
     summary: "Project details will be added when the case-study content is supplied.",
     challenge: "Challenge details coming soon.",
     insight: "Insight details coming soon.",
@@ -474,6 +500,13 @@ export const PROJECTS: Project[] = [
     image: "/images/projects/project-placeholder.svg",
     imageAlt: "",
     media: [],
+    externalLinks: [
+      { label: "Website", href: "https://www.unilevernigeria.com/" },
+      { label: "Instagram", href: "https://www.instagram.com/unileverwestafrica/" },
+      { label: "LinkedIn", href: "https://www.linkedin.com/company/unilever/" },
+      { label: "Facebook", href: "https://www.facebook.com/unilever" },
+      { label: "X", href: "https://x.com/Unilever" },
+    ],
     summary: "Project details will be added when the case-study content is supplied.",
     challenge: "Challenge details coming soon.",
     insight: "Insight details coming soon.",
