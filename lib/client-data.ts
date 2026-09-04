@@ -126,36 +126,38 @@ export type MarketingCard = {
   rows: { label: string; value: string }[];
 };
 
-export const oneUtilityMarketingPlan: {
+export type CampaignMediaPlan = {
   mediaBuying: MarketingCard[];
   influencerMarketing: MarketingCard[];
-} = {
+};
+
+export const oneUtilityMarketingPlan: CampaignMediaPlan = {
   mediaBuying: [
     {
       title: "Channel mix",
       rows: [
-        { label: "Paid social", value: "—" },
-        { label: "Search", value: "—" },
-        { label: "Display / video", value: "—" },
-        { label: "OOH / radio", value: "—" },
+        { label: "Paid social", value: "45% · ₦38.25m" },
+        { label: "Search", value: "15% · ₦12.75m" },
+        { label: "Display / video", value: "25% · ₦21.25m" },
+        { label: "OOH / radio", value: "15% · ₦12.75m" },
       ],
     },
     {
       title: "Budget & flight",
       rows: [
-        { label: "Total budget", value: "—" },
-        { label: "Flight dates", value: "—" },
-        { label: "Daily pacing", value: "—" },
-        { label: "Buy type", value: "—" },
+        { label: "Total budget", value: "₦85m" },
+        { label: "Flight length", value: "92 days" },
+        { label: "Daily pacing", value: "₦924k / day" },
+        { label: "Media channels", value: "4" },
       ],
     },
     {
       title: "Targeting & KPIs",
       rows: [
-        { label: "Audience", value: "—" },
-        { label: "Geo", value: "—" },
-        { label: "Primary KPI", value: "—" },
-        { label: "Target CPA", value: "—" },
+        { label: "Primary KPI", value: "150k account sign-ups" },
+        { label: "Target CPA", value: "≤ ₦567" },
+        { label: "First bill-payment target", value: "75k" },
+        { label: "Priority cities", value: "5" },
       ],
     },
   ],
@@ -163,28 +165,32 @@ export const oneUtilityMarketingPlan: {
     {
       title: "Creator tiers",
       rows: [
-        { label: "Macro", value: "—" },
-        { label: "Micro", value: "—" },
-        { label: "Nano / UGC", value: "—" },
+        { label: "Macro", value: "4 creators" },
+        { label: "Micro", value: "20 creators" },
+        { label: "Nano / UGC", value: "40 creators" },
       ],
     },
     {
       title: "Deliverables",
       rows: [
-        { label: "Content format", value: "—" },
-        { label: "Posts per creator", value: "—" },
-        { label: "Usage rights", value: "—" },
+        { label: "Hero posts", value: "64" },
+        { label: "Story frames", value: "192" },
+        { label: "Paid usage", value: "3 months" },
       ],
     },
     {
       title: "Tracking",
       rows: [
-        { label: "Attribution", value: "—" },
-        { label: "Promo / QR code", value: "—" },
-        { label: "Primary KPI", value: "—" },
+        { label: "Tracked links", value: "64" },
+        { label: "Unique QR codes", value: "64" },
+        { label: "Tracked sign-ups", value: "150k" },
       ],
     },
   ],
+};
+
+export const oneUtilityCampaignMediaPlans: Record<string, CampaignMediaPlan> = {
+  "1-utility-bank": oneUtilityMarketingPlan,
 };
 
 export type CampaignListItem = {
@@ -324,6 +330,12 @@ Secondary: build brand affinity and grow share of voice in a saturated market.
 ## Market context
 
 Nigeria's e-bills market — utility bills, subscriptions, levies and premiums — reached ₦2.8 trillion in 2022, up 22% from ₦2.3 trillion in 2021. Payments already move across bank apps, USSD, aggregators and fintech wallets. Speed and access are now expected, but the essentials stay scattered across single-purpose services.
+
+## Market signals
+
+- **22bn+** e-payment transactions in Nigeria, H1 2024.
+- **64%** formal financial inclusion in 2023, up from 56% in 2020.
+- **15** open questions we need 1U to answer before launch.
 
 ## Audience
 

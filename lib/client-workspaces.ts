@@ -6,11 +6,12 @@
 // This module keys that content per client. Clients without curated content get a
 // blank template (see makeEmptyWorkspace) so nothing from another client leaks in.
 
-import type { PhaseKey, PhaseContent, PresetData } from "./client-data";
+import type { CampaignMediaPlan, PhaseKey, PhaseContent, PresetData } from "./client-data";
 import {
   defaultPreset,
   strategyMarkdown,
   phaseContent,
+  oneUtilityCampaignMediaPlans,
   valuePropositionData,
 } from "./client-data";
 import { CAMPAIGNS } from "./campaigns";
@@ -36,6 +37,9 @@ export type ClientWorkspace = {
   palette: string[];
   primaryColor: string;
   brandArchetype: string;
+  creatorSlugs: string[];
+  moodboardImages: CreativePreview[];
+  campaignMediaPlans: Record<string, CampaignMediaPlan>;
   creativePreviews: Record<CreativeChannel, CreativePreview>;
   fontPreview: { heading: string; body: string };
   // Optional campaign film shown on the client Overview; omitted when there is none.
@@ -56,6 +60,16 @@ const oneUtilityWorkspace: ClientWorkspace = {
   palette: ["#1B3FC2", "#2237B4", "#72B7FF", "#F3F2F2"],
   primaryColor: "#1B3FC2",
   brandArchetype: "The Everyman",
+  creatorSlugs: ["joseph-adeyemo", "king-elisha", "akinbinu-akintayo", "priscilla-ibiteye"],
+  moodboardImages: [
+    { src: "/sites/1ub/campaign/deck/uploads/overview-product-utility-v2.jpg", alt: "1Utility Bank utility product artwork" },
+    { src: "/sites/1ub/campaign/deck/uploads/overview-challenge-community-v2.jpg", alt: "1Utility Bank community artwork" },
+    { src: "/sites/1ub/campaign/deck/uploads/creative-moodboard.png", alt: "1Utility Bank creative moodboard" },
+    { src: "/sites/1ub/campaign/deck/uploads/concept-everyday-oracle-v2.png", alt: "1Utility Bank Everyday Oracle concept artwork" },
+    { src: "/images/one-utility-bank-campaign-preview.png", alt: "1Utility Bank Leap of Faith campaign artwork" },
+    { src: "/sites/1ub/campaign/deck/uploads/1u-audience-lifestyle.jpg", alt: "1Utility Bank audience lifestyle photography" },
+  ],
+  campaignMediaPlans: oneUtilityCampaignMediaPlans,
   creativePreviews: {
     social: {
       src: "/media/clients/1utility/social.png",
@@ -177,6 +191,9 @@ function makeEmptyWorkspace(clientId: string, clientName: string): ClientWorkspa
     palette: NEUTRAL_PALETTE,
     primaryColor: NEUTRAL_PALETTE[0],
     brandArchetype: "The Everyman",
+    creatorSlugs: [],
+    moodboardImages: [],
+    campaignMediaPlans: {},
     creativePreviews: {
       social: { src: PLACEHOLDER_IMAGE, alt: "" },
       film: { src: PLACEHOLDER_IMAGE, alt: "" },

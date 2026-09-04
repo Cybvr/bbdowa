@@ -8,7 +8,7 @@ import { CAMPAIGNS } from "@/lib/campaigns";
 import type { Campaign, CampaignStatus } from "@/lib/campaigns";
 import { CLIENTS, CREATORS } from "@/lib/users";
 import { getClientWorkspace } from "@/lib/client-workspaces";
-import { campaignWorkspaceStatuses, oneUtilityMarketingPlan } from "@/lib/client-data";
+import { campaignWorkspaceStatuses } from "@/lib/client-data";
 import { fontOptions, ctaOptions } from "@/lib/campaign-options";
 import type {
   PhaseContent,
@@ -28,25 +28,6 @@ function workspaceStatusFromCampaign(status: CampaignStatus): CampaignWorkspaceS
 function campaignImageFor(campaignId: string): string {
   return CAMPAIGNS.find((campaign) => campaign.slug === campaignId)?.image ?? "/images/projects/project-placeholder.svg";
 }
-
-const oneUtilityMoodboardImages = [
-  {
-    src: "/sites/1ub/campaign/deck/uploads/creative-moodboard.png",
-    alt: "1Utility Bank creative moodboard",
-  },
-  {
-    src: "/sites/1ub/campaign/deck/uploads/concept-everyday-oracle-v2.png",
-    alt: "1Utility Bank Everyday Oracle concept artwork",
-  },
-  {
-    src: "/images/one-utility-bank-campaign-preview.png",
-    alt: "1Utility Bank Leap of Faith campaign artwork",
-  },
-  {
-    src: "/sites/1ub/campaign/deck/uploads/1u-audience-lifestyle.jpg",
-    alt: "1Utility Bank audience lifestyle photography",
-  },
-];
 
 type CaseStudyDraft = Pick<Campaign, "challenge" | "insight" | "strategy" | "execution" | "outcome"> & {
   platform: string;
@@ -141,6 +122,8 @@ export default function ClientPage() {
         ? "moodboard"
         : pathname.endsWith("/creators")
           ? "creators"
+          : pathname.endsWith("/media")
+            ? "media"
           : "overview";
 
   // key={slug} forces a remount when navigating between clients so all
@@ -369,7 +352,7 @@ function StrategyEditor({ markdown }: { markdown: string }) {
   );
 }
 
-type OneUtilityWorkspaceView = "overview" | "campaign" | "brand" | "moodboard" | "creators";
+type OneUtilityWorkspaceView = "overview" | "campaign" | "brand" | "moodboard" | "creators" | "media";
 
 function OneUtilityClientWorkspace({
   slug,
@@ -478,7 +461,9 @@ function OneUtilityClientWorkspace({
     { name: "Amara Obi", initials: "AO", color: "#B45309" },
     { name: "Tunde Bello", initials: "TB", color: "#1D4ED8" },
   ];
-  const selectedCreators = CREATORS.filter((creator) => creator.availability === "open").slice(0, 4);
+  const selectedCreators = workspace.creatorSlugs
+    .map((creatorSlug) => CREATORS.find((creator) => creator.slug === creatorSlug))
+    .filter((creator): creator is (typeof CREATORS)[number] => Boolean(creator));
 
   const nextCampaignNumberRef = useRef(2);
 
@@ -656,6 +641,7 @@ function OneUtilityClientWorkspace({
               : null;
   const activeCampaign =
     campaigns.find((campaign) => campaign.id === activeCampaignId) ?? campaigns[0];
+  const activeCampaignMediaPlan = workspace.campaignMediaPlans[activeCampaignId];
   const activeCaseStudy = caseStudies[activeCampaignId] ?? caseStudyFromCampaign();
   const updateCaseStudy = (field: keyof CaseStudyDraft, value: string) =>
     setCaseStudies((previous) => ({
@@ -705,15 +691,22 @@ function OneUtilityClientWorkspace({
           <div className="mx-3 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-card px-3 py-3 sm:mx-5 sm:px-4">
             <div className="flex min-w-0 items-center gap-3">
               <Link
+                href="/dashboard/clients"
+                aria-label="Back to clients"
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Link>
+              <Link
                 href={`/dashboard/clients/${slug}/overview`}
                 onClick={() => setActiveMainTab("overview")}
                 aria-label={`${clientName} overview`}
-                className="flex h-9 w-10 shrink-0 items-center justify-center"
+                className="flex h-12 w-14 shrink-0 items-center justify-center"
               >
                 <ImageWithFallback
                   src={clientProfileImage}
                   alt=""
-                  className="h-full w-full object-contain p-1"
+                  className="h-full w-full object-contain"
                   fallbackClassName="h-full w-full rounded-md"
                 />
               </Link>
@@ -738,7 +731,7 @@ function OneUtilityClientWorkspace({
                   : "text-muted-foreground hover:text-foreground"
                   }`}
               >
-                Brand DNA
+                DNA
               </Link>
               <Link
                 href={`/dashboard/clients/${slug}/moodboard`}
@@ -757,6 +750,15 @@ function OneUtilityClientWorkspace({
                   }`}
               >
                 Creators
+              </Link>
+              <Link
+                href={`/dashboard/clients/${slug}/media`}
+                className={`relative flex items-center px-3 pb-3 pt-1 text-sm font-semibold transition whitespace-nowrap ${activeMainTab === "media"
+                  ? "text-primary after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:bg-primary"
+                  : "text-muted-foreground hover:text-foreground"
+                  }`}
+              >
+                Media
               </Link>
               </nav>
             </div>
@@ -1085,7 +1087,7 @@ function OneUtilityClientWorkspace({
                             <h3 className="text-base font-semibold text-foreground">Media buying</h3>
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {oneUtilityMarketingPlan.mediaBuying.map((card, index) => {
+                            {activeCampaignMediaPlan?.mediaBuying.map((card, index) => {
                               const Icon = [BarChart3, TrendingUp, ScanLine][index] ?? BarChart3;
                               return (
                                 <div key={card.title} className="rounded-2xl p-5 bg-card border border-border shadow-sm space-y-3">
@@ -1112,7 +1114,7 @@ function OneUtilityClientWorkspace({
                             <h3 className="text-base font-semibold text-foreground">Influencer marketing</h3>
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {oneUtilityMarketingPlan.influencerMarketing.map((card, index) => {
+                            {activeCampaignMediaPlan?.influencerMarketing.map((card, index) => {
                               const Icon = [Users, Film, BarChart3][index] ?? Users;
                               return (
                                 <div key={card.title} className="rounded-2xl p-5 bg-card border border-border shadow-sm space-y-3">
@@ -1505,7 +1507,7 @@ function OneUtilityClientWorkspace({
               <div className="mx-auto w-full max-w-5xl space-y-4 pb-8">
                 <ClientWorkspaceHero clientName={clientName} title="Moodboard" />
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
-                  {oneUtilityMoodboardImages.map((image) => (
+                  {workspace.moodboardImages.map((image) => (
                     <button
                       key={image.src}
                       type="button"
@@ -1526,28 +1528,90 @@ function OneUtilityClientWorkspace({
               <div className="mx-auto w-full max-w-5xl">
                 <ClientWorkspaceHero clientName={clientName} title="Creators" />
                 <p className="mt-4 text-sm text-muted-foreground">Selected creators for {clientName}.</p>
-                <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                  {selectedCreators.map((creator) => (
-                    <Link
-                      key={creator.slug}
-                      href={`/dashboard/creators/${creator.slug}`}
-                      className="group overflow-hidden rounded-xl border border-border bg-background transition hover:border-primary"
-                    >
-                      <div className="aspect-[4/3] bg-muted">
-                        <ImageWithFallback
-                          src={creator.profileImage ?? creator.featuredImage ?? "/images/projects/project-placeholder.svg"}
-                          alt={`${creator.name} profile`}
-                          className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
-                        />
+                {selectedCreators.length ? (
+                  <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    {selectedCreators.map((creator) => (
+                      <Link
+                        key={creator.slug}
+                        href={`/dashboard/creators/${creator.slug}`}
+                        className="group overflow-hidden rounded-xl border border-border bg-background transition hover:border-primary"
+                      >
+                        <div className="aspect-[4/3] bg-muted">
+                          <ImageWithFallback
+                            src={creator.profileImage ?? creator.featuredImage ?? "/images/projects/project-placeholder.svg"}
+                            alt={`${creator.name} profile`}
+                            className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+                          />
+                        </div>
+                        <div className="space-y-1 p-4">
+                          <span className="text-xs font-medium text-primary">{creator.category}</span>
+                          <h2 className="text-base font-semibold text-foreground">{creator.name}</h2>
+                          <p className="text-sm text-muted-foreground">{creator.availability}</p>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-6 text-sm text-muted-foreground">No creators assigned to this client yet.</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeMainTab === "media" && (
+            <div className="px-4 py-4 sm:px-6">
+              <div className="mx-auto w-full max-w-5xl space-y-6 pb-8">
+                <ClientWorkspaceHero clientName={clientName} title="Media" />
+                {campaigns.map((campaign) => {
+                  const mediaPlan = workspace.campaignMediaPlans[campaign.id];
+                  if (!mediaPlan) return null;
+
+                  return (
+                    <section key={campaign.id} className="space-y-5">
+                      <h2 className="text-lg font-semibold text-foreground">{campaign.title}</h2>
+                      <div className="space-y-3">
+                        <h3 className="text-base font-semibold text-foreground">Media buying</h3>
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                          {mediaPlan.mediaBuying.map((card, index) => {
+                            const Icon = [BarChart3, TrendingUp, ScanLine][index] ?? BarChart3;
+                            return (
+                              <div key={card.title} className="space-y-3 rounded-2xl border border-border bg-card p-5 shadow-sm">
+                                <span className="flex items-center gap-1.5 font-mono text-xs text-primary">
+                                  <Icon className="h-3.5 w-3.5" /> {card.title}
+                                </span>
+                                <ul className="space-y-1.5 text-sm">
+                                  {card.rows.map((row) => (
+                                    <li key={row.label} className="flex justify-between gap-2"><span className="text-muted-foreground">{row.label}</span><span className="font-medium text-foreground">{row.value}</span></li>
+                                  ))}
+                                </ul>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
-                      <div className="space-y-1 p-4">
-                        <span className="text-xs font-medium text-primary">{creator.category}</span>
-                        <h2 className="text-base font-semibold text-foreground">{creator.name}</h2>
-                        <p className="text-sm text-muted-foreground">Open for work</p>
+                      <div className="space-y-3">
+                        <h3 className="text-base font-semibold text-foreground">Influencer marketing</h3>
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                          {mediaPlan.influencerMarketing.map((card, index) => {
+                            const Icon = [Users, Film, BarChart3][index] ?? Users;
+                            return (
+                              <div key={card.title} className="space-y-3 rounded-2xl border border-border bg-card p-5 shadow-sm">
+                                <span className="flex items-center gap-1.5 font-mono text-xs text-primary">
+                                  <Icon className="h-3.5 w-3.5" /> {card.title}
+                                </span>
+                                <ul className="space-y-1.5 text-sm">
+                                  {card.rows.map((row) => (
+                                    <li key={row.label} className="flex justify-between gap-2"><span className="text-muted-foreground">{row.label}</span><span className="font-medium text-foreground">{row.value}</span></li>
+                                  ))}
+                                </ul>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
-                    </Link>
-                  ))}
-                </div>
+                    </section>
+                  );
+                })}
               </div>
             </div>
           )}
