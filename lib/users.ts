@@ -1,4 +1,6 @@
-export type UserType = "team" | "creator";
+import { CAMPAIGNS } from "@/lib/campaigns";
+
+export type UserType = "team" | "creator" | "client";
 
 export type TeamUser = {
   type: "team";
@@ -70,7 +72,14 @@ export type Creator = {
   craftNote: string;
 };
 
-export type User = TeamUser | Creator;
+export type ClientUser = {
+  type: "client";
+  slug: string;
+  name: string;
+  profileImage?: string | null;
+};
+
+export type User = TeamUser | Creator | ClientUser;
 
 const TEAM_RECORDS: Omit<TeamUser, "type">[] = [
   {
@@ -723,7 +732,41 @@ export const CREATORS: Creator[] = CREATOR_RECORDS.map((creator) => ({
   ...creator,
 }));
 
-export const USERS: User[] = [...TEAM, ...CREATORS];
+// Client accounts use their own brand mark as a profile image. Keep this
+// separate from campaign artwork so the directory represents the client, not
+// whichever campaign happened to be added first.
+const CLIENT_PROFILE_IMAGES: Record<string, string> = {
+  "1utility": "/images/one-utility-logo.svg",
+  "benin-tourism": "/images/clients/benin-tourism.png",
+  "brown-forman": "/images/clients/brown-forman.png",
+  "central-bank-of-nigeria": "/images/clients/central-bank-of-nigeria.png",
+  "chicken-republic": "/images/clients/chicken-republic.png",
+  "diageo": "/images/clients/diageo.png",
+  "google": "/images/clients/google.png",
+  "interswitch": "/images/clients/interswitch.png",
+  "keizen-games": "/images/clients/keizen-games.png",
+  "orijin": "/images/clients/orijin.png",
+  "pringles": "/images/clients/pringles.png",
+  "proforce-nigeria": "/images/clients/proforce-nigeria.png",
+  "unilever": "/images/clients/unilever.png",
+  "visa": "/images/clients/visa.png",
+};
+
+export const CLIENTS: ClientUser[] = Array.from(
+  new Map(
+    CAMPAIGNS.map((campaign) => [
+      campaign.clientId,
+      {
+        type: "client" as const,
+        slug: campaign.clientId,
+        name: campaign.client,
+        profileImage: CLIENT_PROFILE_IMAGES[campaign.clientId] ?? null,
+      },
+    ])
+  ).values()
+).sort((a, b) => a.name.localeCompare(b.name));
+
+export const USERS: User[] = [...TEAM, ...CREATORS, ...CLIENTS];
 
 export const CREATOR_CATEGORIES = [...new Set(CREATORS.map((creator) => creator.category))].sort();
 
@@ -758,7 +801,9 @@ export function getUserByName(name: string): User | undefined {
 }
 
 export function userHref(user: User): string {
-  return user.type === "creator" ? creatorHref(user.slug) : `/dashboard/people/${user.slug}`;
+  if (user.type === "creator") return creatorHref(user.slug);
+  if (user.type === "client") return `/dashboard/clients/${user.slug}/overview`;
+  return `/dashboard/people/${user.slug}`;
 }
 
 export function userInitials(user: User): string {

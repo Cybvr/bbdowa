@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { BLOG_POSTS } from "@/lib/blog";
 import {
-  PROJECTS,
-  projectHref,
-  projectLiveDateLabel,
-  projectsDueFrom,
-  projectsLiveNow,
-  projectsWithTrackedTarget,
-} from "@/lib/projects";
+  CAMPAIGNS,
+  campaignHref,
+  campaignLiveDateLabel,
+  campaignsDueFrom,
+  campaignsLiveNow,
+  campaignsWithTrackedTarget,
+} from "@/lib/campaigns";
 import { PageHeader, Panel, SectionHeading, StatItem, StatRow, TextLink } from "@/components/dashboard/ui";
 import { NAV_ICON_SET, type NavIconComponent } from "@/components/nav-icons";
 
@@ -19,7 +19,8 @@ type ActionTile = {
 };
 
 const ACTIONS: ActionTile[] = [
-  { label: "Projects", href: "/dashboard/projects", description: "Live campaigns and targets", Icon: NAV_ICON_SET.Projects },
+  { label: "Clients", href: "/dashboard/clients", description: "Client users and account workspaces", Icon: NAV_ICON_SET.People },
+  { label: "Campaigns", href: "/dashboard/campaigns", description: "Live campaigns and targets", Icon: NAV_ICON_SET.Projects },
   { label: "Products", href: "/dashboard/products", description: "Client brands and lines", Icon: NAV_ICON_SET.Products },
   { label: "Workflows", href: "/dashboard/workflows/agency", description: "Agency and pitch playbooks", Icon: NAV_ICON_SET.Workflows },
   { label: "Assets", href: "/dashboard/brand", description: "Brand kit and resources", Icon: NAV_ICON_SET.Assets },
@@ -31,9 +32,9 @@ const ACTIONS: ActionTile[] = [
 
 export default function HomePage() {
   const latestPosts = BLOG_POSTS.slice(0, 3);
-  const liveNow = projectsLiveNow(PROJECTS);
-  const dueSoon = projectsDueFrom(PROJECTS, new Date());
-  const trackedTargets = projectsWithTrackedTarget(PROJECTS);
+  const liveNow = campaignsLiveNow(CAMPAIGNS);
+  const dueSoon = campaignsDueFrom(CAMPAIGNS, new Date());
+  const trackedTargets = campaignsWithTrackedTarget(CAMPAIGNS);
 
   return (
     <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
@@ -56,12 +57,12 @@ export default function HomePage() {
                   {dueSoon.map((project) => (
                     <li key={project.slug}>
                       <Link
-                        href={projectHref(project.slug)}
+                        href={campaignHref(project.slug)}
                         className="text-foreground no-underline hover:text-primary focus-visible:text-primary"
                       >
                         {project.name}
                       </Link>{" "}
-                      <span className="text-muted-foreground">{projectLiveDateLabel(project)}</span>
+                      <span className="text-muted-foreground">{campaignLiveDateLabel(project)}</span>
                     </li>
                   ))}
                 </ul>
@@ -72,8 +73,8 @@ export default function HomePage() {
           />
           <StatItem
             label="Targets tracked"
-            value={`${trackedTargets.length}/${PROJECTS.length}`}
-            detail={<TextLink href="/dashboard/projects">View projects</TextLink>}
+            value={`${trackedTargets.length}/${CAMPAIGNS.length}`}
+            detail={<TextLink href="/dashboard/campaigns">View campaigns</TextLink>}
           />
         </StatRow>
       </section>

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BackLink } from "@/components/back-link";
 import { PRODUCTS, productHref } from "@/lib/products";
-import { PROJECTS, projectHref } from "@/lib/projects";
+import { CAMPAIGNS, campaignHref } from "@/lib/campaigns";
 import { TEAM, userInitials } from "@/lib/users";
 import { MetaGrid, MetaItem, SectionHeading } from "@/components/dashboard/ui";
 
@@ -32,7 +32,7 @@ export default async function UserDetailPage({ params }: Params) {
   const user = TEAM.find((member) => member.slug === slug);
   if (!user) notFound();
 
-  const projects = PROJECTS.filter((project) => project.lead === user.name);
+  const campaigns = CAMPAIGNS.filter((campaign) => campaign.lead === user.name);
   const products = PRODUCTS.filter((product) => product.owner?.name === user.name);
 
   return (
@@ -69,15 +69,15 @@ export default async function UserDetailPage({ params }: Params) {
 
       <section className="mt-12 grid grid-cols-1 gap-x-10 gap-y-10 sm:grid-cols-2" aria-label="Linked work">
         <div>
-          <SectionHeading>Projects led</SectionHeading>
-          {projects.length ? (
+          <SectionHeading>Campaigns led</SectionHeading>
+          {campaigns.length ? (
             <ul className="m-0 list-none border-t border-border p-0">
-              {projects.map((project) => (
-                <li key={project.slug}>
-                  <Link href={projectHref(project.slug)} className={WORK_LINK}>
-                    <span className="text-[16px] font-semibold leading-[1.15]">{project.name}</span>
+              {campaigns.map((campaign) => (
+                <li key={campaign.slug}>
+                  <Link href={campaignHref(campaign.slug)} className={WORK_LINK}>
+                    <span className="text-[16px] font-semibold leading-[1.15]">{campaign.name}</span>
                     <span className="text-[12px] font-medium text-muted-foreground group-hover:text-primary">
-                      {project.status}
+                      {campaign.status}
                     </span>
                   </Link>
                 </li>
@@ -85,7 +85,7 @@ export default async function UserDetailPage({ params }: Params) {
             </ul>
           ) : (
             <p className="m-0 border-t border-border py-4 text-[14px] text-muted-foreground">
-              No linked projects yet.
+              No linked campaigns yet.
             </p>
           )}
         </div>

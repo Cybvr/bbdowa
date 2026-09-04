@@ -1,38 +1,39 @@
-export type ProjectStatus = "live" | "pitch" | "completed";
+export type CampaignStatus = "live" | "pitch" | "completed";
 
-export type ProjectMedia = {
+export type CampaignMedia = {
   kind: "image" | "video";
   src: string;
   alt: string;
   poster?: string;
 };
 
-export type ProjectLiveDate = {
+export type CampaignLiveDate = {
   date: string;
 };
 
-export type ProjectExternalLink = {
+export type CampaignExternalLink = {
   label: string;
   href: string;
 };
 
-export type Project = {
+export type Campaign = {
   slug: string;
   name: string;
   campaign?: string;
+  clientId: string;
   client: string;
   category: string;
   year: number | null;
-  liveAt?: ProjectLiveDate;
-  status: ProjectStatus;
+  liveAt?: CampaignLiveDate;
+  status: CampaignStatus;
   lead: string;
   fee: string;
   target: string;
   result: string;
   image: string;
   imageAlt: string;
-  media: ProjectMedia[];
-  externalLinks?: ProjectExternalLink[];
+  media: CampaignMedia[];
+  externalLinks?: CampaignExternalLink[];
   summary: string;
   challenge: string;
   insight: string;
@@ -43,11 +44,12 @@ export type Project = {
   placeholder: boolean;
 };
 
-export const PROJECTS: Project[] = [
+export const CAMPAIGNS: Campaign[] = [
   {
     slug: "jack-daniels",
     name: "Jack Daniel’s",
     campaign: "That’s Naija, That’s Jack",
+    clientId: "brown-forman",
     client: "Brown-Forman",
     category: "Food & beverages",
     year: 2026,
@@ -86,6 +88,7 @@ export const PROJECTS: Project[] = [
     slug: "betano",
     name: "Betano",
     campaign: "Make We Bet",
+    clientId: "keizen-games",
     client: "Keizen Games",
     category: "Entertainment",
     year: 2026,
@@ -116,6 +119,7 @@ export const PROJECTS: Project[] = [
   {
     slug: "proforce-nigeria",
     name: "Proforce Nigeria",
+    clientId: "proforce-nigeria",
     client: "Proforce Nigeria",
     category: "Defence & manufacturing",
     year: 2026,
@@ -136,7 +140,7 @@ export const PROJECTS: Project[] = [
       { label: "X", href: "https://x.com/Proforcedefence" },
       { label: "YouTube", href: "https://www.youtube.com/c/PROFORCEofficial" },
     ],
-    summary: "Project details will be added when the case-study content is supplied.",
+    summary: "Campaign details will be added when the case-study content is supplied.",
     challenge: "Challenge details coming soon.",
     insight: "Insight details coming soon.",
     strategy: "Strategy details coming soon.",
@@ -148,6 +152,7 @@ export const PROJECTS: Project[] = [
   {
     slug: "1-utility-bank",
     name: "1 Utility Bank",
+    clientId: "1utility",
     client: "1 Utility Bank",
     category: "Finance",
     year: 2026,
@@ -166,7 +171,7 @@ export const PROJECTS: Project[] = [
       { label: "Instagram", href: "https://www.instagram.com/1ubanksupport/" },
       { label: "Facebook", href: "https://www.facebook.com/1UBank" },
     ],
-    summary: "Project details will be added when the case-study content is supplied.",
+    summary: "Campaign details will be added when the case-study content is supplied.",
     challenge: "Challenge details coming soon.",
     insight: "Insight details coming soon.",
     strategy: "Strategy details coming soon.",
@@ -178,6 +183,7 @@ export const PROJECTS: Project[] = [
   {
     slug: "cbn",
     name: "CBN",
+    clientId: "central-bank-of-nigeria",
     client: "Central Bank of Nigeria",
     category: "Finance",
     year: 2026,
@@ -202,6 +208,7 @@ export const PROJECTS: Project[] = [
   {
     slug: "benin-tourism",
     name: "Benin Tourism",
+    clientId: "benin-tourism",
     client: "Benin Tourism",
     category: "Travel & tourism",
     year: 2026,
@@ -226,6 +233,7 @@ export const PROJECTS: Project[] = [
   {
     slug: "interswitch-verve",
     name: "Verve",
+    clientId: "interswitch",
     client: "Interswitch",
     category: "Finance",
     year: 2021,
@@ -244,7 +252,7 @@ export const PROJECTS: Project[] = [
       { label: "Instagram", href: "https://www.instagram.com/vervecard/" },
       { label: "X", href: "https://x.com/vervecard" },
     ],
-    summary: "Project details will be added when the case-study content is supplied.",
+    summary: "Campaign details will be added when the case-study content is supplied.",
     challenge: "Challenge details coming soon.",
     insight: "Insight details coming soon.",
     strategy: "Strategy details coming soon.",
@@ -257,6 +265,7 @@ export const PROJECTS: Project[] = [
     slug: "diageo-guinness",
     name: "Guinness",
     campaign: "Made of Black",
+    clientId: "diageo",
     client: "Diageo",
     category: "Food & beverages",
     year: 2021,
@@ -310,6 +319,7 @@ export const PROJECTS: Project[] = [
     slug: "visa-work",
     name: "Visa",
     campaign: "Not a Tourist",
+    clientId: "visa",
     client: "Visa",
     category: "Finance",
     year: 2016,
@@ -351,6 +361,7 @@ export const PROJECTS: Project[] = [
     slug: "google-work",
     name: "Google",
     campaign: "Know Google",
+    clientId: "google",
     client: "Google",
     category: "Technology",
     year: null,
@@ -389,6 +400,7 @@ export const PROJECTS: Project[] = [
     slug: "orijin",
     name: "Orijin",
     campaign: "Live Original",
+    clientId: "orijin",
     client: "Orijin",
     category: "Food & beverages",
     year: null,
@@ -421,6 +433,7 @@ export const PROJECTS: Project[] = [
     slug: "pringles",
     name: "Pringles",
     campaign: "Cool Days",
+    clientId: "pringles",
     client: "Pringles",
     category: "Food & beverages",
     year: null,
@@ -452,6 +465,7 @@ export const PROJECTS: Project[] = [
     slug: "chicken-republic",
     name: "Chicken Republic",
     campaign: "Easter / Anti-Violence",
+    clientId: "chicken-republic",
     client: "Chicken Republic",
     category: "Food & beverages",
     year: null,
@@ -488,6 +502,7 @@ export const PROJECTS: Project[] = [
     slug: "unilever",
     name: "Unilever",
     campaign: "Closer Is Better",
+    clientId: "unilever",
     client: "Unilever",
     category: "Consumer goods",
     year: 2026,
@@ -507,7 +522,7 @@ export const PROJECTS: Project[] = [
       { label: "Facebook", href: "https://www.facebook.com/unilever" },
       { label: "X", href: "https://x.com/Unilever" },
     ],
-    summary: "Project details will be added when the case-study content is supplied.",
+    summary: "Campaign details will be added when the case-study content is supplied.",
     challenge: "Challenge details coming soon.",
     insight: "Insight details coming soon.",
     strategy: "Strategy details coming soon.",
@@ -518,49 +533,49 @@ export const PROJECTS: Project[] = [
   },
 ];
 
-export function getProject(slug: string): Project | undefined {
-  return PROJECTS.find((project) => project.slug === slug);
+export function getCampaign(slug: string): Campaign | undefined {
+  return CAMPAIGNS.find((campaign) => campaign.slug === slug);
 }
 
-export function projectHref(slug: string): string {
-  return `/dashboard/projects/${slug}`;
+export function campaignHref(slug: string): string {
+  return `/dashboard/campaigns/${slug}`;
 }
 
-function liveSortValue(project: Project): number {
-  return project.liveAt ? Date.parse(`${project.liveAt.date}T00:00:00Z`) : 0;
+function liveSortValue(campaign: Campaign): number {
+  return campaign.liveAt ? Date.parse(`${campaign.liveAt.date}T00:00:00Z`) : 0;
 }
 
-export function sortProjectsByLatestLive(projects: Project[]): Project[] {
-  return [...projects].sort((a, b) => {
+export function sortCampaignsByLatestLive(campaigns: Campaign[]): Campaign[] {
+  return [...campaigns].sort((a, b) => {
     const liveStatus = Number(b.status === "live") - Number(a.status === "live");
     if (liveStatus !== 0) return liveStatus;
     return liveSortValue(b) - liveSortValue(a);
   });
 }
 
-export function projectsLiveNow(projects: Project[]): Project[] {
-  return projects.filter((project) => project.status === "live");
+export function campaignsLiveNow(campaigns: Campaign[]): Campaign[] {
+  return campaigns.filter((campaign) => campaign.status === "live");
 }
 
-export function projectsDueFrom(projects: Project[], from: Date, limit = 3): Project[] {
+export function campaignsDueFrom(campaigns: Campaign[], from: Date, limit = 3): Campaign[] {
   const fromTime = from.getTime();
-  return projects
-    .filter((project) => project.liveAt && liveSortValue(project) >= fromTime)
+  return campaigns
+    .filter((campaign) => campaign.liveAt && liveSortValue(campaign) >= fromTime)
     .sort((a, b) => liveSortValue(a) - liveSortValue(b))
     .slice(0, limit);
 }
 
-export function projectsWithTrackedTarget(projects: Project[]): Project[] {
-  return projects.filter((project) => project.target.toLowerCase() !== "to be confirmed");
+export function campaignsWithTrackedTarget(campaigns: Campaign[]): Campaign[] {
+  return campaigns.filter((campaign) => campaign.target.toLowerCase() !== "to be confirmed");
 }
 
-export function projectLiveDateLabel(project: Project): string {
-  if (!project.liveAt) return "Date TBC";
+export function campaignLiveDateLabel(campaign: Campaign): string {
+  if (!campaign.liveAt) return "Date TBC";
 
   return new Intl.DateTimeFormat("en-GB", {
     day: "numeric",
     month: "long",
     year: "numeric",
     timeZone: "UTC",
-  }).format(new Date(`${project.liveAt.date}T00:00:00Z`));
+  }).format(new Date(`${campaign.liveAt.date}T00:00:00Z`));
 }

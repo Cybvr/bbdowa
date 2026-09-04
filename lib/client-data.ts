@@ -3,41 +3,41 @@
 // It is intentionally separate from user/account data in `lib/users.ts` —
 // do not mix the two.
 
-export type ProjectStatus = "live" | "pitch" | "completed";
+export type CampaignStatus = "live" | "pitch" | "completed";
 
-export type ProjectMedia = {
+export type CampaignMedia = {
   kind: "image" | "video";
   src: string;
   alt: string;
   poster?: string;
 };
 
-export type ProjectLiveDate = {
+export type CampaignLiveDate = {
   date: string;
 };
 
-export type ProjectExternalLink = {
+export type CampaignExternalLink = {
   label: string;
   href: string;
 };
 
-export type Project = {
+export type Campaign = {
   slug: string;
   name: string;
   campaign?: string;
   client: string;
   category: string;
   year: number | null;
-  liveAt?: ProjectLiveDate;
-  status: ProjectStatus;
+  liveAt?: CampaignLiveDate;
+  status: CampaignStatus;
   lead: string;
   fee: string;
   target: string;
   result: string;
   image: string;
   imageAlt: string;
-  media: ProjectMedia[];
-  externalLinks?: ProjectExternalLink[];
+  media: CampaignMedia[];
+  externalLinks?: CampaignExternalLink[];
   summary: string;
   challenge: string;
   insight: string;
@@ -111,10 +111,20 @@ export interface PhaseContent {
   prPitchAngle: string;
 }
 
+export type CampaignWorkspaceStatus = "Draft" | "Pitch" | "In progress" | "Live" | "Completed";
+
+export const campaignWorkspaceStatuses: CampaignWorkspaceStatus[] = [
+  "Draft",
+  "Pitch",
+  "In progress",
+  "Live",
+  "Completed",
+];
+
 export type CampaignListItem = {
   id: string;
   title: string;
-  status: "Draft" | "In progress";
+  status: CampaignWorkspaceStatus;
 };
 
 export type CompetitorItem = {
@@ -200,7 +210,7 @@ export const defaultPreset: PresetData = {
   headline: "ONE BILL. NO LEAP OF FAITH.",
   subtext:
     "OneUtility puts you in control of the essentials that keep life running, giving you peace of mind. Launch by winning one useful moment — a single utility payment — so a new bank earns trust one successful essential at a time.",
-  palette: ["#0B3B2E", "#F4C542", "#F8FAFC", "#111827"],
+  palette: ["#1B3FC2", "#2237B4", "#72B7FF", "#F3F2F2"],
   socialAccount: "1 Utility Bank",
   socialTitle: "One bank for the things that keep life moving.",
   socialBody:
@@ -321,6 +331,14 @@ Make the movement from uncertainty to control visible. Show proof at every step 
 - **1U Works Here** — trained merchants with a visible trust mark, a trackable QR and a branded POS kit.
 - **Done Day** — a monthly moment (the 28th, before month-end bills) where 1U picks up one utility bill for users who pay through the app that day.
 - **First Bill cohort** — a documented founding group that publishes real trial and support metrics.
+
+## Activation concepts
+
+**Utility help desk — lead activation.** A guided branch and market sign-up that opens a verified account and shows one payment done live. Production scope: layout, staffing, assets and measurement.
+
+**Field & Partner Toolkit — modular activation unit.** A scalable physical system for promoters, branches, product education or audience onboarding. Includes key visual, scripts, setup guide and reporting.
+
+**Post-experience follow-up.** A QR-enabled takeaway connecting the physical touchpoint to product information, sign-up or the next useful action. Digital fallback with consent-aware capture.
 
 ## Measurement
 

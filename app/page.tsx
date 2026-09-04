@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PROJECTS, sortProjectsByLatestLive } from "@/lib/projects";
+import { CAMPAIGNS, sortCampaignsByLatestLive } from "@/lib/campaigns";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { ContactForm } from "./contact-form";
@@ -10,8 +10,8 @@ const RECORD = [
   { value: "30+", label: "People in Lagos" },
 ];
 
-const WORK = sortProjectsByLatestLive(
-  PROJECTS.filter((project) => project.status !== "pitch"),
+const WORK = sortCampaignsByLatestLive(
+  CAMPAIGNS.filter((campaign) => campaign.status !== "pitch"),
 ).slice(0, 8);
 
 export default function MarketingHomePage() {
@@ -80,7 +80,7 @@ export default function MarketingHomePage() {
               return (
                 <article key={project.slug} className={featured ? "sm:col-span-2" : undefined}>
                   <Link
-                    href={`/dashboard/projects/${project.slug}`}
+                    href={`/dashboard/campaigns/${project.slug}`}
                     className="group block text-foreground no-underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
                   >
                     <div

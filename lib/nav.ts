@@ -16,7 +16,7 @@ export const MARKETING_DASHBOARD_LINK: NavLink = {
 export const MARKETING_FOOTER_LINKS: NavLink[] = [
   { label: "About", href: "/about" },
   { label: "People", href: "/dashboard/people" },
-  { label: "Projects", href: "/dashboard/projects" },
+  { label: "Campaigns", href: "/dashboard/campaigns" },
   { label: "Careers", href: "/dashboard/careers" },
   { label: "Blog", href: "/dashboard/blog" },
   { label: "Dashboard", href: "/dashboard" },
@@ -28,7 +28,8 @@ export type NavItem =
 
 export const NAV_ITEMS: NavItem[] = [
   { kind: "link", label: "Home", href: "/dashboard" },
-  { kind: "link", label: "Projects", href: "/dashboard/projects" },
+  { kind: "link", label: "Clients", href: "/dashboard/clients" },
+  { kind: "link", label: "Campaigns", href: "/dashboard/campaigns" },
   { kind: "link", label: "Products", href: "/dashboard/products" },
   {
     kind: "menu",

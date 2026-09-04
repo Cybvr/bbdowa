@@ -1,59 +1,59 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import Link from "next/link";
-import { ProfileNav } from "@/components/profile-nav";
-import { DashboardSidebarSheet } from "@/components/dashboard-sidebar";
-import {
-  defaultPreset,
-  strategyMarkdown,
-  phaseContent,
-  campaignPreviewBackground,
-  valuePropositionData,
-} from "@/lib/client-data";
-import {
-  chatReplies,
-  fontOptions,
-  ctaOptions,
-} from "@/lib/campaign-options";
+import { useParams, usePathname } from "next/navigation";
+import { CAMPAIGNS } from "@/lib/campaigns";
+import type { CampaignStatus } from "@/lib/campaigns";
+import { CLIENTS } from "@/lib/users";
+import { getClientWorkspace } from "@/lib/client-workspaces";
+import { campaignWorkspaceStatuses } from "@/lib/client-data";
+import { fontOptions, ctaOptions } from "@/lib/campaign-options";
 import type {
-  PresetData,
   PhaseContent,
   CampaignListItem,
+  CampaignWorkspaceStatus,
 } from "@/lib/client-data";
+
+// The public campaign data uses live/pitch/completed; the workspace exposes a
+// slightly richer editable set. Map the real status onto that set so the card
+// and overview reflect the actual campaign rather than a flat "Draft".
+function workspaceStatusFromCampaign(status: CampaignStatus): CampaignWorkspaceStatus {
+  if (status === "live") return "Live";
+  if (status === "completed") return "Completed";
+  return "Pitch";
+}
 import {
   Sparkles,
-  Send,
   LayoutDashboard,
   FileText,
   Palette,
   Smartphone,
-  Store,
   Info,
   Globe,
   Layers,
   Feather,
   ScanLine,
   Box,
-  Download,
-  Link as LinkIcon,
-  PanelLeftClose,
-  PanelLeftOpen,
+  Share2,
   ChevronDown,
+  ChevronRight,
   Film,
   Mic,
   Megaphone,
   Newspaper,
+  Users,
+  BarChart3,
   Plus,
   ChevronLeft,
   ArrowRight,
   TrendingUp,
-  Menu,
   Bold,
   Italic,
   List,
   Heading2,
   Pilcrow,
+  Save,
 } from "lucide-react";
 
 function TabPageHeader({ title }: { title: string }) {
@@ -62,6 +62,20 @@ function TabPageHeader({ title }: { title: string }) {
       {title}
     </h1>
   );
+}
+
+export default function ClientPage() {
+  const { slug } = useParams<{ slug: string }>();
+  const pathname = usePathname();
+  const initialView: OneUtilityWorkspaceView = pathname.endsWith("/campaigns")
+    ? "campaign"
+    : pathname.endsWith("/brand-dna")
+      ? "brand"
+      : "overview";
+
+  // key={slug} forces a remount when navigating between clients so all
+  // slug-derived initial state (preset, palette, copy) re-initialises.
+  return <OneUtilityClientWorkspace key={slug} slug={slug} initialView={initialView} />;
 }
 
 function CopyField({
@@ -286,22 +300,37 @@ function StrategyEditor({ markdown }: { markdown: string }) {
   );
 }
 
-export default function OneUtilityClientPage() {
-  const [preset] = useState<PresetData>(defaultPreset);
-  const clientName = "1Utilitybank";
-  const [projectName, setProjectName] = useState(defaultPreset.name);
+type OneUtilityWorkspaceView = "overview" | "campaign" | "brand";
+
+function OneUtilityClientWorkspace({
+  slug,
+  initialView = "overview",
+}: {
+  slug: string;
+  initialView?: OneUtilityWorkspaceView;
+}) {
+  const client = CLIENTS.find((user) => user.slug === slug);
+  const clientName = client?.name ?? "Client";
+  const workspace = getClientWorkspace(slug, clientName);
+  const preset = workspace.preset;
+  const clientProfileImage = client?.profileImage ?? "/images/projects/project-placeholder.svg";
+  const initialClientCampaigns = CAMPAIGNS.filter((campaign) => campaign.clientId === slug);
+  const [projectName, setProjectName] = useState(preset.name);
   const [activeMainTab, setActiveMainTab] = useState<
     "overview" | "campaign" | "brand"
-  >("campaign");
+  >(initialView);
   const [campaignView, setCampaignView] = useState<"home" | "editor">("home");
   const [campaignSubTab, setCampaignSubTab] = useState<"overview" | "strategy" | "creative" | "marketing">("overview");
-  const [campaigns, setCampaigns] = useState<CampaignListItem[]>([
-    { id: "utility-bank", title: defaultPreset.name, status: "In progress" },
-  ]);
-  const [activeCampaignId, setActiveCampaignId] = useState("utility-bank");
-  const [currentPhase, setCurrentPhase] = useState<
-    "tease" | "launch" | "experience" | "sustain"
-  >("launch");
+  const [campaigns, setCampaigns] = useState<CampaignListItem[]>(() =>
+    initialClientCampaigns.length > 0
+      ? initialClientCampaigns.map((campaign) => ({
+          id: campaign.slug,
+          title: campaign.campaign ?? campaign.name,
+          status: workspaceStatusFromCampaign(campaign.status),
+        }))
+      : [{ id: "client-campaign", title: "Campaign to be defined", status: "Draft" }]
+  );
+  const [activeCampaignId, setActiveCampaignId] = useState(() => initialClientCampaigns[0]?.slug ?? "client-campaign");
   type Section =
     | "social"
     | "film"
@@ -315,42 +344,58 @@ export default function OneUtilityClientPage() {
     setActiveSection((prev) => (prev === id ? null : id));
 
   // Strategy input fields state
-  const [marketAudience, setMarketAudience] = useState(defaultPreset.footprintShort);
+  const [marketAudience, setMarketAudience] = useState(preset.footprintShort);
 
   // Brand DNA state
-  const [palette, setPalette] = useState<string[]>(["#2563eb", "#1d4ed8", "#60a5fa", "#0f172a"]);
+  const [palette, setPalette] = useState<string[]>(workspace.palette);
   const [fontPairing, setFontPairing] = useState(fontOptions[0]);
-  const updatePaletteColor = (index: number, value: string) =>
+  const [businessProfileDirty, setBusinessProfileDirty] = useState(false);
+  const [designDirty, setDesignDirty] = useState(false);
+  const updatePaletteColor = (index: number, value: string) => {
     setPalette((prev) => prev.map((c, i) => (i === index ? value : c)));
-  const addPaletteColor = () => setPalette((prev) => [...prev, "#888888"]);
-  const removePaletteColor = (index: number) =>
+    setDesignDirty(true);
+  };
+  const addPaletteColor = () => {
+    setPalette((prev) => [...prev, "#888888"]);
+    setDesignDirty(true);
+  };
+  const removePaletteColor = (index: number) => {
     setPalette((prev) => prev.filter((_, i) => i !== index));
+    setDesignDirty(true);
+  };
 
   // Campaign overview state
-  const [campaignOwners, setCampaignOwners] = useState("Jide Pinheiro, Amara Obi");
+  // Campaign lead mirrors the lead recorded on the campaign itself, so the
+  // workspace and the public campaign page always name the same person.
+  const [campaignLead, setCampaignLead] = useState(initialClientCampaigns[0]?.lead ?? "");
   const [campaignStart, setCampaignStart] = useState("2026-08-01");
   const [campaignEnd, setCampaignEnd] = useState("2026-10-31");
   const [campaignDeadline, setCampaignDeadline] = useState("2026-07-25");
 
   // Settings state
-  const [brandUrl, setBrandUrl] = useState(defaultPreset.url);
-  const [scope, setScope] = useState(defaultPreset.scope);
-  const [footprint, setFootprint] = useState(defaultPreset.footprint);
-  const [aesthetic, setAesthetic] = useState(defaultPreset.aesthetic);
-  const [brandArchetype, setBrandArchetype] = useState("The Everyman");
-  const [toneVal, setToneVal] = useState(defaultPreset.toneVal);
-  const [toneLabel, setToneLabel] = useState(defaultPreset.toneText);
+  const [brandUrl, setBrandUrl] = useState(preset.url);
+  const [scope, setScope] = useState(preset.scope);
+  const [footprint, setFootprint] = useState(preset.footprint);
+  const [aesthetic, setAesthetic] = useState(preset.aesthetic);
+  const [brandArchetype, setBrandArchetype] = useState(workspace.brandArchetype);
+  const [toneVal, setToneVal] = useState(preset.toneVal);
+  const [toneLabel, setToneLabel] = useState(preset.toneText);
   const [statusNotification, setStatusNotification] = useState<string | null>(null);
 
   // Brand DNA: editable core value proposition
-  const [valueProp, setValueProp] = useState(valuePropositionData.coreHeadline);
-  const progressStages = valuePropositionData.progressModel;
-
-  // Page accent (primary) override — default blue (#2563eb)
-  const [primaryColor, setPrimaryColor] = useState<string>("#2563eb");
+  const [valueProp, setValueProp] = useState(workspace.valueProposition.coreHeadline);
+  const [progressStages, setProgressStages] = useState(() =>
+    workspace.valueProposition.progressModel.map((item) => ({
+      ...item,
+      stage: item.stage.replace(/^\d+\.\s*/, ""),
+    }))
+  );
+  // Page accent follows the client's primary brand colour.
+  const [primaryColor, setPrimaryColor] = useState<string>(workspace.primaryColor);
   const handleAccentChange = (color: string) => {
     setPrimaryColor(color);
     setPalette((prev) => [color, ...prev.slice(1)]);
+    setDesignDirty(true);
   };
   const collaborators = [
     { name: "Jide Pinheiro", initials: "JP", color: "#0B3B2E" },
@@ -358,30 +403,10 @@ export default function OneUtilityClientPage() {
     { name: "Tunde Bello", initials: "TB", color: "#1D4ED8" },
   ];
 
-  // Chat state
-  const [chatMessages, setChatMessages] = useState<
-    Array<{ id: number; role: "assistant" | "user"; text: string }>
-  >([
-    {
-      id: 1,
-      role: "assistant",
-      text: "Hi — I can help shape this campaign. Ask me about direction, copy angles or channel ideas for the selected account.",
-    },
-  ]);
-  const [chatInput, setChatInput] = useState("");
-  const chatMessagesEndRef = useRef<HTMLDivElement>(null);
-  const replyIndexRef = useRef(0);
   const nextCampaignNumberRef = useRef(2);
 
   // Toast state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  // Chat collapse state
-  const [chatOpen, setChatOpen] = useState(true);
-
-  useEffect(() => {
-    chatMessagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatMessages]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -390,23 +415,27 @@ export default function OneUtilityClientPage() {
     }, 4000);
   };
 
-  const handleSendChat = (e: React.FormEvent) => {
-    e.preventDefault();
-    const text = chatInput.trim();
-    if (!text) return;
+  const handleSaveBusinessProfile = () => {
+    setBusinessProfileDirty(false);
+    showToast("Business profile saved.");
+  };
 
-    const userMsg = { id: Date.now(), role: "user" as const, text };
-    setChatMessages((prev) => [...prev, userMsg]);
-    setChatInput("");
+  const handleSaveBrandDna = () => {
+    setDesignDirty(false);
+    showToast("Brand DNA saved.");
+  };
 
-    setTimeout(() => {
-      const replyText = chatReplies[replyIndexRef.current % chatReplies.length];
-      replyIndexRef.current += 1;
-      setChatMessages((prev) => [
-        ...prev,
-        { id: Date.now() + 1, role: "assistant" as const, text: replyText },
-      ]);
-    }, 700);
+  const updateProgressStage = (
+    index: number,
+    field: "stage" | "label" | "desc",
+    value: string
+  ) => {
+    setProgressStages((prev) =>
+      prev.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, [field]: value } : item
+      )
+    );
+    setBusinessProfileDirty(true);
   };
 
   const handleShareCampaign = async () => {
@@ -430,10 +459,6 @@ export default function OneUtilityClientPage() {
     showToast("Sharing is unavailable in this browser.");
   };
 
-  const handleExportCampaign = () => {
-    window.print();
-  };
-
   const handleNewCampaign = () => {
     const campaignNumber = nextCampaignNumberRef.current;
     const id = `campaign-${campaignNumber}`;
@@ -442,25 +467,34 @@ export default function OneUtilityClientPage() {
     setCampaigns((prev) => [...prev, { id, title, status: "Draft" }]);
     setActiveCampaignId(id);
     setProjectName(title);
-    setCurrentPhase("launch");
     setActiveSection("social");
-    setMarketAudience(defaultPreset.footprintShort);
-    setBrandUrl(defaultPreset.url);
-    setScope(defaultPreset.scope);
-    setFootprint(defaultPreset.footprint);
-    setAesthetic(defaultPreset.aesthetic);
-    setToneVal(defaultPreset.toneVal);
-    setToneLabel(defaultPreset.toneText);
-    setCampaignCopy(phaseContent);
+    setMarketAudience(preset.footprintShort);
+    setBrandUrl(preset.url);
+    setScope(preset.scope);
+    setFootprint(preset.footprint);
+    setAesthetic(preset.aesthetic);
+    setToneVal(preset.toneVal);
+    setToneLabel(preset.toneText);
+    setCampaignCopy(workspace.phaseContent.launch);
     setStatusNotification(null);
     setActiveMainTab("campaign");
     setCampaignView("editor");
     showToast("New campaign draft created.");
   };
 
+  const handleSelectCampaign = (campaignId: string) => {
+    const selectedCampaign = campaigns.find((campaign) => campaign.id === campaignId);
+    if (!selectedCampaign) return;
+
+    setActiveCampaignId(selectedCampaign.id);
+    setProjectName(selectedCampaign.title);
+    const realCampaign = CAMPAIGNS.find((campaign) => campaign.slug === selectedCampaign.id);
+    setCampaignLead(realCampaign?.lead ?? "");
+  };
+
   const handleOpenCampaign = (campaign: CampaignListItem) => {
-    setActiveCampaignId(campaign.id);
-    setProjectName(campaign.title);
+    handleSelectCampaign(campaign.id);
+    setActiveMainTab("campaign");
     setCampaignView("editor");
   };
 
@@ -469,6 +503,14 @@ export default function OneUtilityClientPage() {
     setCampaigns((prev) =>
       prev.map((campaign) =>
         campaign.id === activeCampaignId ? { ...campaign, title } : campaign
+      )
+    );
+  };
+
+  const handleCampaignStatusChange = (status: CampaignWorkspaceStatus) => {
+    setCampaigns((prev) =>
+      prev.map((campaign) =>
+        campaign.id === activeCampaignId ? { ...campaign, status } : campaign
       )
     );
   };
@@ -484,6 +526,7 @@ export default function OneUtilityClientPage() {
 
   const updateTone = (val: number) => {
     setToneVal(val);
+    setDesignDirty(true);
     const toneMap: Record<number, string> = {
       1: "Direct & Sharp",
       2: "Conversational & Familiar",
@@ -493,13 +536,64 @@ export default function OneUtilityClientPage() {
     setToneLabel(toneMap[val] || "Conversational");
   };
 
-  const [campaignCopy, setCampaignCopy] = useState(phaseContent);
-  const phase = campaignCopy[currentPhase];
+  const [campaignCopy, setCampaignCopy] = useState<PhaseContent>(workspace.phaseContent.launch);
+  const phase = campaignCopy;
+  const creativePreview =
+    activeSection === "social"
+      ? {
+          src: workspace.creativePreviews.social.src,
+          alt: workspace.creativePreviews.social.alt,
+          format: "SOCIAL & DIGITAL",
+          title: phase.socialTitle,
+          description: phase.socialBody,
+          cta: phase.socialCta,
+          aspect: "aspect-square",
+        }
+      : activeSection === "film"
+        ? {
+            src: workspace.creativePreviews.film.src,
+            alt: workspace.creativePreviews.film.alt,
+            format: "30 SECOND FILM",
+            title: phase.filmTitle,
+            description: phase.filmDesc,
+            cta: phase.filmCta,
+            aspect: "aspect-video",
+          }
+        : activeSection === "audio"
+          ? {
+              src: workspace.creativePreviews.audio.src,
+              alt: workspace.creativePreviews.audio.alt,
+              format: "RADIO SPOT",
+              title: phase.audioTitle,
+              description: phase.audioDesc,
+              cta: phase.audioCta,
+              aspect: "aspect-[4/5]",
+            }
+          : activeSection === "ooh"
+            ? {
+                src: workspace.creativePreviews.ooh.src,
+                alt: workspace.creativePreviews.ooh.alt,
+                format: `${preset.oohFormat} / ${preset.oohPlacement}`,
+                title: phase.oohTitle,
+                description: phase.oohDesc,
+                cta: phase.oohCta,
+                aspect: "aspect-[16/7]",
+              }
+            : activeSection === "print"
+              ? {
+                  src: workspace.creativePreviews.print.src,
+                  alt: workspace.creativePreviews.print.alt,
+                  format: "PRINT",
+                  title: phase.printTitle,
+                  description: phase.printDesc,
+                  cta: phase.printCta,
+                  aspect: "aspect-[3/4]",
+                }
+              : null;
+  const activeCampaign =
+    campaigns.find((campaign) => campaign.id === activeCampaignId) ?? campaigns[0];
   const updateCopy = (field: keyof PhaseContent, value: string) =>
-    setCampaignCopy((prev) => ({
-      ...prev,
-      [currentPhase]: { ...prev[currentPhase], [field]: value },
-    }));
+    setCampaignCopy((prev) => ({ ...prev, [field]: value }));
 
   const getContrastTextColor = (hex: string) => {
     const value = hex.replace("#", "");
@@ -513,13 +607,15 @@ export default function OneUtilityClientPage() {
 
   return (
     <div
-      className="min-h-screen lg:h-screen flex flex-col gap-2 overflow-x-hidden overflow-y-auto lg:overflow-hidden bg-card p-2 text-foreground antialiased font-sans"
+      className="utility-workspace min-h-screen lg:h-screen flex flex-col gap-2 overflow-x-hidden overflow-y-auto lg:overflow-hidden bg-card p-2 text-foreground antialiased font-sans [&_h1]:[font-family:var(--workspace-font-heading)] [&_h2]:[font-family:var(--workspace-font-heading)] [&_h3]:[font-family:var(--workspace-font-heading)] [&_h4]:[font-family:var(--workspace-font-heading)] [&_h5]:[font-family:var(--workspace-font-heading)] [&_h6]:[font-family:var(--workspace-font-heading)]"
       style={
         {
           "--primary": primaryColor,
           "--ring": primaryColor,
           "--primary-foreground": getContrastTextColor(primaryColor),
           "--font-sans": selectedFonts.body,
+          "--workspace-font-body": selectedFonts.body,
+          "--workspace-font-heading": selectedFonts.heading,
         } as React.CSSProperties
       }
     >
@@ -531,212 +627,108 @@ export default function OneUtilityClientPage() {
         </div>
       )}
 
-      {/* TOP HEADER: CLIENT IDENTIFIER */}
-      <header className="h-14 sm:h-16 rounded-xl bg-black text-white px-3 py-2 sm:px-6 sm:py-3 flex flex-nowrap items-center justify-between gap-2 sm:gap-3 shrink-0 z-30">
-        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-          <DashboardSidebarSheet trigger={
-            <button
-              type="button"
-              aria-label="Open navigation menu"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border-0 bg-transparent text-white hover:bg-white/10 focus-visible:outline-none transition cursor-pointer"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-          } />
-          <Link
-            href="/dashboard"
-            aria-label="BBDO West Africa dashboard"
-            className="hidden sm:flex shrink-0 items-center min-w-0 hover:opacity-85 transition"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/bbdo-west-africa.png"
-              alt="BBDO West Africa"
-              className="block h-5 sm:h-6 w-auto max-w-full brightness-0 invert"
-            />
-          </Link>
-          <span className="hidden sm:inline text-white/30 text-sm">/</span>
-          <img
-            src="/images/one-utility-logo.svg"
-            alt={clientName}
-            className="h-6 w-6 shrink-0 object-contain"
-          />
-          <span className="truncate text-sm font-semibold tracking-tight text-white">
-            {clientName}
-          </span>
-          {activeMainTab === "campaign" && campaignView === "editor" && (
-            <>
-              <span className="text-white/30 text-xs font-mono">/</span>
-              <span className="text-sm font-medium text-white/60 truncate">
-                {projectName}
-              </span>
-            </>
-          )}
-        </div>
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          {/* Collaborators */}
-          <div className="hidden sm:flex items-center -space-x-2 pr-1" aria-label="Collaborators on this campaign">
-            {collaborators.map((c) => (
-              <span
-                key={c.name}
-                title={c.name}
-                className="grid h-7 w-7 place-items-center rounded-full border-2 border-black text-sm font-semibold text-white"
-                style={{ backgroundColor: c.color }}
-              >
-                {c.initials}
-              </span>
-            ))}
-          </div>
-
-          {/* Accent color */}
-          <label
-            title="Change accent color"
-            className="relative flex items-center gap-2 px-2.5 py-1.5 text-sm font-medium text-secondary-foreground bg-secondary hover:bg-secondary/90 rounded-md border border-border transition cursor-pointer"
-          >
-            <span
-              className="h-3.5 w-3.5 rounded-full border border-border"
-              style={{ backgroundColor: primaryColor }}
-            />
-            <span className="hidden sm:inline">Accent</span>
-            <input
-              type="color"
-              value={primaryColor}
-              onChange={(e) => handleAccentChange(e.target.value)}
-              aria-label="Change accent color"
-              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-            />
-          </label>
-
-          <button onClick={handleShareCampaign} aria-label="Share" className="px-2.5 sm:px-3.5 py-1.5 text-sm font-medium text-secondary-foreground bg-secondary hover:bg-secondary/90 rounded-md border border-border transition flex items-center gap-2">
-            <LinkIcon className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Share</span>
-          </button>
-          <button onClick={handleExportCampaign} aria-label="Export" className="px-2.5 sm:px-3.5 py-1.5 text-sm font-medium text-primary-foreground bg-primary hover:opacity-90 rounded-md transition flex items-center gap-2">
-            <Download className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Export</span>
-          </button>
-          <ProfileNav />
-        </div>
-      </header>
-
-      <div className="flex flex-col lg:flex-row lg:flex-1 lg:min-h-0 gap-2 lg:overflow-hidden">
-      {/* RIGHT SIDEBAR: WORKSPACE ASSISTANT */}
-      <aside
-        className={`order-2 rounded-xl bg-background flex flex-col shrink-0 z-20 overflow-visible lg:overflow-hidden transition-all ${
-          chatOpen ? "w-full lg:w-96" : "w-full lg:w-12"
-        }`}
-      >
-        {/* Chat Header / Collapse Toggle */}
-        <div className="flex items-center justify-between gap-2 p-3 border-b border-border shrink-0">
-          {chatOpen && (
-            <span className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-primary" /> Workspace assistant
-            </span>
-          )}
-          <button
-            onClick={() => setChatOpen((v) => !v)}
-            aria-label={chatOpen ? "Collapse assistant" : "Expand assistant"}
-            aria-expanded={chatOpen}
-            className="grid h-8 w-8 flex-none place-items-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition ml-auto"
-          >
-            {chatOpen ? (
-              <PanelLeftClose className="w-4 h-4" />
-            ) : (
-              <PanelLeftOpen className="w-4 h-4" />
-            )}
-          </button>
-        </div>
-
-        {chatOpen && (
-          <>
-        {/* Chat Messages */}
-        <div id="chatMessages" className="flex-1 overflow-y-auto p-4 space-y-3 min-h-[320px] lg:min-h-0">
-          {chatMessages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`flex items-start gap-2 ${
-                msg.role === "user" ? "justify-end" : ""
-              }`}
-            >
-              {msg.role === "assistant" && (
-                <span className="grid h-7 w-7 flex-none place-items-center rounded-full bg-primary/10 border border-primary/20 text-primary">
-                  <Sparkles className="w-3.5 h-3.5" />
-                </span>
-              )}
-              <div
-                className={`max-w-[85%] rounded-xl px-3 py-2 text-sm ${
-                  msg.role === "user"
-                    ? "rounded-tr-sm bg-primary text-primary-foreground font-medium shadow"
-                    : "rounded-tl-sm border border-border bg-muted/60 text-foreground"
-                }`}
-              >
-                {msg.text}
-              </div>
-            </div>
-          ))}
-          <div ref={chatMessagesEndRef} />
-        </div>
-
-        {/* Chat Input */}
-        <div className="p-3 border-t border-border bg-card/60 shrink-0">
-          <form onSubmit={handleSendChat} className="flex items-center gap-2">
-            <input
-              type="text"
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              placeholder="Ask the workspace assistant..."
-              autoComplete="off"
-              className="flex-1 min-w-0 bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none transition"
-            />
-            <button
-              type="submit"
-              aria-label="Send"
-              className="grid h-9 w-9 flex-none place-items-center rounded-lg bg-primary hover:opacity-90 text-primary-foreground transition"
-            >
-              <Send className="w-4 h-4" />
-            </button>
-          </form>
-        </div>
-          </>
-        )}
-      </aside>
-
+      <div className="flex flex-col lg:flex-1 lg:min-h-0 gap-2 lg:overflow-hidden">
       {/* MAIN CANVAS: TABS + CONTENT */}
       <main className="order-1 lg:flex-1 lg:min-h-0 rounded-xl bg-background flex flex-col lg:overflow-hidden">
 
+        {/* CLIENT HEADER: LOGO + BREADCRUMB + NAME + ACTIONS */}
+        <div className="flex flex-nowrap items-center justify-between gap-3 px-3 py-2.5 sm:px-5 sm:py-3 shrink-0 z-30">
+          <div className="flex min-w-0 items-center gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={clientProfileImage}
+              alt=""
+              className="h-11 w-11 shrink-0 rounded-xl border border-border bg-muted object-contain p-1.5"
+            />
+            <div className="min-w-0">
+              <nav aria-label="Breadcrumb">
+                <ol className="m-0 flex min-w-0 list-none items-center gap-1.5 p-0 text-xs text-muted-foreground">
+                  <li>
+                    <Link href="/dashboard/clients" className="whitespace-nowrap hover:text-foreground">
+                      All
+                    </Link>
+                  </li>
+                  <li aria-hidden="true"><ChevronRight className="h-3 w-3 shrink-0" /></li>
+                  <li aria-current="page" className="truncate text-foreground">{clientName}</li>
+                </ol>
+              </nav>
+              <h1 className="m-0 truncate text-xl sm:text-2xl font-bold tracking-tight text-foreground">{clientName}</h1>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* Collaborators */}
+            <div className="hidden sm:flex items-center -space-x-2 pr-1" aria-label="Collaborators on this campaign">
+              {collaborators.map((c) => (
+                <span
+                  key={c.name}
+                  title={c.name}
+                  className="grid h-7 w-7 place-items-center rounded-full border-2 border-card text-sm font-semibold text-white"
+                  style={{ backgroundColor: c.color }}
+                >
+                  {c.initials}
+                </span>
+              ))}
+            </div>
+
+            {/* Accent color */}
+            <label
+              title="Change accent color"
+              aria-label="Change accent color"
+              className="relative flex items-center gap-1 px-2 py-1.5 rounded-md border border-border bg-secondary hover:bg-secondary/90 transition cursor-pointer text-secondary-foreground"
+            >
+              <Palette className="w-4 h-4" style={{ color: primaryColor }} />
+              <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+              <input
+                type="color"
+                value={primaryColor}
+                onChange={(e) => handleAccentChange(e.target.value)}
+                aria-label="Change accent color"
+                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+              />
+            </label>
+
+            <button onClick={handleShareCampaign} aria-label="Share" className="px-2.5 sm:px-3.5 py-1.5 text-sm font-medium text-primary-foreground bg-primary hover:opacity-90 rounded-md transition flex items-center gap-2">
+              <Share2 className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Share</span>
+            </button>
+          </div>
+        </div>
+
         {/* TOP-LEVEL VIEW TABS: OVERVIEW | CAMPAIGNS | BRAND DNA */}
-        <div className="min-h-12 border-b border-border px-1 sm:px-6 flex items-center justify-center gap-0.5 sm:gap-1 bg-card/60 shrink-0">
-          <button
-            onClick={() => setActiveMainTab("overview")}
-            className={`flex-1 sm:flex-none justify-center px-2 sm:px-4 py-2.5 text-sm font-semibold border-b-2 flex items-center gap-1.5 sm:gap-2 transition whitespace-nowrap ${
+        <div className="min-h-11 border-b border-border px-2 sm:px-5 flex items-center justify-start gap-0.5 sm:gap-1 shrink-0">
+          <Link
+            href={`/dashboard/clients/${slug}/overview`}
+            className={`px-2 sm:px-3 py-2.5 text-sm font-semibold border-b-2 flex items-center gap-1.5 sm:gap-2 transition whitespace-nowrap ${
               activeMainTab === "overview"
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
             <Box className="w-3.5 h-3.5" /> Overview
-          </button>
-          <button
+          </Link>
+          <Link
+            href={`/dashboard/clients/${slug}/campaigns`}
             onClick={() => {
               setActiveMainTab("campaign");
               setCampaignView("home");
             }}
-            className={`flex-1 sm:flex-none justify-center px-2 sm:px-4 py-2.5 text-sm font-semibold border-b-2 flex items-center gap-1.5 sm:gap-2 transition whitespace-nowrap ${
+            className={`px-2 sm:px-3 py-2.5 text-sm font-semibold border-b-2 flex items-center gap-1.5 sm:gap-2 transition whitespace-nowrap ${
               activeMainTab === "campaign"
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
             <LayoutDashboard className="w-3.5 h-3.5" /> Campaigns
-          </button>
-          <button
-            onClick={() => setActiveMainTab("brand")}
-            className={`flex-1 sm:flex-none justify-center px-2 sm:px-4 py-2.5 text-sm font-semibold border-b-2 flex items-center gap-1.5 sm:gap-2 transition whitespace-nowrap ${
+          </Link>
+          <Link
+            href={`/dashboard/clients/${slug}/brand-dna`}
+            className={`px-2 sm:px-3 py-2.5 text-sm font-semibold border-b-2 flex items-center gap-1.5 sm:gap-2 transition whitespace-nowrap ${
               activeMainTab === "brand"
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
             <Palette className="w-3.5 h-3.5" /> Brand DNA
-          </button>
+          </Link>
         </div>
 
         {/* CAMPAIGN VIEW */}
@@ -759,22 +751,21 @@ export default function OneUtilityClientPage() {
                     <button
                       key={campaign.id}
                       onClick={() => handleOpenCampaign(campaign)}
-                      className="group overflow-hidden text-left transition flex flex-col"
+                      className="overflow-hidden text-left flex flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 rounded-2xl"
                     >
-                      <div className="relative w-full aspect-square bg-muted overflow-hidden rounded-2xl">
+                      <div className="relative w-full aspect-square overflow-hidden rounded-2xl border border-border bg-muted">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src="/images/one-utility-bank-campaign-preview.png"
+                          src={workspace.campaignPreviewImage}
                           alt={campaign.title}
-                          className="w-full h-full object-cover transition duration-300 group-hover:scale-105"
+                          className="w-full h-full object-cover"
                         />
                         <span className="absolute top-3 left-3 rounded-md bg-background/90 backdrop-blur-sm px-2 py-0.5 text-xs font-mono uppercase tracking-wide text-primary font-semibold border border-border">
                           {campaign.status}
                         </span>
                       </div>
                       <div className="pt-3 flex flex-col flex-1 justify-between space-y-1">
-                        <span className="block text-sm font-semibold text-foreground group-hover:text-primary transition">{campaign.title}</span>
-                        <span className="block text-sm text-muted-foreground">Open campaign workspace</span>
+                        <span className="block text-sm font-semibold text-foreground">{campaign.title}</span>
                       </div>
                     </button>
                   ))}
@@ -856,6 +847,12 @@ export default function OneUtilityClientPage() {
                 {campaignSubTab === "overview" && (
                   <div className="lg:flex-1 lg:overflow-y-auto lg:min-h-0 pr-1 py-4">
                     <div className="space-y-4 max-w-2xl">
+                      <CopyField
+                        label="Campaign name"
+                        value={projectName}
+                        onChange={handleProjectNameChange}
+                      />
+
                       <div className="space-y-1.5">
                         <label htmlFor="campaignScopeOverview" className="text-xs font-mono text-primary uppercase tracking-widest font-semibold flex items-center gap-1.5">
                           <Layers className="w-3.5 h-3.5" /> Scope
@@ -873,10 +870,28 @@ export default function OneUtilityClientPage() {
                         </select>
                       </div>
 
+                      <div className="space-y-1.5">
+                        <label htmlFor="campaignStatusOverview" className="text-xs font-mono text-primary uppercase tracking-widest font-semibold flex items-center gap-1.5">
+                          <Info className="w-3.5 h-3.5" /> Status
+                        </label>
+                        <select
+                          id="campaignStatusOverview"
+                          value={activeCampaign?.status ?? "Draft"}
+                          onChange={(e) => handleCampaignStatusChange(e.target.value as CampaignWorkspaceStatus)}
+                          className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm text-foreground outline-none transition"
+                        >
+                          {campaignWorkspaceStatuses.map((status) => (
+                            <option key={status} value={status}>
+                              {status}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
                       <CopyField
-                        label="Owners"
-                        value={campaignOwners}
-                        onChange={setCampaignOwners}
+                        label="Campaign lead"
+                        value={campaignLead}
+                        onChange={setCampaignLead}
                       />
 
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -917,7 +932,7 @@ export default function OneUtilityClientPage() {
 
                 {/* CAMPAIGN SUB-TAB: STRATEGY */}
                 {campaignSubTab === "strategy" && (
-                  <StrategyEditor markdown={strategyMarkdown} />
+                  <StrategyEditor markdown={workspace.strategyMarkdown} />
                 )}
 
                 {/* CAMPAIGN SUB-TAB: CREATIVES */}
@@ -960,219 +975,141 @@ export default function OneUtilityClientPage() {
 
                   {/* RIGHT: LIVE PREVIEW WINDOW */}
                   <div className="lg:min-h-0 lg:overflow-y-auto rounded-2xl border border-border bg-muted/30 p-4 sm:p-6 flex items-center justify-center">
-                    <div className="w-full max-w-sm space-y-6">
-                    {activeSection === "social" && (
-                    <div className="space-y-6">
-                    {/* Social post mockup */}
-                    <div className="space-y-3">
-                      <div
-                        className="w-full aspect-square rounded-3xl border border-border bg-cover bg-center relative overflow-hidden shadow-2xl flex flex-col justify-between p-6 group"
-                        style={campaignPreviewBackground}
-                      >
-                        <div className="relative z-10 flex items-center justify-between">
-                          <span className="text-sm font-medium text-foreground">
-                            {preset.socialAccount}
-                          </span>
-                          <span className="text-sm bg-muted px-2 py-0.5 rounded text-muted-foreground">
-                            Sponsored
-                          </span>
-                        </div>
-
-                        <div className="relative z-10 text-center space-y-3 my-auto">
-                          <span className="text-sm tracking-widest text-primary uppercase font-mono block">
-                            Phase: {currentPhase.toUpperCase()}
-                          </span>
-                          <h3 className="text-3xl text-foreground font-bold leading-snug">
-                            {phase.socialTitle}
-                          </h3>
-                          <p className="text-sm text-muted-foreground font-light max-w-xs mx-auto">
-                            {phase.socialBody}
-                          </p>
-                        </div>
-
-                        <div className="relative z-10 text-center">
-                          <button className="w-full py-2.5 bg-primary text-primary-foreground font-semibold text-sm rounded-xl uppercase hover:opacity-90 transition">
-                            {phase.socialCta}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                  </div>
-                    )}
-
-                    {activeSection === "film" && (
-                      <div className="space-y-3">
-                        <div
-                          className="w-full aspect-video rounded-2xl border border-border bg-cover bg-center relative overflow-hidden shadow-2xl flex flex-col justify-between p-5"
-                          style={campaignPreviewBackground}
-                        >
-                          <div className="relative z-10 flex justify-between items-center text-xs font-mono text-muted-foreground">
-                            <span>0:00 / 0:30</span>
-                            <span>TVC</span>
-                          </div>
-                          <span className="absolute inset-0 m-auto grid h-14 w-14 place-items-center rounded-full bg-primary/90 text-primary-foreground shadow-lg">
-                            <Play className="w-6 h-6 ml-0.5" />
-                          </span>
-                          <div className="relative z-10 space-y-1">
-                            <h4 className="text-base font-bold text-foreground leading-snug">{phase.filmTitle}</h4>
-                            <p className="text-sm text-muted-foreground line-clamp-2">{phase.filmDesc}</p>
-                            <span className="inline-block mt-2 px-3 py-1.5 bg-primary text-primary-foreground font-semibold text-sm rounded-lg">
-                              {phase.filmCta}
+                    {creativePreview ? (
+                      <article className="w-full max-w-md overflow-hidden rounded-2xl border border-border bg-card shadow-xl">
+                        {/* Every channel uses a produced campaign image; editable copy stays as delivery metadata. */}
+                        <div className={`relative overflow-hidden ${creativePreview.aspect}`}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={creativePreview.src}
+                            alt={creativePreview.alt}
+                            className="h-full w-full object-cover"
+                          />
+                          <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-3 bg-gradient-to-b from-black/60 to-transparent p-4">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={clientProfileImage}
+                              alt={clientName}
+                              className="h-6 w-auto brightness-0 invert"
+                            />
+                            <span className="rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-mono font-semibold tracking-wider text-[#1B3FC2]">
+                              {creativePreview.format}
                             </span>
                           </div>
                         </div>
-                      </div>
-                    )}
-
-                    {activeSection === "audio" && (
-                      <div className="space-y-3">
-                        <div className="w-full rounded-2xl border border-border bg-card p-5 shadow-sm space-y-4">
-                          <div className="flex justify-between items-center text-xs font-mono text-muted-foreground">
-                            <span>RADIO SPOT</span>
-                            <span>0:30</span>
-                          </div>
+                        <div className="space-y-3 p-5">
                           <div className="space-y-1">
-                            <h4 className="text-base font-bold text-foreground leading-snug">{phase.audioTitle}</h4>
-                            <p className="text-sm text-muted-foreground">{phase.audioDesc}</p>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <span className="grid h-10 w-10 flex-none place-items-center rounded-full bg-primary text-primary-foreground">
-                              <Play className="w-4 h-4 ml-0.5" />
-                            </span>
-                            <div className="flex items-center gap-0.5 h-8 flex-1">
-                              {[40, 70, 30, 90, 55, 75, 35, 60, 85, 45, 65, 25, 80, 50, 70, 40, 60, 30].map(
-                                (h, i) => (
-                                  <span
-                                    key={i}
-                                    className="flex-1 bg-primary/30 rounded-sm"
-                                    style={{ height: `${h}%` }}
-                                  />
-                                )
-                              )}
-                            </div>
-                          </div>
-                          <span className="inline-block px-3 py-1.5 bg-primary text-primary-foreground font-semibold text-sm rounded-lg">
-                            {phase.audioCta}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-
-                    {activeSection === "ooh" && (
-                      <div className="space-y-3">
-                        <div
-                          className="w-full aspect-[16/7] rounded-2xl border border-border bg-cover bg-center p-8 sm:p-12 flex flex-col justify-between relative shadow-sm overflow-hidden"
-                          style={campaignPreviewBackground}
-                        >
-                          <div className="flex justify-between items-start text-xs font-mono text-muted-foreground">
-                            <span>48-SHEET / DIGITAL OOH · {preset.oohPlacement}</span>
-                            <span className="text-primary">{preset.oohFormat}</span>
-                          </div>
-                          <div className="max-w-2xl space-y-2">
-                            <span className="text-sm uppercase tracking-widest text-primary font-mono">
-                              {preset.client}
-                            </span>
-                            <h2 className="text-3xl sm:text-5xl font-extrabold text-foreground tracking-tight leading-none">
-                              {phase.oohTitle}
-                            </h2>
-                            <p className="text-sm text-muted-foreground font-light">{phase.oohDesc}</p>
-                          </div>
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-sm text-muted-foreground font-mono">
-                              {marketAudience.toUpperCase()}
-                            </span>
-                            <span className="inline-block px-3 py-1.5 bg-primary text-primary-foreground font-semibold text-sm rounded-lg">
-                              {phase.oohCta}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {activeSection === "print" && (
-                      <div className="space-y-3">
-                        <div
-                          className="w-full aspect-[3/4] rounded-2xl border border-border bg-cover bg-center p-6 shadow-sm flex flex-col justify-between overflow-hidden"
-                          style={campaignPreviewBackground}
-                        >
-                          <div className="space-y-2">
-                            <span className="text-sm uppercase tracking-widest text-primary font-mono block">
-                              {preset.client}
-                            </span>
-                            <h4 className="text-2xl font-extrabold text-foreground leading-tight">
-                              {phase.printTitle}
-                            </h4>
-                            <p className="text-sm text-muted-foreground leading-relaxed">
-                              {phase.printDesc}
+                            <p className="text-[10px] font-mono font-semibold tracking-[0.16em] text-[#1B3FC2]">
+                              {creativePreview.format}
                             </p>
+                            <h3 className="text-xl font-bold leading-tight text-foreground">{creativePreview.title}</h3>
+                            <p className="text-sm leading-relaxed text-muted-foreground">{creativePreview.description}</p>
                           </div>
-                          <div className="grid grid-cols-2 gap-3 opacity-30">
-                            {Array.from({ length: 8 }).map((_, i) => (
-                              <span key={i} className="h-1.5 rounded-sm bg-muted-foreground" />
-                            ))}
-                          </div>
-                          <span className="inline-block px-3 py-1.5 bg-primary text-primary-foreground font-semibold text-sm rounded-lg self-start">
-                            {phase.printCta}
+                          <span className="inline-flex rounded-lg bg-[#1B3FC2] px-3 py-2 text-sm font-semibold text-white">
+                            {creativePreview.cta}
                           </span>
                         </div>
-                      </div>
+                      </article>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">Choose a creative channel to preview its campaign image.</p>
                     )}
-                  </div>
                   </div>
                 </div>
                 )}
 
                 {/* CAMPAIGN SUB-TAB: MARKETING */}
                 {campaignSubTab === "marketing" && (
-                  <div className="lg:flex-1 lg:overflow-y-auto lg:min-h-0 pr-1 py-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                      <div className="rounded-2xl p-6 bg-card border border-border space-y-3 flex flex-col justify-between shadow-sm">
-                        <div className="space-y-2">
+                  <div className="lg:flex-1 lg:overflow-y-auto lg:min-h-0 pr-1 py-4 space-y-6">
+                    {/* MEDIA BUYING */}
+                    <section className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <span className="grid h-7 w-7 place-items-center rounded-lg bg-primary/10 border border-primary/20 text-primary">
+                          <Megaphone className="w-3.5 h-3.5" />
+                        </span>
+                        <h3 className="text-base font-semibold text-foreground">Media buying</h3>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="rounded-2xl p-5 bg-card border border-border shadow-sm space-y-3">
                           <span className="text-xs font-mono text-primary flex items-center gap-1.5">
-                            <Store className="w-3.5 h-3.5" /> Lead activation concept
+                            <BarChart3 className="w-3.5 h-3.5" /> Channel mix
                           </span>
-                          <h4 className="text-xl font-bold text-foreground">{phase.activationTitle}</h4>
-                          <p className="text-sm text-muted-foreground leading-relaxed font-light">
-                            {phase.activationBody}
-                          </p>
+                          <ul className="text-sm space-y-1.5">
+                            <li className="flex justify-between gap-2"><span className="text-muted-foreground">Paid social</span><span className="text-foreground font-medium">—</span></li>
+                            <li className="flex justify-between gap-2"><span className="text-muted-foreground">Search</span><span className="text-foreground font-medium">—</span></li>
+                            <li className="flex justify-between gap-2"><span className="text-muted-foreground">Display / video</span><span className="text-foreground font-medium">—</span></li>
+                            <li className="flex justify-between gap-2"><span className="text-muted-foreground">OOH / radio</span><span className="text-foreground font-medium">—</span></li>
+                          </ul>
                         </div>
-                        <div className="text-sm text-muted-foreground font-mono pt-4 border-t border-border">
-                          Production scope: layout, staffing, assets & measurement
-                        </div>
-                      </div>
 
-                      <div className="rounded-2xl p-6 bg-card border border-border space-y-3 flex flex-col justify-between shadow-sm">
-                        <div className="space-y-2">
+                        <div className="rounded-2xl p-5 bg-card border border-border shadow-sm space-y-3">
                           <span className="text-xs font-mono text-primary flex items-center gap-1.5">
-                            <Box className="w-3.5 h-3.5" /> Modular activation unit
+                            <TrendingUp className="w-3.5 h-3.5" /> Budget & flight
                           </span>
-                          <h4 className="text-xl font-bold text-foreground">Field & Partner Toolkit</h4>
-                          <p className="text-sm text-muted-foreground leading-relaxed font-light">
-                            A scalable physical system for promoters, branches, product education or audience onboarding.
-                          </p>
+                          <ul className="text-sm space-y-1.5">
+                            <li className="flex justify-between gap-2"><span className="text-muted-foreground">Total budget</span><span className="text-foreground font-medium">—</span></li>
+                            <li className="flex justify-between gap-2"><span className="text-muted-foreground">Flight dates</span><span className="text-foreground font-medium">—</span></li>
+                            <li className="flex justify-between gap-2"><span className="text-muted-foreground">Daily pacing</span><span className="text-foreground font-medium">—</span></li>
+                            <li className="flex justify-between gap-2"><span className="text-muted-foreground">Buy type</span><span className="text-foreground font-medium">—</span></li>
+                          </ul>
                         </div>
-                        <div className="text-sm text-muted-foreground font-mono pt-4 border-t border-border">
-                          Includes: key visual, scripts, setup guide & reporting
-                        </div>
-                      </div>
 
-                      <div className="rounded-2xl p-6 bg-muted border border-border text-foreground space-y-3 flex flex-col justify-between shadow-sm">
-                        <div className="space-y-2">
-                          <span className="text-xs font-mono tracking-widest text-muted-foreground uppercase block">
-                            POST-EXPERIENCE FOLLOW-UP
+                        <div className="rounded-2xl p-5 bg-card border border-border shadow-sm space-y-3">
+                          <span className="text-xs font-mono text-primary flex items-center gap-1.5">
+                            <ScanLine className="w-3.5 h-3.5" /> Targeting & KPIs
                           </span>
-                          <h4 className="text-xl font-bold text-foreground">Keep the campaign moving.</h4>
-                          <p className="text-sm text-muted-foreground leading-relaxed">
-                            A QR-enabled takeaway connecting the physical touchpoint to product information, sign-up or the next useful action.
-                          </p>
-                        </div>
-                        <div className="text-xs font-mono text-muted-foreground pt-3 border-t border-border flex justify-between">
-                          <span>Digital fallback</span>
-                          <span>Consent-aware capture</span>
+                          <ul className="text-sm space-y-1.5">
+                            <li className="flex justify-between gap-2"><span className="text-muted-foreground">Audience</span><span className="text-foreground font-medium">—</span></li>
+                            <li className="flex justify-between gap-2"><span className="text-muted-foreground">Geo</span><span className="text-foreground font-medium">—</span></li>
+                            <li className="flex justify-between gap-2"><span className="text-muted-foreground">Primary KPI</span><span className="text-foreground font-medium">—</span></li>
+                            <li className="flex justify-between gap-2"><span className="text-muted-foreground">Target CPA</span><span className="text-foreground font-medium">—</span></li>
+                          </ul>
                         </div>
                       </div>
-                    </div>
+                    </section>
+
+                    {/* INFLUENCER MARKETING */}
+                    <section className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <span className="grid h-7 w-7 place-items-center rounded-lg bg-primary/10 border border-primary/20 text-primary">
+                          <Users className="w-3.5 h-3.5" />
+                        </span>
+                        <h3 className="text-base font-semibold text-foreground">Influencer marketing</h3>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="rounded-2xl p-5 bg-card border border-border shadow-sm space-y-3">
+                          <span className="text-xs font-mono text-primary flex items-center gap-1.5">
+                            <Users className="w-3.5 h-3.5" /> Creator tiers
+                          </span>
+                          <ul className="text-sm space-y-1.5">
+                            <li className="flex justify-between gap-2"><span className="text-muted-foreground">Macro</span><span className="text-foreground font-medium">—</span></li>
+                            <li className="flex justify-between gap-2"><span className="text-muted-foreground">Micro</span><span className="text-foreground font-medium">—</span></li>
+                            <li className="flex justify-between gap-2"><span className="text-muted-foreground">Nano / UGC</span><span className="text-foreground font-medium">—</span></li>
+                          </ul>
+                        </div>
+
+                        <div className="rounded-2xl p-5 bg-card border border-border shadow-sm space-y-3">
+                          <span className="text-xs font-mono text-primary flex items-center gap-1.5">
+                            <Film className="w-3.5 h-3.5" /> Deliverables
+                          </span>
+                          <ul className="text-sm space-y-1.5">
+                            <li className="flex justify-between gap-2"><span className="text-muted-foreground">Content format</span><span className="text-foreground font-medium">—</span></li>
+                            <li className="flex justify-between gap-2"><span className="text-muted-foreground">Posts per creator</span><span className="text-foreground font-medium">—</span></li>
+                            <li className="flex justify-between gap-2"><span className="text-muted-foreground">Usage rights</span><span className="text-foreground font-medium">—</span></li>
+                          </ul>
+                        </div>
+
+                        <div className="rounded-2xl p-5 bg-card border border-border shadow-sm space-y-3">
+                          <span className="text-xs font-mono text-primary flex items-center gap-1.5">
+                            <BarChart3 className="w-3.5 h-3.5" /> Tracking
+                          </span>
+                          <ul className="text-sm space-y-1.5">
+                            <li className="flex justify-between gap-2"><span className="text-muted-foreground">Attribution</span><span className="text-foreground font-medium">—</span></li>
+                            <li className="flex justify-between gap-2"><span className="text-muted-foreground">Promo / QR code</span><span className="text-foreground font-medium">—</span></li>
+                            <li className="flex justify-between gap-2"><span className="text-muted-foreground">Primary KPI</span><span className="text-foreground font-medium">—</span></li>
+                          </ul>
+                        </div>
+                      </div>
+                    </section>
                   </div>
                 )}
               </div>
@@ -1185,40 +1122,61 @@ export default function OneUtilityClientPage() {
         {activeMainTab === "overview" && (
           <div className="lg:flex-1 lg:overflow-y-auto px-4 py-4 sm:px-6">
             <div className="w-full max-w-5xl mx-auto space-y-4 pb-8">
-              <div className="flex items-center justify-between gap-3 pb-3 border-b border-border">
-                <TabPageHeader title="Overview" />
-              </div>
+              {/* CAMPAIGN FILM */}
+              {workspace.overviewVideo && (
+                <video
+                  className="w-full h-[350px] rounded-2xl border border-border bg-muted object-cover"
+                  controls
+                  preload="metadata"
+                  poster={workspace.campaignPreviewImage}
+                  aria-label={`${clientName} campaign film`}
+                >
+                  <source src={workspace.overviewVideo} type="video/mp4" />
+                  Your browser does not support this video.
+                </video>
+              )}
 
-              {/* OVERVIEW LIST */}
-              <ul className="space-y-3 text-sm">
-                <li className="flex items-center gap-2">
-                  <span className="text-muted-foreground w-40 font-mono text-xs uppercase">Client</span>
-                  <span className="text-foreground font-medium">{clientName}</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-muted-foreground w-40 font-mono text-xs uppercase">Target Audience</span>
-                  <span className="text-foreground font-medium">{marketAudience}</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-muted-foreground w-40 font-mono text-xs uppercase">Number of campaigns</span>
-                  <span className="text-foreground font-medium">{campaigns.length}</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-muted-foreground w-40 font-mono text-xs uppercase">Date Created</span>
-                  <span className="text-foreground font-medium">Sep 01, 2026</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-muted-foreground w-40 font-mono text-xs uppercase">Date Modified</span>
-                  <span className="text-foreground font-medium">Sep 04, 2026</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-muted-foreground w-40 font-mono text-xs uppercase">Status</span>
-                  <div className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="text-foreground font-medium">In progress</span>
+              {/* OVERVIEW GRID */}
+              <div className="overflow-hidden rounded-2xl border border-border">
+                <dl className="m-0 grid grid-cols-2 gap-px bg-border sm:grid-cols-3">
+                  <div className="bg-background p-4 space-y-1">
+                    <dt className="text-muted-foreground font-mono text-xs uppercase">Client</dt>
+                    <dd className="m-0 text-sm text-foreground font-medium">{clientName}</dd>
                   </div>
-                </li>
-              </ul>
+                  <div className="bg-background p-4 space-y-1">
+                    <dt className="text-muted-foreground font-mono text-xs uppercase">Selected campaign</dt>
+                    <dd className="m-0 text-sm text-foreground font-medium">{activeCampaign?.title ?? "No campaign selected"}</dd>
+                  </div>
+                  <div className="bg-background p-4 space-y-1">
+                    <dt className="text-muted-foreground font-mono text-xs uppercase">Campaign lead</dt>
+                    <dd className="m-0 text-sm text-foreground font-medium">{campaignLead || "To be confirmed"}</dd>
+                  </div>
+                  <div className="bg-background p-4 space-y-1">
+                    <dt className="text-muted-foreground font-mono text-xs uppercase">Target Audience</dt>
+                    <dd className="m-0 text-sm text-foreground font-medium">{marketAudience}</dd>
+                  </div>
+                  <div className="bg-background p-4 space-y-1">
+                    <dt className="text-muted-foreground font-mono text-xs uppercase">Number of campaigns</dt>
+                    <dd className="m-0 text-sm text-foreground font-medium">{campaigns.length}</dd>
+                  </div>
+                  <div className="bg-background p-4 space-y-1">
+                    <dt className="text-muted-foreground font-mono text-xs uppercase">Date Created</dt>
+                    <dd className="m-0 text-sm text-foreground font-medium">Sep 01, 2026</dd>
+                  </div>
+                  <div className="bg-background p-4 space-y-1">
+                    <dt className="text-muted-foreground font-mono text-xs uppercase">Date Modified</dt>
+                    <dd className="m-0 text-sm text-foreground font-medium">Sep 04, 2026</dd>
+                  </div>
+                  <div className="bg-background p-4 space-y-1">
+                    <dt className="text-muted-foreground font-mono text-xs uppercase">Status</dt>
+                    <dd className="m-0 flex items-center gap-1.5 text-sm text-foreground font-medium">
+                      <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                      {activeCampaign?.status ?? "Draft"}
+                    </dd>
+                  </div>
+                  <div className="hidden bg-background sm:block" aria-hidden="true" />
+                </dl>
+              </div>
 
             </div>
           </div>
@@ -1232,23 +1190,23 @@ export default function OneUtilityClientPage() {
                 <TabPageHeader title="Brand DNA" />
               </div>
 
-              {/* BUSINESS OVERVIEW & DESIGN */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* BUSINESS OVERVIEW */}
+              {/* BUSINESS PROFILE & IDENTITY */}
+              <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
+                {/* BUSINESS PROFILE */}
                 <section className="space-y-5 bg-card border border-border rounded-2xl p-6 shadow-sm">
                   <div className="border-b border-border pb-3">
                     <span className="text-xs font-mono uppercase tracking-widest text-primary font-semibold">
                       Client Profile
                     </span>
-                    <h2 className="text-base font-semibold text-foreground mt-0.5">Business Overview</h2>
+                    <h2 className="text-base font-semibold text-foreground mt-0.5">Business Profile</h2>
                   </div>
 
                   <div className="p-4 rounded-xl bg-muted border border-border space-y-2">
-                    <span className="text-sm text-muted-foreground block uppercase font-mono">Client wordmark</span>
+                    <span className="text-sm text-muted-foreground block font-mono">Client profile image</span>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src="/images/one-utility-logo.svg"
-                      alt={preset.client}
+                      src={clientProfileImage}
+                      alt={`${preset.client} profile image`}
                       className="h-8 w-auto"
                     />
                   </div>
@@ -1268,7 +1226,10 @@ export default function OneUtilityClientPage() {
                         type="text"
                         id="brandUrl"
                         value={brandUrl}
-                        onChange={(e) => setBrandUrl(e.target.value)}
+                        onChange={(e) => {
+                          setBrandUrl(e.target.value);
+                          setBusinessProfileDirty(true);
+                        }}
                         className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg pl-3 pr-20 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none transition"
                       />
                       <button
@@ -1288,75 +1249,130 @@ export default function OneUtilityClientPage() {
                       type="text"
                       id="footprintInput"
                       value={footprint}
-                      onChange={(e) => setFootprint(e.target.value)}
+                      onChange={(e) => {
+                        setFootprint(e.target.value);
+                        setBusinessProfileDirty(true);
+                      }}
                       className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm text-foreground outline-none transition"
                     />
                   </div>
-
-                  <div className="space-y-1.5">
-                    <label htmlFor="brandArchetype" className="text-sm font-medium text-foreground flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-primary" /> Brand archetype
-                    </label>
-                    <select
-                      id="brandArchetype"
-                      value={brandArchetype}
-                      onChange={(e) => setBrandArchetype(e.target.value)}
-                      className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm text-foreground outline-none transition"
-                    >
-                      {[
-                        "The Everyman",
-                        "The Caregiver",
-                        "The Ruler",
-                        "The Creator",
-                        "The Innocent",
-                        "The Sage",
-                        "The Explorer",
-                        "The Hero",
-                        "The Outlaw",
-                        "The Magician",
-                        "The Lover",
-                        "The Jester",
-                      ].map((a) => (
-                        <option key={a} value={a}>
-                          {a}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-
 
                   {/* 4-Stage Utility Progress Model */}
                   <div className="pt-4 border-t border-border space-y-3">
                     <span className="text-xs font-mono uppercase tracking-wider text-foreground font-semibold flex items-center gap-2">
                       <TrendingUp className="w-4 h-4 text-primary" /> The 4-Stage Progress Model
                     </span>
-                    <ol className="space-y-2.5">
+                    <ol className="space-y-3">
                       {progressStages.map((item, idx) => (
-                        <li key={item.stage} className="flex gap-3">
+                        <li key={idx} className="flex gap-3 rounded-xl border border-border bg-background p-3">
                           <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-md bg-primary/10 text-primary font-mono text-xs font-bold">
                             {idx + 1}
                           </span>
-                          <div className="min-w-0">
-                            <p className="text-sm font-semibold text-foreground">
-                              {item.stage} <span className="text-muted-foreground font-normal">— {item.label}</span>
-                            </p>
-                            <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
+                          <div className="min-w-0 flex-1 space-y-2.5">
+                            <div className="grid gap-2 sm:grid-cols-2">
+                              <div className="space-y-1">
+                                <label htmlFor={`progressStage-${idx}`} className="text-xs font-medium text-muted-foreground">
+                                  Stage
+                                </label>
+                                <input
+                                  id={`progressStage-${idx}`}
+                                  type="text"
+                                  value={item.stage}
+                                  onChange={(e) => updateProgressStage(idx, "stage", e.target.value)}
+                                  className="w-full rounded-lg border border-input bg-background px-2.5 py-2 text-sm font-semibold text-foreground outline-none transition focus:border-primary focus:ring-1 focus:ring-primary/40"
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <label htmlFor={`progressLabel-${idx}`} className="text-xs font-medium text-muted-foreground">
+                                  Outcome
+                                </label>
+                                <input
+                                  id={`progressLabel-${idx}`}
+                                  type="text"
+                                  value={item.label}
+                                  onChange={(e) => updateProgressStage(idx, "label", e.target.value)}
+                                  className="w-full rounded-lg border border-input bg-background px-2.5 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-1 focus:ring-primary/40"
+                                />
+                              </div>
+                            </div>
+                            <div className="space-y-1">
+                              <label htmlFor={`progressDescription-${idx}`} className="text-xs font-medium text-muted-foreground">
+                                Description
+                              </label>
+                              <textarea
+                                id={`progressDescription-${idx}`}
+                                rows={2}
+                                value={item.desc}
+                                onChange={(e) => updateProgressStage(idx, "desc", e.target.value)}
+                                className="w-full resize-y rounded-lg border border-input bg-background px-2.5 py-2 text-sm leading-relaxed text-foreground outline-none transition focus:border-primary focus:ring-1 focus:ring-primary/40"
+                              />
+                            </div>
                           </div>
                         </li>
                       ))}
                     </ol>
                   </div>
+
+                  <div className="flex items-center justify-end border-t border-border pt-4">
+                    <button
+                      type="button"
+                      onClick={handleSaveBusinessProfile}
+                      disabled={!businessProfileDirty}
+                      className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45"
+                    >
+                      <Save className="h-4 w-4" /> Save business profile
+                    </button>
+                  </div>
                 </section>
 
-                {/* IDENTITY (DESIGN SYSTEM, PALETTE, AESTHETIC, TONE) */}
                 <section className="space-y-5 bg-card border border-border rounded-2xl p-6 shadow-sm">
-                  <div className="border-b border-border pb-3">
-                    <span className="text-xs font-mono uppercase tracking-widest text-primary font-semibold">
-                      Identity
-                    </span>
-                    <h2 className="text-base font-semibold text-foreground mt-0.5">Design & Palette</h2>
-                  </div>
+                  {/* BRAND & DESIGN */}
+                    <div className="border-b border-border pb-3">
+                      <span className="text-xs font-mono uppercase tracking-widest text-primary font-semibold">
+                        Identity
+                      </span>
+                      <h2 className="text-base font-semibold text-foreground mt-0.5">Brand</h2>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label htmlFor="brandArchetype" className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-primary" /> Brand archetype
+                      </label>
+                      <select
+                        id="brandArchetype"
+                        value={brandArchetype}
+                        onChange={(e) => {
+                          setBrandArchetype(e.target.value);
+                          setDesignDirty(true);
+                        }}
+                        className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm text-foreground outline-none transition"
+                      >
+                        {[
+                          "The Everyman",
+                          "The Caregiver",
+                          "The Ruler",
+                          "The Creator",
+                          "The Innocent",
+                          "The Sage",
+                          "The Explorer",
+                          "The Hero",
+                          "The Outlaw",
+                          "The Magician",
+                          "The Lover",
+                          "The Jester",
+                        ].map((archetype) => (
+                          <option key={archetype} value={archetype}>
+                            {archetype}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                  {/* DESIGN SYSTEM, PALETTE, AESTHETIC, TONE */}
+                  <div className="space-y-5 border-t border-border pt-5">
+                    <div>
+                      <h2 className="text-base font-semibold text-foreground">Design</h2>
+                    </div>
 
                   <div className="space-y-2">
                     <span className="text-sm text-muted-foreground block uppercase font-mono">Colors</span>
@@ -1407,7 +1423,10 @@ export default function OneUtilityClientPage() {
                     <select
                       id="fontPairing"
                       value={fontPairing}
-                      onChange={(e) => setFontPairing(e.target.value)}
+                      onChange={(e) => {
+                        setFontPairing(e.target.value);
+                        setDesignDirty(true);
+                      }}
                       className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm font-semibold text-foreground outline-none transition"
                     >
                       {fontOptions.map((f) => (
@@ -1421,13 +1440,13 @@ export default function OneUtilityClientPage() {
                         className="text-2xl font-bold leading-tight text-foreground"
                         style={{ fontFamily: (FONT_STACKS[fontPairing] ?? FONT_STACKS[fontOptions[0]]).heading }}
                       >
-                        One Bill. No Leap of Faith.
+                        {workspace.fontPreview.heading}
                       </p>
                       <p
                         className="text-sm text-muted-foreground leading-relaxed"
                         style={{ fontFamily: (FONT_STACKS[fontPairing] ?? FONT_STACKS[fontOptions[0]]).body }}
                       >
-                        OneUtility puts you in control of the essentials that keep life running, giving you peace of mind. 1234567890
+                        {workspace.fontPreview.body}
                       </p>
                     </div>
                   </div>
@@ -1439,7 +1458,10 @@ export default function OneUtilityClientPage() {
                     <select
                       id="aestheticSelect"
                       value={aesthetic}
-                      onChange={(e) => setAesthetic(e.target.value)}
+                      onChange={(e) => {
+                        setAesthetic(e.target.value);
+                        setDesignDirty(true);
+                      }}
                       className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm text-foreground outline-none transition"
                     >
                       <option value="brand">Brand-led & adaptive</option>
@@ -1472,6 +1494,18 @@ export default function OneUtilityClientPage() {
                       <span>Expressive</span>
                       <span>Premium</span>
                     </div>
+                  </div>
+
+                  <div className="flex items-center justify-end border-t border-border pt-4">
+                    <button
+                      type="button"
+                      onClick={handleSaveBrandDna}
+                      disabled={!designDirty}
+                      className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45"
+                    >
+                      <Save className="h-4 w-4" /> Save brand DNA
+                    </button>
+                  </div>
                   </div>
                 </section>
               </div>
