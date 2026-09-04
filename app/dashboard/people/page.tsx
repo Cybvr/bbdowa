@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getUserByName, userHref } from "@/lib/users";
-import { PageHeader, SectionHeading } from "@/components/dashboard/ui";
+import { ImageWithFallback, PageHeader, SectionHeading } from "@/components/dashboard/ui";
 
 export const metadata: Metadata = { title: "Directory" };
 
@@ -120,10 +120,12 @@ function Person({ name, onDark = false }: { name: string; onDark?: boolean }) {
   const content = (
     <>
       <span className={`relative inline-block h-[22px] w-[22px] flex-none overflow-hidden rounded-full border ${onDark ? "border-background/40 bg-background" : "border-border bg-muted"}`}>
-        {user?.profileImage ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={user.profileImage} alt="" className="h-full w-full object-cover" />
-        ) : null}
+        <ImageWithFallback
+          src={user?.profileImage}
+          alt=""
+          className="h-full w-full object-cover"
+          fallbackClassName="h-full w-full"
+        />
       </span>
       <span>{name}</span>
     </>

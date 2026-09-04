@@ -6,7 +6,7 @@ import { FiArrowUpRight } from "react-icons/fi";
 import { BackLink } from "@/components/back-link";
 import { CREATORS, getCreator, type Creator } from "@/lib/users";
 import { longDate } from "@/lib/format";
-import { MetaGrid, MetaItem, SectionHeading } from "@/components/dashboard/ui";
+import { ImageWithFallback, MetaGrid, MetaItem, SectionHeading } from "@/components/dashboard/ui";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -40,14 +40,7 @@ function platformsFor(creator: Creator): CreatorPlatform[] {
 function ProfileMark({ creator, className }: { creator: Creator; className: string }) {
   return (
     <span aria-hidden="true" className={`grid flex-none place-items-center overflow-hidden bg-muted ${className}`}>
-      {creator.profileImage ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={creator.profileImage} alt="" className="h-full w-full object-cover" />
-      ) : (
-        <span className="font-bold text-muted-foreground">
-          {creator.name.split(" ").map((part) => part[0]).slice(0, 2).join("")}
-        </span>
-      )}
+      <ImageWithFallback src={creator.profileImage} alt="" className="h-full w-full object-cover" fallbackClassName="h-full w-full" />
     </span>
   );
 }
@@ -212,14 +205,12 @@ export default async function CreatorDetailPage({ params }: Params) {
         <aside className="min-w-0 max-[900px]:order-first">
           <div className="overflow-hidden rounded-xl border border-border">
             <div className="relative aspect-[4/5] bg-muted">
-              {creator.featuredImage ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={creator.featuredImage} alt={`${creator.name} featured work`} className="h-full w-full object-cover" />
-              ) : (
-                <span className="grid h-full w-full place-items-center text-[64px] font-bold text-muted-foreground/40">
-                  {creator.name.split(" ").map((part) => part[0]).slice(0, 2).join("")}
-                </span>
-              )}
+              <ImageWithFallback
+                src={creator.featuredImage}
+                alt={`${creator.name} featured work`}
+                className="h-full w-full object-cover"
+                fallbackClassName="h-full w-full"
+              />
               <span className="absolute right-3 top-3 h-2.5 w-2.5 rounded-full bg-primary" aria-hidden="true" />
             </div>
             <div className="border-t border-border p-4">

@@ -162,3 +162,6 @@ export function TextLink({ href, children }: { href: string; children: ReactNode
     </Link>
   );
 }
+
+export { EmptyThumbnail, ImageWithFallback } from "@/components/empty-thumbnail";
+

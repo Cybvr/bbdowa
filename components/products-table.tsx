@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 import type { Product } from "@/lib/products";
 import { productDate, productHref } from "@/lib/products";
 import { longDate, plural } from "@/lib/format";
-import { Badge, EmptyState } from "@/components/dashboard/ui";
+import { Badge, EmptyState, ImageWithFallback } from "@/components/dashboard/ui";
 import { FilterBar, type FilterTab, type SortOption } from "@/components/dashboard/filter-bar";
 
 const FILTERS: FilterTab<"all" | "active" | "idea">[] = [
@@ -109,11 +109,11 @@ export function ProductsTable({ products }: { products: Product[] }) {
                     href={href}
                     className="inline-flex items-center gap-2.5 text-foreground no-underline hover:text-primary focus-visible:text-primary"
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
+                    <ImageWithFallback
                       src={product.avatar}
                       alt={product.name}
                       className="block h-9 w-[110px] object-contain object-left mix-blend-multiply"
+                      fallbackClassName="h-9 w-[110px]"
                     />
                   </Link>
                 </td>

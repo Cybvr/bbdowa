@@ -5,7 +5,7 @@ import { BackLink } from "@/components/back-link";
 import { PRODUCTS, getProduct, productDate, productHref } from "@/lib/products";
 import { longDate } from "@/lib/format";
 import { getUserByName, userHref } from "@/lib/users";
-import { Badge, MetaGrid, MetaItem, SectionHeading } from "@/components/dashboard/ui";
+import { Badge, ImageWithFallback, MetaGrid, MetaItem, SectionHeading } from "@/components/dashboard/ui";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -39,11 +39,11 @@ export default async function ProductDetailPage({ params }: Params) {
 
       <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-5">
         <div className="flex flex-col items-start gap-4">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <ImageWithFallback
             src={product.avatar}
             alt={product.name}
             className="block h-14 w-[160px] object-contain object-left mix-blend-multiply"
+            fallbackClassName="h-14 w-[160px]"
           />
           <h1 className="m-0 text-[26px] font-bold leading-tight tracking-tight sm:text-[32px]">{product.name}</h1>
         </div>
@@ -65,9 +65,13 @@ export default async function ProductDetailPage({ params }: Params) {
                 aria-hidden="true"
                 className="grid h-9 w-9 flex-none place-items-center overflow-hidden rounded-full bg-primary text-[13px] font-bold text-white"
               >
-                {ownerUser?.profileImage ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={ownerUser.profileImage} alt="" className="h-full w-full object-cover" />
+                {ownerUser ? (
+                  <ImageWithFallback
+                    src={ownerUser.profileImage}
+                    alt=""
+                    className="h-full w-full object-cover"
+                    fallbackClassName="h-full w-full"
+                  />
                 ) : product.owner ? (
                   product.owner.avatar
                 ) : (

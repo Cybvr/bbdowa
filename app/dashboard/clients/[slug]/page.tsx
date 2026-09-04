@@ -3,11 +3,12 @@
 import React, { useState, useRef } from "react";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
+import { EmptyThumbnail, ImageWithFallback } from "@/components/empty-thumbnail";
 import { CAMPAIGNS } from "@/lib/campaigns";
-import type { CampaignStatus } from "@/lib/campaigns";
-import { CLIENTS } from "@/lib/users";
+import type { Campaign, CampaignStatus } from "@/lib/campaigns";
+import { CLIENTS, CREATORS } from "@/lib/users";
 import { getClientWorkspace } from "@/lib/client-workspaces";
-import { campaignWorkspaceStatuses } from "@/lib/client-data";
+import { campaignWorkspaceStatuses, oneUtilityMarketingPlan } from "@/lib/client-data";
 import { fontOptions, ctaOptions } from "@/lib/campaign-options";
 import type {
   PhaseContent,
@@ -22,6 +23,78 @@ function workspaceStatusFromCampaign(status: CampaignStatus): CampaignWorkspaceS
   if (status === "live") return "Live";
   if (status === "completed") return "Completed";
   return "Pitch";
+}
+
+function campaignImageFor(campaignId: string): string {
+  return CAMPAIGNS.find((campaign) => campaign.slug === campaignId)?.image ?? "/images/projects/project-placeholder.svg";
+}
+
+const oneUtilityMoodboardImages = [
+  {
+    src: "/sites/1ub/campaign/deck/uploads/creative-moodboard.png",
+    alt: "1Utility Bank creative moodboard",
+  },
+  {
+    src: "/sites/1ub/campaign/deck/uploads/concept-everyday-oracle-v2.png",
+    alt: "1Utility Bank Everyday Oracle concept artwork",
+  },
+  {
+    src: "/images/one-utility-bank-campaign-preview.png",
+    alt: "1Utility Bank Leap of Faith campaign artwork",
+  },
+  {
+    src: "/sites/1ub/campaign/deck/uploads/1u-audience-lifestyle.jpg",
+    alt: "1Utility Bank audience lifestyle photography",
+  },
+];
+
+type CaseStudyDraft = Pick<Campaign, "challenge" | "insight" | "strategy" | "execution" | "outcome"> & {
+  platform: string;
+};
+
+function caseStudyFromCampaign(campaign?: Campaign): CaseStudyDraft {
+  return {
+    challenge: campaign?.challenge ?? "",
+    insight: campaign?.insight ?? "",
+    strategy: campaign?.strategy ?? "",
+    platform: campaign?.platform.join(", ") ?? "",
+    execution: campaign?.execution ?? "",
+    outcome: campaign?.outcome ?? "",
+  };
+}
+
+function ClientWorkspaceHero({
+  clientName,
+  title,
+  children,
+}: {
+  clientName: string;
+  title: string;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div className="relative h-[350px] overflow-hidden rounded-2xl border border-border bg-muted">
+      {children ?? (
+        <ImageWithFallback
+          src="/images/bbdowa-red-pattern-placeholder.png"
+          alt="BBDO West Africa placeholder pattern"
+          className="h-full w-full object-cover"
+        />
+      )}
+      <div className="pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-black/65 to-transparent px-5 py-5 text-white sm:px-6">
+        <nav aria-label="Breadcrumb">
+          <ol className="m-0 flex list-none items-center gap-1.5 p-0 text-xs text-white/75">
+            <li>All</li>
+            <li aria-hidden="true"><ChevronRight className="h-3 w-3" /></li>
+            <li>{clientName}</li>
+            <li aria-hidden="true"><ChevronRight className="h-3 w-3" /></li>
+            <li aria-current="page">{title}</li>
+          </ol>
+        </nav>
+        <h1 className="mb-0 mt-2 text-xl font-bold tracking-tight sm:text-2xl">{title}</h1>
+      </div>
+    </div>
+  );
 }
 import {
   Sparkles,
@@ -54,15 +127,8 @@ import {
   Heading2,
   Pilcrow,
   Save,
+  X,
 } from "lucide-react";
-
-function TabPageHeader({ title }: { title: string }) {
-  return (
-    <h1 className="text-sm font-semibold tracking-tight text-foreground">
-      {title}
-    </h1>
-  );
-}
 
 export default function ClientPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -71,7 +137,11 @@ export default function ClientPage() {
     ? "campaign"
     : pathname.endsWith("/brand-dna")
       ? "brand"
-      : "overview";
+      : pathname.endsWith("/moodboard")
+        ? "moodboard"
+        : pathname.endsWith("/creators")
+          ? "creators"
+          : "overview";
 
   // key={slug} forces a remount when navigating between clients so all
   // slug-derived initial state (preset, palette, copy) re-initialises.
@@ -173,9 +243,8 @@ function CopyGroup({
           {icon} {title}
         </span>
         <ChevronDown
-          className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${
-            open ? "rotate-180" : ""
-          }`}
+          className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${open ? "rotate-180" : ""
+            }`}
         />
       </button>
       {open && <div className="pb-5 pt-1 space-y-3">{children}</div>}
@@ -267,7 +336,7 @@ function StrategyEditor({ markdown }: { markdown: string }) {
   );
 
   return (
-    <div className="lg:flex-1 lg:overflow-y-auto lg:min-h-0 -mx-4 sm:-mx-6 bg-muted px-4 sm:px-6 py-6">
+    <div className="-mx-4 bg-muted px-4 py-6 sm:-mx-6 sm:px-6">
       <div className="mx-auto w-full max-w-[720px] space-y-3">
         <div className="sticky top-0 z-10 flex flex-wrap items-center gap-0.5 rounded-lg border border-border bg-background/95 backdrop-blur px-1.5 py-1 shadow-sm">
           <ToolButton label="Heading" onRun={() => exec("formatBlock", "H2")}>
@@ -300,7 +369,7 @@ function StrategyEditor({ markdown }: { markdown: string }) {
   );
 }
 
-type OneUtilityWorkspaceView = "overview" | "campaign" | "brand";
+type OneUtilityWorkspaceView = "overview" | "campaign" | "brand" | "moodboard" | "creators";
 
 function OneUtilityClientWorkspace({
   slug,
@@ -315,23 +384,29 @@ function OneUtilityClientWorkspace({
   const preset = workspace.preset;
   const clientProfileImage = client?.profileImage ?? "/images/projects/project-placeholder.svg";
   const initialClientCampaigns = CAMPAIGNS.filter((campaign) => campaign.clientId === slug);
-  const [projectName, setProjectName] = useState(preset.name);
+  const primaryCampaign = initialClientCampaigns[0];
+  const [projectName, setProjectName] = useState(
+    primaryCampaign?.campaign ?? primaryCampaign?.name ?? preset.name,
+  );
   const [activeMainTab, setActiveMainTab] = useState<
-    "overview" | "campaign" | "brand"
+    OneUtilityWorkspaceView
   >(initialView);
   const [campaignView, setCampaignView] = useState<"home" | "editor">("home");
-  const [campaignSubTab, setCampaignSubTab] = useState<"overview" | "strategy" | "creative" | "marketing">("overview");
-  const [selectedGalleryItem, setSelectedGalleryItem] = useState<{ src: string; title: string; category: string } | null>(null);
+  const [campaignSubTab, setCampaignSubTab] = useState<"overview" | "case-study" | "strategy" | "creative" | "marketing">("overview");
+  const [selectedCreative, setSelectedCreative] = useState<{ src: string; alt: string } | null>(null);
   const [campaigns, setCampaigns] = useState<CampaignListItem[]>(() =>
     initialClientCampaigns.length > 0
       ? initialClientCampaigns.map((campaign) => ({
-          id: campaign.slug,
-          title: campaign.campaign ?? campaign.name,
-          status: workspaceStatusFromCampaign(campaign.status),
-        }))
+        id: campaign.slug,
+        title: campaign.campaign ?? campaign.name,
+        status: workspaceStatusFromCampaign(campaign.status),
+      }))
       : [{ id: "client-campaign", title: "Campaign to be defined", status: "Draft" }]
   );
   const [activeCampaignId, setActiveCampaignId] = useState(() => initialClientCampaigns[0]?.slug ?? "client-campaign");
+  const [caseStudies, setCaseStudies] = useState<Record<string, CaseStudyDraft>>(() =>
+    Object.fromEntries(initialClientCampaigns.map((campaign) => [campaign.slug, caseStudyFromCampaign(campaign)])),
+  );
   type Section =
     | "social"
     | "film"
@@ -403,6 +478,7 @@ function OneUtilityClientWorkspace({
     { name: "Amara Obi", initials: "AO", color: "#B45309" },
     { name: "Tunde Bello", initials: "TB", color: "#1D4ED8" },
   ];
+  const selectedCreators = CREATORS.filter((creator) => creator.availability === "open").slice(0, 4);
 
   const nextCampaignNumberRef = useRef(2);
 
@@ -424,19 +500,6 @@ function OneUtilityClientWorkspace({
   const handleSaveBrandDna = () => {
     setDesignDirty(false);
     showToast("Brand DNA saved.");
-  };
-
-  const updateProgressStage = (
-    index: number,
-    field: "stage" | "label" | "desc",
-    value: string
-  ) => {
-    setProgressStages((prev) =>
-      prev.map((item, itemIndex) =>
-        itemIndex === index ? { ...item, [field]: value } : item
-      )
-    );
-    setBusinessProfileDirty(true);
   };
 
   const handleShareCampaign = async () => {
@@ -542,57 +605,63 @@ function OneUtilityClientWorkspace({
   const creativePreview =
     activeSection === "social"
       ? {
-          src: workspace.creativePreviews.social.src,
-          alt: workspace.creativePreviews.social.alt,
-          format: "SOCIAL & DIGITAL",
-          title: phase.socialTitle,
-          description: phase.socialBody,
-          cta: phase.socialCta,
-          aspect: "aspect-square",
-        }
+        src: workspace.creativePreviews.social.src,
+        alt: workspace.creativePreviews.social.alt,
+        format: "SOCIAL & DIGITAL",
+        title: phase.socialTitle,
+        description: phase.socialBody,
+        cta: phase.socialCta,
+        aspect: "aspect-square",
+      }
       : activeSection === "film"
         ? {
-            src: workspace.creativePreviews.film.src,
-            alt: workspace.creativePreviews.film.alt,
-            format: "30 SECOND FILM",
-            title: phase.filmTitle,
-            description: phase.filmDesc,
-            cta: phase.filmCta,
-            aspect: "aspect-video",
-          }
+          src: workspace.creativePreviews.film.src,
+          alt: workspace.creativePreviews.film.alt,
+          format: "30 SECOND FILM",
+          title: phase.filmTitle,
+          description: phase.filmDesc,
+          cta: phase.filmCta,
+          aspect: "aspect-video",
+        }
         : activeSection === "audio"
           ? {
-              src: workspace.creativePreviews.audio.src,
-              alt: workspace.creativePreviews.audio.alt,
-              format: "RADIO SPOT",
-              title: phase.audioTitle,
-              description: phase.audioDesc,
-              cta: phase.audioCta,
-              aspect: "aspect-[4/5]",
-            }
+            src: workspace.creativePreviews.audio.src,
+            alt: workspace.creativePreviews.audio.alt,
+            format: "RADIO SPOT",
+            title: phase.audioTitle,
+            description: phase.audioDesc,
+            cta: phase.audioCta,
+            aspect: "aspect-[4/5]",
+          }
           : activeSection === "ooh"
             ? {
-                src: workspace.creativePreviews.ooh.src,
-                alt: workspace.creativePreviews.ooh.alt,
-                format: `${preset.oohFormat} / ${preset.oohPlacement}`,
-                title: phase.oohTitle,
-                description: phase.oohDesc,
-                cta: phase.oohCta,
-                aspect: "aspect-[16/7]",
-              }
+              src: workspace.creativePreviews.ooh.src,
+              alt: workspace.creativePreviews.ooh.alt,
+              format: `${preset.oohFormat} / ${preset.oohPlacement}`,
+              title: phase.oohTitle,
+              description: phase.oohDesc,
+              cta: phase.oohCta,
+              aspect: "aspect-[16/7]",
+            }
             : activeSection === "print"
               ? {
-                  src: workspace.creativePreviews.print.src,
-                  alt: workspace.creativePreviews.print.alt,
-                  format: "PRINT",
-                  title: phase.printTitle,
-                  description: phase.printDesc,
-                  cta: phase.printCta,
-                  aspect: "aspect-[3/4]",
-                }
+                src: workspace.creativePreviews.print.src,
+                alt: workspace.creativePreviews.print.alt,
+                format: "PRINT",
+                title: phase.printTitle,
+                description: phase.printDesc,
+                cta: phase.printCta,
+                aspect: "aspect-[3/4]",
+              }
               : null;
   const activeCampaign =
     campaigns.find((campaign) => campaign.id === activeCampaignId) ?? campaigns[0];
+  const activeCaseStudy = caseStudies[activeCampaignId] ?? caseStudyFromCampaign();
+  const updateCaseStudy = (field: keyof CaseStudyDraft, value: string) =>
+    setCaseStudies((previous) => ({
+      ...previous,
+      [activeCampaignId]: { ...activeCaseStudy, [field]: value },
+    }));
   const updateCopy = (field: keyof PhaseContent, value: string) =>
     setCampaignCopy((prev) => ({ ...prev, [field]: value }));
 
@@ -608,7 +677,7 @@ function OneUtilityClientWorkspace({
 
   return (
     <div
-      className="utility-workspace min-h-screen lg:h-screen flex flex-col gap-2 overflow-x-hidden overflow-y-auto lg:overflow-hidden bg-card p-2 text-foreground antialiased font-sans [&_h1]:[font-family:var(--workspace-font-heading)] [&_h2]:[font-family:var(--workspace-font-heading)] [&_h3]:[font-family:var(--workspace-font-heading)] [&_h4]:[font-family:var(--workspace-font-heading)] [&_h5]:[font-family:var(--workspace-font-heading)] [&_h6]:[font-family:var(--workspace-font-heading)]"
+      className="utility-workspace min-h-screen p-2 text-foreground antialiased font-sans [&_h1]:[font-family:var(--workspace-font-heading)] [&_h2]:[font-family:var(--workspace-font-heading)] [&_h3]:[font-family:var(--workspace-font-heading)] [&_h4]:[font-family:var(--workspace-font-heading)] [&_h5]:[font-family:var(--workspace-font-heading)] [&_h6]:[font-family:var(--workspace-font-heading)]"
       style={
         {
           "--primary": primaryColor,
@@ -628,760 +697,623 @@ function OneUtilityClientWorkspace({
         </div>
       )}
 
-      <div className="flex flex-col lg:flex-1 lg:min-h-0 gap-2 lg:overflow-hidden">
-      {/* MAIN CANVAS: TABS + CONTENT */}
-      <main className="order-1 lg:flex-1 lg:min-h-0 rounded-xl bg-background flex flex-col lg:overflow-hidden">
+      <div className="flex flex-col gap-2">
+        {/* MAIN CANVAS: TABS + CONTENT */}
+        <main className="order-1">
 
-        {/* CLIENT HEADER: LOGO + BREADCRUMB + NAME + ACTIONS */}
-        <div className="flex flex-nowrap items-center justify-between gap-3 px-3 py-2.5 sm:px-5 sm:py-3 shrink-0 z-30">
-          <div className="flex min-w-0 items-center gap-3">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={clientProfileImage}
-              alt=""
-              className="h-11 w-11 shrink-0 rounded-xl border border-border bg-muted object-contain p-1.5"
-            />
-            <div className="min-w-0">
-              <nav aria-label="Breadcrumb">
-                <ol className="m-0 flex min-w-0 list-none items-center gap-1.5 p-0 text-xs text-muted-foreground">
-                  <li>
-                    <Link href="/dashboard/clients" className="whitespace-nowrap hover:text-foreground">
-                      All
-                    </Link>
-                  </li>
-                  <li aria-hidden="true"><ChevronRight className="h-3 w-3 shrink-0" /></li>
-                  <li aria-current="page" className="truncate text-foreground">{clientName}</li>
-                </ol>
+          {/* TOP-LEVEL VIEW TABS */}
+          <div className="mx-3 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-card px-3 py-3 sm:mx-5 sm:px-4">
+            <div className="flex min-w-0 items-center gap-3">
+              <Link
+                href={`/dashboard/clients/${slug}/overview`}
+                onClick={() => setActiveMainTab("overview")}
+                aria-label={`${clientName} overview`}
+                className="flex h-9 w-10 shrink-0 items-center justify-center"
+              >
+                <ImageWithFallback
+                  src={clientProfileImage}
+                  alt=""
+                  className="h-full w-full object-contain p-1"
+                  fallbackClassName="h-full w-full rounded-md"
+                />
+              </Link>
+              <nav aria-label="Client workspace" className="flex min-w-0 items-center gap-2 overflow-x-auto">
+              <Link
+                href={`/dashboard/clients/${slug}/campaigns`}
+                onClick={() => {
+                  setActiveMainTab("campaign");
+                  setCampaignView("home");
+                }}
+                className={`relative flex items-center px-3 pb-3 pt-1 text-sm font-semibold transition whitespace-nowrap ${activeMainTab === "campaign"
+                  ? "text-primary after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:bg-primary"
+                  : "text-muted-foreground hover:text-foreground"
+                  }`}
+              >
+                Campaigns
+              </Link>
+              <Link
+                href={`/dashboard/clients/${slug}/brand-dna`}
+                className={`relative flex items-center px-3 pb-3 pt-1 text-sm font-semibold transition whitespace-nowrap ${activeMainTab === "brand"
+                  ? "text-primary after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:bg-primary"
+                  : "text-muted-foreground hover:text-foreground"
+                  }`}
+              >
+                Brand DNA
+              </Link>
+              <Link
+                href={`/dashboard/clients/${slug}/moodboard`}
+                className={`relative flex items-center px-3 pb-3 pt-1 text-sm font-semibold transition whitespace-nowrap ${activeMainTab === "moodboard"
+                  ? "text-primary after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:bg-primary"
+                  : "text-muted-foreground hover:text-foreground"
+                  }`}
+              >
+                Moodboard
+              </Link>
+              <Link
+                href={`/dashboard/clients/${slug}/creators`}
+                className={`relative flex items-center px-3 pb-3 pt-1 text-sm font-semibold transition whitespace-nowrap ${activeMainTab === "creators"
+                  ? "text-primary after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:bg-primary"
+                  : "text-muted-foreground hover:text-foreground"
+                  }`}
+              >
+                Creators
+              </Link>
               </nav>
-              <h1 className="m-0 truncate text-xl sm:text-2xl font-bold tracking-tight text-foreground">{clientName}</h1>
             </div>
-          </div>
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            {/* Collaborators */}
-            <div className="hidden sm:flex items-center -space-x-2 pr-1" aria-label="Collaborators on this campaign">
-              {collaborators.map((c) => (
-                <span
-                  key={c.name}
-                  title={c.name}
-                  className="grid h-7 w-7 place-items-center rounded-full border-2 border-card text-sm font-semibold text-white"
-                  style={{ backgroundColor: c.color }}
-                >
-                  {c.initials}
-                </span>
-              ))}
-            </div>
-
-            {/* Accent color */}
-            <label
-              title="Change accent color"
-              aria-label="Change accent color"
-              className="relative flex items-center gap-1 px-2 py-1.5 rounded-md border border-border bg-secondary hover:bg-secondary/90 transition cursor-pointer text-secondary-foreground"
-            >
-              <Palette className="w-4 h-4" style={{ color: primaryColor }} />
-              <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
-              <input
-                type="color"
-                value={primaryColor}
-                onChange={(e) => handleAccentChange(e.target.value)}
-                aria-label="Change accent color"
-                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-              />
-            </label>
-
-            <button onClick={handleShareCampaign} aria-label="Share" className="px-2.5 sm:px-3.5 py-1.5 text-sm font-medium text-primary-foreground bg-primary hover:opacity-90 rounded-md transition flex items-center gap-2">
-              <Share2 className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Share</span>
-            </button>
-          </div>
-        </div>
-
-        {/* TOP-LEVEL VIEW TABS: OVERVIEW | CAMPAIGNS | BRAND DNA */}
-        <div className="min-h-11 border-b border-border px-2 sm:px-5 flex items-center justify-start gap-0.5 sm:gap-1 shrink-0">
-          <Link
-            href={`/dashboard/clients/${slug}/overview`}
-            className={`px-2 sm:px-3 py-2.5 text-sm font-semibold border-b-2 flex items-center gap-1.5 sm:gap-2 transition whitespace-nowrap ${
-              activeMainTab === "overview"
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Box className="w-3.5 h-3.5" /> Overview
-          </Link>
-          <Link
-            href={`/dashboard/clients/${slug}/campaigns`}
-            onClick={() => {
-              setActiveMainTab("campaign");
-              setCampaignView("home");
-            }}
-            className={`px-2 sm:px-3 py-2.5 text-sm font-semibold border-b-2 flex items-center gap-1.5 sm:gap-2 transition whitespace-nowrap ${
-              activeMainTab === "campaign"
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <LayoutDashboard className="w-3.5 h-3.5" /> Campaigns
-          </Link>
-          <Link
-            href={`/dashboard/clients/${slug}/brand-dna`}
-            className={`px-2 sm:px-3 py-2.5 text-sm font-semibold border-b-2 flex items-center gap-1.5 sm:gap-2 transition whitespace-nowrap ${
-              activeMainTab === "brand"
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Palette className="w-3.5 h-3.5" /> Brand DNA
-          </Link>
-        </div>
-
-        {/* CAMPAIGN VIEW */}
-        {activeMainTab === "campaign" && (
-          campaignView === "home" ? (
-            <div className="lg:flex-1 lg:overflow-y-auto px-4 py-4 sm:px-6">
-              <div className="w-full max-w-5xl mx-auto space-y-4 pb-8">
-                <div className="flex items-center justify-between gap-3 pb-3 border-b border-border">
-                  <TabPageHeader title="Campaigns" />
-                  <button
-                    onClick={handleNewCampaign}
-                    className="px-3 py-1.5 text-sm font-medium text-primary-foreground bg-primary hover:opacity-90 rounded-md transition flex items-center gap-1.5"
+            <div className="ml-auto flex items-center gap-2 py-2 sm:gap-3">
+              <div className="hidden items-center -space-x-2 pr-1 sm:flex" aria-label="Collaborators on this campaign">
+                {collaborators.map((c) => (
+                  <span
+                    key={c.name}
+                    title={c.name}
+                    className="grid h-7 w-7 place-items-center rounded-full border-2 border-card text-sm font-semibold text-white"
+                    style={{ backgroundColor: c.color }}
                   >
-                    <Plus className="w-3.5 h-3.5" />
-                    New campaign
-                  </button>
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {campaigns.map((campaign) => (
+                    {c.initials}
+                  </span>
+                ))}
+              </div>
+              <label
+                title="Change accent color"
+                aria-label="Change accent color"
+                className="relative flex cursor-pointer items-center gap-1 rounded-md border border-border bg-secondary px-2 py-1.5 text-secondary-foreground transition hover:bg-secondary/90"
+              >
+                <Palette className="w-4 h-4" style={{ color: primaryColor }} />
+                <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+                <input
+                  type="color"
+                  value={primaryColor}
+                  onChange={(e) => handleAccentChange(e.target.value)}
+                  aria-label="Change accent color"
+                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                />
+              </label>
+              <button onClick={handleShareCampaign} aria-label="Share" className="flex items-center gap-2 rounded-md bg-primary px-2.5 py-1.5 text-sm font-medium text-primary-foreground transition hover:opacity-90 sm:px-3.5">
+                <Share2 className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Share</span>
+              </button>
+            </div>
+          </div>
+
+          {/* CAMPAIGN VIEW */}
+          {activeMainTab === "campaign" && (
+            campaignView === "home" ? (
+              <div className="px-4 py-4 sm:px-6">
+                <div className="w-full max-w-5xl mx-auto space-y-4 pb-8">
+                  <ClientWorkspaceHero clientName={clientName} title="Campaigns" />
+                  <div className="flex justify-end">
                     <button
-                      key={campaign.id}
-                      onClick={() => handleOpenCampaign(campaign)}
-                      className="overflow-hidden text-left flex flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 rounded-2xl"
+                      onClick={handleNewCampaign}
+                      className="px-3 py-1.5 text-sm font-medium text-primary-foreground bg-primary hover:opacity-90 rounded-md transition flex items-center gap-1.5"
                     >
-                      <div className="relative w-full aspect-square overflow-hidden rounded-2xl border border-border bg-muted">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={workspace.campaignPreviewImage}
-                          alt={campaign.title}
-                          className="w-full h-full object-cover"
-                        />
-                        <span className="absolute top-3 left-3 rounded-md bg-background/90 backdrop-blur-sm px-2 py-0.5 text-xs font-mono uppercase tracking-wide text-primary font-semibold border border-border">
-                          {campaign.status}
-                        </span>
-                      </div>
-                      <div className="pt-3 flex flex-col flex-1 justify-between space-y-1">
-                        <span className="block text-sm font-semibold text-foreground">{campaign.title}</span>
-                      </div>
+                      <Plus className="w-3.5 h-3.5" />
+                      New campaign
                     </button>
-                  ))}
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {campaigns.map((campaign) => (
+                      <button
+                        key={campaign.id}
+                        onClick={() => handleOpenCampaign(campaign)}
+                        className="overflow-hidden text-left flex flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 rounded-2xl"
+                      >
+                        <div className="relative w-full aspect-square overflow-hidden rounded-2xl border border-border bg-muted">
+                          <ImageWithFallback
+                            src={campaignImageFor(campaign.id)}
+                            alt={campaign.title}
+                            className="w-full h-full object-cover"
+                            iconClassName="w-10 h-10"
+                          />
+                          <span className="absolute top-3 left-3 rounded-md bg-background/90 backdrop-blur-sm px-2 py-0.5 text-xs font-mono uppercase tracking-wide text-primary font-semibold border border-border">
+                            {campaign.status}
+                          </span>
+                        </div>
+                        <div className="pt-3 flex flex-col flex-1 justify-between space-y-1">
+                          <span className="block text-sm font-semibold text-foreground">{campaign.title}</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          ) : (
-          <div className="flex flex-col lg:flex-1 lg:overflow-hidden">
-            {/* TAB CONTENT AREA */}
-            <div className="lg:flex-1 lg:overflow-hidden px-4 py-4 sm:px-6 flex flex-col" id="canvasScrollArea">
-              <div className="w-full max-w-5xl mx-auto flex flex-col lg:flex-1 lg:min-h-0 gap-4">
-                <div className="flex flex-wrap items-center justify-between gap-3 shrink-0 border-b border-border pb-3">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <button
-                      onClick={() => setCampaignView("home")}
-                      aria-label="Back to campaigns"
-                      className="grid h-8 w-8 flex-none place-items-center rounded-md border border-border text-foreground hover:text-primary hover:bg-muted transition"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
-                    <input
-                      type="text"
-                      value={projectName}
-                      onChange={(e) => handleProjectNameChange(e.target.value)}
-                      aria-label="Campaign title"
-                      className="min-w-0 flex-1 bg-transparent border-b border-transparent hover:border-border focus:border-primary px-1 py-0.5 text-sm font-semibold tracking-tight text-foreground outline-none transition placeholder:text-muted-foreground"
-                    />
-                  </div>
-
-                  {/* CAMPAIGN SUB-TABS: OVERVIEW > STRATEGY > CREATIVES */}
-                  <div className="flex items-center gap-1 text-sm shrink-0">
-                    <button
-                      onClick={() => setCampaignSubTab("overview")}
-                      className={`px-2.5 py-1.5 rounded-md font-medium transition ${
-                        campaignSubTab === "overview"
-                          ? "text-foreground font-semibold"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      Overview
-                    </button>
-                    <span className="text-muted-foreground/50">›</span>
-                    <button
-                      onClick={() => setCampaignSubTab("strategy")}
-                      className={`px-2.5 py-1.5 rounded-md font-medium transition ${
-                        campaignSubTab === "strategy"
-                          ? "text-foreground font-semibold"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      Strategy
-                    </button>
-                    <span className="text-muted-foreground/50">›</span>
-                    <button
-                      onClick={() => setCampaignSubTab("creative")}
-                      className={`px-2.5 py-1.5 rounded-md font-medium transition ${
-                        campaignSubTab === "creative"
-                          ? "text-foreground font-semibold"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      Creatives
-                    </button>
-                    <span className="text-muted-foreground/50">›</span>
-                    <button
-                      onClick={() => setCampaignSubTab("marketing")}
-                      className={`px-2.5 py-1.5 rounded-md font-medium transition ${
-                        campaignSubTab === "marketing"
-                          ? "text-foreground font-semibold"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      Marketing
-                    </button>
-                  </div>
-                </div>
-
-                {/* CAMPAIGN SUB-TAB: OVERVIEW */}
-                {campaignSubTab === "overview" && (
-                  <div className="lg:flex-1 lg:overflow-y-auto lg:min-h-0 pr-1 py-4">
-                    <div className="space-y-4 max-w-2xl">
-                      <CopyField
-                        label="Campaign name"
-                        value={projectName}
-                        onChange={handleProjectNameChange}
-                      />
-
-                      <div className="space-y-1.5">
-                        <label htmlFor="campaignScopeOverview" className="text-xs font-mono text-primary uppercase tracking-widest font-semibold flex items-center gap-1.5">
-                          <Layers className="w-3.5 h-3.5" /> Scope
-                        </label>
-                        <select
-                          id="campaignScopeOverview"
-                          value={scope}
-                          onChange={(e) => setScope(e.target.value)}
-                          className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm text-foreground outline-none transition"
+            ) : (
+              <div>
+                {/* TAB CONTENT AREA */}
+                <div className="px-4 py-4 sm:px-6">
+                  <div className="mx-auto w-full max-w-5xl space-y-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3 shrink-0 border-b border-border pb-3">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <button
+                          onClick={() => setCampaignView("home")}
+                          aria-label="Back to campaigns"
+                          className="grid h-8 w-8 flex-none place-items-center rounded-md border border-border text-foreground hover:text-primary hover:bg-muted transition"
                         >
-                          <option value="integrated">Integrated launch (film, social, OOH, radio, activation)</option>
-                          <option value="social">Social, creators & performance</option>
-                          <option value="ooh">Out of home & transit focus</option>
-                          <option value="activation">Retail, pop-up & field toolkit</option>
-                        </select>
+                          <ChevronLeft className="w-4 h-4" />
+                        </button>
+                        <input
+                          type="text"
+                          value={projectName}
+                          onChange={(e) => handleProjectNameChange(e.target.value)}
+                          aria-label="Campaign title"
+                          className="min-w-0 flex-1 bg-transparent border-b border-transparent hover:border-border focus:border-primary px-1 py-0.5 text-sm font-semibold tracking-tight text-foreground outline-none transition placeholder:text-muted-foreground"
+                        />
                       </div>
 
-                      <div className="space-y-1.5">
-                        <label htmlFor="campaignStatusOverview" className="text-xs font-mono text-primary uppercase tracking-widest font-semibold flex items-center gap-1.5">
-                          <Info className="w-3.5 h-3.5" /> Status
-                        </label>
-                        <select
-                          id="campaignStatusOverview"
-                          value={activeCampaign?.status ?? "Draft"}
-                          onChange={(e) => handleCampaignStatusChange(e.target.value as CampaignWorkspaceStatus)}
-                          className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm text-foreground outline-none transition"
+                      {/* CAMPAIGN SUB-TABS */}
+                      <div className="flex items-center gap-1 text-sm shrink-0">
+                        <button
+                          onClick={() => setCampaignSubTab("overview")}
+                          className={`px-2.5 py-1.5 rounded-md font-medium transition ${campaignSubTab === "overview"
+                            ? "text-foreground font-semibold"
+                            : "text-muted-foreground hover:text-foreground"
+                            }`}
                         >
-                          {campaignWorkspaceStatuses.map((status) => (
-                            <option key={status} value={status}>
-                              {status}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <CopyField
-                        label="Campaign lead"
-                        value={campaignLead}
-                        onChange={setCampaignLead}
-                      />
-
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div className="space-y-1.5">
-                          <label htmlFor="campaignStart" className="text-sm font-medium text-foreground">Campaign start</label>
-                          <input
-                            type="date"
-                            id="campaignStart"
-                            value={campaignStart}
-                            onChange={(e) => setCampaignStart(e.target.value)}
-                            className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm text-foreground outline-none transition"
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <label htmlFor="campaignEnd" className="text-sm font-medium text-foreground">Campaign end</label>
-                          <input
-                            type="date"
-                            id="campaignEnd"
-                            value={campaignEnd}
-                            onChange={(e) => setCampaignEnd(e.target.value)}
-                            className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm text-foreground outline-none transition"
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <label htmlFor="campaignDeadline" className="text-sm font-medium text-foreground">Deadline</label>
-                          <input
-                            type="date"
-                            id="campaignDeadline"
-                            value={campaignDeadline}
-                            onChange={(e) => setCampaignDeadline(e.target.value)}
-                            className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm text-foreground outline-none transition"
-                          />
-                        </div>
+                          Overview
+                        </button>
+                        <span className="text-muted-foreground/50">›</span>
+                        <button
+                          onClick={() => setCampaignSubTab("case-study")}
+                          className={`px-2.5 py-1.5 rounded-md font-medium transition ${campaignSubTab === "case-study"
+                            ? "text-foreground font-semibold"
+                            : "text-muted-foreground hover:text-foreground"
+                            }`}
+                        >
+                          Case study
+                        </button>
+                        <span className="text-muted-foreground/50">›</span>
+                        <button
+                          onClick={() => setCampaignSubTab("strategy")}
+                          className={`px-2.5 py-1.5 rounded-md font-medium transition ${campaignSubTab === "strategy"
+                            ? "text-foreground font-semibold"
+                            : "text-muted-foreground hover:text-foreground"
+                            }`}
+                        >
+                          Strategy
+                        </button>
+                        <span className="text-muted-foreground/50">›</span>
+                        <button
+                          onClick={() => setCampaignSubTab("creative")}
+                          className={`px-2.5 py-1.5 rounded-md font-medium transition ${campaignSubTab === "creative"
+                            ? "text-foreground font-semibold"
+                            : "text-muted-foreground hover:text-foreground"
+                            }`}
+                        >
+                          Creatives
+                        </button>
+                        <span className="text-muted-foreground/50">›</span>
+                        <button
+                          onClick={() => setCampaignSubTab("marketing")}
+                          className={`px-2.5 py-1.5 rounded-md font-medium transition ${campaignSubTab === "marketing"
+                            ? "text-foreground font-semibold"
+                            : "text-muted-foreground hover:text-foreground"
+                            }`}
+                        >
+                          Marketing
+                        </button>
                       </div>
                     </div>
-                  </div>
-                )}
 
-                {/* CAMPAIGN SUB-TAB: STRATEGY */}
-                {campaignSubTab === "strategy" && (
-                  <StrategyEditor markdown={workspace.strategyMarkdown} />
-                )}
+                    {/* CAMPAIGN SUB-TAB: OVERVIEW */}
+                    {campaignSubTab === "overview" && (
+                      <div className="py-4">
+                        <div className="space-y-4 max-w-2xl">
+                          <CopyField
+                            label="Campaign name"
+                            value={projectName}
+                            onChange={handleProjectNameChange}
+                          />
 
-                {/* CAMPAIGN SUB-TAB: CREATIVES GALLERY */}
-                {campaignSubTab === "creative" && (
-                  <div className="lg:flex-1 lg:overflow-y-auto lg:min-h-0 py-2 space-y-6">
-                    <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-border">
-                      <div>
-                        <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-                          <Palette className="w-4 h-4 text-primary" /> Creative Gallery
-                        </h3>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          Campaign key visuals, photography assets, and production media.
-                        </p>
-                      </div>
-                      <span className="text-xs font-mono bg-muted px-2.5 py-1 rounded-full text-muted-foreground border border-border">
-                        5 Assets
-                      </span>
-                    </div>
-
-                    {/* GALLERY GRID */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                      {[
-                        {
-                          id: "jack-daniels-hero",
-                          title: "Jack Daniel's Old No. 7 — Tennessee Whiskey",
-                          category: "Featured Hero Visual",
-                          src: "/images/jack-daniels.png",
-                          aspect: "aspect-[4/3]",
-                          featured: true,
-                        },
-                        {
-                          id: "creative-social",
-                          title: "Social & Digital Campaign Key Visual",
-                          category: "Social & Digital",
-                          src: workspace.creativePreviews.social.src,
-                          aspect: "aspect-square",
-                          featured: false,
-                        },
-                        {
-                          id: "creative-film",
-                          title: "Commercial Film Spot Visual",
-                          category: "Film / Commercial",
-                          src: workspace.creativePreviews.film.src,
-                          aspect: "aspect-video",
-                          featured: false,
-                        },
-                        {
-                          id: "creative-ooh",
-                          title: "Out-of-Home Billboard & Transit Asset",
-                          category: "OOH & Transit",
-                          src: workspace.creativePreviews.ooh.src,
-                          aspect: "aspect-[16/9]",
-                          featured: false,
-                        },
-                        {
-                          id: "creative-print",
-                          title: "Print & Editorial Campaign Spread",
-                          category: "Print & Magazine",
-                          src: workspace.creativePreviews.print.src,
-                          aspect: "aspect-[3/4]",
-                          featured: false,
-                        },
-                      ].map((item) => (
-                        <div
-                          key={item.id}
-                          onClick={() => setSelectedGalleryItem({ src: item.src, title: item.title, category: item.category })}
-                          className={`group relative overflow-hidden rounded-2xl border border-border bg-card shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col ${
-                            item.featured ? "md:col-span-2 lg:col-span-2" : ""
-                          }`}
-                        >
-                          <div className={`relative w-full overflow-hidden bg-muted/40 ${item.featured ? "h-80 sm:h-96" : item.aspect}`}>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={item.src}
-                              alt={item.title}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent opacity-90 group-hover:opacity-95 transition-opacity" />
-
-                            {item.featured && (
-                              <span className="absolute top-3 left-3 bg-primary text-primary-foreground text-[10px] font-mono font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-md flex items-center gap-1">
-                                <Sparkles className="w-3 h-3" /> Featured Visual
-                              </span>
-                            )}
-
-                            <div className="absolute bottom-0 inset-x-0 p-5 text-white space-y-1">
-                              <span className="text-[10px] font-mono font-semibold uppercase tracking-wider text-white/75 block">
-                                {item.category}
-                              </span>
-                              <h4 className="text-base sm:text-lg font-bold leading-tight text-white group-hover:text-primary-foreground transition-colors">
-                                {item.title}
-                              </h4>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* LIGHTBOX MODAL */}
-                    {selectedGalleryItem && (
-                      <div
-                        className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6"
-                        onClick={() => setSelectedGalleryItem(null)}
-                      >
-                        <div
-                          className="relative max-w-4xl w-full bg-card rounded-2xl overflow-hidden border border-border shadow-2xl flex flex-col max-h-[90vh]"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-muted/40">
-                            <div>
-                              <span className="text-xs font-mono text-primary font-medium block">
-                                {selectedGalleryItem.category}
-                              </span>
-                              <h3 className="text-base font-bold text-foreground">
-                                {selectedGalleryItem.title}
-                              </h3>
-                            </div>
-                            <button
-                              onClick={() => setSelectedGalleryItem(null)}
-                              className="grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition"
+                          <div className="space-y-1.5">
+                            <label htmlFor="campaignScopeOverview" className="text-sm font-medium text-foreground">
+                              Scope
+                            </label>
+                            <select
+                              id="campaignScopeOverview"
+                              value={scope}
+                              onChange={(e) => setScope(e.target.value)}
+                              className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm text-foreground outline-none transition"
                             >
-                              ✕
-                            </button>
+                              <option value="integrated">Integrated launch (film, social, OOH, radio, activation)</option>
+                              <option value="social">Social, creators & performance</option>
+                              <option value="ooh">Out of home & transit focus</option>
+                              <option value="activation">Retail, pop-up & field toolkit</option>
+                            </select>
                           </div>
-                          <div className="p-4 flex-1 overflow-auto flex items-center justify-center bg-black/90">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={selectedGalleryItem.src}
-                              alt={selectedGalleryItem.title}
-                              className="max-h-[72vh] w-auto object-contain rounded-lg shadow-lg"
-                            />
+
+                          <div className="space-y-1.5">
+                            <label htmlFor="campaignStatusOverview" className="text-sm font-medium text-foreground">
+                              Status
+                            </label>
+                            <select
+                              id="campaignStatusOverview"
+                              value={activeCampaign?.status ?? "Draft"}
+                              onChange={(e) => handleCampaignStatusChange(e.target.value as CampaignWorkspaceStatus)}
+                              className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm text-foreground outline-none transition"
+                            >
+                              {campaignWorkspaceStatuses.map((status) => (
+                                <option key={status} value={status}>
+                                  {status}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <CopyField
+                            label="Campaign lead"
+                            value={campaignLead}
+                            onChange={setCampaignLead}
+                          />
+
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div className="space-y-1.5">
+                              <label htmlFor="campaignStart" className="text-sm font-medium text-foreground">Campaign start</label>
+                              <input
+                                type="date"
+                                id="campaignStart"
+                                value={campaignStart}
+                                onChange={(e) => setCampaignStart(e.target.value)}
+                                className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm text-foreground outline-none transition"
+                              />
+                            </div>
+                            <div className="space-y-1.5">
+                              <label htmlFor="campaignEnd" className="text-sm font-medium text-foreground">Campaign end</label>
+                              <input
+                                type="date"
+                                id="campaignEnd"
+                                value={campaignEnd}
+                                onChange={(e) => setCampaignEnd(e.target.value)}
+                                className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm text-foreground outline-none transition"
+                              />
+                            </div>
+                            <div className="space-y-1.5">
+                              <label htmlFor="campaignDeadline" className="text-sm font-medium text-foreground">Deadline</label>
+                              <input
+                                type="date"
+                                id="campaignDeadline"
+                                value={campaignDeadline}
+                                onChange={(e) => setCampaignDeadline(e.target.value)}
+                                className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm text-foreground outline-none transition"
+                              />
+                            </div>
                           </div>
                         </div>
                       </div>
                     )}
-                  </div>
-                )}
 
-                {/* CAMPAIGN SUB-TAB: MARKETING */}
-                {campaignSubTab === "marketing" && (
-                  <div className="lg:flex-1 lg:overflow-y-auto lg:min-h-0 pr-1 py-4 space-y-6">
-                    {/* MEDIA BUYING */}
-                    <section className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <span className="grid h-7 w-7 place-items-center rounded-lg bg-primary/10 border border-primary/20 text-primary">
-                          <Megaphone className="w-3.5 h-3.5" />
-                        </span>
-                        <h3 className="text-base font-semibold text-foreground">Media buying</h3>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <div className="rounded-2xl p-5 bg-card border border-border shadow-sm space-y-3">
-                          <span className="text-xs font-mono text-primary flex items-center gap-1.5">
-                            <BarChart3 className="w-3.5 h-3.5" /> Channel mix
-                          </span>
-                          <ul className="text-sm space-y-1.5">
-                            <li className="flex justify-between gap-2"><span className="text-muted-foreground">Paid social</span><span className="text-foreground font-medium">—</span></li>
-                            <li className="flex justify-between gap-2"><span className="text-muted-foreground">Search</span><span className="text-foreground font-medium">—</span></li>
-                            <li className="flex justify-between gap-2"><span className="text-muted-foreground">Display / video</span><span className="text-foreground font-medium">—</span></li>
-                            <li className="flex justify-between gap-2"><span className="text-muted-foreground">OOH / radio</span><span className="text-foreground font-medium">—</span></li>
-                          </ul>
-                        </div>
-
-                        <div className="rounded-2xl p-5 bg-card border border-border shadow-sm space-y-3">
-                          <span className="text-xs font-mono text-primary flex items-center gap-1.5">
-                            <TrendingUp className="w-3.5 h-3.5" /> Budget & flight
-                          </span>
-                          <ul className="text-sm space-y-1.5">
-                            <li className="flex justify-between gap-2"><span className="text-muted-foreground">Total budget</span><span className="text-foreground font-medium">—</span></li>
-                            <li className="flex justify-between gap-2"><span className="text-muted-foreground">Flight dates</span><span className="text-foreground font-medium">—</span></li>
-                            <li className="flex justify-between gap-2"><span className="text-muted-foreground">Daily pacing</span><span className="text-foreground font-medium">—</span></li>
-                            <li className="flex justify-between gap-2"><span className="text-muted-foreground">Buy type</span><span className="text-foreground font-medium">—</span></li>
-                          </ul>
-                        </div>
-
-                        <div className="rounded-2xl p-5 bg-card border border-border shadow-sm space-y-3">
-                          <span className="text-xs font-mono text-primary flex items-center gap-1.5">
-                            <ScanLine className="w-3.5 h-3.5" /> Targeting & KPIs
-                          </span>
-                          <ul className="text-sm space-y-1.5">
-                            <li className="flex justify-between gap-2"><span className="text-muted-foreground">Audience</span><span className="text-foreground font-medium">—</span></li>
-                            <li className="flex justify-between gap-2"><span className="text-muted-foreground">Geo</span><span className="text-foreground font-medium">—</span></li>
-                            <li className="flex justify-between gap-2"><span className="text-muted-foreground">Primary KPI</span><span className="text-foreground font-medium">—</span></li>
-                            <li className="flex justify-between gap-2"><span className="text-muted-foreground">Target CPA</span><span className="text-foreground font-medium">—</span></li>
-                          </ul>
+                    {/* CAMPAIGN SUB-TAB: CASE STUDY */}
+                    {campaignSubTab === "case-study" && (
+                      <div className="py-4">
+                        <div className="max-w-2xl space-y-5">
+                          <div>
+                            <h3 className="m-0 text-base font-semibold text-foreground">Campaign case study</h3>
+                            <p className="mb-0 mt-1 text-sm leading-[1.45] text-muted-foreground">
+                              Edit the strategic narrative that appears on the published campaign record.
+                            </p>
+                          </div>
+                          <CopyField label="Challenge" value={activeCaseStudy.challenge} onChange={(value) => updateCaseStudy("challenge", value)} textarea rows={4} />
+                          <CopyField label="Insight" value={activeCaseStudy.insight} onChange={(value) => updateCaseStudy("insight", value)} textarea rows={4} />
+                          <CopyField label="Strategy" value={activeCaseStudy.strategy} onChange={(value) => updateCaseStudy("strategy", value)} textarea rows={4} />
+                          <CopyField label="Platform" value={activeCaseStudy.platform} onChange={(value) => updateCaseStudy("platform", value)} textarea rows={3} hint="Separate channels with commas" />
+                          <CopyField label="Execution" value={activeCaseStudy.execution} onChange={(value) => updateCaseStudy("execution", value)} textarea rows={4} />
+                          <CopyField label="Outcome" value={activeCaseStudy.outcome} onChange={(value) => updateCaseStudy("outcome", value)} textarea rows={4} />
                         </div>
                       </div>
-                    </section>
+                    )}
 
-                    {/* INFLUENCER MARKETING */}
-                    <section className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <span className="grid h-7 w-7 place-items-center rounded-lg bg-primary/10 border border-primary/20 text-primary">
-                          <Users className="w-3.5 h-3.5" />
-                        </span>
-                        <h3 className="text-base font-semibold text-foreground">Influencer marketing</h3>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <div className="rounded-2xl p-5 bg-card border border-border shadow-sm space-y-3">
-                          <span className="text-xs font-mono text-primary flex items-center gap-1.5">
-                            <Users className="w-3.5 h-3.5" /> Creator tiers
-                          </span>
-                          <ul className="text-sm space-y-1.5">
-                            <li className="flex justify-between gap-2"><span className="text-muted-foreground">Macro</span><span className="text-foreground font-medium">—</span></li>
-                            <li className="flex justify-between gap-2"><span className="text-muted-foreground">Micro</span><span className="text-foreground font-medium">—</span></li>
-                            <li className="flex justify-between gap-2"><span className="text-muted-foreground">Nano / UGC</span><span className="text-foreground font-medium">—</span></li>
-                          </ul>
+                    {/* CAMPAIGN SUB-TAB: STRATEGY */}
+                    {campaignSubTab === "strategy" && (
+                      <StrategyEditor markdown={workspace.strategyMarkdown} />
+                    )}
+
+                    {/* CAMPAIGN SUB-TAB: CREATIVES GALLERY */}
+                    {campaignSubTab === "creative" && (
+                      <div className="py-4">
+                        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+                          {Object.values(workspace.creativePreviews).map((item) => (
+                            <button
+                              key={item.src}
+                              type="button"
+                              onClick={() => setSelectedCreative(item)}
+                              aria-label={`Open ${item.alt}`}
+                              className="aspect-square overflow-hidden rounded-xl bg-muted text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                            >
+                              <ImageWithFallback
+                                src={item.src}
+                                alt={item.alt}
+                                className="h-full w-full object-cover"
+                              />
+                            </button>
+                          ))}
                         </div>
 
-                        <div className="rounded-2xl p-5 bg-card border border-border shadow-sm space-y-3">
-                          <span className="text-xs font-mono text-primary flex items-center gap-1.5">
-                            <Film className="w-3.5 h-3.5" /> Deliverables
-                          </span>
-                          <ul className="text-sm space-y-1.5">
-                            <li className="flex justify-between gap-2"><span className="text-muted-foreground">Content format</span><span className="text-foreground font-medium">—</span></li>
-                            <li className="flex justify-between gap-2"><span className="text-muted-foreground">Posts per creator</span><span className="text-foreground font-medium">—</span></li>
-                            <li className="flex justify-between gap-2"><span className="text-muted-foreground">Usage rights</span><span className="text-foreground font-medium">—</span></li>
-                          </ul>
-                        </div>
-
-                        <div className="rounded-2xl p-5 bg-card border border-border shadow-sm space-y-3">
-                          <span className="text-xs font-mono text-primary flex items-center gap-1.5">
-                            <BarChart3 className="w-3.5 h-3.5" /> Tracking
-                          </span>
-                          <ul className="text-sm space-y-1.5">
-                            <li className="flex justify-between gap-2"><span className="text-muted-foreground">Attribution</span><span className="text-foreground font-medium">—</span></li>
-                            <li className="flex justify-between gap-2"><span className="text-muted-foreground">Promo / QR code</span><span className="text-foreground font-medium">—</span></li>
-                            <li className="flex justify-between gap-2"><span className="text-muted-foreground">Primary KPI</span><span className="text-foreground font-medium">—</span></li>
-                          </ul>
-                        </div>
-                      </div>
-                    </section>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-          )
-        )}
-
-        {/* OVERVIEW VIEW */}
-        {activeMainTab === "overview" && (
-          <div className="lg:flex-1 lg:overflow-y-auto px-4 py-4 sm:px-6">
-            <div className="w-full max-w-5xl mx-auto space-y-4 pb-8">
-              {/* CAMPAIGN FILM */}
-              {workspace.overviewVideo && (
-                <video
-                  className="w-full h-[350px] rounded-2xl border border-border bg-muted object-cover"
-                  controls
-                  preload="metadata"
-                  poster={workspace.campaignPreviewImage}
-                  aria-label={`${clientName} campaign film`}
-                >
-                  <source src={workspace.overviewVideo} type="video/mp4" />
-                  Your browser does not support this video.
-                </video>
-              )}
-
-              {/* OVERVIEW GRID */}
-              <div className="overflow-hidden rounded-2xl border border-border">
-                <dl className="m-0 grid grid-cols-2 gap-px bg-border sm:grid-cols-3">
-                  <div className="bg-background p-4 space-y-1">
-                    <dt className="text-muted-foreground font-mono text-xs uppercase">Client</dt>
-                    <dd className="m-0 text-sm text-foreground font-medium">{clientName}</dd>
-                  </div>
-                  <div className="bg-background p-4 space-y-1">
-                    <dt className="text-muted-foreground font-mono text-xs uppercase">Selected campaign</dt>
-                    <dd className="m-0 text-sm text-foreground font-medium">{activeCampaign?.title ?? "No campaign selected"}</dd>
-                  </div>
-                  <div className="bg-background p-4 space-y-1">
-                    <dt className="text-muted-foreground font-mono text-xs uppercase">Campaign lead</dt>
-                    <dd className="m-0 text-sm text-foreground font-medium">{campaignLead || "To be confirmed"}</dd>
-                  </div>
-                  <div className="bg-background p-4 space-y-1">
-                    <dt className="text-muted-foreground font-mono text-xs uppercase">Target Audience</dt>
-                    <dd className="m-0 text-sm text-foreground font-medium">{marketAudience}</dd>
-                  </div>
-                  <div className="bg-background p-4 space-y-1">
-                    <dt className="text-muted-foreground font-mono text-xs uppercase">Number of campaigns</dt>
-                    <dd className="m-0 text-sm text-foreground font-medium">{campaigns.length}</dd>
-                  </div>
-                  <div className="bg-background p-4 space-y-1">
-                    <dt className="text-muted-foreground font-mono text-xs uppercase">Date Created</dt>
-                    <dd className="m-0 text-sm text-foreground font-medium">Sep 01, 2026</dd>
-                  </div>
-                  <div className="bg-background p-4 space-y-1">
-                    <dt className="text-muted-foreground font-mono text-xs uppercase">Date Modified</dt>
-                    <dd className="m-0 text-sm text-foreground font-medium">Sep 04, 2026</dd>
-                  </div>
-                  <div className="bg-background p-4 space-y-1">
-                    <dt className="text-muted-foreground font-mono text-xs uppercase">Status</dt>
-                    <dd className="m-0 flex items-center gap-1.5 text-sm text-foreground font-medium">
-                      <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                      {activeCampaign?.status ?? "Draft"}
-                    </dd>
-                  </div>
-                  <div className="hidden bg-background sm:block" aria-hidden="true" />
-                </dl>
-              </div>
-
-            </div>
-          </div>
-        )}
-
-        {/* BRAND DNA VIEW */}
-        {activeMainTab === "brand" && (
-          <div className="lg:flex-1 lg:overflow-y-auto px-4 py-4 sm:px-6">
-            <div className="w-full max-w-5xl mx-auto space-y-4 pb-8">
-              <div className="flex items-center justify-between gap-3 pb-3 border-b border-border">
-                <TabPageHeader title="Brand DNA" />
-              </div>
-
-              {/* BUSINESS PROFILE & IDENTITY */}
-              <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
-                {/* BUSINESS PROFILE */}
-                <section className="space-y-5 bg-card border border-border rounded-2xl p-6 shadow-sm">
-                  <div className="border-b border-border pb-3">
-                    <span className="text-xs font-mono uppercase tracking-widest text-primary font-semibold">
-                      Client Profile
-                    </span>
-                    <h2 className="text-base font-semibold text-foreground mt-0.5">Business Profile</h2>
-                  </div>
-
-                  <div className="p-4 rounded-xl bg-muted border border-border space-y-2">
-                    <span className="text-sm text-muted-foreground block font-mono">Client profile image</span>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={clientProfileImage}
-                      alt={`${preset.client} profile image`}
-                      className="h-8 w-auto"
-                    />
-                  </div>
-
-                  {statusNotification && (
-                    <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg text-sm text-primary">
-                      {statusNotification}
-                    </div>
-                  )}
-
-                  <div className="space-y-1.5">
-                    <label htmlFor="brandUrl" className="text-sm font-medium text-foreground flex items-center gap-1.5">
-                      <Globe className="w-3.5 h-3.5 text-primary" /> Website
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        id="brandUrl"
-                        value={brandUrl}
-                        onChange={(e) => {
-                          setBrandUrl(e.target.value);
-                          setBusinessProfileDirty(true);
-                        }}
-                        className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg pl-3 pr-20 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none transition"
-                      />
-                      <button
-                        onClick={handleSimulateScrape}
-                        className="absolute right-1 top-1 bottom-1 px-2.5 bg-secondary text-secondary-foreground hover:bg-secondary/90 text-sm rounded border border-border transition flex items-center gap-1"
-                      >
-                        <ScanLine className="w-3 h-3" /> Read
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label htmlFor="footprintInput" className="text-sm font-medium text-foreground flex items-center gap-1.5">
-                      <Globe className="w-3.5 h-3.5 text-primary" /> Target Audience
-                    </label>
-                    <input
-                      type="text"
-                      id="footprintInput"
-                      value={footprint}
-                      onChange={(e) => {
-                        setFootprint(e.target.value);
-                        setBusinessProfileDirty(true);
-                      }}
-                      className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm text-foreground outline-none transition"
-                    />
-                  </div>
-
-                  {/* 4-Stage Utility Progress Model */}
-                  <div className="pt-4 border-t border-border space-y-3">
-                    <span className="text-xs font-mono uppercase tracking-wider text-foreground font-semibold flex items-center gap-2">
-                      <TrendingUp className="w-4 h-4 text-primary" /> The 4-Stage Progress Model
-                    </span>
-                    <ol className="space-y-3">
-                      {progressStages.map((item, idx) => (
-                        <li key={idx} className="flex gap-3 rounded-xl border border-border bg-background p-3">
-                          <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-md bg-primary/10 text-primary font-mono text-xs font-bold">
-                            {idx + 1}
-                          </span>
-                          <div className="min-w-0 flex-1 space-y-2.5">
-                            <div className="grid gap-2 sm:grid-cols-2">
-                              <div className="space-y-1">
-                                <label htmlFor={`progressStage-${idx}`} className="text-xs font-medium text-muted-foreground">
-                                  Stage
-                                </label>
-                                <input
-                                  id={`progressStage-${idx}`}
-                                  type="text"
-                                  value={item.stage}
-                                  onChange={(e) => updateProgressStage(idx, "stage", e.target.value)}
-                                  className="w-full rounded-lg border border-input bg-background px-2.5 py-2 text-sm font-semibold text-foreground outline-none transition focus:border-primary focus:ring-1 focus:ring-primary/40"
-                                />
-                              </div>
-                              <div className="space-y-1">
-                                <label htmlFor={`progressLabel-${idx}`} className="text-xs font-medium text-muted-foreground">
-                                  Outcome
-                                </label>
-                                <input
-                                  id={`progressLabel-${idx}`}
-                                  type="text"
-                                  value={item.label}
-                                  onChange={(e) => updateProgressStage(idx, "label", e.target.value)}
-                                  className="w-full rounded-lg border border-input bg-background px-2.5 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-1 focus:ring-primary/40"
-                                />
-                              </div>
-                            </div>
-                            <div className="space-y-1">
-                              <label htmlFor={`progressDescription-${idx}`} className="text-xs font-medium text-muted-foreground">
-                                Description
-                              </label>
-                              <textarea
-                                id={`progressDescription-${idx}`}
-                                rows={2}
-                                value={item.desc}
-                                onChange={(e) => updateProgressStage(idx, "desc", e.target.value)}
-                                className="w-full resize-y rounded-lg border border-input bg-background px-2.5 py-2 text-sm leading-relaxed text-foreground outline-none transition focus:border-primary focus:ring-1 focus:ring-primary/40"
+                        {selectedCreative ? (
+                          <div
+                            className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 sm:p-8"
+                            role="dialog"
+                            aria-modal="true"
+                            aria-label={selectedCreative.alt}
+                            onClick={() => setSelectedCreative(null)}
+                          >
+                            <button
+                              type="button"
+                              aria-label="Close image"
+                              onClick={() => setSelectedCreative(null)}
+                              className="absolute right-5 top-5 grid h-10 w-10 place-items-center rounded-full bg-white/15 text-white hover:bg-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                            >
+                              <X className="h-5 w-5" aria-hidden="true" />
+                            </button>
+                            <div className="max-h-full max-w-full" onClick={(event) => event.stopPropagation()}>
+                              <ImageWithFallback
+                                src={selectedCreative.src}
+                                alt={selectedCreative.alt}
+                                className="max-h-[calc(100vh-4rem)] max-w-full rounded-xl object-contain"
                               />
                             </div>
                           </div>
-                        </li>
-                      ))}
-                    </ol>
-                  </div>
+                        ) : null}
+                      </div>
+                    )}
 
-                  <div className="flex items-center justify-end border-t border-border pt-4">
-                    <button
-                      type="button"
-                      onClick={handleSaveBusinessProfile}
-                      disabled={!businessProfileDirty}
-                      className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45"
+                    {/* CAMPAIGN SUB-TAB: MARKETING */}
+                    {campaignSubTab === "marketing" && (
+                      <div className="space-y-6 py-4">
+                        {/* MEDIA BUYING */}
+                        <section className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <span className="grid h-7 w-7 place-items-center rounded-lg bg-primary/10 border border-primary/20 text-primary">
+                              <Megaphone className="w-3.5 h-3.5" />
+                            </span>
+                            <h3 className="text-base font-semibold text-foreground">Media buying</h3>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {oneUtilityMarketingPlan.mediaBuying.map((card, index) => {
+                              const Icon = [BarChart3, TrendingUp, ScanLine][index] ?? BarChart3;
+                              return (
+                                <div key={card.title} className="rounded-2xl p-5 bg-card border border-border shadow-sm space-y-3">
+                                  <span className="text-xs font-mono text-primary flex items-center gap-1.5">
+                                    <Icon className="w-3.5 h-3.5" /> {card.title}
+                                  </span>
+                                  <ul className="text-sm space-y-1.5">
+                                    {card.rows.map((row) => (
+                                      <li key={row.label} className="flex justify-between gap-2"><span className="text-muted-foreground">{row.label}</span><span className="text-foreground font-medium">{row.value}</span></li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </section>
+
+                        {/* INFLUENCER MARKETING */}
+                        <section className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <span className="grid h-7 w-7 place-items-center rounded-lg bg-primary/10 border border-primary/20 text-primary">
+                              <Users className="w-3.5 h-3.5" />
+                            </span>
+                            <h3 className="text-base font-semibold text-foreground">Influencer marketing</h3>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {oneUtilityMarketingPlan.influencerMarketing.map((card, index) => {
+                              const Icon = [Users, Film, BarChart3][index] ?? Users;
+                              return (
+                                <div key={card.title} className="rounded-2xl p-5 bg-card border border-border shadow-sm space-y-3">
+                                  <span className="text-xs font-mono text-primary flex items-center gap-1.5">
+                                    <Icon className="w-3.5 h-3.5" /> {card.title}
+                                  </span>
+                                  <ul className="text-sm space-y-1.5">
+                                    {card.rows.map((row) => (
+                                      <li key={row.label} className="flex justify-between gap-2"><span className="text-muted-foreground">{row.label}</span><span className="text-foreground font-medium">{row.value}</span></li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </section>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )
+          )}
+
+          {/* OVERVIEW VIEW */}
+          {activeMainTab === "overview" && (
+            <div className="px-4 py-4 sm:px-6">
+              <div className="w-full max-w-5xl mx-auto space-y-4 pb-8">
+                {/* CAMPAIGN FILM */}
+                <ClientWorkspaceHero clientName={clientName} title="Overview">
+                  {workspace.overviewVideo ? (
+                    <video
+                      className="h-full w-full object-cover"
+                      controls
+                      preload="metadata"
+                      poster={campaignImageFor(activeCampaignId)}
+                      aria-label={`${clientName} campaign film`}
                     >
-                      <Save className="h-4 w-4" /> Save business profile
-                    </button>
-                  </div>
-                </section>
+                      <source src={workspace.overviewVideo} type="video/mp4" />
+                      Your browser does not support this video.
+                    </video>
+                  ) : (
+                    <EmptyThumbnail
+                      className="h-full w-full"
+                      iconClassName="w-12 h-12 text-muted-foreground/35"
+                      label="No campaign video available"
+                    />
+                  )}
+                </ClientWorkspaceHero>
 
-                <section className="space-y-5 bg-card border border-border rounded-2xl p-6 shadow-sm">
-                  {/* BRAND & DESIGN */}
+                {/* OVERVIEW GRID */}
+                <div className="overflow-hidden rounded-2xl border border-border">
+                  <dl className="m-0 grid grid-cols-2 gap-px bg-border sm:grid-cols-3">
+                    <div className="bg-background p-4 space-y-1">
+                      <dt className="text-muted-foreground font-mono text-xs uppercase">Client</dt>
+                      <dd className="m-0 text-sm text-foreground font-medium">{clientName}</dd>
+                    </div>
+                    <div className="bg-background p-4 space-y-1">
+                      <dt className="text-muted-foreground font-mono text-xs uppercase">Selected campaign</dt>
+                      <dd className="m-0 text-sm text-foreground font-medium">{activeCampaign?.title ?? "No campaign selected"}</dd>
+                    </div>
+                    <div className="bg-background p-4 space-y-1">
+                      <dt className="text-muted-foreground font-mono text-xs uppercase">Campaign lead</dt>
+                      <dd className="m-0 text-sm text-foreground font-medium">{campaignLead || "To be confirmed"}</dd>
+                    </div>
+                    <div className="bg-background p-4 space-y-1">
+                      <dt className="text-muted-foreground font-mono text-xs uppercase">Target Audience</dt>
+                      <dd className="m-0 text-sm text-foreground font-medium">{marketAudience}</dd>
+                    </div>
+                    <div className="bg-background p-4 space-y-1">
+                      <dt className="text-muted-foreground font-mono text-xs uppercase">Number of campaigns</dt>
+                      <dd className="m-0 text-sm text-foreground font-medium">{campaigns.length}</dd>
+                    </div>
+                    <div className="bg-background p-4 space-y-1">
+                      <dt className="text-muted-foreground font-mono text-xs uppercase">Date Created</dt>
+                      <dd className="m-0 text-sm text-foreground font-medium">Sep 01, 2026</dd>
+                    </div>
+                    <div className="bg-background p-4 space-y-1">
+                      <dt className="text-muted-foreground font-mono text-xs uppercase">Date Modified</dt>
+                      <dd className="m-0 text-sm text-foreground font-medium">Sep 04, 2026</dd>
+                    </div>
+                    <div className="bg-background p-4 space-y-1">
+                      <dt className="text-muted-foreground font-mono text-xs uppercase">Status</dt>
+                      <dd className="m-0 flex items-center gap-1.5 text-sm text-foreground font-medium">
+                        <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                        {activeCampaign?.status ?? "Draft"}
+                      </dd>
+                    </div>
+                    <div className="hidden bg-background sm:block" aria-hidden="true" />
+                  </dl>
+                </div>
+
+              </div>
+            </div>
+          )}
+
+          {/* BRAND DNA VIEW */}
+          {activeMainTab === "brand" && (
+            <div className="px-4 py-4 sm:px-6">
+              <div className="w-full max-w-5xl mx-auto space-y-4 pb-8">
+                <ClientWorkspaceHero clientName={clientName} title="Brand DNA" />
+
+                {/* BUSINESS PROFILE & IDENTITY */}
+                <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
+                  {/* BUSINESS PROFILE */}
+                  <section className="space-y-5">
+                    <div className="border-b border-border pb-3">
+                      <span className="text-xs font-mono uppercase tracking-widest text-primary font-semibold">
+                        Profile
+                      </span>
+                      <h2 className="text-base font-semibold text-foreground mt-0.5">Business Profile</h2>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <span className="text-sm font-medium text-foreground block">Client profile image</span>
+                      <div className="h-10 flex items-center">
+                        <ImageWithFallback
+                          src={clientProfileImage}
+                          alt={`${preset.client} profile image`}
+                          className="h-8 w-auto object-contain"
+                          fallbackClassName="h-8 w-16 rounded border border-border"
+                          iconClassName="w-4 h-4"
+                        />
+                      </div>
+                    </div>
+
+                    {statusNotification && (
+                      <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg text-sm text-primary">
+                        {statusNotification}
+                      </div>
+                    )}
+
+                    <div className="space-y-1.5">
+                      <label htmlFor="brandUrl" className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                        <Globe className="w-3.5 h-3.5 text-primary" /> Website
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          id="brandUrl"
+                          value={brandUrl}
+                          onChange={(e) => {
+                            setBrandUrl(e.target.value);
+                            setBusinessProfileDirty(true);
+                          }}
+                          className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg pl-3 pr-20 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none transition"
+                        />
+                        <button
+                          onClick={handleSimulateScrape}
+                          className="absolute right-1 top-1 bottom-1 px-2.5 bg-secondary text-secondary-foreground hover:bg-secondary/90 text-sm rounded border border-border transition flex items-center gap-1"
+                        >
+                          <ScanLine className="w-3 h-3" /> Read
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label htmlFor="footprintInput" className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                        <Globe className="w-3.5 h-3.5 text-primary" /> Target Audience
+                      </label>
+                      <input
+                        type="text"
+                        id="footprintInput"
+                        value={footprint}
+                        onChange={(e) => {
+                          setFootprint(e.target.value);
+                          setBusinessProfileDirty(true);
+                        }}
+                        className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm text-foreground outline-none transition"
+                      />
+                    </div>
+
+                    {/* 4-Stage Utility Progress Model */}
+                    <div className="space-y-2 border-t border-border pt-4">
+                      <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                        <TrendingUp className="w-4 h-4 text-primary" /> The 4-Stage Progress Model
+                      </span>
+                      <p className="max-w-[72ch] text-sm leading-7 text-muted-foreground">
+                        {progressStages.map((item, idx) => (
+                          <span key={item.stage}>
+                            <span className="font-medium text-foreground">{item.stage}: {item.label}.</span>{" "}
+                            {item.desc}{idx < progressStages.length - 1 ? " " : ""}
+                          </span>
+                        ))}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-end border-t border-border pt-4">
+                      <button
+                        type="button"
+                        onClick={handleSaveBusinessProfile}
+                        disabled={!businessProfileDirty}
+                        className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45"
+                      >
+                        <Save className="h-4 w-4" /> Save
+                      </button>
+                    </div>
+                  </section>
+
+                  <section className="space-y-5">
+                    {/* BRAND & DESIGN */}
                     <div className="border-b border-border pb-3">
                       <span className="text-xs font-mono uppercase tracking-widest text-primary font-semibold">
                         Identity
@@ -1423,151 +1355,203 @@ function OneUtilityClientWorkspace({
                       </select>
                     </div>
 
-                  {/* DESIGN SYSTEM, PALETTE, AESTHETIC, TONE */}
-                  <div className="space-y-5 border-t border-border pt-5">
-                    <div>
-                      <h2 className="text-base font-semibold text-foreground">Design</h2>
-                    </div>
+                    {/* DESIGN SYSTEM, PALETTE, AESTHETIC, TONE */}
+                    <div className="space-y-5 border-t border-border pt-5">
+                      <div>
+                        <h2 className="text-base font-semibold text-foreground">Design</h2>
+                      </div>
 
-                  <div className="space-y-2">
-                    <span className="text-sm text-muted-foreground block uppercase font-mono">Colors</span>
-                    <p className="text-sm text-muted-foreground">Click a swatch to pick a colour.</p>
-                    <div className="flex flex-wrap items-stretch gap-2 pt-1">
-                      {palette.map((hex, i) => (
-                        <div key={i} className="group relative flex-1 min-w-[64px]">
-                          <label
-                            className="relative flex h-16 items-center justify-center rounded-lg border border-border text-xs font-mono font-bold cursor-pointer"
-                            style={{ backgroundColor: hex, color: getContrastTextColor(hex) }}
+                      <div className="space-y-2">
+                        <span className="text-sm text-muted-foreground block uppercase font-mono">Colors</span>
+                        <p className="text-sm text-muted-foreground">Click a swatch to pick a colour.</p>
+                        <div className="flex flex-wrap items-stretch gap-2 pt-1">
+                          {palette.map((hex, i) => (
+                            <div key={i} className="group relative flex-1 min-w-[64px]">
+                              <label
+                                className="relative flex h-16 items-center justify-center rounded-lg border border-border text-xs font-mono font-bold cursor-pointer"
+                                style={{ backgroundColor: hex, color: getContrastTextColor(hex) }}
+                              >
+                                {hex.toUpperCase()}
+                                <input
+                                  type="color"
+                                  value={hex}
+                                  onChange={(e) => updatePaletteColor(i, e.target.value)}
+                                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                                  aria-label={`Palette colour ${i + 1}`}
+                                />
+                              </label>
+                              {palette.length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => removePaletteColor(i)}
+                                  aria-label="Remove colour"
+                                  className="absolute -right-1.5 -top-1.5 hidden h-4 w-4 place-items-center rounded-full bg-foreground text-sm leading-none text-background group-hover:grid"
+                                >
+                                  ×
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                          <button
+                            type="button"
+                            onClick={addPaletteColor}
+                            aria-label="Add colour"
+                            className="grid h-16 w-10 shrink-0 place-items-center rounded-lg border border-dashed border-border text-muted-foreground transition hover:border-primary hover:text-foreground"
                           >
-                            {hex.toUpperCase()}
-                            <input
-                              type="color"
-                              value={hex}
-                              onChange={(e) => updatePaletteColor(i, e.target.value)}
-                              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                              aria-label={`Palette colour ${i + 1}`}
-                            />
-                          </label>
-                          {palette.length > 1 && (
-                            <button
-                              type="button"
-                              onClick={() => removePaletteColor(i)}
-                              aria-label="Remove colour"
-                              className="absolute -right-1.5 -top-1.5 hidden h-4 w-4 place-items-center rounded-full bg-foreground text-sm leading-none text-background group-hover:grid"
-                            >
-                              ×
-                            </button>
-                          )}
+                            <Plus className="w-4 h-4" />
+                          </button>
                         </div>
-                      ))}
-                      <button
-                        type="button"
-                        onClick={addPaletteColor}
-                        aria-label="Add colour"
-                        className="grid h-16 w-10 shrink-0 place-items-center rounded-lg border border-dashed border-border text-muted-foreground transition hover:border-primary hover:text-foreground"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
+                      </div>
+
+                      <div className="space-y-1.5 pt-2">
+                        <label htmlFor="fontPairing" className="text-sm text-muted-foreground block uppercase font-mono">
+                          Typography
+                        </label>
+                        <select
+                          id="fontPairing"
+                          value={fontPairing}
+                          onChange={(e) => {
+                            setFontPairing(e.target.value);
+                            setDesignDirty(true);
+                          }}
+                          className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm font-semibold text-foreground outline-none transition"
+                        >
+                          {fontOptions.map((f) => (
+                            <option key={f} value={f}>
+                              {f}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="rounded-lg border border-border bg-muted/40 p-4 space-y-1.5">
+                          <p
+                            className="text-2xl font-bold leading-tight text-foreground"
+                            style={{ fontFamily: (FONT_STACKS[fontPairing] ?? FONT_STACKS[fontOptions[0]]).heading }}
+                          >
+                            {workspace.fontPreview.heading}
+                          </p>
+                          <p
+                            className="text-sm text-muted-foreground leading-relaxed"
+                            style={{ fontFamily: (FONT_STACKS[fontPairing] ?? FONT_STACKS[fontOptions[0]]).body }}
+                          >
+                            {workspace.fontPreview.body}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5 pt-2 border-t border-border">
+                        <label htmlFor="aestheticSelect" className="text-sm font-medium text-foreground flex items-center gap-1.5 pt-3">
+                          <Palette className="w-3.5 h-3.5 text-primary" /> Aesthetic direction
+                        </label>
+                        <select
+                          id="aestheticSelect"
+                          value={aesthetic}
+                          onChange={(e) => {
+                            setAesthetic(e.target.value);
+                            setDesignDirty(true);
+                          }}
+                          className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm text-foreground outline-none transition"
+                        >
+                          <option value="brand">Brand-led & adaptive</option>
+                          <option value="culture">Bold cultural energy</option>
+                          <option value="trust">Trusted corporate clarity</option>
+                          <option value="product">Product and demonstration-led</option>
+                          <option value="editorial">Editorial storytelling</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label htmlFor="toneSlider" className="text-sm font-medium text-foreground flex items-center justify-between">
+                          <span className="flex items-center gap-1.5">
+                            <Feather className="w-3.5 h-3.5 text-primary" /> Tone dial
+                          </span>
+                          <span className="text-sm text-primary">{toneLabel}</span>
+                        </label>
+                        <input
+                          type="range"
+                          id="toneSlider"
+                          min="1"
+                          max="4"
+                          value={toneVal}
+                          onChange={(e) => updateTone(parseInt(e.target.value, 10))}
+                          className="w-full accent-primary bg-muted h-1.5 rounded-lg cursor-pointer"
+                        />
+                        <div className="flex justify-between text-sm text-muted-foreground font-mono">
+                          <span>Direct</span>
+                          <span>Conversational</span>
+                          <span>Expressive</span>
+                          <span>Premium</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-end border-t border-border pt-4">
+                        <button
+                          type="button"
+                          onClick={handleSaveBrandDna}
+                          disabled={!designDirty}
+                          className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45"
+                        >
+                          <Save className="h-4 w-4" /> Save
+                        </button>
+                      </div>
                     </div>
-                  </div>
-
-                  <div className="space-y-1.5 pt-2">
-                    <label htmlFor="fontPairing" className="text-sm text-muted-foreground block uppercase font-mono">
-                      Typography
-                    </label>
-                    <select
-                      id="fontPairing"
-                      value={fontPairing}
-                      onChange={(e) => {
-                        setFontPairing(e.target.value);
-                        setDesignDirty(true);
-                      }}
-                      className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm font-semibold text-foreground outline-none transition"
-                    >
-                      {fontOptions.map((f) => (
-                        <option key={f} value={f}>
-                          {f}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="rounded-lg border border-border bg-muted/40 p-4 space-y-1.5">
-                      <p
-                        className="text-2xl font-bold leading-tight text-foreground"
-                        style={{ fontFamily: (FONT_STACKS[fontPairing] ?? FONT_STACKS[fontOptions[0]]).heading }}
-                      >
-                        {workspace.fontPreview.heading}
-                      </p>
-                      <p
-                        className="text-sm text-muted-foreground leading-relaxed"
-                        style={{ fontFamily: (FONT_STACKS[fontPairing] ?? FONT_STACKS[fontOptions[0]]).body }}
-                      >
-                        {workspace.fontPreview.body}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5 pt-2 border-t border-border">
-                    <label htmlFor="aestheticSelect" className="text-sm font-medium text-foreground flex items-center gap-1.5 pt-3">
-                      <Palette className="w-3.5 h-3.5 text-primary" /> Aesthetic direction
-                    </label>
-                    <select
-                      id="aestheticSelect"
-                      value={aesthetic}
-                      onChange={(e) => {
-                        setAesthetic(e.target.value);
-                        setDesignDirty(true);
-                      }}
-                      className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm text-foreground outline-none transition"
-                    >
-                      <option value="brand">Brand-led & adaptive</option>
-                      <option value="culture">Bold cultural energy</option>
-                      <option value="trust">Trusted corporate clarity</option>
-                      <option value="product">Product and demonstration-led</option>
-                      <option value="editorial">Editorial storytelling</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label htmlFor="toneSlider" className="text-sm font-medium text-foreground flex items-center justify-between">
-                      <span className="flex items-center gap-1.5">
-                        <Feather className="w-3.5 h-3.5 text-primary" /> Tone dial
-                      </span>
-                      <span className="text-sm text-primary">{toneLabel}</span>
-                    </label>
-                    <input
-                      type="range"
-                      id="toneSlider"
-                      min="1"
-                      max="4"
-                      value={toneVal}
-                      onChange={(e) => updateTone(parseInt(e.target.value, 10))}
-                      className="w-full accent-primary bg-muted h-1.5 rounded-lg cursor-pointer"
-                    />
-                    <div className="flex justify-between text-sm text-muted-foreground font-mono">
-                      <span>Direct</span>
-                      <span>Conversational</span>
-                      <span>Expressive</span>
-                      <span>Premium</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-end border-t border-border pt-4">
-                    <button
-                      type="button"
-                      onClick={handleSaveBrandDna}
-                      disabled={!designDirty}
-                      className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45"
-                    >
-                      <Save className="h-4 w-4" /> Save brand DNA
-                    </button>
-                  </div>
-                  </div>
-                </section>
+                  </section>
+                </div>
               </div>
             </div>
-          </div>
-        )}
-      </main>
+          )}
+
+          {activeMainTab === "moodboard" && (
+            <div className="px-4 py-4 sm:px-6">
+              <div className="mx-auto w-full max-w-5xl space-y-4 pb-8">
+                <ClientWorkspaceHero clientName={clientName} title="Moodboard" />
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+                  {oneUtilityMoodboardImages.map((image) => (
+                    <button
+                      key={image.src}
+                      type="button"
+                      onClick={() => setSelectedCreative(image)}
+                      className="aspect-[3/4] overflow-hidden rounded-md bg-muted text-left"
+                      aria-label={`Open ${image.alt}`}
+                    >
+                      <ImageWithFallback src={image.src} alt={image.alt} className="h-full w-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeMainTab === "creators" && (
+            <div className="px-4 py-6 sm:px-6">
+              <div className="mx-auto w-full max-w-5xl">
+                <ClientWorkspaceHero clientName={clientName} title="Creators" />
+                <p className="mt-4 text-sm text-muted-foreground">Selected creators for {clientName}.</p>
+                <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  {selectedCreators.map((creator) => (
+                    <Link
+                      key={creator.slug}
+                      href={`/dashboard/creators/${creator.slug}`}
+                      className="group overflow-hidden rounded-xl border border-border bg-background transition hover:border-primary"
+                    >
+                      <div className="aspect-[4/3] bg-muted">
+                        <ImageWithFallback
+                          src={creator.profileImage ?? creator.featuredImage ?? "/images/projects/project-placeholder.svg"}
+                          alt={`${creator.name} profile`}
+                          className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+                        />
+                      </div>
+                      <div className="space-y-1 p-4">
+                        <span className="text-xs font-medium text-primary">{creator.category}</span>
+                        <h2 className="text-base font-semibold text-foreground">{creator.name}</h2>
+                        <p className="text-sm text-muted-foreground">Open for work</p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </main>
       </div>
     </div>
   );

@@ -80,7 +80,7 @@ export default function MarketingHomePage() {
               return (
                 <article key={project.slug} className={featured ? "sm:col-span-2" : undefined}>
                   <Link
-                    href={`/dashboard/campaigns/${project.slug}`}
+                    href={`/work/${project.slug}`}
                     className="group block text-foreground no-underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
                   >
                     <div

@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { CAMPAIGNS, getCampaign } from "@/lib/campaigns";
 import { getUserByName, userHref } from "@/lib/users";
 import { BackLink } from "@/components/back-link";
-import { Badge, MetaGrid, MetaItem, SectionHeading } from "@/components/dashboard/ui";
+import { Badge, ImageWithFallback, MetaGrid, MetaItem, SectionHeading } from "@/components/dashboard/ui";
 import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 
@@ -42,8 +42,7 @@ export default async function CampaignDetailPage({ params }: Params) {
         aria-labelledby="campaign-name"
       >
         <div className="relative aspect-[4/3] max-w-[440px] overflow-hidden rounded-xl bg-muted">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={campaign.image} alt={campaign.imageAlt} className="block h-full w-full object-cover" />
+          <ImageWithFallback src={campaign.image} alt={campaign.imageAlt} className="block h-full w-full object-cover" />
         </div>
         <div>
           <Badge tone={campaign.status === "live" ? "active" : "neutral"}>{campaign.status}</Badge>
@@ -102,8 +101,7 @@ export default async function CampaignDetailPage({ params }: Params) {
                   Your browser does not support this video.
                 </video>
               ) : (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <ImageWithFallback
                   key={media.src}
                   src={media.src}
                   alt={media.alt}

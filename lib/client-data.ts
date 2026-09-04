@@ -121,6 +121,72 @@ export const campaignWorkspaceStatuses: CampaignWorkspaceStatus[] = [
   "Completed",
 ];
 
+export type MarketingCard = {
+  title: string;
+  rows: { label: string; value: string }[];
+};
+
+export const oneUtilityMarketingPlan: {
+  mediaBuying: MarketingCard[];
+  influencerMarketing: MarketingCard[];
+} = {
+  mediaBuying: [
+    {
+      title: "Channel mix",
+      rows: [
+        { label: "Paid social", value: "—" },
+        { label: "Search", value: "—" },
+        { label: "Display / video", value: "—" },
+        { label: "OOH / radio", value: "—" },
+      ],
+    },
+    {
+      title: "Budget & flight",
+      rows: [
+        { label: "Total budget", value: "—" },
+        { label: "Flight dates", value: "—" },
+        { label: "Daily pacing", value: "—" },
+        { label: "Buy type", value: "—" },
+      ],
+    },
+    {
+      title: "Targeting & KPIs",
+      rows: [
+        { label: "Audience", value: "—" },
+        { label: "Geo", value: "—" },
+        { label: "Primary KPI", value: "—" },
+        { label: "Target CPA", value: "—" },
+      ],
+    },
+  ],
+  influencerMarketing: [
+    {
+      title: "Creator tiers",
+      rows: [
+        { label: "Macro", value: "—" },
+        { label: "Micro", value: "—" },
+        { label: "Nano / UGC", value: "—" },
+      ],
+    },
+    {
+      title: "Deliverables",
+      rows: [
+        { label: "Content format", value: "—" },
+        { label: "Posts per creator", value: "—" },
+        { label: "Usage rights", value: "—" },
+      ],
+    },
+    {
+      title: "Tracking",
+      rows: [
+        { label: "Attribution", value: "—" },
+        { label: "Promo / QR code", value: "—" },
+        { label: "Primary KPI", value: "—" },
+      ],
+    },
+  ],
+};
+
 export type CampaignListItem = {
   id: string;
   title: string;
@@ -355,10 +421,6 @@ One bill is the entry point. Control is the benefit. Trust is what we earn. We d
 
 **One Bill. No Leap of Faith. From Due to Done. One You-niverse.**
 `;
-
-export const campaignPreviewBackground = {
-  backgroundImage: "url('/images/one-utility-bank-campaign-preview.png')",
-};
 
 export const initialCampaigns: CampaignListItem[] = [
   { id: "utility-bank", title: defaultPreset.name, status: "In progress" },

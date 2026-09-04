@@ -21,10 +21,12 @@ export type ProfileNavItem = {
 export type ProfileNavProps = {
   initials?: string;
   name?: string;
+  email?: string;
   organization?: string;
   items?: readonly ProfileNavItem[];
   logoutLabel?: string;
   onLogout?: () => void;
+  variant?: "avatar" | "row";
 };
 
 function UserIcon() {
@@ -62,21 +64,39 @@ const DEFAULT_ITEMS: readonly ProfileNavItem[] = [
 export function ProfileNav({
   initials = "JP",
   name = "Jide Pinheiro",
+  email = "jide.pinheiro@comcorpe.com",
   organization = "BBDO West Africa",
   items = DEFAULT_ITEMS,
   logoutLabel = "Log out",
   onLogout,
+  variant = "avatar",
 }: ProfileNavProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          aria-label="Open profile menu"
-          className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary-foreground text-[11px] font-extrabold tracking-[0.04em] text-primary transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-foreground"
-        >
-          {initials}
-        </button>
+        {variant === "row" ? (
+          <button
+            type="button"
+            aria-label="Open profile menu"
+            className="flex w-full items-center gap-2 rounded-lg p-1.5 text-left transition-colors hover:bg-black/15 focus-visible:bg-black/15 focus-visible:outline-none"
+          >
+            <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary-foreground text-[11px] font-extrabold tracking-[0.04em] text-primary">
+              {initials}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-xs font-semibold leading-tight text-primary-foreground">{name}</span>
+              <span className="block truncate text-[11px] leading-tight text-primary-foreground/70">{email}</span>
+            </span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            aria-label="Open profile menu"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary-foreground text-[11px] font-extrabold tracking-[0.04em] text-primary transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-foreground"
+          >
+            {initials}
+          </button>
+        )}
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end" className="w-64">

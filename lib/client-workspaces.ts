@@ -36,7 +36,6 @@ export type ClientWorkspace = {
   palette: string[];
   primaryColor: string;
   brandArchetype: string;
-  campaignPreviewImage: string;
   creativePreviews: Record<CreativeChannel, CreativePreview>;
   fontPreview: { heading: string; body: string };
   // Optional campaign film shown on the client Overview; omitted when there is none.
@@ -57,7 +56,6 @@ const oneUtilityWorkspace: ClientWorkspace = {
   palette: ["#1B3FC2", "#2237B4", "#72B7FF", "#F3F2F2"],
   primaryColor: "#1B3FC2",
   brandArchetype: "The Everyman",
-  campaignPreviewImage: "/images/one-utility-bank-campaign-preview.png",
   creativePreviews: {
     social: {
       src: "/media/clients/1utility/social.png",
@@ -179,7 +177,6 @@ function makeEmptyWorkspace(clientId: string, clientName: string): ClientWorkspa
     palette: NEUTRAL_PALETTE,
     primaryColor: NEUTRAL_PALETTE[0],
     brandArchetype: "The Everyman",
-    campaignPreviewImage: PLACEHOLDER_IMAGE,
     creativePreviews: {
       social: { src: PLACEHOLDER_IMAGE, alt: "" },
       film: { src: PLACEHOLDER_IMAGE, alt: "" },

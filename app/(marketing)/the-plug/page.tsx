@@ -24,12 +24,12 @@ export default function ThePlugPage() {
               To learn more about the things we do differently which give us the marketing edge, plug in.
             </p>
             <p>
-              Explore the people, resources and opportunities behind the work.
+              Explore the work, how we think and the people who make it happen.
             </p>
             <ul className="m-0 mt-10 list-none border-t border-foreground p-0">
-              <li className="border-b border-foreground py-5"><Link href="/dashboard/resources" className={LINK}>Resources ↗</Link></li>
-              <li className="border-b border-foreground py-5"><Link href="/dashboard/people" className={LINK}>People ↗</Link></li>
-              <li className="border-b border-foreground py-5"><Link href="/dashboard/careers" className={LINK}>Careers ↗</Link></li>
+              <li className="border-b border-foreground py-5"><Link href="/#work" className={LINK}>The work ↗</Link></li>
+              <li className="border-b border-foreground py-5"><Link href="/about" className={LINK}>About us ↗</Link></li>
+              <li className="border-b border-foreground py-5"><Link href="/contact" className={LINK}>Get in touch ↗</Link></li>
             </ul>
           </div>
         </section>

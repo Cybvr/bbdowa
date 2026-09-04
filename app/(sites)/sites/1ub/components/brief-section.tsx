@@ -177,16 +177,7 @@ export default function BriefSection() {
         </div>
 
         <section className="mt-10 md:mt-14" id="creative-mood">
-          <div className="space-y-3">
-            <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
-              Creative mood
-            </h2>
-            <p className="text-sm md:text-base text-muted-foreground max-w-2xl">
-              A visual direction built from bold colour, surreal portraiture, collage and
-              contemporary African cultural references.
-            </p>
-          </div>
-          <figure className="relative mt-6 overflow-hidden rounded-3xl border border-border bg-card">
+          <figure className="relative overflow-hidden rounded-3xl border border-border bg-card">
             <Image
                 src="/sites/1ub/campaign/deck/uploads/creative-moodboard.png"
               alt="Creative moodboard with bold colour, surreal portraits, collage and cultural references"

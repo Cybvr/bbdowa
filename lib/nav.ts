@@ -8,18 +8,11 @@ export const MARKETING_NAV: NavLink[] = [
   { label: "Contact", href: "/contact" },
 ];
 
-export const MARKETING_DASHBOARD_LINK: NavLink = {
-  label: "Dashboard",
-  href: "/dashboard",
-};
-
 export const MARKETING_FOOTER_LINKS: NavLink[] = [
   { label: "About", href: "/about" },
-  { label: "People", href: "/dashboard/people" },
-  { label: "Campaigns", href: "/dashboard/campaigns" },
-  { label: "Careers", href: "/dashboard/careers" },
-  { label: "Blog", href: "/dashboard/blog" },
-  { label: "Dashboard", href: "/dashboard" },
+  { label: "Work", href: "/#work" },
+  { label: "The Plug", href: "/the-plug" },
+  { label: "Contact", href: "/contact" },
 ];
 
 export type NavItem =
@@ -28,7 +21,6 @@ export type NavItem =
 
 export const NAV_ITEMS: NavItem[] = [
   { kind: "link", label: "Home", href: "/dashboard" },
-  { kind: "link", label: "Clients", href: "/dashboard/clients" },
   { kind: "link", label: "Campaigns", href: "/dashboard/campaigns" },
   { kind: "link", label: "Products", href: "/dashboard/products" },
   {
@@ -52,8 +44,9 @@ export const NAV_ITEMS: NavItem[] = [
   {
     kind: "menu",
     label: "Directory",
-    match: ["/dashboard/people", "/dashboard/creators"],
+    match: ["/dashboard/clients", "/dashboard/people", "/dashboard/creators"],
     items: [
+      { label: "Clients", href: "/dashboard/clients" },
       { label: "Team", href: "/dashboard/people" },
       { label: "Creators", href: "/dashboard/creators" },
     ],

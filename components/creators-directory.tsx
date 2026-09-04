@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import type { IconType } from "react-icons";
 import { FaBehance, FaGlobe, FaLinkedinIn } from "react-icons/fa";
 import { FiFilter, FiX } from "react-icons/fi";
+import { ImageWithFallback } from "@/components/empty-thumbnail";
 import type { Creator } from "@/lib/users";
 import { baseCity, rateFloorNgn, creatorHref } from "@/lib/users";
 
@@ -29,18 +30,13 @@ export function initials(name: string): string {
     .join("");
 }
 
-function Avatar({ name, imageSrc, className = "" }: { name: string; imageSrc?: string | null; className?: string }) {
+function Avatar({ imageSrc, className = "" }: { imageSrc?: string | null; className?: string }) {
   return (
     <span
       aria-hidden="true"
-      className={`grid flex-none place-items-center overflow-hidden rounded-full bg-primary font-black tracking-[-0.04em] text-white ${className}`}
+      className={`grid flex-none place-items-center overflow-hidden rounded-full ${className}`}
     >
-      {imageSrc ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={imageSrc} alt="" className="h-full w-full object-cover" />
-      ) : (
-        initials(name)
-      )}
+      <ImageWithFallback src={imageSrc} alt="" className="h-full w-full object-cover" fallbackClassName="h-full w-full" />
     </span>
   );
 }
@@ -422,7 +418,7 @@ export function CreatorDirectory({
                 aria-label={creator.name}
                 className="flex-none focus-visible:outline-none"
               >
-                <Avatar name={creator.name} imageSrc={creator.profileImage} className="h-12 w-12 text-[15px]" />
+                <Avatar imageSrc={creator.profileImage} className="h-12 w-12" />
               </Link>
 
               <div className="min-w-0 flex-1">

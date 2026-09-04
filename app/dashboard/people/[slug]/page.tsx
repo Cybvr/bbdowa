@@ -5,7 +5,7 @@ import { BackLink } from "@/components/back-link";
 import { PRODUCTS, productHref } from "@/lib/products";
 import { CAMPAIGNS, campaignHref } from "@/lib/campaigns";
 import { TEAM, userInitials } from "@/lib/users";
-import { MetaGrid, MetaItem, SectionHeading } from "@/components/dashboard/ui";
+import { ImageWithFallback, MetaGrid, MetaItem, SectionHeading } from "@/components/dashboard/ui";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -46,12 +46,12 @@ export default async function UserDetailPage({ params }: Params) {
           aria-hidden="true"
           className="grid h-20 w-20 place-items-center overflow-hidden rounded-full bg-primary text-[24px] font-bold text-white sm:h-24 sm:w-24"
         >
-          {user.profileImage ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={user.profileImage} alt="" className="h-full w-full object-cover" />
-          ) : (
-            userInitials(user)
-          )}
+          <ImageWithFallback
+            src={user.profileImage}
+            alt=""
+            className="h-full w-full object-cover"
+            fallbackClassName="h-full w-full"
+          />
         </div>
         <div>
           <p className="mb-1.5 mt-0 text-[13px] font-semibold text-primary">{user.department}</p>

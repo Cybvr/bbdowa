@@ -30,12 +30,6 @@ export default function Header() {
           >
             Understanding
           </a>
-          <a
-            className="text-xs md:text-sm font-bold text-muted-foreground hover:text-blue transition-colors py-2 border-b-2 border-transparent aria-[current=true]:border-blue aria-[current=true]:text-blue whitespace-nowrap"
-            href="#proposal"
-          >
-            Proposal
-          </a>
         </nav>
         <a
           className="ml-auto inline-flex items-center px-4 py-2 rounded-full bg-blue text-primary-foreground text-xs md:text-sm font-bold hover:bg-blue-deep transition-colors whitespace-nowrap"

@@ -6,13 +6,13 @@ import type { Campaign } from "@/lib/campaigns";
 import type { ClientUser } from "@/lib/users";
 import { userHref } from "@/lib/users";
 import { plural } from "@/lib/format";
-import { EmptyState } from "@/components/dashboard/ui";
+import { EmptyState, ImageWithFallback } from "@/components/dashboard/ui";
 import { FilterBar, type FilterTab, type SortOption } from "@/components/dashboard/filter-bar";
 
-const FILTERS: FilterTab<"active" | "all" | "archived">[] = [
-  { key: "active", label: "Active" },
+const FILTERS: FilterTab<"all" | "live" | "completed">[] = [
   { key: "all", label: "All" },
-  { key: "archived", label: "Archived" },
+  { key: "live", label: "Live" },
+  { key: "completed", label: "Completed" },
 ];
 
 type FilterKey = (typeof FILTERS)[number]["key"];
@@ -24,15 +24,17 @@ const SORTS: SortOption<"name" | "campaigns">[] = [
 
 type SortKey = (typeof SORTS)[number]["key"];
 
-// A client is active while any of its campaigns is not yet completed;
-// once every campaign is completed the client reads as archived.
-function isClientArchived(clientSlug: string, campaigns: Campaign[]): boolean {
+function hasCompletedCampaigns(clientSlug: string, campaigns: Campaign[]): boolean {
   const clientCampaigns = campaigns.filter((campaign) => campaign.clientId === clientSlug);
   return clientCampaigns.length > 0 && clientCampaigns.every((campaign) => campaign.status === "completed");
 }
 
+function hasLiveCampaigns(clientSlug: string, campaigns: Campaign[]): boolean {
+  return campaigns.some((campaign) => campaign.clientId === clientSlug && campaign.status === "live");
+}
+
 export function ClientsDirectory({ clients, campaigns }: { clients: ClientUser[]; campaigns: Campaign[] }) {
-  const [filter, setFilter] = useState<FilterKey>("active");
+  const [filter, setFilter] = useState<FilterKey>("all");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortKey>("name");
 
@@ -40,9 +42,11 @@ export function ClientsDirectory({ clients, campaigns }: { clients: ClientUser[]
     const query = search.trim().toLowerCase();
     const matches = clients.filter((client) => {
       const matchesSearch = !query || client.name.toLowerCase().includes(query);
-      const archived = isClientArchived(client.slug, campaigns);
       const matchesFilter =
-        filter === "all" || (filter === "archived" ? archived : !archived);
+        filter === "all" ||
+        (filter === "live"
+          ? hasLiveCampaigns(client.slug, campaigns)
+          : hasCompletedCampaigns(client.slug, campaigns));
       return matchesSearch && matchesFilter;
     });
 
@@ -85,15 +89,13 @@ export function ClientsDirectory({ clients, campaigns }: { clients: ClientUser[]
                     href={userHref(client)}
                     className="group flex h-full overflow-hidden rounded-xl border border-border bg-background text-foreground no-underline transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                   >
-                    <div className="aspect-[4/3] w-[38%] shrink-0 bg-muted">
-                      {client.profileImage ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={client.profileImage}
-                          alt={`${client.name} profile image`}
-                          className="h-full w-full object-contain p-4"
-                        />
-                      ) : null}
+                    <div className="aspect-[4/3] w-[38%] shrink-0 bg-muted overflow-hidden flex items-center justify-center p-3">
+                      <ImageWithFallback
+                        src={client.profileImage}
+                        alt={`${client.name} profile image`}
+                        className="h-full w-full object-contain"
+                        iconClassName="w-6 h-6"
+                      />
                     </div>
                     <div className="flex min-w-0 flex-1 flex-col justify-between gap-3 p-4">
                       <span className="text-[16px] font-semibold leading-tight group-hover:text-primary">{client.name}</span>

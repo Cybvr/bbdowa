@@ -5,15 +5,16 @@ import { useMemo, useState } from "react";
 import type { Campaign } from "@/lib/campaigns";
 import { campaignHref, campaignLiveDateLabel } from "@/lib/campaigns";
 import { plural } from "@/lib/format";
-import { EmptyState } from "@/components/dashboard/ui";
-import { FilterBar, type SortOption } from "@/components/dashboard/filter-bar";
+import { EmptyState, ImageWithFallback } from "@/components/dashboard/ui";
+import { FilterBar, type FilterTab, type SortOption } from "@/components/dashboard/filter-bar";
 
-const STATUS_OPTIONS = [
-  { value: "all", label: "All statuses" },
-  { value: "live", label: "Live" },
-  { value: "pitch", label: "Pitch" },
-  { value: "completed", label: "Completed" },
+const STATUS_TABS: FilterTab<"all" | "live" | "completed">[] = [
+  { key: "all", label: "All" },
+  { key: "live", label: "Live" },
+  { key: "completed", label: "Completed" },
 ];
+
+type StatusKey = (typeof STATUS_TABS)[number]["key"];
 
 const SORTS: SortOption<"recent" | "name" | "client">[] = [
   { key: "recent", label: "Most recent" },
@@ -28,7 +29,7 @@ function liveTime(campaign: Campaign): number {
 }
 
 export function CampaignsTable({ campaigns }: { campaigns: Campaign[] }) {
-  const [status, setStatus] = useState("all");
+  const [status, setStatus] = useState<StatusKey>("all");
   const [category, setCategory] = useState("all");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortKey>("recent");
@@ -69,13 +70,16 @@ export function CampaignsTable({ campaigns }: { campaigns: Campaign[] }) {
     <>
       <FilterBar
         panelId="campaign-panel"
+        tabs={STATUS_TABS}
+        activeTab={status}
+        onTabChange={setStatus}
+        tabsLabel="Filter campaigns by status"
         search={search}
         onSearchChange={setSearch}
         searchPlaceholder="Search campaigns"
         searchClassName="w-[150px]"
         filters={[
           { label: "Filter by category", value: category, onChange: setCategory, options: categoryOptions },
-          { label: "Filter by status", value: status, onChange: setStatus, options: STATUS_OPTIONS },
         ]}
         sortOptions={SORTS}
         activeSort={sort}
@@ -83,7 +87,7 @@ export function CampaignsTable({ campaigns }: { campaigns: Campaign[] }) {
         resultCount={plural(visible.length, "campaign")}
       />
 
-      <section id="campaign-panel" aria-label="Campaigns">
+      <section id="campaign-panel" role="tabpanel" aria-labelledby={`campaign-panel-tab-${status}`}>
         {visible.length > 0 ? (
           <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2 lg:grid-cols-3">
             {visible.map((campaign) => (
@@ -92,9 +96,8 @@ export function CampaignsTable({ campaigns }: { campaigns: Campaign[] }) {
                   href={campaignHref(campaign.slug)}
                   className="group flex h-full overflow-hidden rounded-xl border border-border bg-background text-foreground no-underline transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                 >
-                  <div className="aspect-[4/3] w-[38%] shrink-0 bg-muted">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
+                  <div className="aspect-[4/3] w-[38%] shrink-0 bg-muted overflow-hidden">
+                    <ImageWithFallback
                       src={campaign.image}
                       alt={campaign.imageAlt}
                       className="h-full w-full object-cover"
