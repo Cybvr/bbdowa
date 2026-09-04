@@ -503,7 +503,7 @@ export default function OneUtilityClientPage() {
 
   return (
     <div
-      className="min-h-screen lg:h-screen flex flex-col gap-2 overflow-auto lg:overflow-hidden bg-card p-2 text-foreground antialiased font-sans"
+      className="min-h-screen lg:h-screen flex flex-col gap-2 overflow-x-hidden overflow-y-auto lg:overflow-hidden bg-card p-2 text-foreground antialiased font-sans"
       style={
         primaryColor
           ? ({
@@ -523,8 +523,8 @@ export default function OneUtilityClientPage() {
       )}
 
       {/* TOP HEADER: CLIENT IDENTIFIER */}
-      <header className="min-h-16 rounded-xl bg-black text-white px-4 py-3 sm:px-6 flex flex-wrap items-center justify-between gap-3 shrink-0 z-30">
-        <div className="flex items-center gap-3 min-w-0">
+      <header className="min-h-16 rounded-xl bg-black text-white px-4 py-3 sm:px-6 flex items-center justify-between gap-3 shrink-0 z-30">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <DashboardSidebarSheet trigger={
             <button
               type="button"
@@ -552,7 +552,7 @@ export default function OneUtilityClientPage() {
             alt={clientName}
             className="h-6 w-6 shrink-0 object-contain"
           />
-          <span className="text-sm font-semibold tracking-tight text-white">
+          <span className="truncate text-sm font-semibold tracking-tight text-white">
             {clientName}
           </span>
           {activeMainTab === "campaign" && campaignView === "editor" && (
@@ -564,7 +564,7 @@ export default function OneUtilityClientPage() {
             </>
           )}
         </div>
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           {/* Collaborators */}
           <div className="hidden sm:flex items-center -space-x-2 pr-1" aria-label="Collaborators on this campaign">
             {collaborators.map((c) => (
@@ -598,11 +598,11 @@ export default function OneUtilityClientPage() {
             />
           </label>
 
-          <button onClick={handleShareCampaign} className="px-3.5 py-1.5 text-sm font-medium text-secondary-foreground bg-secondary hover:bg-secondary/90 rounded-md border border-border transition flex items-center gap-2">
-            <LinkIcon className="w-3.5 h-3.5" /> Share
+          <button onClick={handleShareCampaign} aria-label="Share" className="px-2.5 sm:px-3.5 py-1.5 text-sm font-medium text-secondary-foreground bg-secondary hover:bg-secondary/90 rounded-md border border-border transition flex items-center gap-2">
+            <LinkIcon className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Share</span>
           </button>
-          <button onClick={handleExportCampaign} className="px-3.5 py-1.5 text-sm font-medium text-primary-foreground bg-primary hover:opacity-90 rounded-md transition flex items-center gap-2">
-            <Download className="w-3.5 h-3.5" /> Export
+          <button onClick={handleExportCampaign} aria-label="Export" className="px-2.5 sm:px-3.5 py-1.5 text-sm font-medium text-primary-foreground bg-primary hover:opacity-90 rounded-md transition flex items-center gap-2">
+            <Download className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Export</span>
           </button>
           <ProfileNav />
         </div>
@@ -694,10 +694,10 @@ export default function OneUtilityClientPage() {
       <main className="order-1 lg:flex-1 lg:min-h-0 rounded-xl bg-background flex flex-col lg:overflow-hidden">
 
         {/* TOP-LEVEL VIEW TABS: OVERVIEW | CAMPAIGNS | BRAND DNA */}
-        <div className="min-h-12 border-b border-border px-4 sm:px-6 flex items-center justify-start sm:justify-center gap-1 bg-card/60 shrink-0 overflow-x-auto">
+        <div className="min-h-12 border-b border-border px-1 sm:px-6 flex items-center justify-center gap-0.5 sm:gap-1 bg-card/60 shrink-0">
           <button
             onClick={() => setActiveMainTab("overview")}
-            className={`px-4 py-2.5 text-sm font-semibold border-b-2 flex items-center gap-2 transition whitespace-nowrap ${
+            className={`flex-1 sm:flex-none justify-center px-2 sm:px-4 py-2.5 text-sm font-semibold border-b-2 flex items-center gap-1.5 sm:gap-2 transition whitespace-nowrap ${
               activeMainTab === "overview"
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
@@ -710,7 +710,7 @@ export default function OneUtilityClientPage() {
               setActiveMainTab("campaign");
               setCampaignView("home");
             }}
-            className={`px-4 py-2.5 text-sm font-semibold border-b-2 flex items-center gap-2 transition whitespace-nowrap ${
+            className={`flex-1 sm:flex-none justify-center px-2 sm:px-4 py-2.5 text-sm font-semibold border-b-2 flex items-center gap-1.5 sm:gap-2 transition whitespace-nowrap ${
               activeMainTab === "campaign"
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
@@ -720,7 +720,7 @@ export default function OneUtilityClientPage() {
           </button>
           <button
             onClick={() => setActiveMainTab("brand")}
-            className={`px-4 py-2.5 text-sm font-semibold border-b-2 flex items-center gap-2 transition whitespace-nowrap ${
+            className={`flex-1 sm:flex-none justify-center px-2 sm:px-4 py-2.5 text-sm font-semibold border-b-2 flex items-center gap-1.5 sm:gap-2 transition whitespace-nowrap ${
               activeMainTab === "brand"
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
