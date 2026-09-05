@@ -2,7 +2,7 @@
 
 import { DashboardLogo, DashboardSidebarContent, DashboardSidebarSheet } from "@/components/dashboard-sidebar";
 
-export function DashboardHeader() {
+export function DashboardHeader({ hideMobile = false }: { hideMobile?: boolean }) {
   return (
     <>
       {/* Desktop sidebar */}
@@ -14,7 +14,9 @@ export function DashboardHeader() {
       </nav>
 
       {/* Mobile top bar */}
-      <div className="sticky top-0 z-40 flex items-center justify-between bg-primary px-[max(18px,env(safe-area-inset-left))] py-3 nav:hidden">
+      <div
+        className={`${hideMobile ? "hidden" : "sticky top-0 z-40 flex"} items-center justify-between bg-primary px-[max(18px,env(safe-area-inset-left))] py-3 nav:hidden`}
+      >
         <DashboardLogo />
         <DashboardSidebarSheet />
       </div>

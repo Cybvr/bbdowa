@@ -4,6 +4,12 @@ import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { EmptyThumbnail, ImageWithFallback } from "@/components/empty-thumbnail";
 import { CAMPAIGNS } from "@/lib/campaigns";
 import type { Campaign, CampaignStatus } from "@/lib/campaigns";
@@ -682,6 +688,9 @@ function OneUtilityClientWorkspace({
     { view: "creators", label: "Creators", href: `/dashboard/clients/${slug}/creators` },
     { view: "media", label: "Media", href: `/dashboard/clients/${slug}/media` },
   ];
+  const mobileWorkspaceTabs = workspaceTabs.slice(0, 3);
+  const mobileMoreTabs = workspaceTabs.slice(3);
+  const isMobileMoreActive = mobileMoreTabs.some((tab) => tab.view === activeMainTab);
 
   const campaignSubTabs: { id: typeof campaignSubTab; label: string }[] = [
     { id: "overview", label: "Overview" },
@@ -690,13 +699,6 @@ function OneUtilityClientWorkspace({
     { id: "creative", label: "Creatives" },
     { id: "marketing", label: "Marketing" },
   ];
-
-  // The tab strip scrolls horizontally on narrow screens. Without this it opens
-  // at scrollLeft 0, which can leave the active tab off-screen.
-  const activeTabRef = useRef<HTMLAnchorElement>(null);
-  useEffect(() => {
-    activeTabRef.current?.scrollIntoView({ block: "nearest", inline: "center" });
-  }, [activeMainTab]);
 
   const activeSubTabRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
@@ -730,7 +732,7 @@ function OneUtilityClientWorkspace({
         <main className="order-1">
 
           {/* TOP-LEVEL VIEW TABS */}
-          <div className="mx-4 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl bg-card px-2 py-2 sm:mx-5 sm:flex-nowrap sm:gap-x-3 sm:px-4">
+          <div className="mx-2 flex items-center gap-1 rounded-xl bg-card p-2 sm:mx-5 sm:gap-x-3 sm:px-4">
             <Link
               href="/dashboard/clients"
               aria-label="Back to clients"
@@ -742,7 +744,7 @@ function OneUtilityClientWorkspace({
               href={`/dashboard/clients/${slug}/overview`}
               onClick={() => setActiveMainTab("overview")}
               aria-label={`${clientName} overview`}
-              className="flex h-10 w-12 shrink-0 items-center justify-center sm:h-12 sm:w-14"
+              className="flex h-10 w-10 shrink-0 items-center justify-center sm:h-12 sm:w-14"
             >
               <ImageWithFallback
                 src={clientProfileImage}
@@ -753,8 +755,62 @@ function OneUtilityClientWorkspace({
             </Link>
             <nav
               aria-label="Client workspace"
-              className="no-scrollbar order-4 -mx-2 w-full min-w-0 overflow-x-auto px-2 sm:order-none sm:mx-0 sm:w-auto sm:flex-1 sm:px-0"
+              className="flex min-w-0 flex-1 items-center sm:hidden"
             >
+              <div className="flex min-w-0 flex-1 items-center justify-end gap-0.5">
+                {mobileWorkspaceTabs.map((tab) => {
+                  const isActive = activeMainTab === tab.view;
+                  return (
+                    <Link
+                      key={tab.view}
+                      href={tab.href}
+                      onClick={tab.onSelect}
+                      aria-current={isActive ? "page" : undefined}
+                      className={`relative flex h-10 shrink-0 items-center whitespace-nowrap rounded-md px-1 text-xs font-semibold tracking-tight transition ${isActive
+                        ? "text-primary after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:bg-primary"
+                        : "text-muted-foreground hover:text-foreground"
+                        }`}
+                    >
+                      {tab.label}
+                    </Link>
+                  );
+                })}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label="More client sections"
+                      className={`relative flex h-10 shrink-0 items-center gap-0.5 rounded-md px-1 text-xs font-semibold tracking-tight transition ${isMobileMoreActive
+                        ? "text-primary after:absolute after:inset-x-1 after:bottom-0 after:h-0.5 after:bg-primary"
+                        : "text-muted-foreground hover:text-foreground"
+                        }`}
+                    >
+                      More
+                      <ChevronDown className="h-3 w-3" aria-hidden="true" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" sideOffset={6} className="w-40">
+                    {mobileMoreTabs.map((tab) => (
+                      <DropdownMenuItem key={tab.view} asChild className="px-3 py-2.5">
+                        <Link
+                          href={tab.href}
+                          onClick={tab.onSelect}
+                          aria-current={activeMainTab === tab.view ? "page" : undefined}
+                          className={activeMainTab === tab.view ? "font-semibold text-primary" : undefined}
+                        >
+                          {tab.label}
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                    <DropdownMenuItem onSelect={handleShareCampaign} className="px-3 py-2.5">
+                      <Share2 className="h-4 w-4" aria-hidden="true" />
+                      Share
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </nav>
+            <nav aria-label="Client workspace" className="hidden min-w-0 flex-1 sm:block">
               <div className="flex items-center gap-1">
                 {workspaceTabs.map((tab) => {
                   const isActive = activeMainTab === tab.view;
@@ -763,7 +819,6 @@ function OneUtilityClientWorkspace({
                       key={tab.view}
                       href={tab.href}
                       onClick={tab.onSelect}
-                      ref={isActive ? activeTabRef : undefined}
                       aria-current={isActive ? "page" : undefined}
                       className={`relative flex shrink-0 items-center whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold transition ${isActive
                         ? "text-primary after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:bg-primary"
@@ -776,8 +831,8 @@ function OneUtilityClientWorkspace({
                 })}
               </div>
             </nav>
-            <div className="order-3 ml-auto flex shrink-0 items-center gap-2 sm:order-none sm:gap-3">
-              <div className="hidden items-center -space-x-2 pr-1 sm:flex" aria-label="Collaborators on this campaign">
+            <div className="ml-auto hidden shrink-0 items-center gap-3 sm:flex">
+              <div className="flex items-center -space-x-2 pr-1" aria-label="Collaborators on this campaign">
                 {collaborators.map((c) => (
                   <span
                     key={c.name}

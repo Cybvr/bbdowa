@@ -2,75 +2,61 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import type { Campaign } from "@/lib/campaigns";
 import type { ClientUser } from "@/lib/users";
 import { userHref } from "@/lib/users";
-import { plural } from "@/lib/format";
-import { EmptyState, ImageWithFallback } from "@/components/dashboard/ui";
-import { FilterBar, type FilterTab, type SortOption } from "@/components/dashboard/filter-bar";
+import { longDate, plural } from "@/lib/format";
+import { Badge, EmptyState, ImageWithFallback } from "@/components/dashboard/ui";
+import { FilterBar, type SortOption } from "@/components/dashboard/filter-bar";
 
-const FILTERS: FilterTab<"all" | "live" | "completed">[] = [
-  { key: "all", label: "All" },
-  { key: "live", label: "Live" },
-  { key: "completed", label: "Completed" },
-];
-
-type FilterKey = (typeof FILTERS)[number]["key"];
-
-const SORTS: SortOption<"name" | "campaigns">[] = [
-  { key: "name", label: "Name (A-Z)" },
-  { key: "campaigns", label: "Campaign count" },
+const SORTS: SortOption<"name" | "date" | "industry">[] = [
+  { key: "name", label: "Name (A–Z)" },
+  { key: "date", label: "Most recent" },
+  { key: "industry", label: "Industry (A–Z)" },
 ];
 
 type SortKey = (typeof SORTS)[number]["key"];
 
-function hasCompletedCampaigns(clientSlug: string, campaigns: Campaign[]): boolean {
-  const clientCampaigns = campaigns.filter((campaign) => campaign.clientId === clientSlug);
-  return clientCampaigns.length > 0 && clientCampaigns.every((campaign) => campaign.status === "completed");
-}
-
-function hasLiveCampaigns(clientSlug: string, campaigns: Campaign[]): boolean {
-  return campaigns.some((campaign) => campaign.clientId === clientSlug && campaign.status === "live");
-}
-
-export function ClientsDirectory({ clients, campaigns }: { clients: ClientUser[]; campaigns: Campaign[] }) {
-  const [filter, setFilter] = useState<FilterKey>("all");
+export function ClientsDirectory({ clients }: { clients: ClientUser[] }) {
+  const [industry, setIndustry] = useState("all");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortKey>("name");
+
+  const industryOptions = useMemo(
+    () => [
+      { value: "all", label: "All industries" },
+      ...[...new Set(clients.map((client) => client.industry))]
+        .sort((a, b) => a.localeCompare(b))
+        .map((value) => ({ value, label: value })),
+    ],
+    [clients],
+  );
 
   const visibleClients = useMemo(() => {
     const query = search.trim().toLowerCase();
     const matches = clients.filter((client) => {
-      const matchesSearch = !query || client.name.toLowerCase().includes(query);
-      const matchesFilter =
-        filter === "all" ||
-        (filter === "live"
-          ? hasLiveCampaigns(client.slug, campaigns)
-          : hasCompletedCampaigns(client.slug, campaigns));
-      return matchesSearch && matchesFilter;
+      const matchesSearch =
+        !query || [client.name, client.industry].join(" ").toLowerCase().includes(query);
+      const matchesIndustry = industry === "all" || client.industry === industry;
+      return matchesSearch && matchesIndustry;
     });
 
     return [...matches].sort((a, b) => {
-      if (sort === "campaigns") {
-        const aCount = campaigns.filter((campaign) => campaign.clientId === a.slug).length;
-        const bCount = campaigns.filter((campaign) => campaign.clientId === b.slug).length;
-        return bCount - aCount || a.name.localeCompare(b.name);
-      }
+      if (sort === "date") return (b.date ?? "").localeCompare(a.date ?? "");
+      if (sort === "industry") return a.industry.localeCompare(b.industry) || a.name.localeCompare(b.name);
       return a.name.localeCompare(b.name);
     });
-  }, [campaigns, clients, filter, search, sort]);
+  }, [clients, industry, search, sort]);
 
   return (
     <>
       <FilterBar
         panelId="client-panel"
-        tabs={FILTERS}
-        activeTab={filter}
-        onTabChange={setFilter}
-        tabsLabel="Status"
         search={search}
         onSearchChange={setSearch}
         searchPlaceholder="Search clients"
+        filters={[
+          { label: "Industry", value: industry, onChange: setIndustry, options: industryOptions },
+        ]}
         sortOptions={SORTS}
         activeSort={sort}
         onSortChange={setSort}
@@ -80,36 +66,40 @@ export function ClientsDirectory({ clients, campaigns }: { clients: ClientUser[]
       <section id="client-panel" aria-label="Clients">
         {visibleClients.length > 0 ? (
           <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2 lg:grid-cols-3">
-            {visibleClients.map((client) => {
-              const clientCampaigns = campaigns.filter((campaign) => campaign.clientId === client.slug);
-
-              return (
-                <li key={client.slug}>
-                  <Link
-                    href={userHref(client)}
-                    className="group flex h-full overflow-hidden rounded-xl border border-border bg-background text-foreground no-underline transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                  >
-                    <div className="aspect-[4/3] w-[38%] shrink-0 bg-muted overflow-hidden flex items-center justify-center p-3">
-                      <ImageWithFallback
-                        src={client.profileImage}
-                        alt={`${client.name} profile image`}
-                        className="h-full w-full object-contain"
-                        iconClassName="w-6 h-6"
-                      />
-                    </div>
-                    <div className="flex min-w-0 flex-1 flex-col justify-between gap-3 p-4">
-                      <span className="text-[16px] font-semibold leading-tight group-hover:text-primary">{client.name}</span>
+            {visibleClients.map((client) => (
+              <li key={client.slug}>
+                <Link
+                  href={userHref(client)}
+                  className="group flex h-full overflow-hidden rounded-xl border border-border bg-background text-foreground no-underline transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                >
+                  <div className="aspect-[4/3] w-[38%] shrink-0 bg-muted overflow-hidden flex items-center justify-center p-3">
+                    <ImageWithFallback
+                      src={client.profileImage}
+                      alt={`${client.name} profile image`}
+                      className="h-full w-full object-contain"
+                      iconClassName="w-6 h-6"
+                    />
+                  </div>
+                  <div className="flex min-w-0 flex-1 flex-col p-4">
+                    <span className="text-[16px] font-semibold leading-tight group-hover:text-primary">
+                      {client.name}
+                    </span>
+                    <div className="mt-auto flex flex-col items-start gap-1.5 pt-3">
+                      <Badge>{client.industry}</Badge>
                       <span className="text-[13px] text-muted-foreground">
-                        {clientCampaigns.length} {clientCampaigns.length === 1 ? "campaign" : "campaigns"}
+                        {client.date ? <time dateTime={client.date}>{longDate(client.date)}</time> : "—"}
                       </span>
                     </div>
-                  </Link>
-                </li>
-              );
-            })}
+                  </div>
+                </Link>
+              </li>
+            ))}
           </ul>
         ) : (
-          <EmptyState title="No clients match" description="Try a different search term or clear your search." />
+          <EmptyState
+            title="No clients match"
+            description="Try a different search term, industry filter or clear your filters."
+          />
         )}
       </section>
     </>

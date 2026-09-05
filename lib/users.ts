@@ -76,6 +76,8 @@ export type ClientUser = {
   type: "client";
   slug: string;
   name: string;
+  date: string | null;
+  industry: string;
   profileImage?: string | null;
 };
 
@@ -943,15 +945,19 @@ const CLIENT_PROFILE_IMAGES: Record<string, string> = {
 
 export const CLIENTS: ClientUser[] = Array.from(
   new Map(
-    CAMPAIGNS.map((campaign) => [
-      campaign.clientId,
-      {
-        type: "client" as const,
-        slug: campaign.clientId,
-        name: campaign.client,
-        profileImage: CLIENT_PROFILE_IMAGES[campaign.clientId] ?? null,
-      },
-    ])
+    [...CAMPAIGNS]
+      .sort((a, b) => (a.liveAt?.date ?? "").localeCompare(b.liveAt?.date ?? ""))
+      .map((campaign) => [
+        campaign.clientId,
+        {
+          type: "client" as const,
+          slug: campaign.clientId,
+          name: campaign.client,
+          date: campaign.liveAt?.date ?? null,
+          industry: campaign.category,
+          profileImage: CLIENT_PROFILE_IMAGES[campaign.clientId] ?? null,
+        },
+      ])
   ).values()
 ).sort((a, b) => a.name.localeCompare(b.name));
 
