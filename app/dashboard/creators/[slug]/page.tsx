@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import type { IconType } from "react-icons";
-import { FaBehance, FaGlobe, FaLinkedinIn } from "react-icons/fa";
+import { FaBehance, FaGlobe, FaInstagram, FaLinkedinIn } from "react-icons/fa";
 import { FiArrowUpRight } from "react-icons/fi";
 import { BackLink } from "@/components/back-link";
-import { CREATORS, getCreator, type Creator } from "@/lib/users";
+import { CREATORS, getCreator, isCreatorNew, type Creator } from "@/lib/users";
 import { longDate } from "@/lib/format";
 import { ImageWithFallback, MetaGrid, MetaItem, SectionHeading } from "@/components/dashboard/ui";
 
@@ -34,6 +34,7 @@ function platformsFor(creator: Creator): CreatorPlatform[] {
   }
   if (creator.behance) platforms.push({ label: "Behance", href: creator.behance, Icon: FaBehance });
   if (creator.linkedin) platforms.push({ label: "LinkedIn", href: creator.linkedin, Icon: FaLinkedinIn });
+  if (creator.instagram) platforms.push({ label: "Instagram", href: creator.instagram, Icon: FaInstagram });
   return platforms;
 }
 
@@ -63,7 +64,10 @@ export default async function CreatorDetailPage({ params }: Params) {
             <div className="flex items-center gap-4">
               <ProfileMark creator={creator} className="h-16 w-16 rounded-full text-[18px] sm:h-20 sm:w-20" />
               <div>
-                <span className="block text-[13px] font-semibold text-primary">{creator.category}</span>
+                <div className="flex items-center gap-2">
+                  <span className="block text-[13px] font-semibold text-primary">{creator.category}</span>
+                  {isCreatorNew(creator) ? <span className="rounded-full bg-primary/10 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-primary">New</span> : null}
+                </div>
                 <h1 className="mb-0 mt-1.5 text-[24px] font-bold leading-tight tracking-tight sm:text-[30px]">
                   {creator.name}
                 </h1>
@@ -83,6 +87,7 @@ export default async function CreatorDetailPage({ params }: Params) {
             <MetaItem label="Years active">{creator.yearsActive ?? "Not provided"}</MetaItem>
             <MetaItem label="Vouched by">{creator.vouchedBy}</MetaItem>
             <MetaItem label="Last engaged">{longDate(creator.lastEngaged)}</MetaItem>
+            <MetaItem label="Added to directory">{longDate(creator.addedAt?.slice(0, 10))}</MetaItem>
             <MetaItem label="Engagements">{creator.workedOn.length ? creator.workedOn.join(", ") : "—"}</MetaItem>
           </MetaGrid>
 
@@ -194,7 +199,9 @@ export default async function CreatorDetailPage({ params }: Params) {
                   ) : null}
                   {creator.phone ? <li className="border-t border-border py-2.5">{creator.phone}</li> : null}
                   {!creator.email && !creator.phone ? (
-                    <li className="border-t border-border py-2.5 text-muted-foreground">Public contact links not yet confirmed.</li>
+                    <li className="border-t border-border py-2.5 text-muted-foreground">{creator.contactNote ?? "Public contact links not yet confirmed."}</li>
+                  ) : creator.contactNote ? (
+                    <li className="border-t border-border py-2.5 text-muted-foreground">{creator.contactNote}</li>
                   ) : null}
                 </ul>
               </section>

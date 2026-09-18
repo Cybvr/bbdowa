@@ -4,11 +4,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { IconType } from "react-icons";
-import { FaBehance, FaGlobe, FaLinkedinIn } from "react-icons/fa";
+import { FaBehance, FaGlobe, FaInstagram, FaLinkedinIn } from "react-icons/fa";
 import { FiFilter, FiX } from "react-icons/fi";
 import { ImageWithFallback } from "@/components/empty-thumbnail";
+import { Badge } from "@/components/dashboard/ui";
 import type { Creator } from "@/lib/users";
-import { baseCity, rateFloorNgn, creatorHref } from "@/lib/users";
+import { baseCity, creatorAddedTimestamp, creatorHref, isCreatorNew, rateFloorNgn } from "@/lib/users";
 
 const AVAILABILITY_DOT: Record<Creator["availability"], string> = {
   open: "bg-[#1a9a4a]",
@@ -49,6 +50,7 @@ function platformLinks(creator: Creator): PlatformLink[] {
     { label: "Website", href: portfolioIsBehance ? null : creator.portfolio, Icon: FaGlobe },
     { label: "LinkedIn", href: creator.linkedin ?? null, Icon: FaLinkedinIn },
     { label: "Behance", href: creator.behance ?? (portfolioIsBehance ? creator.portfolio : null), Icon: FaBehance },
+    { label: "Instagram", href: creator.instagram ?? null, Icon: FaInstagram },
   ];
 }
 
@@ -62,6 +64,8 @@ const RATE_STEP = 1_000;
 const RATE_MIN = 0;
 const RATE_CAP = 100_000;
 const PAGE_SIZE = 10;
+type AddedFilter = "all" | "recent" | "older";
+type AddedSort = "newest" | "oldest";
 
 type DirectoryUrlState = {
   search: string;
@@ -69,6 +73,8 @@ type DirectoryUrlState = {
   location: string;
   availability: Creator["availability"] | "all";
   maxRate: number;
+  added: AddedFilter;
+  sort: AddedSort;
   page: number;
 };
 
@@ -79,6 +85,8 @@ function readDirectoryUrlState(categories: string[], locations: string[]): Direc
     location: "all",
     availability: "all",
     maxRate: RATE_CAP,
+    added: "all",
+    sort: "newest",
     page: 1,
   };
 
@@ -90,6 +98,8 @@ function readDirectoryUrlState(categories: string[], locations: string[]): Direc
   const category = params.get("category");
   const location = params.get("location");
   const availability = params.get("availability");
+  const added = params.get("added");
+  const sort = params.get("sort");
 
   return {
     search: params.get("search") ?? defaults.search,
@@ -103,6 +113,8 @@ function readDirectoryUrlState(categories: string[], locations: string[]): Direc
       Number.isFinite(rawRate)
         ? Math.min(RATE_CAP, Math.max(RATE_MIN, Math.round(rawRate / RATE_STEP) * RATE_STEP))
         : defaults.maxRate,
+    added: added === "recent" || added === "older" ? added : defaults.added,
+    sort: sort === "oldest" ? sort : defaults.sort,
     page: Number.isInteger(rawPage) && rawPage > 0 ? rawPage : defaults.page,
   };
 }
@@ -128,6 +140,12 @@ function writeDirectoryUrl(state: DirectoryUrlState) {
   if (state.maxRate < RATE_CAP) params.set("maxRate", String(state.maxRate));
   else params.delete("maxRate");
 
+  if (state.added !== "all") params.set("added", state.added);
+  else params.delete("added");
+
+  if (state.sort !== "newest") params.set("sort", state.sort);
+  else params.delete("sort");
+
   if (state.page > 1) params.set("page", String(state.page));
   else params.delete("page");
 
@@ -150,6 +168,10 @@ type FilterControlsProps = {
   setAvailability: (value: Creator["availability"] | "all") => void;
   maxRate: number;
   setMaxRate: (value: number) => void;
+  added: AddedFilter;
+  setAdded: (value: AddedFilter) => void;
+  sort: AddedSort;
+  setSort: (value: AddedSort) => void;
   categories: string[];
   locations: string[];
   activeFilterCount: number;
@@ -167,6 +189,10 @@ function FilterControls({
   setAvailability,
   maxRate,
   setMaxRate,
+  added,
+  setAdded,
+  sort,
+  setSort,
   categories,
   locations,
   activeFilterCount,
@@ -219,6 +245,15 @@ function FilterControls({
         <option value="busy">Busy</option>
         <option value="unconfirmed">Unconfirmed</option>
       </select>
+      <select value={added} onChange={(event) => setAdded(event.target.value as AddedFilter)} aria-label="Added date" className={`${SELECT} w-full`}>
+        <option value="all">Any added date</option>
+        <option value="recent">Added in the last 30 days</option>
+        <option value="older">Added earlier</option>
+      </select>
+      <select value={sort} onChange={(event) => setSort(event.target.value as AddedSort)} aria-label="Sort creators" className={`${SELECT} w-full`}>
+        <option value="newest">Newest first</option>
+        <option value="oldest">Oldest first</option>
+      </select>
       <label className="flex flex-col gap-3 text-[11px] font-extrabold uppercase tracking-[0.12em]">
         <span className="flex items-center justify-between text-muted-foreground">
           <span>₦0</span>
@@ -263,12 +298,16 @@ export function CreatorDirectory({
   const [location, setLocation] = useState<string>("all");
   const [availability, setAvailability] = useState<Creator["availability"] | "all">("all");
   const [maxRate, setMaxRate] = useState<number>(RATE_CAP);
+  const [added, setAdded] = useState<AddedFilter>("all");
+  const [sort, setSort] = useState<AddedSort>("newest");
   const [filterOpen, setFilterOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [urlStateInitialized, setUrlStateInitialized] = useState(false);
 
   const visible = creators.filter((creator) => {
     const query = search.trim().toLowerCase();
+    const addedTimestamp = creatorAddedTimestamp(creator);
+    const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
     const searchable = [
       creator.name,
       creator.category,
@@ -284,8 +323,12 @@ export function CreatorDirectory({
       (category === "all" || creator.category === category) &&
       (location === "all" || baseCity(creator.location) === location) &&
       (availability === "all" || creator.availability === availability) &&
+      (added === "all" || (added === "recent" ? addedTimestamp >= thirtyDaysAgo : addedTimestamp < thirtyDaysAgo)) &&
       (maxRate >= RATE_CAP || rateFloorNgn(creator) <= maxRate)
     );
+  }).sort((a, b) => {
+    const difference = creatorAddedTimestamp(b) - creatorAddedTimestamp(a);
+    return sort === "newest" ? difference : -difference;
   });
 
   const activeFilterCount = [
@@ -294,6 +337,7 @@ export function CreatorDirectory({
     location !== "all" ? location : "",
     availability !== "all" ? availability : "",
     maxRate < RATE_CAP ? "rate" : "",
+    added !== "all" ? added : "",
   ].filter(Boolean).length;
 
   useEffect(() => {
@@ -304,6 +348,8 @@ export function CreatorDirectory({
       setLocation(next.location);
       setAvailability(next.availability);
       setMaxRate(next.maxRate);
+      setAdded(next.added);
+      setSort(next.sort);
       setPage(next.page);
     };
 
@@ -319,8 +365,8 @@ export function CreatorDirectory({
 
   useEffect(() => {
     if (!urlStateInitialized) return;
-    writeDirectoryUrl({ search, category, location, availability, maxRate, page: currentPage });
-  }, [search, category, location, availability, maxRate, currentPage, urlStateInitialized]);
+    writeDirectoryUrl({ search, category, location, availability, maxRate, added, sort, page: currentPage });
+  }, [search, category, location, availability, maxRate, added, sort, currentPage, urlStateInitialized]);
 
   const updateSearch = (value: string) => {
     setSearch(value);
@@ -347,12 +393,24 @@ export function CreatorDirectory({
     setPage(1);
   };
 
+  const updateAdded = (value: AddedFilter) => {
+    setAdded(value);
+    setPage(1);
+  };
+
+  const updateSort = (value: AddedSort) => {
+    setSort(value);
+    setPage(1);
+  };
+
   const clearFilters = () => {
     setSearch("");
     setCategory("all");
     setLocation("all");
     setAvailability("all");
     setMaxRate(RATE_CAP);
+    setAdded("all");
+    setSort("newest");
     setPage(1);
   };
 
@@ -371,6 +429,10 @@ export function CreatorDirectory({
             setAvailability={updateAvailability}
             maxRate={maxRate}
             setMaxRate={updateMaxRate}
+            added={added}
+            setAdded={updateAdded}
+            sort={sort}
+            setSort={updateSort}
             categories={categories}
             locations={locations}
             activeFilterCount={activeFilterCount}
@@ -431,6 +493,7 @@ export function CreatorDirectory({
                       {creator.name}
                     </Link>
                   </h2>
+                  {isCreatorNew(creator) ? <Badge tone="active">NEW</Badge> : null}
                   <span className="inline-flex items-center gap-1.5 text-[12px] font-medium text-muted-foreground">
                     <span aria-hidden="true" className={`h-2 w-2 rounded-full ${AVAILABILITY_DOT[creator.availability]}`} />
                     {AVAILABILITY_LABEL[creator.availability]}
@@ -549,6 +612,10 @@ export function CreatorDirectory({
               setAvailability={updateAvailability}
               maxRate={maxRate}
               setMaxRate={updateMaxRate}
+              added={added}
+              setAdded={updateAdded}
+              sort={sort}
+              setSort={updateSort}
               categories={categories}
               locations={locations}
               activeFilterCount={activeFilterCount}

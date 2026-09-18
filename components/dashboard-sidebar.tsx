@@ -125,6 +125,9 @@ export function DashboardNavFooter({ onNavigate }: { onNavigate?: () => void }) 
   return (
     <div className="mt-auto pt-3">
       <ProfileNav variant="row" />
+      <p className="m-0 pt-3 text-center font-mono text-[9px] font-semibold uppercase tracking-[0.16em] text-primary-foreground/45">
+        Powered by VCNS
+      </p>
     </div>
   );
 }

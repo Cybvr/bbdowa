@@ -10,7 +10,9 @@ import {
 } from "@/lib/campaigns";
 import { PageHeader, SectionHeading, StatItem, StatRow, TextLink } from "@/components/dashboard/ui";
 import { DashboardNotifications } from "@/components/dashboard-notifications";
+import { CreatorCarousel } from "@/components/creator-carousel";
 import { NAV_ICON_SET, type NavIconComponent } from "@/components/nav-icons";
+import { CREATORS } from "@/lib/users";
 
 type ActionTile = {
   label: string;
@@ -101,6 +103,8 @@ export default function HomePage() {
           ))}
         </ul>
       </section>
+
+      <CreatorCarousel creators={CREATORS} />
     </main>
   );
 }
