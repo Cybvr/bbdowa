@@ -5,10 +5,11 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type { IconType } from "react-icons";
 import { FaBehance, FaGlobe } from "react-icons/fa";
-import { FiBookmark, FiChevronDown, FiFilter, FiGrid, FiList, FiMail, FiPlus, FiSearch } from "react-icons/fi";
+import { FiBookmark, FiCheck, FiChevronDown, FiEdit2, FiFilter, FiGrid, FiList, FiMail, FiPlus, FiSearch, FiTrash2 } from "react-icons/fi";
 import { ImageWithFallback } from "@/components/empty-thumbnail";
 import { Badge } from "@/components/dashboard/ui";
 import { SocialIcon, type SocialIconName } from "@/components/social-icon";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { LoginDialog } from "@/components/login-dialog";
 import type { Creator } from "@/lib/users";
@@ -58,7 +59,14 @@ const RATE_STEP = 1_000;
 const RATE_MIN = 0;
 const RATE_CAP = 100_000;
 const PAGE_SIZE = 12;
-const MY_CREATORS_STORAGE_KEY = "bbdowa-my-creator-list";
+const LEGACY_CREATORS_STORAGE_KEY = "bbdowa-my-creator-list";
+const CREATOR_LISTS_STORAGE_KEY = "bbdowa-creator-lists";
+
+type CreatorList = { id: string; name: string; slugs: string[] };
+
+function newListId() {
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+}
 type AddedFilter = "all" | "recent" | "older";
 type AddedSort = "popular" | "newest" | "oldest";
 type DirectoryView = "list" | "cards";
@@ -487,19 +495,19 @@ function CreatorTabs({
   tab,
   setTab,
   allCount,
-  myListCount,
+  listCount,
 }: {
   tab: DirectoryTab;
   setTab: (value: DirectoryTab) => void;
   allCount: number;
-  myListCount: number;
+  listCount: number;
 }) {
   return (
     <div className="mb-3 flex items-end justify-between gap-4 border-b border-border sm:mb-5">
       <div className="flex items-center gap-5" role="tablist" aria-label="Creator lists">
         {([
           ["all", "All", allCount],
-          ["my-lists", "My lists", myListCount],
+          ["my-lists", "Lists", listCount],
         ] as const).map(([key, label, count]) => (
           <button
             key={key}
@@ -536,9 +544,9 @@ function CreatorSelectionButton({
   return (
     <button
       type="button"
-      aria-label={selected ? `Remove ${creator.name} from My lists` : `Add ${creator.name} to My lists`}
+      aria-label={selected ? `Edit the lists ${creator.name} is in` : `Add ${creator.name} to a list`}
       aria-pressed={selected}
-      title={selected ? "Remove from My lists" : "Add to My lists"}
+      title={selected ? "Edit lists" : "Add to a list"}
       onClick={(event) => {
         event.stopPropagation();
         onToggle();
@@ -551,6 +559,206 @@ function CreatorSelectionButton({
     >
       <FiBookmark aria-hidden="true" className={`h-4 w-4 ${selected ? "fill-current" : ""}`} />
     </button>
+  );
+}
+
+const LIST_INPUT =
+  "min-h-[40px] w-full rounded-lg border border-border bg-background px-3 py-2 text-[13px] text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40";
+
+function ListBar({
+  lists,
+  activeListId,
+  setActiveListId,
+  onNewList,
+  onRename,
+  onDelete,
+}: {
+  lists: CreatorList[];
+  activeListId: string | null;
+  setActiveListId: (value: string) => void;
+  onNewList: () => void;
+  onRename: (listId: string, name: string) => void;
+  onDelete: (listId: string) => void;
+}) {
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [draftName, setDraftName] = useState("");
+
+  const commitRename = () => {
+    if (renamingId) onRename(renamingId, draftName);
+    setRenamingId(null);
+  };
+
+  return (
+    <div className="mb-5 flex flex-wrap items-center gap-2">
+      {lists.map((list) => {
+        const active = list.id === activeListId;
+
+        if (renamingId === list.id) {
+          return (
+            <input
+              key={list.id}
+              autoFocus
+              value={draftName}
+              aria-label="List name"
+              onChange={(event) => setDraftName(event.target.value)}
+              onBlur={commitRename}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") commitRename();
+                if (event.key === "Escape") setRenamingId(null);
+              }}
+              className={`${LIST_INPUT} w-40`}
+            />
+          );
+        }
+
+        return (
+          <span
+            key={list.id}
+            className={`inline-flex min-h-[40px] items-center gap-2 rounded-full border px-3.5 py-2 text-[13px] font-medium transition ${
+              active ? "border-foreground bg-foreground text-background" : "border-border bg-background text-foreground hover:border-foreground"
+            }`}
+          >
+            <button
+              type="button"
+              aria-pressed={active}
+              onClick={() => setActiveListId(list.id)}
+              className="cursor-pointer bg-transparent p-0 text-inherit focus-visible:outline-none focus-visible:underline"
+            >
+              {list.name}
+              <span className={`ml-2 text-[11px] ${active ? "text-background/70" : "text-muted-foreground"}`}>{list.slugs.length}</span>
+            </button>
+            {active ? (
+              <>
+                <button
+                  type="button"
+                  title="Rename list"
+                  aria-label={`Rename ${list.name}`}
+                  onClick={() => {
+                    setDraftName(list.name);
+                    setRenamingId(list.id);
+                  }}
+                  className="cursor-pointer bg-transparent p-0 text-inherit opacity-70 hover:opacity-100 focus-visible:outline-none"
+                >
+                  <FiEdit2 aria-hidden="true" className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  title="Delete list"
+                  aria-label={`Delete ${list.name}`}
+                  onClick={() => onDelete(list.id)}
+                  className="cursor-pointer bg-transparent p-0 text-inherit opacity-70 hover:opacity-100 focus-visible:outline-none"
+                >
+                  <FiTrash2 aria-hidden="true" className="h-3.5 w-3.5" />
+                </button>
+              </>
+            ) : null}
+          </span>
+        );
+      })}
+      <button
+        type="button"
+        onClick={onNewList}
+        className="inline-flex min-h-[40px] cursor-pointer items-center gap-2 rounded-full border border-dashed border-border bg-transparent px-3.5 py-2 text-[13px] font-medium hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+      >
+        <FiPlus aria-hidden="true" className="h-4 w-4" />
+        New list
+      </button>
+    </div>
+  );
+}
+
+function ListDialog({
+  open,
+  onOpenChange,
+  creator,
+  lists,
+  onToggleCreator,
+  onCreateList,
+}: {
+  open: boolean;
+  onOpenChange: (value: boolean) => void;
+  creator: Creator | null;
+  lists: CreatorList[];
+  onToggleCreator: (listId: string, slug: string) => void;
+  onCreateList: (name: string, slugs: string[]) => void;
+}) {
+  const [name, setName] = useState("");
+
+  useEffect(() => {
+    if (!open) setName("");
+  }, [open]);
+
+  const submitNewList = () => {
+    if (!name.trim()) return;
+    onCreateList(name, creator ? [creator.slug] : []);
+    setName("");
+    if (!creator) onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent aria-describedby={undefined} className="max-w-[420px]">
+        <DialogHeader>
+          <DialogTitle className="pr-8 text-lg sm:text-xl">
+            {creator ? `Add ${creator.name} to a list` : "New list"}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="flex flex-col gap-4">
+          {creator && lists.length > 0 ? (
+            <div className="flex max-h-64 flex-col gap-1 overflow-y-auto">
+              {lists.map((list) => {
+                const included = list.slugs.includes(creator.slug);
+                return (
+                  <button
+                    key={list.id}
+                    type="button"
+                    aria-pressed={included}
+                    onClick={() => onToggleCreator(list.id, creator.slug)}
+                    className="flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-transparent px-3 py-2 text-left text-[13px] hover:border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                  >
+                    <span className="min-w-0 truncate font-medium">{list.name}</span>
+                    <span className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                      {list.slugs.length}
+                      <span
+                        className={`grid h-5 w-5 place-items-center rounded-full border ${
+                          included ? "border-foreground bg-foreground text-background" : "border-border"
+                        }`}
+                      >
+                        {included ? <FiCheck aria-hidden="true" className="h-3 w-3" /> : null}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
+
+          <div className="flex items-center gap-2">
+            <input
+              value={name}
+              aria-label="New list name"
+              placeholder="New list name"
+              onChange={(event) => setName(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  submitNewList();
+                }
+              }}
+              className={LIST_INPUT}
+            />
+            <button
+              type="button"
+              onClick={submitNewList}
+              disabled={!name.trim()}
+              className="min-h-[40px] shrink-0 cursor-pointer rounded-lg border border-foreground bg-foreground px-3.5 py-2 text-[13px] font-medium text-background disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            >
+              Create
+            </button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -678,12 +886,18 @@ export function CreatorDirectory({
   const [sort, setSort] = useState<AddedSort>("popular");
   const [view, setView] = useState<DirectoryView>("cards");
   const [tab, setTab] = useState<DirectoryTab>("all");
-  const [selectedCreatorSlugs, setSelectedCreatorSlugs] = useState<string[]>([]);
+  const [lists, setLists] = useState<CreatorList[]>([]);
+  const [activeListId, setActiveListId] = useState<string | null>(null);
+  const [listDialogOpen, setListDialogOpen] = useState(false);
+  const [listDialogCreator, setListDialogCreator] = useState<Creator | null>(null);
   const [listsInitialized, setListsInitialized] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [urlStateInitialized, setUrlStateInitialized] = useState(false);
+
+  const activeList = lists.find((list) => list.id === activeListId) ?? null;
+  const savedSlugs = useMemo(() => new Set(lists.flatMap((list) => list.slugs)), [lists]);
 
   const popularityScore = (creator: Creator) =>
     creator.tags.reduce((total, tag) => total + (creatorTagCounts[tag] ?? 0), 0);
@@ -711,7 +925,7 @@ export function CreatorDirectory({
       (added === "all" || (added === "recent" ? addedTimestamp >= thirtyDaysAgo : addedTimestamp < thirtyDaysAgo)) &&
       (vetted === "all" || (vetted === "vetted" ? creator.vetted === true : creator.vetted !== true)) &&
       (selectedTags.length === 0 || selectedTags.some((tag) => creator.tags.includes(tag))) &&
-      (tab === "all" || selectedCreatorSlugs.includes(creator.slug)) &&
+      (tab === "all" || (activeList?.slugs.includes(creator.slug) ?? false)) &&
       (maxRate >= RATE_CAP || rateFloorNgn(creator) <= maxRate)
     );
   }).sort((a, b) => {
@@ -760,17 +974,29 @@ export function CreatorDirectory({
   }, [categories, creatorTags, locations]);
 
   useEffect(() => {
+    const creatorSlugs = new Set(creators.map((creator) => creator.slug));
+    const cleanSlugs = (value: unknown) =>
+      Array.isArray(value)
+        ? value.filter((slug): slug is string => typeof slug === "string" && creatorSlugs.has(slug))
+        : [];
+
     try {
-      const stored = window.localStorage.getItem(MY_CREATORS_STORAGE_KEY);
-      const parsed = stored ? JSON.parse(stored) : [];
-      const creatorSlugs = new Set(creators.map((creator) => creator.slug));
-      setSelectedCreatorSlugs(
-        Array.isArray(parsed)
-          ? parsed.filter((slug): slug is string => typeof slug === "string" && creatorSlugs.has(slug))
-          : [],
-      );
+      const stored = window.localStorage.getItem(CREATOR_LISTS_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setLists(
+          Array.isArray(parsed)
+            ? parsed
+                .filter((list) => list && typeof list.id === "string" && typeof list.name === "string")
+                .map((list) => ({ id: list.id, name: list.name, slugs: cleanSlugs(list.slugs) }))
+            : [],
+        );
+      } else {
+        const legacy = cleanSlugs(JSON.parse(window.localStorage.getItem(LEGACY_CREATORS_STORAGE_KEY) ?? "[]"));
+        setLists(legacy.length > 0 ? [{ id: newListId(), name: "Saved", slugs: legacy }] : []);
+      }
     } catch {
-      setSelectedCreatorSlugs([]);
+      setLists([]);
     } finally {
       setListsInitialized(true);
     }
@@ -778,8 +1004,16 @@ export function CreatorDirectory({
 
   useEffect(() => {
     if (!listsInitialized) return;
-    window.localStorage.setItem(MY_CREATORS_STORAGE_KEY, JSON.stringify(selectedCreatorSlugs));
-  }, [listsInitialized, selectedCreatorSlugs]);
+    window.localStorage.setItem(CREATOR_LISTS_STORAGE_KEY, JSON.stringify(lists));
+  }, [listsInitialized, lists]);
+
+  useEffect(() => {
+    if (lists.length === 0) {
+      if (activeListId !== null) setActiveListId(null);
+      return;
+    }
+    if (!lists.some((list) => list.id === activeListId)) setActiveListId(lists[0].id);
+  }, [activeListId, lists]);
 
   const totalPages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -845,10 +1079,42 @@ export function CreatorDirectory({
     setPage(1);
   };
 
-  const toggleCreator = (slug: string) => {
-    setSelectedCreatorSlugs((current) =>
-      current.includes(slug) ? current.filter((item) => item !== slug) : [...current, slug],
+  const openListDialog = (creator: Creator | null) => {
+    setListDialogCreator(creator);
+    setListDialogOpen(true);
+  };
+
+  const createList = (name: string, slugs: string[]) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    const id = newListId();
+    setLists((current) => [...current, { id, name: trimmed, slugs }]);
+    setActiveListId(id);
+    setPage(1);
+  };
+
+  const toggleCreatorInList = (listId: string, slug: string) => {
+    setLists((current) =>
+      current.map((list) =>
+        list.id === listId
+          ? {
+              ...list,
+              slugs: list.slugs.includes(slug) ? list.slugs.filter((item) => item !== slug) : [...list.slugs, slug],
+            }
+          : list,
+      ),
     );
+    setPage(1);
+  };
+
+  const renameList = (listId: string, name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    setLists((current) => current.map((list) => (list.id === listId ? { ...list, name: trimmed } : list)));
+  };
+
+  const deleteList = (listId: string) => {
+    setLists((current) => current.filter((list) => list.id !== listId));
     setPage(1);
   };
 
@@ -884,8 +1150,22 @@ export function CreatorDirectory({
             tab={tab}
             setTab={updateTab}
             allCount={creators.length}
-            myListCount={selectedCreatorSlugs.length}
+            listCount={lists.length}
           />
+
+          {tab === "my-lists" ? (
+            <ListBar
+              lists={lists}
+              activeListId={activeListId}
+              setActiveListId={(value) => {
+                setActiveListId(value);
+                setPage(1);
+              }}
+              onNewList={() => openListDialog(null)}
+              onRename={renameList}
+              onDelete={deleteList}
+            />
+          ) : null}
 
           <div className="mb-5 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
@@ -916,8 +1196,8 @@ export function CreatorDirectory({
             <CreatorCard
               key={creator.slug}
               creator={creator}
-              selected={selectedCreatorSlugs.includes(creator.slug)}
-              onToggle={() => toggleCreator(creator.slug)}
+              selected={savedSlugs.has(creator.slug)}
+              onToggle={() => openListDialog(creator)}
             />
           ) : <article
             key={creator.slug}
@@ -965,8 +1245,8 @@ export function CreatorDirectory({
               <div className="flex flex-none items-center gap-2 max-[640px]:w-full">
                 <CreatorSelectionButton
                   creator={creator}
-                  selected={selectedCreatorSlugs.includes(creator.slug)}
-                  onToggle={() => toggleCreator(creator.slug)}
+                  selected={savedSlugs.has(creator.slug)}
+                  onToggle={() => openListDialog(creator)}
                   className="h-9 w-9"
                 />
                 {platformLinks(creator)
@@ -1033,18 +1313,26 @@ export function CreatorDirectory({
         )) : (
           <div className="rounded-2xl border border-dashed border-border px-5 py-12 text-center">
             <p className="m-0 text-[14px] font-semibold">
-              {tab === "my-lists" ? "Your list is empty" : "No creators match these filters"}
+              {tab !== "my-lists"
+                ? "No creators match these filters"
+                : lists.length === 0
+                  ? "No lists yet"
+                  : `${activeList?.name ?? "This list"} is empty`}
             </p>
             <p className="mb-0 mt-1.5 text-[13px] text-muted-foreground">
-              {tab === "my-lists" ? "Select the bookmark on a creator to save them here." : "Try changing or clearing your filters."}
+              {tab !== "my-lists"
+                ? "Try changing or clearing your filters."
+                : lists.length === 0
+                  ? "Create a list, then add creators to it from the bookmark on their card."
+                  : "Use the bookmark on a creator to add them to this list."}
             </p>
             {tab === "my-lists" ? (
               <button
                 type="button"
-                onClick={() => updateTab("all")}
+                onClick={() => (lists.length === 0 ? openListDialog(null) : updateTab("all"))}
                 className="mt-4 cursor-pointer rounded-lg border border-border px-3 py-2 text-[13px] font-medium hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               >
-                Browse all creators
+                {lists.length === 0 ? "Create a list" : "Browse all creators"}
               </button>
             ) : null}
           </div>
@@ -1110,6 +1398,15 @@ export function CreatorDirectory({
           </div>
         </SheetContent>
       </Sheet>
+
+      <ListDialog
+        open={listDialogOpen}
+        onOpenChange={setListDialogOpen}
+        creator={listDialogCreator}
+        lists={lists}
+        onToggleCreator={toggleCreatorInList}
+        onCreateList={createList}
+      />
 
       <LoginDialog
         open={loginModalOpen}
