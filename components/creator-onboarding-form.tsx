@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { onAuthStateChanged, type User as FirebaseUser } from "firebase/auth";
+import { firebaseAuth } from "@/lib/firebase/client";
+import { completeCreatorOnboarding } from "@/lib/firebase/user-profiles";
 
 type FormState = {
   name: string;
@@ -37,32 +40,19 @@ export function CreatorOnboardingForm() {
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [submitted, setSubmitted] = React.useState(false);
+  const [firebaseUser, setFirebaseUser] = React.useState<FirebaseUser | null>(null);
 
   React.useEffect(() => {
-    let active = true;
-    fetch("/api/auth/session", { cache: "no-store" })
-      .then(async (response) => {
-        if (!response.ok) {
-          router.replace("/auth/login?next=/onboarding/creator");
-          return null;
-        }
-        return (await response.json()) as { user?: { name?: string | null } };
-      })
-      .then((data) => {
-        if (active && data?.user?.name) {
-          setForm((current) => ({ ...current, name: data.user?.name ?? "" }));
-        }
-      })
-      .catch(() => {
-        if (active) setError("We could not load your account. Please sign in again.");
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-
-    return () => {
-      active = false;
-    };
+    return onAuthStateChanged(firebaseAuth, (user) => {
+      if (!user) {
+        router.replace("/auth/login?next=/onboarding/creator");
+        setLoading(false);
+        return;
+      }
+      setFirebaseUser(user);
+      if (user.displayName) setForm((current) => ({ ...current, name: user.displayName ?? "" }));
+      setLoading(false);
+    });
   }, [router]);
 
   const update = (key: keyof FormState, value: string) => {
@@ -84,13 +74,8 @@ export function CreatorOnboardingForm() {
     setSubmitting(true);
 
     try {
-      const response = await fetch("/api/creator/onboarding", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      const data = (await response.json().catch(() => null)) as { error?: string } | null;
-      if (!response.ok) throw new Error(data?.error ?? "We could not save your creator profile.");
+      if (!firebaseUser) throw new Error("Your sign-in has expired. Please sign in again.");
+      await completeCreatorOnboarding(firebaseUser, form);
       setSubmitted(true);
       window.setTimeout(() => router.replace("/dashboard/creators"), 900);
     } catch (submissionError) {

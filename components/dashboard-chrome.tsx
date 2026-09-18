@@ -1,9 +1,27 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { DashboardHeader } from "@/components/dashboard-header";
-import { AuthProvider } from "@/components/auth-provider";
+import { AuthProvider, useAuth } from "@/components/auth-provider";
+
+function AuthenticatedDashboard({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const auth = useAuth();
+
+  useEffect(() => {
+    if (!auth.loading && !auth.user) {
+      router.replace(`/auth/login?next=${encodeURIComponent(`${pathname}${window.location.search}`)}`);
+    }
+  }, [auth.loading, auth.user, pathname, router]);
+
+  if (auth.loading || !auth.user) {
+    return <div className="min-h-screen bg-background" aria-busy="true" />;
+  }
+
+  return <>{children}</>;
+}
 
 export function DashboardChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -25,7 +43,9 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
           sidebarCollapsed={sidebarCollapsed}
           onToggleSidebar={() => setSidebarCollapsed((value) => !value)}
         />
-        <div className={`min-w-0 flex-1 transition-[margin-left] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${sidebarCollapsed ? "nav:ml-[80px]" : "nav:ml-[208px]"}`}>{children}</div>
+        <div className={`min-w-0 flex-1 transition-[margin-left] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${sidebarCollapsed ? "nav:ml-[80px]" : "nav:ml-[208px]"}`}>
+          <AuthenticatedDashboard>{children}</AuthenticatedDashboard>
+        </div>
       </div>
     </AuthProvider>
   );

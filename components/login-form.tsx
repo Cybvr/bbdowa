@@ -7,15 +7,16 @@ import { FirebaseError } from "firebase/app";
 import {
   GoogleAuthProvider,
   OAuthProvider,
-  inMemoryPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence,
   setPersistence,
   signInWithPopup,
-  signOut,
   type User,
 } from "firebase/auth";
 import { ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { firebaseAuth } from "@/lib/firebase/client";
+import { upsertUserProfile, type AuthIntent } from "@/lib/firebase/user-profiles";
 
 export type LoginFormMode = "signin" | "signup";
 
@@ -90,22 +91,9 @@ export function LoginForm({
     }
   };
 
-  const createServerSession = async (user: User, intent: "member" | "creator") => {
-    const idToken = await user.getIdToken();
-    const response = await fetch("/api/auth/session", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ idToken, rememberMe, intent }),
-    });
-
-    if (!response.ok) {
-      const data = (await response.json().catch(() => null)) as { error?: string } | null;
-      throw new Error(data?.error ?? "The server could not start your session.");
-    }
-
-    const data = (await response.json()) as { needsOnboarding?: boolean };
-    await signOut(firebaseAuth);
-    const needsOnboarding = intent === "creator" && data.needsOnboarding;
+  const finishClientSession = async (user: User, intent: AuthIntent) => {
+    const profileState = await upsertUserProfile(user, intent);
+    const needsOnboarding = intent === "creator" && profileState.needsOnboarding;
     setSuccessMessage(needsOnboarding ? "Account created. Opening your creator setup..." : "Welcome back. Opening Bantaba...");
     onSuccess?.();
     router.replace(needsOnboarding ? "/onboarding/creator" : destination);
@@ -118,14 +106,14 @@ export function LoginForm({
     setIsLoading(true);
 
     try {
-      await setPersistence(firebaseAuth, inMemoryPersistence);
+      await setPersistence(firebaseAuth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
       const authProvider = provider === "google"
         ? new GoogleAuthProvider()
         : new OAuthProvider("microsoft.com");
       authProvider.setCustomParameters({ prompt: "select_account" });
       if (provider === "microsoft") authProvider.addScope("User.Read");
       const credential = await signInWithPopup(firebaseAuth, authProvider);
-      await createServerSession(credential.user, mode === "signup" ? "creator" : "member");
+      await finishClientSession(credential.user, mode === "signup" ? "creator" : "member");
     } catch (authError) {
       setError(authErrorMessage(authError));
     } finally {

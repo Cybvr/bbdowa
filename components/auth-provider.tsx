@@ -2,9 +2,9 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { signOut } from "firebase/auth";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import { firebaseAuth } from "@/lib/firebase/client";
-import type { SessionUser } from "@/lib/auth/session";
+import { sessionUserFromFirebaseUser, type SessionUser } from "@/lib/auth/session";
 
 type AuthContextValue = {
   user: SessionUser | null;
@@ -20,30 +20,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    let active = true;
-
-    fetch("/api/auth/session", { cache: "no-store" })
-      .then(async (response) => {
-        if (!response.ok) return null;
-        const data = (await response.json()) as { user?: SessionUser };
-        return data.user ?? null;
-      })
-      .then((sessionUser) => {
-        if (active) setUser(sessionUser);
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-
-    return () => {
-      active = false;
-    };
+    return onAuthStateChanged(firebaseAuth, (firebaseUser) => {
+      setUser(firebaseUser ? sessionUserFromFirebaseUser(firebaseUser) : null);
+      setLoading(false);
+    });
   }, []);
 
   const logout = React.useCallback(async () => {
     await Promise.allSettled([
       signOut(firebaseAuth),
-      fetch("/api/auth/session", { method: "DELETE" }),
     ]);
     setUser(null);
     router.replace("/auth/login");
