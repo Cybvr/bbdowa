@@ -977,8 +977,6 @@ export function CreatorDirectory({
   });
 
   const activeFilterCount = [
-    search.trim(),
-    category !== "all" ? category : "",
     location !== "all" ? location : "",
     availability !== "all" ? availability : "",
     gender !== "all" ? gender : "",
@@ -1166,8 +1164,6 @@ export function CreatorDirectory({
   };
 
   const clearFilters = () => {
-    setSearch("");
-    setCategory("all");
     setLocation("all");
     setAvailability("all");
     setGender("all");
@@ -1175,7 +1171,6 @@ export function CreatorDirectory({
     setAdded("all");
     setVetted("all");
     setSelectedTags([]);
-    setSort("popular");
     setPage(1);
   };
 
