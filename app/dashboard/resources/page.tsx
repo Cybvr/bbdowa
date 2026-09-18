@@ -58,7 +58,7 @@ const META = "text-[13px] text-muted-foreground";
 export default function ResourcesPage() {
   return (
     <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
-      <PageHeader title="Resources" description="Everything in one place." />
+      <PageHeader title="Resources" />
 
       {GROUPS.map((group) => (
         <div key={group.title} className="mt-8">

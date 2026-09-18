@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default function CampaignsPage() {
   return (
     <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
-      <PageHeader title="Campaigns" description="Client work: fee, target and result on every campaign." />
+      <PageHeader title="Campaigns" />
       <CampaignsTable campaigns={CAMPAIGNS} />
     </main>
   );

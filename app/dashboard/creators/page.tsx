@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "Creators" };
 export default function CreatorPage() {
   return (
     <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
-      <PageHeader title="Creators" description="Search, filter and open a creator's profile." />
+      <PageHeader title="Creators" />
       <div className="mt-6">
         <CreatorDirectory creators={CREATORS} categories={CREATOR_CATEGORIES} locations={CREATOR_LOCATIONS} />
       </div>

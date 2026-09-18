@@ -26,7 +26,7 @@ export default function BlogPage() {
 
   return (
     <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
-      <PageHeader title="Updates" description="News, work and thinking from BBDO West Africa." />
+      <PageHeader title="Updates" />
 
       <section className="mt-8" aria-labelledby="featured-post">
         <Panel className="grid grid-cols-1 gap-6 sm:grid-cols-2">

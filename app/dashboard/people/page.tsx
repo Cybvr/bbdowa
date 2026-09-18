@@ -143,7 +143,7 @@ function Person({ name, onDark = false }: { name: string; onDark?: boolean }) {
 export default function PeoplePage() {
   return (
     <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
-      <PageHeader title="Directory" description="How the agency is organized." meta="Operating model" />
+      <PageHeader title="Directory" meta="Operating model" />
 
       <section className="mt-10" aria-label="Agency organogram">
         <div className="mx-auto w-[min(300px,100%)] rounded-xl bg-foreground px-5 py-4 text-center text-background max-[720px]:mb-5">

@@ -105,7 +105,6 @@ export default function AgencyWorkflowPage() {
     <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
       <PageHeader
         title="Agency Workflow"
-        description="The same pod handles your project from start to finish, across six connected stages."
       />
 
       <section className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-label="Modern agency principles">

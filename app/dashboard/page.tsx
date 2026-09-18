@@ -43,7 +43,6 @@ export default function HomePage() {
     <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
       <PageHeader
         title="Home"
-        description="Bantaba — our shared home for agency information and working knowledge."
         actions={<DashboardNotifications posts={latestPosts} />}
       />
 

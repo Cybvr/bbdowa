@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default function ClientsPage() {
   return (
     <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
-      <PageHeader title="Clients" description="Client accounts by date and industry." />
+      <PageHeader title="Clients" />
       <ClientsDirectory clients={CLIENTS} />
     </main>
   );
