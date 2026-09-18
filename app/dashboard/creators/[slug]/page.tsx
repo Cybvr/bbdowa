@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import type { IconType } from "react-icons";
-import { FaBehance, FaGlobe, FaInstagram, FaLinkedinIn } from "react-icons/fa";
+import { FaBehance, FaGlobe } from "react-icons/fa";
 import { FiArrowUpRight } from "react-icons/fi";
 import { BackLink } from "@/components/back-link";
 import { CREATORS, getCreator, isCreatorNew, type Creator } from "@/lib/users";
 import { longDate } from "@/lib/format";
 import { ImageWithFallback, MetaGrid, MetaItem, SectionHeading } from "@/components/dashboard/ui";
+import { SocialIcon, type SocialIconName } from "@/components/social-icon";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -23,7 +24,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 
 const HISTORY_ROW = "border-t border-border py-3";
 
-type CreatorPlatform = { label: string; href: string; Icon: IconType };
+type CreatorPlatform = { label: string; href: string; Icon?: IconType; brand?: SocialIconName };
 
 function platformsFor(creator: Creator): CreatorPlatform[] {
   const platforms: CreatorPlatform[] = [];
@@ -33,8 +34,8 @@ function platformsFor(creator: Creator): CreatorPlatform[] {
     if (isBehance && !creator.behance) platforms.push({ label: "Behance", href: creator.portfolio, Icon: FaBehance });
   }
   if (creator.behance) platforms.push({ label: "Behance", href: creator.behance, Icon: FaBehance });
-  if (creator.linkedin) platforms.push({ label: "LinkedIn", href: creator.linkedin, Icon: FaLinkedinIn });
-  if (creator.instagram) platforms.push({ label: "Instagram", href: creator.instagram, Icon: FaInstagram });
+  if (creator.linkedin) platforms.push({ label: "LinkedIn", href: creator.linkedin, brand: "LinkedIn" });
+  if (creator.instagram) platforms.push({ label: "Instagram", href: creator.instagram, brand: "Instagram" });
   return platforms;
 }
 
@@ -159,7 +160,7 @@ export default async function CreatorDetailPage({ params }: Params) {
                 <SectionHeading>Platforms</SectionHeading>
                 {platforms.length ? (
                   <div className="grid grid-cols-1 gap-2">
-                    {platforms.map(({ label, href, Icon }) => (
+                    {platforms.map(({ label, href, Icon, brand }) => (
                       <a
                         key={label}
                         href={href}
@@ -170,7 +171,7 @@ export default async function CreatorDetailPage({ params }: Params) {
                       >
                         <span className="flex items-center gap-3">
                           <span className="grid h-9 w-9 place-items-center rounded-full bg-foreground text-background group-hover:bg-primary">
-                            <Icon aria-hidden="true" className="h-4 w-4" />
+                            {brand ? <SocialIcon name={brand} className="h-5 w-5" /> : Icon ? <Icon aria-hidden="true" className="h-4 w-4" /> : null}
                           </span>
                           <span>
                             <strong className="block text-[14px] font-semibold leading-none">{label}</strong>

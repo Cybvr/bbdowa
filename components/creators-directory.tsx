@@ -4,10 +4,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { IconType } from "react-icons";
-import { FaBehance, FaGlobe, FaInstagram, FaLinkedinIn } from "react-icons/fa";
-import { FiFilter, FiX } from "react-icons/fi";
+import { FaBehance, FaGlobe } from "react-icons/fa";
+import { FiFilter, FiGrid, FiList, FiMail, FiX } from "react-icons/fi";
 import { ImageWithFallback } from "@/components/empty-thumbnail";
 import { Badge } from "@/components/dashboard/ui";
+import { SocialIcon, type SocialIconName } from "@/components/social-icon";
 import type { Creator } from "@/lib/users";
 import { baseCity, creatorAddedTimestamp, creatorHref, isCreatorNew, rateFloorNgn } from "@/lib/users";
 
@@ -42,20 +43,20 @@ function Avatar({ imageSrc, className = "" }: { imageSrc?: string | null; classN
   );
 }
 
-type PlatformLink = { label: string; href: string | null; Icon: IconType };
+type PlatformLink = { label: string; href: string | null; Icon?: IconType; brand?: SocialIconName };
 
 function platformLinks(creator: Creator): PlatformLink[] {
   const portfolioIsBehance = creator.portfolio?.toLowerCase().includes("behance.net") ?? false;
   return [
     { label: "Website", href: portfolioIsBehance ? null : creator.portfolio, Icon: FaGlobe },
-    { label: "LinkedIn", href: creator.linkedin ?? null, Icon: FaLinkedinIn },
+    { label: "LinkedIn", href: creator.linkedin ?? null, brand: "LinkedIn" },
     { label: "Behance", href: creator.behance ?? (portfolioIsBehance ? creator.portfolio : null), Icon: FaBehance },
-    { label: "Instagram", href: creator.instagram ?? null, Icon: FaInstagram },
+    { label: "Instagram", href: creator.instagram ?? null, brand: "Instagram" },
   ];
 }
 
 const SELECT =
-  "min-h-[44px] cursor-pointer rounded-lg border border-border bg-card px-[14px] py-2.5 font-mono text-[13px] font-medium text-foreground hover:border-foreground focus-visible:outline-none";
+  "min-h-[44px] cursor-pointer rounded-none border-0 border-b border-border bg-background px-0 py-2.5 font-mono text-[13px] font-medium text-foreground hover:border-foreground focus-visible:border-primary focus-visible:outline-none";
 
 const PILL =
   "inline-block rounded-full bg-foreground/[0.07] px-2.5 py-1 text-[11px] leading-none text-foreground";
@@ -63,9 +64,10 @@ const PILL =
 const RATE_STEP = 1_000;
 const RATE_MIN = 0;
 const RATE_CAP = 100_000;
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 12;
 type AddedFilter = "all" | "recent" | "older";
 type AddedSort = "newest" | "oldest";
+type DirectoryView = "list" | "cards";
 
 type DirectoryUrlState = {
   search: string;
@@ -75,6 +77,7 @@ type DirectoryUrlState = {
   maxRate: number;
   added: AddedFilter;
   sort: AddedSort;
+  view: DirectoryView;
   page: number;
 };
 
@@ -87,6 +90,7 @@ function readDirectoryUrlState(categories: string[], locations: string[]): Direc
     maxRate: RATE_CAP,
     added: "all",
     sort: "newest",
+    view: "cards",
     page: 1,
   };
 
@@ -100,6 +104,7 @@ function readDirectoryUrlState(categories: string[], locations: string[]): Direc
   const availability = params.get("availability");
   const added = params.get("added");
   const sort = params.get("sort");
+  const view = params.get("view");
 
   return {
     search: params.get("search") ?? defaults.search,
@@ -115,6 +120,7 @@ function readDirectoryUrlState(categories: string[], locations: string[]): Direc
         : defaults.maxRate,
     added: added === "recent" || added === "older" ? added : defaults.added,
     sort: sort === "oldest" ? sort : defaults.sort,
+    view: view === "list" ? view : defaults.view,
     page: Number.isInteger(rawPage) && rawPage > 0 ? rawPage : defaults.page,
   };
 }
@@ -145,6 +151,9 @@ function writeDirectoryUrl(state: DirectoryUrlState) {
 
   if (state.sort !== "newest") params.set("sort", state.sort);
   else params.delete("sort");
+
+  if (state.view !== "cards") params.set("view", state.view);
+  else params.delete("view");
 
   if (state.page > 1) params.set("page", String(state.page));
   else params.delete("page");
@@ -283,6 +292,125 @@ function FilterControls({
   );
 }
 
+function ViewToggle({ view, setView }: { view: DirectoryView; setView: (value: DirectoryView) => void }) {
+  return (
+    <div className="inline-flex items-center rounded-lg border border-border bg-background p-1" role="group" aria-label="Creator view">
+      <button
+        type="button"
+        aria-label="List view"
+        aria-pressed={view === "list"}
+        title="List view"
+        onClick={() => setView("list")}
+        className={`grid h-7 w-7 cursor-pointer place-items-center rounded-md transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
+          view === "list" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
+        }`}
+      >
+        <FiList aria-hidden="true" className="h-4 w-4" />
+      </button>
+      <button
+        type="button"
+        aria-label="Card view"
+        aria-pressed={view === "cards"}
+        title="Card view"
+        onClick={() => setView("cards")}
+        className={`grid h-7 w-7 cursor-pointer place-items-center rounded-md transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
+          view === "cards" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
+        }`}
+      >
+        <FiGrid aria-hidden="true" className="h-4 w-4" />
+      </button>
+    </div>
+  );
+}
+
+function CreatorCard({ creator }: { creator: Creator }) {
+  const links = platformLinks(creator).filter((platform) => platform.href);
+
+  return (
+    <article
+      className="group block self-start overflow-hidden rounded-2xl border border-border bg-background text-foreground no-underline transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+    >
+      <Link
+        href={creatorHref(creator.slug)}
+        aria-label={creator.name}
+        className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40"
+      >
+        <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+          <ImageWithFallback
+            src={creator.featuredImage ?? creator.profileImage}
+            alt={`${creator.name} featured image`}
+            className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+            fallbackClassName="h-full w-full"
+          />
+          <div className="absolute inset-x-3 top-3 flex flex-wrap items-center justify-end gap-2">
+            {isCreatorNew(creator) ? <Badge tone="active">NEW</Badge> : null}
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-background px-2.5 py-1.5 text-[11px] font-medium leading-none text-muted-foreground">
+              <span aria-hidden="true" className={`h-2 w-2 rounded-full ${AVAILABILITY_DOT[creator.availability]}`} />
+              {AVAILABILITY_LABEL[creator.availability]}
+            </span>
+          </div>
+        </div>
+      </Link>
+
+      <div className="p-3">
+        <h2 className="m-0 line-clamp-2 text-[14px] font-semibold leading-[1.2] tracking-tight">
+          <Link
+            href={creatorHref(creator.slug)}
+            className="text-foreground no-underline group-hover:text-primary focus-visible:outline-none focus-visible:text-primary"
+          >
+            {creator.name}
+          </Link>
+        </h2>
+        <p className="mb-0 mt-0.5 text-[12px] leading-snug text-muted-foreground">
+          {creator.category} · {baseCity(creator.location)}
+        </p>
+        <p className="mb-0 mt-1.5 line-clamp-2 text-[12px] leading-[1.4] text-muted-foreground">
+          {creator.niche ?? creator.craftNote}
+        </p>
+
+        {links.length > 0 || creator.email ? (
+          <div className="mt-2 flex items-center gap-1.5">
+            {links.map(({ label, href, Icon, brand }) => (
+              <a
+                key={label}
+                href={href!}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={`Open ${creator.name} on ${label}`}
+                title={label}
+                className="grid h-7 w-7 place-items-center rounded-full border border-border text-foreground transition hover:border-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              >
+                {brand ? <SocialIcon name={brand} className="h-3.5 w-3.5" /> : Icon ? <Icon aria-hidden="true" className="h-3.5 w-3.5" /> : null}
+              </a>
+            ))}
+            {creator.email ? (
+              <a
+                href={`mailto:${creator.email}`}
+                aria-label={`Email ${creator.name}`}
+                title={creator.email}
+                className="grid h-7 w-7 place-items-center rounded-full border border-border text-foreground transition hover:border-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              >
+                <FiMail aria-hidden="true" className="h-3.5 w-3.5" />
+              </a>
+            ) : null}
+          </div>
+        ) : null}
+
+        <div className="mt-2 grid grid-cols-2 gap-2 border-t border-border pt-2">
+          <div className="min-w-0">
+            <span className="block text-[9px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Audience</span>
+            <strong className="mt-1 block truncate text-[12px] font-semibold">{creator.followerCount ?? "Not provided"}</strong>
+          </div>
+          <div className="min-w-0">
+            <span className="block text-[9px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Contact</span>
+            <strong className="mt-1 block truncate text-[12px] font-semibold">{creator.email ?? "Instagram DM"}</strong>
+          </div>
+        </div>
+      </div>
+    </article>
+  );
+}
+
 export function CreatorDirectory({
   creators,
   categories,
@@ -300,6 +428,7 @@ export function CreatorDirectory({
   const [maxRate, setMaxRate] = useState<number>(RATE_CAP);
   const [added, setAdded] = useState<AddedFilter>("all");
   const [sort, setSort] = useState<AddedSort>("newest");
+  const [view, setView] = useState<DirectoryView>("cards");
   const [filterOpen, setFilterOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [urlStateInitialized, setUrlStateInitialized] = useState(false);
@@ -350,6 +479,7 @@ export function CreatorDirectory({
       setMaxRate(next.maxRate);
       setAdded(next.added);
       setSort(next.sort);
+      setView(next.view);
       setPage(next.page);
     };
 
@@ -365,8 +495,8 @@ export function CreatorDirectory({
 
   useEffect(() => {
     if (!urlStateInitialized) return;
-    writeDirectoryUrl({ search, category, location, availability, maxRate, added, sort, page: currentPage });
-  }, [search, category, location, availability, maxRate, added, sort, currentPage, urlStateInitialized]);
+    writeDirectoryUrl({ search, category, location, availability, maxRate, added, sort, view, page: currentPage });
+  }, [search, category, location, availability, maxRate, added, sort, view, currentPage, urlStateInitialized]);
 
   const updateSearch = (value: string) => {
     setSearch(value);
@@ -450,18 +580,24 @@ export function CreatorDirectory({
               <FiFilter aria-hidden="true" className="h-4 w-4" />
               Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
             </button>
-            <span className="text-[13px] font-medium text-muted-foreground">
-              {visible.length} {visible.length === 1 ? "person" : "people"}
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="text-[13px] font-medium text-muted-foreground">
+                {visible.length} {visible.length === 1 ? "person" : "people"}
+              </span>
+              <ViewToggle view={view} setView={setView} />
+            </div>
           </div>
 
-          <p aria-live="polite" className="mb-5 mt-0 hidden text-[13px] font-medium text-muted-foreground min-[801px]:block">
-            {visible.length} {visible.length === 1 ? "person" : "people"}
-          </p>
+          <div className="mb-5 hidden items-center justify-between gap-3 min-[801px]:flex">
+            <p aria-live="polite" className="m-0 text-[13px] font-medium text-muted-foreground">
+              {visible.length} {visible.length === 1 ? "person" : "people"}
+            </p>
+            <ViewToggle view={view} setView={setView} />
+          </div>
 
-          <div className="flex flex-col gap-3">
+          <div className={view === "cards" ? "grid grid-cols-1 items-start gap-3 sm:grid-cols-2 xl:grid-cols-3" : "flex flex-col gap-3"}>
         {pageVisible.map((creator) => (
-          <article
+          view === "cards" ? <CreatorCard key={creator.slug} creator={creator} /> : <article
             key={creator.slug}
             role="link"
             tabIndex={0}
@@ -507,7 +643,7 @@ export function CreatorDirectory({
               <div className="flex flex-none items-center gap-2 max-[640px]:w-full">
                 {platformLinks(creator)
                   .filter((platform) => platform.href)
-                  .map(({ label, href, Icon }) => (
+                  .map(({ label, href, Icon, brand }) => (
                     <a
                       key={label}
                       href={href!}
@@ -518,9 +654,20 @@ export function CreatorDirectory({
                       onClick={(event) => event.stopPropagation()}
                       className="grid h-9 w-9 flex-none place-items-center rounded-full border border-border text-foreground hover:border-foreground focus-visible:outline-none"
                     >
-                      <Icon aria-hidden="true" className="h-3.5 w-3.5" />
+                      {brand ? <SocialIcon name={brand} className="h-4 w-4" /> : Icon ? <Icon aria-hidden="true" className="h-3.5 w-3.5" /> : null}
                     </a>
                   ))}
+                {creator.email ? (
+                  <a
+                    href={`mailto:${creator.email}`}
+                    aria-label={`Email ${creator.name}`}
+                    title={creator.email}
+                    onClick={(event) => event.stopPropagation()}
+                    className="grid h-9 w-9 flex-none place-items-center rounded-full border border-border text-foreground hover:border-foreground focus-visible:outline-none"
+                  >
+                    <FiMail aria-hidden="true" className="h-4 w-4" />
+                  </a>
+                ) : null}
               </div>
             </div>
 
