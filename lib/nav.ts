@@ -1,5 +1,7 @@
 ﻿export type NavLink = { label: string; href: string };
 
+export type DashboardNavLink = NavLink & { requiresAuth?: boolean };
+
 export const MARKETING_NAV: NavLink[] = [
   { label: "The Work", href: "/#work" },
   { label: "About", href: "/about" },
@@ -16,16 +18,17 @@ export const MARKETING_FOOTER_LINKS: NavLink[] = [
 ];
 
 export type NavItem =
-  | { kind: "link"; label: string; href: string }
-  | { kind: "menu"; label: string; match: string | string[]; items: NavLink[] };
+  | { kind: "link"; label: string; href: string; requiresAuth?: boolean }
+  | { kind: "menu"; label: string; match: string | string[]; items: DashboardNavLink[]; requiresAuth?: boolean };
 
 export const NAV_ITEMS: NavItem[] = [
   { kind: "link", label: "Home", href: "/dashboard" },
-  { kind: "link", label: "Campaigns", href: "/dashboard/campaigns" },
-  { kind: "link", label: "Products", href: "/dashboard/products" },
+  { kind: "link", label: "Campaigns", href: "/dashboard/campaigns", requiresAuth: true },
+  { kind: "link", label: "Products", href: "/dashboard/products", requiresAuth: true },
   {
     kind: "menu",
     label: "Workflows",
+    requiresAuth: true,
     match: "/dashboard/workflows",
     items: [
       { label: "Agency", href: "/dashboard/workflows/agency" },
@@ -35,6 +38,7 @@ export const NAV_ITEMS: NavItem[] = [
   {
     kind: "menu",
     label: "Assets",
+    requiresAuth: true,
     match: ["/dashboard/brand", "/dashboard/resources"],
     items: [
       { label: "Brand assets", href: "/dashboard/brand" },
@@ -46,8 +50,8 @@ export const NAV_ITEMS: NavItem[] = [
     label: "Directory",
     match: ["/dashboard/clients", "/dashboard/people", "/dashboard/creators"],
     items: [
-      { label: "Clients", href: "/dashboard/clients" },
-      { label: "Team", href: "/dashboard/people" },
+      { label: "Clients", href: "/dashboard/clients", requiresAuth: true },
+      { label: "Team", href: "/dashboard/people", requiresAuth: true },
       { label: "Creators", href: "/dashboard/creators" },
     ],
   },

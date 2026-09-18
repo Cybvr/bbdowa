@@ -10,6 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useOptionalAuth } from "@/components/auth-provider";
 
 export type ProfileNavItem = {
   label: string;
@@ -62,15 +63,41 @@ const DEFAULT_ITEMS: readonly ProfileNavItem[] = [
 ];
 
 export function ProfileNav({
-  initials = "JP",
-  name = "Jide Pinheiro",
-  email = "jide.pinheiro@comcorpe.com",
+  initials,
+  name,
+  email,
   organization = "BBDO West Africa",
   items = DEFAULT_ITEMS,
   logoutLabel = "Log out",
   onLogout,
   variant = "avatar",
 }: ProfileNavProps) {
+  const auth = useOptionalAuth();
+  const user = auth?.user ?? null;
+  const loading = auth?.loading ?? false;
+  const logout = auth?.logout;
+  const displayName = name ?? user?.name ?? user?.email?.split("@")[0] ?? "BBDO User";
+  const displayEmail = email ?? user?.email ?? (loading ? "Loading profile..." : "Signed in");
+  const generatedInitials = displayName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
+  const displayInitials = initials ?? (generatedInitials || "BU");
+  const handleLogout = onLogout ?? (logout ? () => void logout() : undefined);
+
+  if (!auth || !user) {
+    return (
+      <Link
+        href="/auth/login"
+        className="inline-flex min-h-10 items-center justify-center rounded-full bg-primary-foreground px-4 text-xs font-bold text-primary no-underline transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-foreground"
+      >
+        Sign in
+      </Link>
+    );
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -81,11 +108,11 @@ export function ProfileNav({
             className="flex w-full items-center gap-2 rounded-lg p-1.5 text-left transition-colors hover:bg-foreground/10 focus-visible:bg-foreground/10 focus-visible:outline-none"
           >
             <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-foreground text-[11px] font-extrabold tracking-[0.04em] text-background">
-              {initials}
+              {displayInitials}
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-xs font-semibold leading-tight text-foreground">{name}</span>
-              <span className="block truncate text-[11px] leading-tight text-muted-foreground">{email}</span>
+              <span className="block truncate text-xs font-semibold leading-tight text-foreground">{displayName}</span>
+              <span className="block truncate text-[11px] leading-tight text-muted-foreground">{displayEmail}</span>
             </span>
           </button>
         ) : (
@@ -94,7 +121,7 @@ export function ProfileNav({
             aria-label="Open profile menu"
             className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary-foreground text-[11px] font-extrabold tracking-[0.04em] text-primary transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-foreground"
           >
-            {initials}
+            {displayInitials}
           </button>
         )}
       </DropdownMenuTrigger>
@@ -103,10 +130,10 @@ export function ProfileNav({
         <DropdownMenuLabel>
           <div className="flex items-center gap-2">
             <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-[13px] font-extrabold text-primary-foreground">
-              {initials}
+              {displayInitials}
             </span>
             <div className="min-w-0">
-              <p className="truncate text-[13px] font-extrabold">{name}</p>
+              <p className="truncate text-[13px] font-extrabold">{displayName}</p>
               <p className="truncate text-[11px] tracking-[0.08em] text-muted-foreground">{organization}</p>
             </div>
           </div>
@@ -128,7 +155,7 @@ export function ProfileNav({
           </DropdownMenuItem>
         ))}
         <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={onLogout}>
+        <DropdownMenuItem onSelect={handleLogout}>
           <LogOutIcon />
           {logoutLabel}
         </DropdownMenuItem>

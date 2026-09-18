@@ -7,6 +7,7 @@ import { LuChevronDown, LuChevronLeft, LuChevronRight, LuMenu } from "react-icon
 import { NAV_ITEMS } from "@/lib/nav";
 import { NAV_ICON_SET } from "@/components/nav-icons";
 import { ProfileNav } from "@/components/profile-nav";
+import { useOptionalAuth } from "@/components/auth-provider";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 const NAV_TEXT =
@@ -44,7 +45,9 @@ export function DashboardLogo({ onNavigate }: { onNavigate?: () => void }) {
 
 export function DashboardNavList({ onNavigate, collapsed = false }: { onNavigate?: () => void; collapsed?: boolean }) {
   const pathname = usePathname();
+  const auth = useOptionalAuth();
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const visibleItems = NAV_ITEMS.filter((item) => !item.requiresAuth || Boolean(auth?.user));
 
   useEffect(() => {
     const activeMenu = NAV_ITEMS.find(
@@ -60,7 +63,7 @@ export function DashboardNavList({ onNavigate, collapsed = false }: { onNavigate
 
   return (
     <ul className="m-0 flex list-none flex-col items-stretch gap-0.5 p-0">
-      {NAV_ITEMS.map((item) => {
+      {visibleItems.map((item) => {
         if (item.kind === "link") {
           const current =
             pathname === item.href ||
@@ -103,7 +106,9 @@ export function DashboardNavList({ onNavigate, collapsed = false }: { onNavigate
             </button>
             {open && (
               <ul className="m-0 mt-1 w-full list-none rounded-lg p-1">
-                {item.items.map((entry) => {
+                {item.items
+                  .filter((entry) => !entry.requiresAuth || Boolean(auth?.user))
+                  .map((entry) => {
                   const current = pathname === entry.href;
                   return (
                     <li key={entry.href} className="block w-full">
@@ -119,7 +124,7 @@ export function DashboardNavList({ onNavigate, collapsed = false }: { onNavigate
                       </Link>
                     </li>
                   );
-                })}
+                  })}
               </ul>
             )}
           </li>
