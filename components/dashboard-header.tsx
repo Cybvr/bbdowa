@@ -2,15 +2,27 @@
 
 import { DashboardLogo, DashboardSidebarContent, DashboardSidebarSheet } from "@/components/dashboard-sidebar";
 
-export function DashboardHeader({ hideMobile = false }: { hideMobile?: boolean }) {
+export function DashboardHeader({
+  hideMobile = false,
+  sidebarCollapsed = false,
+  onToggleSidebar,
+}: {
+  hideMobile?: boolean;
+  sidebarCollapsed?: boolean;
+  onToggleSidebar?: () => void;
+}) {
   return (
     <>
       {/* Desktop sidebar */}
       <nav
         aria-label="Primary navigation"
-        className="hidden flex-col gap-2 overflow-y-auto rounded-2xl bg-primary p-2.5 nav:fixed nav:inset-y-4 nav:left-4 nav:flex nav:w-[192px]"
+        className={`hidden flex-col gap-2 overflow-y-auto rounded-2xl bg-background p-2.5 text-foreground nav:fixed nav:inset-y-4 nav:left-4 nav:flex ${sidebarCollapsed ? "nav:w-[64px]" : "nav:w-[192px]"}`}
       >
-        <DashboardSidebarContent />
+        <DashboardSidebarContent
+          collapsed={sidebarCollapsed}
+          onToggleCollapse={onToggleSidebar}
+          showCollapseToggle
+        />
       </nav>
 
       {/* Mobile top bar */}

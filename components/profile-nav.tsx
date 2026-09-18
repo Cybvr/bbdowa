@@ -78,14 +78,14 @@ export function ProfileNav({
           <button
             type="button"
             aria-label="Open profile menu"
-            className="flex w-full items-center gap-2 rounded-lg p-1.5 text-left transition-colors hover:bg-black/15 focus-visible:bg-black/15 focus-visible:outline-none"
+            className="flex w-full items-center gap-2 rounded-lg p-1.5 text-left transition-colors hover:bg-foreground/10 focus-visible:bg-foreground/10 focus-visible:outline-none"
           >
-            <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary-foreground text-[11px] font-extrabold tracking-[0.04em] text-primary">
+            <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-foreground text-[11px] font-extrabold tracking-[0.04em] text-background">
               {initials}
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-xs font-semibold leading-tight text-primary-foreground">{name}</span>
-              <span className="block truncate text-[11px] leading-tight text-primary-foreground/70">{email}</span>
+              <span className="block truncate text-xs font-semibold leading-tight text-foreground">{name}</span>
+              <span className="block truncate text-[11px] leading-tight text-muted-foreground">{email}</span>
             </span>
           </button>
         ) : (
@@ -132,6 +132,9 @@ export function ProfileNav({
           <LogOutIcon />
           {logoutLabel}
         </DropdownMenuItem>
+        <p className="m-0 border-t border-border/60 px-2 pt-2 text-center font-mono text-[8px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/35">
+          Powered by VCNS
+        </p>
       </DropdownMenuContent>
     </DropdownMenu>
   );

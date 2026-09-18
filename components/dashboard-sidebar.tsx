@@ -3,16 +3,16 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LuChevronDown, LuMenu } from "react-icons/lu";
+import { LuChevronDown, LuChevronLeft, LuChevronRight, LuMenu } from "react-icons/lu";
 import { NAV_ITEMS } from "@/lib/nav";
 import { NAV_ICON_SET } from "@/components/nav-icons";
 import { ProfileNav } from "@/components/profile-nav";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 const NAV_TEXT =
-  "flex min-h-9 w-full items-center gap-2 rounded-lg px-2 py-1.5 font-mono text-xs font-medium leading-none text-primary-foreground/85 no-underline transition-colors hover:bg-black/15 hover:text-primary-foreground focus-visible:bg-black/15 focus-visible:text-primary-foreground focus-visible:outline-none";
+  "flex min-h-9 w-full items-center gap-2 rounded-lg px-2 py-1.5 font-mono text-xs font-medium leading-none text-foreground no-underline transition-colors hover:bg-foreground/10 hover:text-foreground focus-visible:bg-foreground/10 focus-visible:text-foreground focus-visible:outline-none";
 
-const NAV_ACTIVE = "bg-black/25 !text-primary-foreground hover:bg-black/25";
+const NAV_ACTIVE = "bg-muted !text-foreground hover:bg-muted";
 
 function sentenceCase(label: string) {
   return label.charAt(0).toUpperCase() + label.slice(1).toLowerCase();
@@ -26,18 +26,23 @@ function NavIcon({ label }: { label: string }) {
 
 export function DashboardLogo({ onNavigate }: { onNavigate?: () => void }) {
   return (
-    <Link href="/dashboard" onClick={onNavigate} aria-label="BBDO West Africa dashboard" className="min-w-0">
+    <Link
+      href="/dashboard"
+      onClick={onNavigate}
+      aria-label="BBDO West Africa dashboard"
+      className="inline-flex min-w-0 w-fit"
+    >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/bbdo-west-africa.png"
         alt="BBDO West Africa"
-        className="block h-auto w-[clamp(112px,10vw,138px)] max-w-full brightness-0 invert"
+        className="block h-auto w-[clamp(112px,10vw,138px)] max-w-full brightness-0"
       />
     </Link>
   );
 }
 
-export function DashboardNavList({ onNavigate }: { onNavigate?: () => void }) {
+export function DashboardNavList({ onNavigate, collapsed = false }: { onNavigate?: () => void; collapsed?: boolean }) {
   const pathname = usePathname();
   const [openMenu, setOpenMenu] = useState<string | null>(null);
 
@@ -66,10 +71,11 @@ export function DashboardNavList({ onNavigate }: { onNavigate?: () => void }) {
                 href={item.href}
                 aria-current={current ? "page" : undefined}
                 onClick={onNavigate}
-                className={`${NAV_TEXT} ${current ? NAV_ACTIVE : ""}`}
+                title={collapsed ? sentenceCase(item.label) : undefined}
+                className={`${NAV_TEXT} ${collapsed ? "justify-center px-0" : ""} ${current ? NAV_ACTIVE : ""}`}
               >
                 <NavIcon label={item.label} />
-                <span>{sentenceCase(item.label)}</span>
+                <span className={collapsed ? "sr-only" : undefined}>{sentenceCase(item.label)}</span>
               </Link>
             </li>
           );
@@ -86,13 +92,14 @@ export function DashboardNavList({ onNavigate }: { onNavigate?: () => void }) {
               type="button"
               aria-expanded={open}
               onClick={() => setOpenMenu(open ? null : item.label)}
-              className={`cursor-pointer border-0 text-left ${NAV_TEXT} ${
+              title={collapsed ? sentenceCase(item.label) : undefined}
+              className={`cursor-pointer border-0 text-left ${NAV_TEXT} ${collapsed ? "justify-center px-0" : ""} ${
                 sectionActive ? NAV_ACTIVE : "bg-transparent"
               }`}
             >
               <NavIcon label={item.label} />
-              <span>{sentenceCase(item.label)}</span>
-              <LuChevronDown aria-hidden="true" className={`ml-auto h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
+              <span className={collapsed ? "sr-only" : undefined}>{sentenceCase(item.label)}</span>
+              <LuChevronDown aria-hidden="true" className={`${collapsed ? "hidden" : "ml-auto"} h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
             </button>
             {open && (
               <ul className="m-0 mt-1 w-full list-none rounded-lg p-1">
@@ -104,10 +111,11 @@ export function DashboardNavList({ onNavigate }: { onNavigate?: () => void }) {
                         href={entry.href}
                         aria-current={current ? "page" : undefined}
                         onClick={onNavigate}
-                        className={`${NAV_TEXT} pl-7 ${current ? NAV_ACTIVE : ""}`}
+                        title={collapsed ? sentenceCase(entry.label) : undefined}
+                        className={`${NAV_TEXT} ${collapsed ? "justify-center px-0" : "pl-7"} ${current ? NAV_ACTIVE : ""}`}
                       >
                         <NavIcon label={entry.label} />
-                        <span>{sentenceCase(entry.label)}</span>
+                        <span className={collapsed ? "sr-only" : undefined}>{sentenceCase(entry.label)}</span>
                       </Link>
                     </li>
                   );
@@ -121,23 +129,43 @@ export function DashboardNavList({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-export function DashboardNavFooter({ onNavigate }: { onNavigate?: () => void }) {
+export function DashboardNavFooter({ collapsed = false }: { collapsed?: boolean }) {
   return (
     <div className="mt-auto pt-3">
-      <ProfileNav variant="row" />
-      <p className="m-0 pt-3 text-center font-mono text-[9px] font-semibold uppercase tracking-[0.16em] text-primary-foreground/45">
-        Powered by VCNS
-      </p>
+      <ProfileNav variant={collapsed ? "avatar" : "row"} />
     </div>
   );
 }
 
-export function DashboardSidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+export function DashboardSidebarContent({
+  onNavigate,
+  collapsed = false,
+  onToggleCollapse,
+  showCollapseToggle = false,
+}: {
+  onNavigate?: () => void;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
+  showCollapseToggle?: boolean;
+}) {
   return (
     <>
-      <DashboardLogo onNavigate={onNavigate} />
-      <DashboardNavList onNavigate={onNavigate} />
-      <DashboardNavFooter onNavigate={onNavigate} />
+      <div className={`flex min-h-9 items-center gap-2 ${collapsed ? "justify-center" : "justify-between"}`}>
+        {collapsed ? <span aria-hidden="true" className="h-9 w-9" /> : <DashboardLogo onNavigate={onNavigate} />}
+        {showCollapseToggle && onToggleCollapse ? (
+          <button
+            type="button"
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            onClick={onToggleCollapse}
+            className="grid h-8 w-8 shrink-0 cursor-pointer place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          >
+            {collapsed ? <LuChevronRight aria-hidden="true" className="h-4 w-4" /> : <LuChevronLeft aria-hidden="true" className="h-4 w-4" />}
+          </button>
+        ) : null}
+      </div>
+      <DashboardNavList onNavigate={onNavigate} collapsed={collapsed} />
+      <DashboardNavFooter collapsed={collapsed} />
     </>
   );
 }
@@ -163,7 +191,7 @@ export function DashboardSidebarSheet({ trigger }: { trigger?: React.ReactNode }
           </button>
         )}
       </SheetTrigger>
-      <SheetContent side="left" className="w-[min(264px,84vw)] gap-2 overflow-y-auto rounded-2xl border-0 bg-primary p-2.5 text-primary-foreground shadow-2xl">
+      <SheetContent side="left" className="w-[min(264px,84vw)] gap-2 overflow-y-auto rounded-2xl border-0 bg-background p-2.5 text-foreground shadow-2xl">
         <SheetHeader className="sr-only">
           <SheetTitle>Navigation</SheetTitle>
         </SheetHeader>

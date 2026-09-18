@@ -23,11 +23,11 @@ export function PageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-5">
+    <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-4">
       <div>
-        <h1 className="m-0 text-2xl font-bold leading-tight tracking-tight sm:text-3xl">{title}</h1>
+        <h1 className="m-0 text-xl font-bold leading-tight tracking-tight sm:text-2xl">{title}</h1>
         {description ? (
-          <p className="mb-0 mt-1.5 max-w-[60ch] text-[15px] leading-[1.45] text-muted-foreground">
+          <p className="mb-0 mt-1 max-w-[60ch] text-[14px] leading-[1.35] text-muted-foreground">
             {description}
           </p>
         ) : null}
@@ -164,4 +164,3 @@ export function TextLink({ href, children }: { href: string; children: ReactNode
 }
 
 export { EmptyThumbnail, ImageWithFallback } from "@/components/empty-thumbnail";
-
