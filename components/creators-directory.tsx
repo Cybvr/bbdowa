@@ -699,6 +699,7 @@ function ListDialog({
   open,
   onOpenChange,
   creator,
+  seedSlugs,
   lists,
   onToggleCreator,
   onCreateList,
@@ -706,6 +707,7 @@ function ListDialog({
   open: boolean;
   onOpenChange: (value: boolean) => void;
   creator: Creator | null;
+  seedSlugs: string[];
   lists: CreatorList[];
   onToggleCreator: (listId: string, slug: string) => void;
   onCreateList: (name: string, slugs: string[]) => void;
@@ -718,7 +720,7 @@ function ListDialog({
 
   const submitNewList = () => {
     if (!name.trim()) return;
-    onCreateList(name, creator ? [creator.slug] : []);
+    onCreateList(name, seedSlugs);
     setName("");
     if (!creator) onOpenChange(false);
   };
@@ -728,7 +730,11 @@ function ListDialog({
       <DialogContent aria-describedby={undefined} className="max-w-[420px]">
         <DialogHeader>
           <DialogTitle className="pr-8 text-lg sm:text-xl">
-            {creator ? `Add ${creator.name} to a list` : "New list"}
+            {creator
+              ? `Add ${creator.name} to a list`
+              : seedSlugs.length > 0
+                ? `Save ${seedSlugs.length} ${seedSlugs.length === 1 ? "creator" : "creators"} as a list`
+                : "New list"}
           </DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-4">
@@ -927,6 +933,7 @@ export function CreatorDirectory({
   const [activeListId, setActiveListId] = useState<string | null>(null);
   const [listDialogOpen, setListDialogOpen] = useState(false);
   const [listDialogCreator, setListDialogCreator] = useState<Creator | null>(null);
+  const [listDialogSeed, setListDialogSeed] = useState<string[]>([]);
   const [listsInitialized, setListsInitialized] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
@@ -1126,6 +1133,13 @@ export function CreatorDirectory({
 
   const openListDialog = (creator: Creator | null) => {
     setListDialogCreator(creator);
+    setListDialogSeed(creator ? [creator.slug] : []);
+    setListDialogOpen(true);
+  };
+
+  const saveResultsAsList = () => {
+    setListDialogCreator(null);
+    setListDialogSeed(visible.map((creator) => creator.slug));
     setListDialogOpen(true);
   };
 
@@ -1135,6 +1149,7 @@ export function CreatorDirectory({
     const id = newListId();
     setLists((current) => [...current, { id, name: trimmed, slugs }]);
     setActiveListId(id);
+    if (!listDialogCreator && slugs.length > 0) setTab("my-lists");
     setPage(1);
   };
 
@@ -1229,6 +1244,17 @@ export function CreatorDirectory({
               <p aria-live="polite" className="m-0 text-[13px] font-medium text-muted-foreground">
                 {visible.length} {visible.length === 1 ? "person" : "people"}
               </p>
+              {tab !== "my-lists" && visible.length > 0 ? (
+                <button
+                  type="button"
+                  onClick={saveResultsAsList}
+                  title="Save these results as a new list"
+                  className="inline-flex min-h-[40px] cursor-pointer items-center gap-2 rounded-lg border border-border bg-transparent px-3.5 py-2 text-[13px] font-medium hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                >
+                  <FiFolderPlus aria-hidden="true" className="h-4 w-4" />
+                  Save as list
+                </button>
+              ) : null}
             </div>
             <ViewToggle view={view} setView={setView} />
           </div>
@@ -1454,6 +1480,7 @@ export function CreatorDirectory({
         open={listDialogOpen}
         onOpenChange={setListDialogOpen}
         creator={listDialogCreator}
+        seedSlugs={listDialogSeed}
         lists={lists}
         onToggleCreator={toggleCreatorInList}
         onCreateList={createList}
