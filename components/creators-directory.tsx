@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type { IconType } from "react-icons";
 import { FaBehance, FaGlobe } from "react-icons/fa";
-import { FiBookmark, FiCheck, FiChevronDown, FiEdit2, FiFilter, FiGrid, FiList, FiMail, FiPlus, FiSearch, FiTrash2 } from "react-icons/fi";
+import { FiBookmark, FiCheck, FiChevronDown, FiEdit2, FiFilter, FiFolderPlus, FiGrid, FiList, FiMail, FiPlus, FiSearch, FiTrash2 } from "react-icons/fi";
 import { ImageWithFallback } from "@/components/empty-thumbnail";
 import { Badge } from "@/components/dashboard/ui";
 import { SocialIcon, type SocialIconName } from "@/components/social-icon";
@@ -59,7 +59,7 @@ const RATE_STEP = 1_000;
 const RATE_MIN = 0;
 const RATE_CAP = 100_000;
 const PAGE_SIZE = 12;
-const LEGACY_CREATORS_STORAGE_KEY = "bbdowa-my-creator-list";
+const SAVED_CREATORS_STORAGE_KEY = "bbdowa-my-creator-list";
 const CREATOR_LISTS_STORAGE_KEY = "bbdowa-creator-lists";
 
 type CreatorList = { id: string; name: string; slugs: string[] };
@@ -70,7 +70,7 @@ function newListId() {
 type AddedFilter = "all" | "recent" | "older";
 type AddedSort = "popular" | "newest" | "oldest";
 type DirectoryView = "list" | "cards";
-type DirectoryTab = "all" | "my-lists";
+type DirectoryTab = "all" | "saved" | "my-lists";
 type VettedFilter = "all" | "vetted" | "not-vetted";
 type GenderFilter = "all" | "Female" | "Male";
 
@@ -143,7 +143,7 @@ function readDirectoryUrlState(categories: string[], locations: string[], tags: 
     vetted: vetted === "vetted" || vetted === "not-vetted" ? vetted : defaults.vetted,
     sort: sort === "popular" || sort === "newest" || sort === "oldest" ? sort : defaults.sort,
     view: view === "list" ? view : defaults.view,
-    tab: tab === "my-lists" ? tab : defaults.tab,
+    tab: tab === "my-lists" || tab === "saved" ? tab : defaults.tab,
     tags: selectedTags,
     page: Number.isInteger(rawPage) && rawPage > 0 ? rawPage : defaults.page,
   };
@@ -495,11 +495,13 @@ function CreatorTabs({
   tab,
   setTab,
   allCount,
+  savedCount,
   listCount,
 }: {
   tab: DirectoryTab;
   setTab: (value: DirectoryTab) => void;
   allCount: number;
+  savedCount: number;
   listCount: number;
 }) {
   return (
@@ -507,6 +509,7 @@ function CreatorTabs({
       <div className="flex items-center gap-5" role="tablist" aria-label="Creator lists">
         {([
           ["all", "All", allCount],
+          ["saved", "Saved", savedCount],
           ["my-lists", "Lists", listCount],
         ] as const).map(([key, label, count]) => (
           <button
@@ -530,35 +533,60 @@ function CreatorTabs({
   );
 }
 
-function CreatorSelectionButton({
+const CREATOR_ACTION_BUTTON =
+  "grid shrink-0 cursor-pointer place-items-center rounded-full border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40";
+
+function CreatorActions({
   creator,
-  selected,
-  onToggle,
+  saved,
+  inAnyList,
+  onToggleSaved,
+  onOpenLists,
   className = "h-8 w-8",
 }: {
   creator: Creator;
-  selected: boolean;
-  onToggle: () => void;
+  saved: boolean;
+  inAnyList: boolean;
+  onToggleSaved: () => void;
+  onOpenLists: () => void;
   className?: string;
 }) {
   return (
-    <button
-      type="button"
-      aria-label={selected ? `Edit the lists ${creator.name} is in` : `Add ${creator.name} to a list`}
-      aria-pressed={selected}
-      title={selected ? "Edit lists" : "Add to a list"}
-      onClick={(event) => {
-        event.stopPropagation();
-        onToggle();
-      }}
-      className={`grid ${className} shrink-0 cursor-pointer place-items-center rounded-full border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
-        selected
-          ? "border-foreground bg-muted text-foreground"
-          : "border-border bg-background/90 text-muted-foreground hover:border-foreground hover:text-foreground"
-      }`}
-    >
-      <FiBookmark aria-hidden="true" className={`h-4 w-4 ${selected ? "fill-current" : ""}`} />
-    </button>
+    <>
+      <button
+        type="button"
+        aria-label={saved ? `Remove ${creator.name} from Saved` : `Save ${creator.name}`}
+        aria-pressed={saved}
+        title={saved ? "Saved" : "Save"}
+        onClick={(event) => {
+          event.stopPropagation();
+          onToggleSaved();
+        }}
+        className={`${CREATOR_ACTION_BUTTON} ${className} ${
+          saved
+            ? "border-foreground bg-foreground text-background"
+            : "border-border bg-background/90 text-muted-foreground hover:border-foreground hover:text-foreground"
+        }`}
+      >
+        <FiBookmark aria-hidden="true" className={`h-4 w-4 ${saved ? "fill-current" : ""}`} />
+      </button>
+      <button
+        type="button"
+        aria-label={`Add ${creator.name} to a list`}
+        title={inAnyList ? "In a list, edit lists" : "Add to a list"}
+        onClick={(event) => {
+          event.stopPropagation();
+          onOpenLists();
+        }}
+        className={`${CREATOR_ACTION_BUTTON} ${className} ${
+          inAnyList
+            ? "border-foreground bg-muted text-foreground"
+            : "border-border bg-background/90 text-muted-foreground hover:border-foreground hover:text-foreground"
+        }`}
+      >
+        <FiFolderPlus aria-hidden="true" className="h-4 w-4" />
+      </button>
+    </>
   );
 }
 
@@ -764,12 +792,16 @@ function ListDialog({
 
 function CreatorCard({
   creator,
-  selected,
-  onToggle,
+  saved,
+  inAnyList,
+  onToggleSaved,
+  onOpenLists,
 }: {
   creator: Creator;
-  selected: boolean;
-  onToggle: () => void;
+  saved: boolean;
+  inAnyList: boolean;
+  onToggleSaved: () => void;
+  onOpenLists: () => void;
 }) {
   const links = platformLinks(creator).filter((platform) => platform.href);
 
@@ -795,12 +827,16 @@ function CreatorCard({
           </div>
         </div>
       </Link>
-      <CreatorSelectionButton
-        creator={creator}
-        selected={selected}
-        onToggle={onToggle}
-        className="absolute left-2 top-2 z-10 h-7 w-7"
-      />
+      <div className="absolute left-2 top-2 z-10 flex items-center gap-1.5">
+        <CreatorActions
+          creator={creator}
+          saved={saved}
+          inAnyList={inAnyList}
+          onToggleSaved={onToggleSaved}
+          onOpenLists={onOpenLists}
+          className="h-7 w-7"
+        />
+      </div>
 
       <div className="p-2">
         <h2 className="m-0 line-clamp-2 text-[13px] font-semibold leading-[1.2] tracking-tight">
@@ -886,6 +922,7 @@ export function CreatorDirectory({
   const [sort, setSort] = useState<AddedSort>("popular");
   const [view, setView] = useState<DirectoryView>("cards");
   const [tab, setTab] = useState<DirectoryTab>("all");
+  const [savedCreatorSlugs, setSavedCreatorSlugs] = useState<string[]>([]);
   const [lists, setLists] = useState<CreatorList[]>([]);
   const [activeListId, setActiveListId] = useState<string | null>(null);
   const [listDialogOpen, setListDialogOpen] = useState(false);
@@ -897,7 +934,8 @@ export function CreatorDirectory({
   const [urlStateInitialized, setUrlStateInitialized] = useState(false);
 
   const activeList = lists.find((list) => list.id === activeListId) ?? null;
-  const savedSlugs = useMemo(() => new Set(lists.flatMap((list) => list.slugs)), [lists]);
+  const savedSet = useMemo(() => new Set(savedCreatorSlugs), [savedCreatorSlugs]);
+  const listedSlugs = useMemo(() => new Set(lists.flatMap((list) => list.slugs)), [lists]);
 
   const popularityScore = (creator: Creator) =>
     creator.tags.reduce((total, tag) => total + (creatorTagCounts[tag] ?? 0), 0);
@@ -925,7 +963,8 @@ export function CreatorDirectory({
       (added === "all" || (added === "recent" ? addedTimestamp >= thirtyDaysAgo : addedTimestamp < thirtyDaysAgo)) &&
       (vetted === "all" || (vetted === "vetted" ? creator.vetted === true : creator.vetted !== true)) &&
       (selectedTags.length === 0 || selectedTags.some((tag) => creator.tags.includes(tag))) &&
-      (tab === "all" || (activeList?.slugs.includes(creator.slug) ?? false)) &&
+      (tab === "all" ||
+        (tab === "saved" ? savedSet.has(creator.slug) : activeList?.slugs.includes(creator.slug) ?? false)) &&
       (maxRate >= RATE_CAP || rateFloorNgn(creator) <= maxRate)
     );
   }).sort((a, b) => {
@@ -981,20 +1020,20 @@ export function CreatorDirectory({
         : [];
 
     try {
-      const stored = window.localStorage.getItem(CREATOR_LISTS_STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        setLists(
-          Array.isArray(parsed)
-            ? parsed
-                .filter((list) => list && typeof list.id === "string" && typeof list.name === "string")
-                .map((list) => ({ id: list.id, name: list.name, slugs: cleanSlugs(list.slugs) }))
-            : [],
-        );
-      } else {
-        const legacy = cleanSlugs(JSON.parse(window.localStorage.getItem(LEGACY_CREATORS_STORAGE_KEY) ?? "[]"));
-        setLists(legacy.length > 0 ? [{ id: newListId(), name: "Saved", slugs: legacy }] : []);
-      }
+      setSavedCreatorSlugs(cleanSlugs(JSON.parse(window.localStorage.getItem(SAVED_CREATORS_STORAGE_KEY) ?? "[]")));
+    } catch {
+      setSavedCreatorSlugs([]);
+    }
+
+    try {
+      const parsed = JSON.parse(window.localStorage.getItem(CREATOR_LISTS_STORAGE_KEY) ?? "[]");
+      setLists(
+        Array.isArray(parsed)
+          ? parsed
+              .filter((list) => list && typeof list.id === "string" && typeof list.name === "string")
+              .map((list) => ({ id: list.id, name: list.name, slugs: cleanSlugs(list.slugs) }))
+          : [],
+      );
     } catch {
       setLists([]);
     } finally {
@@ -1004,8 +1043,9 @@ export function CreatorDirectory({
 
   useEffect(() => {
     if (!listsInitialized) return;
+    window.localStorage.setItem(SAVED_CREATORS_STORAGE_KEY, JSON.stringify(savedCreatorSlugs));
     window.localStorage.setItem(CREATOR_LISTS_STORAGE_KEY, JSON.stringify(lists));
-  }, [listsInitialized, lists]);
+  }, [listsInitialized, lists, savedCreatorSlugs]);
 
   useEffect(() => {
     if (lists.length === 0) {
@@ -1076,6 +1116,13 @@ export function CreatorDirectory({
 
   const updateTab = (value: DirectoryTab) => {
     setTab(value);
+    setPage(1);
+  };
+
+  const toggleSavedCreator = (slug: string) => {
+    setSavedCreatorSlugs((current) =>
+      current.includes(slug) ? current.filter((item) => item !== slug) : [...current, slug],
+    );
     setPage(1);
   };
 
@@ -1150,6 +1197,7 @@ export function CreatorDirectory({
             tab={tab}
             setTab={updateTab}
             allCount={creators.length}
+            savedCount={savedCreatorSlugs.length}
             listCount={lists.length}
           />
 
@@ -1196,8 +1244,10 @@ export function CreatorDirectory({
             <CreatorCard
               key={creator.slug}
               creator={creator}
-              selected={savedSlugs.has(creator.slug)}
-              onToggle={() => openListDialog(creator)}
+              saved={savedSet.has(creator.slug)}
+              inAnyList={listedSlugs.has(creator.slug)}
+              onToggleSaved={() => toggleSavedCreator(creator.slug)}
+              onOpenLists={() => openListDialog(creator)}
             />
           ) : <article
             key={creator.slug}
@@ -1243,10 +1293,12 @@ export function CreatorDirectory({
               </div>
 
               <div className="flex flex-none items-center gap-2 max-[640px]:w-full">
-                <CreatorSelectionButton
+                <CreatorActions
                   creator={creator}
-                  selected={savedSlugs.has(creator.slug)}
-                  onToggle={() => openListDialog(creator)}
+                  saved={savedSet.has(creator.slug)}
+                  inAnyList={listedSlugs.has(creator.slug)}
+                  onToggleSaved={() => toggleSavedCreator(creator.slug)}
+                  onOpenLists={() => openListDialog(creator)}
                   className="h-9 w-9"
                 />
                 {platformLinks(creator)
@@ -1313,26 +1365,30 @@ export function CreatorDirectory({
         )) : (
           <div className="rounded-2xl border border-dashed border-border px-5 py-12 text-center">
             <p className="m-0 text-[14px] font-semibold">
-              {tab !== "my-lists"
+              {tab === "all"
                 ? "No creators match these filters"
-                : lists.length === 0
-                  ? "No lists yet"
-                  : `${activeList?.name ?? "This list"} is empty`}
+                : tab === "saved"
+                  ? "Nothing saved yet"
+                  : lists.length === 0
+                    ? "No lists yet"
+                    : `${activeList?.name ?? "This list"} is empty`}
             </p>
             <p className="mb-0 mt-1.5 text-[13px] text-muted-foreground">
-              {tab !== "my-lists"
+              {tab === "all"
                 ? "Try changing or clearing your filters."
-                : lists.length === 0
-                  ? "Create a list, then add creators to it from the bookmark on their card."
-                  : "Use the bookmark on a creator to add them to this list."}
+                : tab === "saved"
+                  ? "Use the bookmark on a creator to save them here."
+                  : lists.length === 0
+                    ? "Create a list, then add creators to it with the folder button on their card."
+                    : "Use the folder button on a creator to add them to this list."}
             </p>
-            {tab === "my-lists" ? (
+            {tab !== "all" ? (
               <button
                 type="button"
-                onClick={() => (lists.length === 0 ? openListDialog(null) : updateTab("all"))}
+                onClick={() => (tab === "my-lists" && lists.length === 0 ? openListDialog(null) : updateTab("all"))}
                 className="mt-4 cursor-pointer rounded-lg border border-border px-3 py-2 text-[13px] font-medium hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               >
-                {lists.length === 0 ? "Create a list" : "Browse all creators"}
+                {tab === "my-lists" && lists.length === 0 ? "Create a list" : "Browse all creators"}
               </button>
             ) : null}
           </div>
