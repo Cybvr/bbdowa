@@ -1,4 +1,5 @@
-export type CampaignStatus = "live" | "pitch" | "completed";
+export type ProjectStatus = "live" | "pitch" | "completed";
+export type CampaignStatus = ProjectStatus;
 
 export type CampaignMedia = {
   kind: "image" | "video";
@@ -16,17 +17,18 @@ export type CampaignExternalLink = {
   href: string;
 };
 
-export type Campaign = {
+export type Project = {
   slug: string;
   name: string;
   campaign?: string;
-  clientId: string;
-  client: string;
+  organizationId: string;
+  organizationName: string;
   category: string;
   year: number | null;
   liveAt?: CampaignLiveDate;
-  status: CampaignStatus;
-  lead: string;
+  status: ProjectStatus;
+  leadUserId: string | null;
+  publishedBy?: string | null;
   fee: string;
   target: string;
   result: string;
@@ -44,18 +46,20 @@ export type Campaign = {
   placeholder: boolean;
 };
 
-export const CAMPAIGNS: Campaign[] = [
+export type Campaign = Project;
+
+export const PROJECTS: Project[] = [
   {
-    slug: "jack-daniels",
+    slug: "thats-naija-thats-jack",
     name: "Jack Daniel’s",
     campaign: "That’s Naija, That’s Jack",
-    clientId: "brown-forman",
-    client: "Brown-Forman",
+    organizationId: "brown-forman",
+    organizationName: "Brown-Forman",
     category: "Food & beverages",
     year: 2026,
     liveAt: { date: "2026-08-01" },
     status: "live",
-    lead: "Samiat Basorun",
+    leadUserId: "samiat-basorun",
     fee: "To be confirmed",
     target: "To be confirmed",
     result: "To be confirmed",
@@ -85,16 +89,16 @@ export const CAMPAIGNS: Campaign[] = [
     placeholder: false,
   },
   {
-    slug: "betano",
+    slug: "make-we-bet",
     name: "Betano",
     campaign: "Make We Bet",
-    clientId: "keizen-games",
-    client: "Keizen Games",
+    organizationId: "keizen-games",
+    organizationName: "Keizen Games",
     category: "Entertainment",
     year: 2026,
     liveAt: { date: "2026-01-15" },
     status: "live",
-    lead: "Samiat Basorun",
+    leadUserId: "samiat-basorun",
     fee: "To be confirmed",
     target: "To be confirmed",
     result: "To be confirmed",
@@ -119,13 +123,13 @@ export const CAMPAIGNS: Campaign[] = [
   {
     slug: "proforce-nigeria",
     name: "Proforce Nigeria",
-    clientId: "proforce-nigeria",
-    client: "Proforce Nigeria",
+    organizationId: "proforce-nigeria",
+    organizationName: "Proforce Nigeria",
     category: "Defence & manufacturing",
     year: 2026,
     liveAt: { date: "2026-03-15" },
     status: "pitch",
-    lead: "Samiat Basorun",
+    leadUserId: "samiat-basorun",
     fee: "To be confirmed",
     target: "To be confirmed",
     result: "To be confirmed",
@@ -150,16 +154,16 @@ export const CAMPAIGNS: Campaign[] = [
     placeholder: true,
   },
   {
-    slug: "1-utility-bank",
+    slug: "leap-of-faith",
     name: "1 Utility Bank",
     campaign: "Leap of Faith",
-    clientId: "1utility",
-    client: "1 Utility Bank",
+    organizationId: "1utility",
+    organizationName: "1 Utility Bank",
     category: "Finance",
     year: 2026,
     liveAt: { date: "2026-08-19" },
     status: "pitch",
-    lead: "Samiat Basorun",
+    leadUserId: "samiat-basorun",
     fee: "To be confirmed",
     target: "To be confirmed",
     result: "To be confirmed",
@@ -201,13 +205,13 @@ export const CAMPAIGNS: Campaign[] = [
   {
     slug: "cbn",
     name: "CBN",
-    clientId: "central-bank-of-nigeria",
-    client: "Central Bank of Nigeria",
+    organizationId: "central-bank-of-nigeria",
+    organizationName: "Central Bank of Nigeria",
     category: "Finance",
     year: 2026,
     liveAt: { date: "2026-08-15" },
     status: "pitch",
-    lead: "Enyi Odigbo",
+    leadUserId: "enyi-odigbo",
     fee: "To be confirmed",
     target: "To be confirmed",
     result: "To be confirmed",
@@ -226,13 +230,13 @@ export const CAMPAIGNS: Campaign[] = [
   {
     slug: "benin-tourism",
     name: "Benin Tourism",
-    clientId: "benin-tourism",
-    client: "Benin Tourism",
+    organizationId: "benin-tourism",
+    organizationName: "Benin Tourism",
     category: "Travel & tourism",
     year: 2026,
     liveAt: { date: "2026-05-15" },
     status: "pitch",
-    lead: "Jide Pinheiro",
+    leadUserId: "jide-pinheiro",
     fee: "To be confirmed",
     target: "To be confirmed",
     result: "To be confirmed",
@@ -251,13 +255,13 @@ export const CAMPAIGNS: Campaign[] = [
   {
     slug: "interswitch-verve",
     name: "Verve",
-    clientId: "interswitch",
-    client: "Interswitch",
+    organizationId: "interswitch",
+    organizationName: "Interswitch",
     category: "Finance",
     year: 2021,
     liveAt: { date: "2021-04-15" },
     status: "completed",
-    lead: "",
+    leadUserId: null,
     fee: "To be confirmed",
     target: "To be confirmed",
     result: "To be confirmed",
@@ -280,16 +284,16 @@ export const CAMPAIGNS: Campaign[] = [
     placeholder: true,
   },
   {
-    slug: "diageo-guinness",
+    slug: "made-of-black",
     name: "Guinness",
     campaign: "Made of Black",
-    clientId: "diageo",
-    client: "Diageo",
+    organizationId: "diageo",
+    organizationName: "Diageo",
     category: "Food & beverages",
     year: 2021,
     liveAt: { date: "2021-07-15" },
     status: "completed",
-    lead: "",
+    leadUserId: null,
     fee: "To be confirmed",
     target: "To be confirmed",
     result: "To be confirmed",
@@ -334,16 +338,16 @@ export const CAMPAIGNS: Campaign[] = [
     placeholder: false,
   },
   {
-    slug: "visa-work",
+    slug: "not-a-tourist",
     name: "Visa",
     campaign: "Not a Tourist",
-    clientId: "visa",
-    client: "Visa",
+    organizationId: "visa",
+    organizationName: "Visa",
     category: "Finance",
     year: 2016,
     liveAt: { date: "2016-08-05" },
     status: "completed",
-    lead: "",
+    leadUserId: null,
     fee: "To be confirmed",
     target: "To be confirmed",
     result: "To be confirmed",
@@ -376,16 +380,16 @@ export const CAMPAIGNS: Campaign[] = [
     placeholder: true,
   },
   {
-    slug: "google-work",
+    slug: "know-google",
     name: "Google",
     campaign: "Know Google",
-    clientId: "google",
-    client: "Google",
+    organizationId: "google",
+    organizationName: "Google",
     category: "Technology",
     year: null,
     liveAt: { date: "2020-06-15" },
     status: "completed",
-    lead: "",
+    leadUserId: null,
     fee: "To be confirmed",
     target: "To be confirmed",
     result: "To be confirmed",
@@ -415,16 +419,16 @@ export const CAMPAIGNS: Campaign[] = [
     placeholder: true,
   },
   {
-    slug: "orijin",
+    slug: "live-original",
     name: "Orijin",
     campaign: "Live Original",
-    clientId: "orijin",
-    client: "Orijin",
+    organizationId: "orijin",
+    organizationName: "Orijin",
     category: "Food & beverages",
     year: null,
     liveAt: { date: "2019-09-15" },
     status: "completed",
-    lead: "",
+    leadUserId: null,
     fee: "To be confirmed",
     target: "To be confirmed",
     result: "To be confirmed",
@@ -448,16 +452,16 @@ export const CAMPAIGNS: Campaign[] = [
     placeholder: true,
   },
   {
-    slug: "pringles",
+    slug: "cool-days",
     name: "Pringles",
     campaign: "Cool Days",
-    clientId: "pringles",
-    client: "Pringles",
+    organizationId: "pringles",
+    organizationName: "Pringles",
     category: "Food & beverages",
     year: null,
     liveAt: { date: "2018-07-15" },
     status: "completed",
-    lead: "",
+    leadUserId: null,
     fee: "To be confirmed",
     target: "To be confirmed",
     result: "To be confirmed",
@@ -480,16 +484,16 @@ export const CAMPAIGNS: Campaign[] = [
     placeholder: true,
   },
   {
-    slug: "chicken-republic",
+    slug: "easter-anti-violence",
     name: "Chicken Republic",
     campaign: "Easter / Anti-Violence",
-    clientId: "chicken-republic",
-    client: "Chicken Republic",
+    organizationId: "chicken-republic",
+    organizationName: "Chicken Republic",
     category: "Food & beverages",
     year: null,
     liveAt: { date: "2020-04-15" },
     status: "completed",
-    lead: "",
+    leadUserId: null,
     fee: "To be confirmed",
     target: "To be confirmed",
     result: "To be confirmed",
@@ -517,16 +521,16 @@ export const CAMPAIGNS: Campaign[] = [
     placeholder: true,
   },
   {
-    slug: "unilever",
+    slug: "closer-is-better",
     name: "Unilever",
     campaign: "Closer Is Better",
-    clientId: "unilever",
-    client: "Unilever",
+    organizationId: "unilever",
+    organizationName: "Unilever",
     category: "Consumer goods",
     year: 2026,
     liveAt: { date: "2026-02-15" },
     status: "completed",
-    lead: "Samiat Basorun",
+    leadUserId: "samiat-basorun",
     fee: "To be confirmed",
     target: "To be confirmed",
     result: "To be confirmed",
@@ -550,6 +554,10 @@ export const CAMPAIGNS: Campaign[] = [
     placeholder: true,
   },
 ];
+
+// Backwards-compatible name for existing campaign pages while the domain
+// model is now represented as organization-owned projects.
+export const CAMPAIGNS: Campaign[] = PROJECTS;
 
 export function getCampaign(slug: string): Campaign | undefined {
   return CAMPAIGNS.find((campaign) => campaign.slug === slug);

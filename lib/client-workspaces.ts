@@ -14,7 +14,7 @@ import {
   oneUtilityCampaignMediaPlans,
   valuePropositionData,
 } from "./client-data";
-import { CAMPAIGNS } from "./campaigns";
+import { PROJECTS } from "./projects";
 
 export type CreativePreview = { src: string; alt: string };
 
@@ -28,8 +28,8 @@ export type ValueProposition = {
   progressModel: { stage: string; label: string; desc: string }[];
 };
 
-export type ClientWorkspace = {
-  clientId: string;
+export type OrganizationWorkspace = {
+  organizationId: string;
   preset: PresetData;
   strategyMarkdown: string;
   phaseContent: Record<PhaseKey, PhaseContent>;
@@ -51,8 +51,8 @@ export type ClientWorkspace = {
 const PLACEHOLDER_IMAGE = "/images/projects/project-placeholder.svg";
 const NEUTRAL_PALETTE = ["#111827", "#374151", "#9CA3AF", "#F3F4F6"];
 
-const oneUtilityWorkspace: ClientWorkspace = {
-  clientId: "1utility",
+const oneUtilityWorkspace: OrganizationWorkspace = {
+  organizationId: "1utility",
   preset: defaultPreset,
   strategyMarkdown,
   phaseContent,
@@ -148,14 +148,14 @@ function emptyPhaseContent(): Record<PhaseKey, PhaseContent> {
   };
 }
 
-function makeEmptyWorkspace(clientId: string, clientName: string): ClientWorkspace {
-  const campaign = CAMPAIGNS.find((item) => item.clientId === clientId);
+function makeEmptyWorkspace(organizationId: string, organizationName: string): OrganizationWorkspace {
+  const campaign = PROJECTS.find((item) => item.organizationId === organizationId);
   const category = campaign?.category ?? "";
   const website = campaign?.externalLinks?.find((link) => link.label === "Website")?.href ?? "";
   const url = website.replace(/^https?:\/\//, "").replace(/\/$/, "");
 
   const preset: PresetData = {
-    client: clientName,
+    client: organizationName,
     category,
     name: "Campaign to be defined",
     url,
@@ -168,7 +168,7 @@ function makeEmptyWorkspace(clientId: string, clientName: string): ClientWorkspa
     headline: "",
     subtext: "",
     palette: NEUTRAL_PALETTE,
-    socialAccount: clientName,
+    socialAccount: organizationName,
     socialTitle: "",
     socialBody: "",
     socialCta: "",
@@ -189,9 +189,9 @@ function makeEmptyWorkspace(clientId: string, clientName: string): ClientWorkspa
   };
 
   return {
-    clientId,
+    organizationId,
     preset,
-    strategyMarkdown: `# ${clientName}\n\nStrategy for this client has not been added yet.`,
+    strategyMarkdown: `# ${organizationName}\n\nStrategy for this organization has not been added yet.`,
     phaseContent: emptyPhaseContent(),
     valueProposition: {
       coreHeadline: "",
@@ -214,17 +214,20 @@ function makeEmptyWorkspace(clientId: string, clientName: string): ClientWorkspa
       print: { src: PLACEHOLDER_IMAGE, alt: "" },
     },
     fontPreview: {
-      heading: clientName,
+      heading: organizationName,
       body: "The quick brown fox jumps over the lazy dog. 1234567890",
     },
     hasContent: false,
   };
 }
 
-const CLIENT_WORKSPACES: Record<string, ClientWorkspace> = {
+const ORGANIZATION_WORKSPACES: Record<string, OrganizationWorkspace> = {
   "1utility": oneUtilityWorkspace,
 };
 
-export function getClientWorkspace(clientId: string, clientName: string): ClientWorkspace {
-  return CLIENT_WORKSPACES[clientId] ?? makeEmptyWorkspace(clientId, clientName);
+export function getOrganizationWorkspace(
+  organizationId: string,
+  organizationName: string,
+): OrganizationWorkspace {
+  return ORGANIZATION_WORKSPACES[organizationId] ?? makeEmptyWorkspace(organizationId, organizationName);
 }

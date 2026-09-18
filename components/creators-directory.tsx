@@ -12,6 +12,8 @@ import { SocialIcon, type SocialIconName } from "@/components/social-icon";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { LoginDialog } from "@/components/login-dialog";
+import { useOptionalAuth } from "@/components/auth-provider";
+import { ShareCreatorDialog } from "@/components/share-creator-dialog";
 import type { Creator } from "@/lib/users";
 import { baseCity, creatorAddedTimestamp, creatorHref, isCreatorNew, rateFloorNgn } from "@/lib/users";
 
@@ -225,17 +227,36 @@ type FilterControlsProps = {
 };
 
 function FilterAccordion({ label, value, children }: { label: string; value: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+
   return (
-    <details className="group border-b border-border last:border-b-0">
-      <summary className="flex min-h-[38px] cursor-pointer list-none items-center justify-between gap-2 text-[13px] font-medium text-foreground [&::-webkit-details-marker]:hidden">
+    <div className="border-b border-border last:border-b-0">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+        className="flex min-h-[38px] w-full cursor-pointer items-center justify-between gap-2 border-0 bg-transparent p-0 text-left text-[13px] font-medium text-foreground"
+      >
         <span>{label}</span>
         <span className="flex min-w-0 items-center gap-1.5 text-right text-[11px] text-muted-foreground">
           <span className="truncate">{value}</span>
-          <FiChevronDown aria-hidden="true" className="h-3.5 w-3.5 flex-none transition-transform group-open:rotate-180" />
+          <FiChevronDown
+            aria-hidden="true"
+            className={`h-3.5 w-3.5 flex-none transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${open ? "rotate-180" : ""}`}
+          />
         </span>
-      </summary>
-      <div className="space-y-1 pb-2 pt-1.5">{children}</div>
-    </details>
+      </button>
+      <div
+        aria-hidden={!open}
+        className={`grid transition-[grid-template-rows,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+          open ? "grid-rows-[1fr] opacity-100" : "pointer-events-none grid-rows-[0fr] opacity-0"
+        }`}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <div className="space-y-1 pb-2 pt-1.5">{children}</div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -422,6 +443,9 @@ function CreatorDiscoveryBar({
   setSort: (value: AddedSort) => void;
   onJoinClick?: () => void;
 }) {
+  const auth = useOptionalAuth();
+  const showJoinAction = auth ? !auth.loading && !auth.user : true;
+
   const toggleCategory = (category: string) => {
     setCategory(selectedCategory === category ? "all" : category);
   };
@@ -447,14 +471,16 @@ function CreatorDiscoveryBar({
         </button>
         </form>
 
-        <button
-          type="button"
-          onClick={onJoinClick}
-          className="inline-flex h-16 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full bg-primary px-8 text-[15px] font-bold text-primary-foreground no-underline transition hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:h-[72px] sm:text-base"
-        >
-          <FiPlus aria-hidden="true" className="h-5 w-5" />
-          Join Bantaba
-        </button>
+        {showJoinAction ? (
+          <button
+            type="button"
+            onClick={onJoinClick}
+            className="inline-flex h-16 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full bg-primary px-8 text-[15px] font-bold text-primary-foreground no-underline transition hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:h-[72px] sm:text-base"
+          >
+            <FiPlus aria-hidden="true" className="h-5 w-5" />
+            Join Bantaba
+          </button>
+        ) : null}
       </div>
 
       <div className="mt-3 flex items-center justify-between gap-2 sm:mt-4">
@@ -863,8 +889,9 @@ function CreatorCard({
           {creator.niche ?? creator.craftNote}
         </p>
 
-        {links.length > 0 || creator.email ? (
-          <div className="mt-1.5 flex items-center gap-1">
+        <div className="mt-1.5 flex items-center justify-between gap-2">
+          {links.length > 0 || creator.email ? (
+            <div className="flex min-w-0 items-center gap-1">
             {links.map(({ label, href, Icon, brand }) => (
               <a
                 key={label}
@@ -888,8 +915,14 @@ function CreatorCard({
                 <FiMail aria-hidden="true" className="h-3 w-3" />
               </a>
             ) : null}
-          </div>
-        ) : null}
+            </div>
+          ) : <span aria-hidden="true" />}
+          <ShareCreatorDialog
+            creatorName={creator.name}
+            path={creatorHref(creator.slug)}
+            className={`${CREATOR_ACTION_BUTTON} h-7 w-7 border-0 bg-muted text-muted-foreground hover:bg-muted/75 hover:text-foreground`}
+          />
+        </div>
 
       </div>
     </article>
@@ -1489,6 +1522,7 @@ export function CreatorDirectory({
       <LoginDialog
         open={loginModalOpen}
         onOpenChange={setLoginModalOpen}
+        initialMode="signup"
       />
     </>
   );

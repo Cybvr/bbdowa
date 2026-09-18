@@ -1,0 +1,9 @@
+{
+  "firestore": [
+    {
+      "database": "bbdowa",
+      "rules": "firestore.bbdowa.rules",
+      "indexes": "firestore.bbdowa.indexes.json"
+    }
+  ]
+}

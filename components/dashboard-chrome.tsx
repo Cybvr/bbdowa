@@ -25,7 +25,7 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
           sidebarCollapsed={sidebarCollapsed}
           onToggleSidebar={() => setSidebarCollapsed((value) => !value)}
         />
-        <div className={`min-w-0 flex-1 ${sidebarCollapsed ? "nav:ml-[80px]" : "nav:ml-[208px]"}`}>{children}</div>
+        <div className={`min-w-0 flex-1 transition-[margin-left] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${sidebarCollapsed ? "nav:ml-[80px]" : "nav:ml-[208px]"}`}>{children}</div>
       </div>
     </AuthProvider>
   );

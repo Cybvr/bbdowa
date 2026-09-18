@@ -32,7 +32,7 @@ export default async function UserDetailPage({ params }: Params) {
   const user = TEAM.find((member) => member.slug === slug);
   if (!user) notFound();
 
-  const campaigns = CAMPAIGNS.filter((campaign) => campaign.lead === user.name);
+  const campaigns = CAMPAIGNS.filter((campaign) => campaign.leadUserId === user.slug);
   const products = PRODUCTS.filter((product) => product.owner?.name === user.name);
 
   return (

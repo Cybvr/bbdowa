@@ -13,8 +13,9 @@ import {
 import { EmptyThumbnail, ImageWithFallback } from "@/components/empty-thumbnail";
 import { CAMPAIGNS } from "@/lib/campaigns";
 import type { Campaign, CampaignStatus } from "@/lib/campaigns";
-import { CLIENTS, CREATORS } from "@/lib/users";
-import { getClientWorkspace } from "@/lib/client-workspaces";
+import { getOrganization } from "@/lib/organizations";
+import { CREATORS, getUser } from "@/lib/users";
+import { getOrganizationWorkspace } from "@/lib/client-workspaces";
 import { campaignWorkspaceStatuses } from "@/lib/client-data";
 import { fontOptions, ctaOptions } from "@/lib/campaign-options";
 import type {
@@ -373,12 +374,12 @@ function OneUtilityClientWorkspace({
   slug: string;
   initialView?: OneUtilityWorkspaceView;
 }) {
-  const client = CLIENTS.find((user) => user.slug === slug);
+  const client = getOrganization(slug);
   const clientName = client?.name ?? "Client";
-  const workspace = getClientWorkspace(slug, clientName);
+  const workspace = getOrganizationWorkspace(slug, clientName);
   const preset = workspace.preset;
   const clientProfileImage = client?.profileImage ?? "/images/projects/project-placeholder.svg";
-  const initialClientCampaigns = CAMPAIGNS.filter((campaign) => campaign.clientId === slug);
+  const initialClientCampaigns = CAMPAIGNS.filter((campaign) => campaign.organizationId === slug);
   const primaryCampaign = initialClientCampaigns[0];
   const [projectName, setProjectName] = useState(
     primaryCampaign?.campaign ?? primaryCampaign?.name ?? preset.name,
@@ -441,7 +442,9 @@ function OneUtilityClientWorkspace({
   // Campaign overview state
   // Campaign lead mirrors the lead recorded on the campaign itself, so the
   // workspace and the public campaign page always name the same person.
-  const [campaignLead, setCampaignLead] = useState(initialClientCampaigns[0]?.lead ?? "");
+  const [campaignLead, setCampaignLead] = useState(
+    getUser(initialClientCampaigns[0]?.leadUserId ?? "")?.name ?? "",
+  );
   const [campaignStart, setCampaignStart] = useState("2026-08-01");
   const [campaignEnd, setCampaignEnd] = useState("2026-10-31");
   const [campaignDeadline, setCampaignDeadline] = useState("2026-07-25");
@@ -547,7 +550,7 @@ function OneUtilityClientWorkspace({
     setActiveCampaignId(selectedCampaign.id);
     setProjectName(selectedCampaign.title);
     const realCampaign = CAMPAIGNS.find((campaign) => campaign.slug === selectedCampaign.id);
-    setCampaignLead(realCampaign?.lead ?? "");
+    setCampaignLead(getUser(realCampaign?.leadUserId ?? "")?.name ?? "");
   };
 
   const handleOpenCampaign = (campaign: CampaignListItem) => {

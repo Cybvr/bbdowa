@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { CREATORS, TEAM, userHref } from "@/lib/users";
+import { CREATORS, TEAM, creatorHref, userHref } from "@/lib/users";
 import { UserGraph, type GraphLink, type GraphNode } from "@/components/user-graph";
 import { PageHeader } from "@/components/dashboard/ui";
 
@@ -29,7 +29,7 @@ function buildGraph(): { nodes: GraphNode[]; links: GraphLink[] } {
 
   const companies = new Map<string, string>();
   for (const creator of CREATORS) {
-    nodes.push({ id: creator.slug, label: creator.name, kind: "creator", href: userHref(creator) });
+    nodes.push({ id: creator.slug, label: creator.name, kind: "creator", href: creatorHref(creator.slug) });
     links.push({ source: creator.slug, target: `cat:${creator.category}` });
     const seen = new Set<string>();
     for (const job of creator.workHistory ?? []) {

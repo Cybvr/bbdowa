@@ -1,6 +1,6 @@
-import { CAMPAIGNS } from "@/lib/campaigns";
+export type UserType = "team";
 
-export type UserType = "team" | "creator" | "client";
+export type UserRole = "admin" | "editor" | "staff" | "viewer";
 
 export type TeamUser = {
   type: "team";
@@ -8,6 +8,7 @@ export type TeamUser = {
   name: string;
   title: string;
   department: string;
+  role: UserRole;
   /** Public headshot; null/absent falls back to the placeholder avatar. */
   profileImage?: string | null;
 };
@@ -79,18 +80,9 @@ export type Creator = {
   craftNote: string;
 };
 
-export type ClientUser = {
-  type: "client";
-  slug: string;
-  name: string;
-  date: string | null;
-  industry: string;
-  profileImage?: string | null;
-};
+export type User = TeamUser;
 
-export type User = TeamUser | Creator | ClientUser;
-
-const TEAM_RECORDS: Omit<TeamUser, "type">[] = [
+const TEAM_RECORDS: Omit<TeamUser, "type" | "role">[] = [
   {
     slug: "enyi-odigbo",
     name: "Enyi Odigbo",
@@ -163,6 +155,7 @@ const TEAM_RECORDS: Omit<TeamUser, "type">[] = [
 
 export const TEAM: TeamUser[] = TEAM_RECORDS.map((member) => ({
   type: "team" as const,
+  role: "staff" as const,
   ...member,
 }));
 
@@ -1204,45 +1197,7 @@ export const CREATORS: Creator[] = CREATOR_RECORDS.map((creator) => ({
   ...creator,
 }));
 
-// Client accounts use their own brand mark as a profile image. Keep this
-// separate from campaign artwork so the directory represents the client, not
-// whichever campaign happened to be added first.
-const CLIENT_PROFILE_IMAGES: Record<string, string> = {
-  "1utility": "/images/one-utility-logo.svg",
-  "benin-tourism": "/images/clients/benin-tourism.png",
-  "brown-forman": "/images/clients/brown-forman.png",
-  "central-bank-of-nigeria": "/images/clients/central-bank-of-nigeria.png",
-  "chicken-republic": "/images/clients/chicken-republic.png",
-  "diageo": "/images/clients/diageo.png",
-  "google": "/images/clients/google.png",
-  "interswitch": "/images/clients/interswitch.png",
-  "keizen-games": "/images/clients/keizen-games.png",
-  "orijin": "/images/clients/orijin.png",
-  "pringles": "/images/clients/pringles.png",
-  "proforce-nigeria": "/images/clients/proforce-nigeria.png",
-  "unilever": "/images/clients/unilever.png",
-  "visa": "/images/clients/visa.png",
-};
-
-export const CLIENTS: ClientUser[] = Array.from(
-  new Map(
-    [...CAMPAIGNS]
-      .sort((a, b) => (a.liveAt?.date ?? "").localeCompare(b.liveAt?.date ?? ""))
-      .map((campaign) => [
-        campaign.clientId,
-        {
-          type: "client" as const,
-          slug: campaign.clientId,
-          name: campaign.client,
-          date: campaign.liveAt?.date ?? null,
-          industry: campaign.category,
-          profileImage: CLIENT_PROFILE_IMAGES[campaign.clientId] ?? null,
-        },
-      ])
-  ).values()
-).sort((a, b) => a.name.localeCompare(b.name));
-
-export const USERS: User[] = [...TEAM, ...CREATORS, ...CLIENTS];
+export const USERS: User[] = [...TEAM];
 
 export const CREATOR_CATEGORIES = [...new Set(CREATORS.map((creator) => creator.category))].sort();
 
@@ -1290,8 +1245,6 @@ export function getUserByName(name: string): User | undefined {
 }
 
 export function userHref(user: User): string {
-  if (user.type === "creator") return creatorHref(user.slug);
-  if (user.type === "client") return `/dashboard/clients/${user.slug}/overview`;
   return `/dashboard/people/${user.slug}`;
 }
 

@@ -13,6 +13,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 const NAV_TEXT =
   "flex min-h-9 w-full items-center gap-2 rounded-lg px-2 py-1.5 font-mono text-xs font-medium leading-none text-foreground no-underline transition-colors hover:bg-foreground/10 hover:text-foreground focus-visible:bg-foreground/10 focus-visible:text-foreground focus-visible:outline-none";
 
+const NAV_LABEL = "overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]";
+
 const NAV_ACTIVE = "bg-muted !text-foreground hover:bg-muted";
 
 function sentenceCase(label: string) {
@@ -78,7 +80,9 @@ export function DashboardNavList({ onNavigate, collapsed = false }: { onNavigate
                 className={`${NAV_TEXT} ${collapsed ? "justify-center px-0" : ""} ${current ? NAV_ACTIVE : ""}`}
               >
                 <NavIcon label={item.label} />
-                <span className={collapsed ? "sr-only" : undefined}>{sentenceCase(item.label)}</span>
+                <span className={`${NAV_LABEL} ${collapsed ? "max-w-0 opacity-0" : "max-w-[140px] opacity-100"}`}>
+                  {sentenceCase(item.label)}
+                </span>
               </Link>
             </li>
           );
@@ -101,32 +105,44 @@ export function DashboardNavList({ onNavigate, collapsed = false }: { onNavigate
               }`}
             >
               <NavIcon label={item.label} />
-              <span className={collapsed ? "sr-only" : undefined}>{sentenceCase(item.label)}</span>
+              <span className={`${NAV_LABEL} ${collapsed ? "max-w-0 opacity-0" : "max-w-[140px] opacity-100"}`}>
+                {sentenceCase(item.label)}
+              </span>
               <LuChevronDown aria-hidden="true" className={`${collapsed ? "hidden" : "ml-auto"} h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
             </button>
-            {open && (
-              <ul className="m-0 mt-1 w-full list-none rounded-lg p-1">
-                {item.items
-                  .filter((entry) => !entry.requiresAuth || Boolean(auth?.user))
-                  .map((entry) => {
-                  const current = pathname === entry.href;
-                  return (
-                    <li key={entry.href} className="block w-full">
-                      <Link
-                        href={entry.href}
-                        aria-current={current ? "page" : undefined}
-                        onClick={onNavigate}
-                        title={collapsed ? sentenceCase(entry.label) : undefined}
-                        className={`${NAV_TEXT} ${collapsed ? "justify-center px-0" : "pl-7"} ${current ? NAV_ACTIVE : ""}`}
-                      >
-                        <NavIcon label={entry.label} />
-                        <span className={collapsed ? "sr-only" : undefined}>{sentenceCase(entry.label)}</span>
-                      </Link>
-                    </li>
-                  );
-                  })}
-              </ul>
-            )}
+            <div
+              aria-hidden={!open}
+              className={`grid transition-[grid-template-rows,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                open ? "grid-rows-[1fr] opacity-100" : "pointer-events-none grid-rows-[0fr] opacity-0"
+              }`}
+            >
+              <div className="min-h-0 overflow-hidden">
+                <ul className="m-0 mt-1 w-full list-none rounded-lg p-1">
+                  {item.items
+                    .filter((entry) => !entry.requiresAuth || Boolean(auth?.user))
+                    .map((entry) => {
+                      const current = pathname === entry.href;
+                      return (
+                        <li key={entry.href} className="block w-full">
+                          <Link
+                            href={entry.href}
+                            aria-current={current ? "page" : undefined}
+                            onClick={onNavigate}
+                            tabIndex={open ? 0 : -1}
+                            title={collapsed ? sentenceCase(entry.label) : undefined}
+                            className={`${NAV_TEXT} ${collapsed ? "justify-center px-0" : "pl-7"} ${current ? NAV_ACTIVE : ""}`}
+                          >
+                            <NavIcon label={entry.label} />
+                            <span className={`${NAV_LABEL} ${collapsed ? "max-w-0 opacity-0" : "max-w-[140px] opacity-100"}`}>
+                              {sentenceCase(entry.label)}
+                            </span>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                </ul>
+              </div>
+            </div>
           </li>
         );
       })}
@@ -156,7 +172,13 @@ export function DashboardSidebarContent({
   return (
     <>
       <div className={`flex min-h-9 items-center gap-2 ${collapsed ? "justify-center" : "justify-between"}`}>
-        {collapsed ? <span aria-hidden="true" className="h-9 w-9" /> : <DashboardLogo onNavigate={onNavigate} />}
+        <div
+          className={`min-w-0 overflow-hidden transition-[max-width,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+            collapsed ? "max-w-0 opacity-0" : "max-w-[140px] opacity-100"
+          }`}
+        >
+          <DashboardLogo onNavigate={onNavigate} />
+        </div>
         {showCollapseToggle && onToggleCollapse ? (
           <button
             type="button"

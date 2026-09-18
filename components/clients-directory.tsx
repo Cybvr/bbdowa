@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import type { ClientUser } from "@/lib/users";
-import { userHref } from "@/lib/users";
+import type { Organization } from "@/lib/organizations";
 import { longDate, plural } from "@/lib/format";
 import { Badge, EmptyState, ImageWithFallback } from "@/components/dashboard/ui";
 import { FilterBar, type SortOption } from "@/components/dashboard/filter-bar";
@@ -16,7 +15,7 @@ const SORTS: SortOption<"name" | "date" | "industry">[] = [
 
 type SortKey = (typeof SORTS)[number]["key"];
 
-export function ClientsDirectory({ clients }: { clients: ClientUser[] }) {
+export function ClientsDirectory({ clients }: { clients: Organization[] }) {
   const [industry, setIndustry] = useState("all");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortKey>("name");
@@ -69,7 +68,7 @@ export function ClientsDirectory({ clients }: { clients: ClientUser[] }) {
             {visibleClients.map((client) => (
               <li key={client.slug}>
                 <Link
-                  href={userHref(client)}
+                  href={`/dashboard/clients/${client.slug}/overview`}
                   className="group flex h-full overflow-hidden rounded-xl border border-border bg-background text-foreground no-underline transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                 >
                   <div className="aspect-[4/3] w-[38%] shrink-0 bg-muted overflow-hidden flex items-center justify-center p-3">

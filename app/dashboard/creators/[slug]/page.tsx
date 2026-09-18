@@ -8,6 +8,7 @@ import { CREATORS, getCreator, isCreatorNew, type Creator } from "@/lib/users";
 import { longDate } from "@/lib/format";
 import { ImageWithFallback, MetaGrid, MetaItem, SectionHeading } from "@/components/dashboard/ui";
 import { SocialIcon, type SocialIconName } from "@/components/social-icon";
+import { ShareCreatorDialog } from "@/components/share-creator-dialog";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -74,7 +75,10 @@ export default async function CreatorDetailPage({ params }: Params) {
                 </h1>
               </div>
             </div>
-            <span className="text-[13px] font-medium text-muted-foreground">{creator.availability}</span>
+            <div className="flex items-center gap-2">
+              <span className="text-[13px] font-medium text-muted-foreground">{creator.availability}</span>
+              <ShareCreatorDialog creatorName={creator.name} path={`/dashboard/creators/${creator.slug}`} showLabel />
+            </div>
           </div>
 
           <p className="my-6 max-w-[850px] text-[17px] leading-[1.4]">{creator.craftNote}</p>

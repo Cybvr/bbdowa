@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useRef } from "react";
-import { FiArrowLeft, FiArrowRight } from "react-icons/fi";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { ImageWithFallback } from "@/components/empty-thumbnail";
 import { SectionHeading } from "@/components/dashboard/ui";
 import {
@@ -40,7 +40,7 @@ export function CreatorCarousel({ creators }: { creators: Creator[] }) {
             onClick={() => move(-1)}
             className="grid h-9 w-9 cursor-pointer place-items-center rounded-lg border border-border bg-background text-foreground transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           >
-            <FiArrowLeft aria-hidden="true" className="h-4 w-4" />
+            <ArrowLeft aria-hidden="true" className="h-4 w-4" />
           </button>
           <button
             type="button"
@@ -48,7 +48,7 @@ export function CreatorCarousel({ creators }: { creators: Creator[] }) {
             onClick={() => move(1)}
             className="grid h-9 w-9 cursor-pointer place-items-center rounded-lg border border-border bg-background text-foreground transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           >
-            <FiArrowRight aria-hidden="true" className="h-4 w-4" />
+            <ArrowRight aria-hidden="true" className="h-4 w-4" />
           </button>
         </div>
       </div>

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CAMPAIGNS, getCampaign } from "@/lib/campaigns";
-import { getUserByName, userHref } from "@/lib/users";
+import { getUser, userHref } from "@/lib/users";
 import { BackLink } from "@/components/back-link";
 import { Badge, ImageWithFallback, MetaGrid, MetaItem, SectionHeading } from "@/components/dashboard/ui";
 import { ArrowUpRight } from "lucide-react";
@@ -29,7 +29,7 @@ export default async function CampaignDetailPage({ params }: Params) {
   if (!campaign) notFound();
 
   const provisional = campaign.placeholder ? "text-muted-foreground" : "";
-  const leadUser = getUserByName(campaign.lead);
+  const leadUser = campaign.leadUserId ? getUser(campaign.leadUserId) : undefined;
 
   return (
     <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
@@ -115,26 +115,26 @@ export default async function CampaignDetailPage({ params }: Params) {
 
       <section className="mt-10" aria-label="Campaign information">
         <MetaGrid>
-          <MetaItem label="Client">
+          <MetaItem label="Organization">
             <Link
-              href={`/dashboard/clients/${campaign.clientId}/overview`}
+              href={`/dashboard/clients/${campaign.organizationId}/overview`}
               className="text-foreground underline decoration-border underline-offset-4 hover:text-primary focus-visible:text-primary"
             >
-              {campaign.client}
+              {campaign.organizationName}
             </Link>
           </MetaItem>
           <MetaItem label="Category">{campaign.category}</MetaItem>
           <MetaItem label="Campaign lead">
-            <span className={campaign.lead ? "" : "text-muted-foreground"}>
+            <span className={campaign.leadUserId ? "" : "text-muted-foreground"}>
               {leadUser ? (
                 <Link
                   href={userHref(leadUser)}
                   className="text-foreground underline decoration-border underline-offset-4 hover:text-primary focus-visible:text-primary"
                 >
-                  {campaign.lead}
+                  {leadUser.name}
                 </Link>
               ) : (
-                campaign.lead || "To be confirmed"
+                campaign.leadUserId ?? "To be confirmed"
               )}
             </span>
           </MetaItem>

@@ -1,8 +1,8 @@
 window.CHAOS_CONTENT = {
   projects: [
     {
-      slug: "jack-daniels",
-      name: "Jack Daniel’s",
+      slug: "thats-naija-thats-jack",
+      name: "That’s Naija, That’s Jack",
       client: "Brown-Forman",
       category: "Food & beverages",
       year: 2024,
@@ -20,7 +20,7 @@ window.CHAOS_CONTENT = {
       placeholder: true
     },
     {
-      slug: "betano",
+      slug: "make-we-bet",
       name: "Betano",
       client: "Keizen Games",
       category: "Entertainment",
@@ -58,7 +58,7 @@ window.CHAOS_CONTENT = {
       placeholder: true
     },
     {
-      slug: "1-utility-bank",
+      slug: "leap-of-faith",
       name: "1 Utility Bank",
       client: "1 Utility Bank",
       category: "Finance",
@@ -96,7 +96,7 @@ window.CHAOS_CONTENT = {
       placeholder: true
     },
     {
-      slug: "diageo-guinness",
+      slug: "made-of-black",
       name: "Guinness",
       client: "Diageo",
       category: "Food & beverages",
@@ -115,7 +115,7 @@ window.CHAOS_CONTENT = {
       placeholder: false
     },
     {
-      slug: "unilever",
+      slug: "closer-is-better",
       name: "Unilever",
       client: "Unilever",
       category: "Consumer goods",
