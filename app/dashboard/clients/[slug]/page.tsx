@@ -399,6 +399,9 @@ function OneUtilityClientWorkspace({
       : [{ id: "client-campaign", title: "Campaign to be defined", status: "Draft" }]
   );
   const [activeCampaignId, setActiveCampaignId] = useState(() => initialClientCampaigns[0]?.slug ?? "client-campaign");
+  const [campaignDescriptions, setCampaignDescriptions] = useState<Record<string, string>>(() =>
+    Object.fromEntries(initialClientCampaigns.map((campaign) => [campaign.slug, campaign.summary])),
+  );
   const [caseStudies, setCaseStudies] = useState<Record<string, CaseStudyDraft>>(() =>
     Object.fromEntries(initialClientCampaigns.map((campaign) => [campaign.slug, caseStudyFromCampaign(campaign)])),
   );
@@ -445,7 +448,6 @@ function OneUtilityClientWorkspace({
 
   // Settings state
   const [brandUrl, setBrandUrl] = useState(preset.url);
-  const [scope, setScope] = useState(preset.scope);
   const [footprint, setFootprint] = useState(preset.footprint);
   const [aesthetic, setAesthetic] = useState(preset.aesthetic);
   const [brandArchetype, setBrandArchetype] = useState(workspace.brandArchetype);
@@ -523,10 +525,10 @@ function OneUtilityClientWorkspace({
     setCampaigns((prev) => [...prev, { id, title, status: "Draft" }]);
     setActiveCampaignId(id);
     setProjectName(title);
+    setCampaignDescriptions((previous) => ({ ...previous, [id]: "" }));
     setActiveSection("social");
     setMarketAudience(preset.footprintShort);
     setBrandUrl(preset.url);
-    setScope(preset.scope);
     setFootprint(preset.footprint);
     setAesthetic(preset.aesthetic);
     setToneVal(preset.toneVal);
@@ -648,6 +650,9 @@ function OneUtilityClientWorkspace({
               : null;
   const activeCampaign =
     campaigns.find((campaign) => campaign.id === activeCampaignId) ?? campaigns[0];
+  const campaignDescription = campaignDescriptions[activeCampaignId] ?? "";
+  const updateCampaignDescription = (value: string) =>
+    setCampaignDescriptions((previous) => ({ ...previous, [activeCampaignId]: value }));
   const activeCampaignMediaPlan = workspace.campaignMediaPlans[activeCampaignId];
   const activeCaseStudy = caseStudies[activeCampaignId] ?? caseStudyFromCampaign();
   const updateCaseStudy = (field: keyof CaseStudyDraft, value: string) =>
@@ -957,22 +962,13 @@ function OneUtilityClientWorkspace({
                             onChange={handleProjectNameChange}
                           />
 
-                          <div className="space-y-1.5">
-                            <label htmlFor="campaignScopeOverview" className="text-sm font-medium text-foreground">
-                              Scope
-                            </label>
-                            <select
-                              id="campaignScopeOverview"
-                              value={scope}
-                              onChange={(e) => setScope(e.target.value)}
-                              className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm text-foreground outline-none transition"
-                            >
-                              <option value="integrated">Integrated launch (film, social, OOH, radio, activation)</option>
-                              <option value="social">Social, creators & performance</option>
-                              <option value="ooh">Out of home & transit focus</option>
-                              <option value="activation">Retail, pop-up & field toolkit</option>
-                            </select>
-                          </div>
+                          <CopyField
+                            label="Campaign description"
+                            value={campaignDescription}
+                            onChange={updateCampaignDescription}
+                            textarea
+                            rows={4}
+                          />
 
                           <div className="space-y-1.5">
                             <label htmlFor="campaignStatusOverview" className="text-sm font-medium text-foreground">
