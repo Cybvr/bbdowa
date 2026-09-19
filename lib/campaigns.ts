@@ -47,9 +47,7 @@ export type Project = {
   execution: string;
   outcome: string;
   placeholder: boolean;
-  /** The client workspace content for this project (strategy, phases, creatives, etc.). */
-  workspace?: ClientWorkspace;
-};
+} & Partial<ClientWorkspace>;
 
 export type Campaign = Project;
 
@@ -206,7 +204,7 @@ export const PROJECTS: Project[] = [
     outcome:
       "Success is measured by the first successful utility payment, then by trust, second payment within 30 days, repeat frequency, reminder engagement and referrals.",
     placeholder: false,
-    workspace: oneUtilityWorkspace,
+    ...oneUtilityWorkspace,
   },
   {
     slug: "cbn",

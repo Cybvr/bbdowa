@@ -1,9 +1,9 @@
 // Client workspace content shown on /dashboard/clients/[slug]
 // (overview, campaigns, strategy, creatives, brand DNA).
 //
-// A workspace belongs to a project: it lives on `project.workspace`
-// (see lib/campaigns.ts). This module holds the workspace SHAPE, the curated
-// 1Utility workspace that is attached to its project, and a blank template
+// The workspace fields live directly on the project (they are spread onto it in
+// lib/campaigns.ts). This module holds the workspace field SHAPE, the curated
+// 1Utility workspace that is spread onto its project, and a blank template
 // (makeEmptyWorkspace) used for projects that have no curated content yet, so
 // nothing from another client ever leaks in.
 

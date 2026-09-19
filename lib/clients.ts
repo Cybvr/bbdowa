@@ -145,19 +145,35 @@ export function getClientProjects(slug: string): Project[] {
 }
 
 /**
- * The workspace content for a client. It lives on the client's project
- * (`project.workspace`); clients/projects without curated content get a blank
- * template so nothing leaks in from another client.
+ * The workspace content for a client, assembled from the fields that live
+ * directly on the client's project; clients/projects without curated content
+ * get a blank template so nothing leaks in from another client.
  */
 export function getClientWorkspace(clientSlug: string, clientName?: string): ClientWorkspace {
   const projects = getClientProjects(clientSlug);
-  const withWorkspace = projects.find((project) => project.workspace);
-  if (withWorkspace?.workspace) return withWorkspace.workspace;
-
-  const project = projects[0];
+  const project = projects.find((item) => item.hasContent) ?? projects[0];
   const name = clientName ?? getClient(clientSlug)?.name ?? clientSlug;
   const website = project?.externalLinks?.find((link) => link.label === "Website")?.href ?? "";
-  return makeEmptyWorkspace({ clientName: name, category: project?.category ?? "", website });
+  const empty = makeEmptyWorkspace({ clientName: name, category: project?.category ?? "", website });
+
+  if (!project?.hasContent) return empty;
+
+  return {
+    preset: project.preset ?? empty.preset,
+    strategyMarkdown: project.strategyMarkdown ?? empty.strategyMarkdown,
+    phaseContent: project.phaseContent ?? empty.phaseContent,
+    valueProposition: project.valueProposition ?? empty.valueProposition,
+    palette: project.palette ?? empty.palette,
+    primaryColor: project.primaryColor ?? empty.primaryColor,
+    brandArchetype: project.brandArchetype ?? empty.brandArchetype,
+    creatorSlugs: project.creatorSlugs ?? empty.creatorSlugs,
+    moodboardImages: project.moodboardImages ?? empty.moodboardImages,
+    campaignMediaPlans: project.campaignMediaPlans ?? empty.campaignMediaPlans,
+    creativePreviews: project.creativePreviews ?? empty.creativePreviews,
+    fontPreview: project.fontPreview ?? empty.fontPreview,
+    overviewVideo: project.overviewVideo ?? empty.overviewVideo,
+    hasContent: project.hasContent ?? empty.hasContent,
+  };
 }
 
 export function clientHref(slug: string): string {
