@@ -1,4 +1,4 @@
-import { PROJECTS, type Project } from "@/lib/projects";
+import { CAMPAIGNS, type Campaign } from "@/lib/campaigns";
 import { makeEmptyWorkspace, type ClientWorkspace } from "@/lib/client-workspaces";
 
 export type Client = {
@@ -16,9 +16,9 @@ export type Client = {
 
 /**
  * Clients are their own records. A project belongs to one client
- * via its `clientId`; an client "has" the projects that point at
- * it (see `getClientProjects`). Edit an client here without
- * touching its projects, and vice versa.
+ * via its `clientId`; an client "has" the campaigns that point at
+ * it (see `getClientCampaigns`). Edit a client here without
+ * touching its campaigns, and vice versa.
  */
 export const CLIENTS: Client[] = [
   {
@@ -139,19 +139,19 @@ export function getClient(slug: string): Client | undefined {
   return CLIENTS.find((client) => client.slug === slug);
 }
 
-/** The projects that belong to this client. */
-export function getClientProjects(slug: string): Project[] {
-  return PROJECTS.filter((project) => project.clientId === slug);
+/** The campaigns that belong to this client. */
+export function getClientCampaigns(slug: string): Campaign[] {
+  return CAMPAIGNS.filter((project) => project.clientId === slug);
 }
 
 /**
  * The workspace content for a client, assembled from the fields that live
- * directly on the client's project; clients/projects without curated content
+ * directly on the client's project; clients/campaigns without curated content
  * get a blank template so nothing leaks in from another client.
  */
 export function getClientWorkspace(clientSlug: string, clientName?: string): ClientWorkspace {
-  const projects = getClientProjects(clientSlug);
-  const project = projects.find((item) => item.hasContent) ?? projects[0];
+  const campaigns = getClientCampaigns(clientSlug);
+  const project = campaigns.find((item) => item.hasContent) ?? campaigns[0];
   const name = clientName ?? getClient(clientSlug)?.name ?? clientSlug;
   const website = project?.externalLinks?.find((link) => link.label === "Website")?.href ?? "";
   const empty = makeEmptyWorkspace({ clientName: name, category: project?.category ?? "", website });

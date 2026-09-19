@@ -1,8 +1,7 @@
 import type { ClientWorkspace } from "@/lib/client-workspaces";
 import { oneUtilityWorkspace } from "@/lib/client-workspaces";
 
-export type ProjectStatus = "live" | "pitch" | "completed";
-export type CampaignStatus = ProjectStatus;
+export type CampaignStatus = "live" | "pitch" | "completed";
 
 export type CampaignMedia = {
   kind: "image" | "video";
@@ -20,7 +19,7 @@ export type CampaignExternalLink = {
   href: string;
 };
 
-export type Project = {
+export type Campaign = {
   slug: string;
   name: string;
   campaign?: string;
@@ -29,7 +28,7 @@ export type Project = {
   category: string;
   year: number | null;
   liveAt?: CampaignLiveDate;
-  status: ProjectStatus;
+  status: CampaignStatus;
   leadUserId: string | null;
   publishedBy?: string | null;
   fee: string;
@@ -49,9 +48,7 @@ export type Project = {
   placeholder: boolean;
 } & Partial<ClientWorkspace>;
 
-export type Campaign = Project;
-
-export const PROJECTS: Project[] = [
+export const CAMPAIGNS: Campaign[] = [
   {
     slug: "thats-naija-thats-jack",
     name: "Jack Daniel’s",
@@ -561,8 +558,6 @@ export const PROJECTS: Project[] = [
 
 // Backwards-compatible name for existing campaign pages while the domain
 // model is now represented as client-owned projects.
-export const CAMPAIGNS: Campaign[] = PROJECTS;
-
 export function getCampaign(slug: string): Campaign | undefined {
   return CAMPAIGNS.find((campaign) => campaign.slug === slug);
 }

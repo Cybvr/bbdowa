@@ -101,7 +101,7 @@ export default async function ProductDetailPage({ params }: Params) {
           <MetaItem label={product.created ? "Date created" : "Target date"}>
             {date ? <time dateTime={date}>{longDate(date)}</time> : <time>Not scheduled</time>}
           </MetaItem>
-          <MetaItem label="Project link">
+          <MetaItem label="Campaign link">
             <Link
               href={productHref(product.slug)}
               className="text-foreground underline decoration-border underline-offset-4 hover:text-primary focus-visible:text-primary"
