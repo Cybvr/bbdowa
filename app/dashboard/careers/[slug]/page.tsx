@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { BackLink } from "@/components/back-link";
 import { getJobBySlug } from "@/lib/firebase/content";
 import { Badge, SectionHeading } from "@/components/dashboard/ui";
+import { JobActions } from "@/components/job-actions";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -22,9 +23,10 @@ export default async function CareerDetailPage({ params }: Params) {
 
   return (
     <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
-      <BackLink href="/dashboard/careers" className="mb-5">
-        Back to careers
-      </BackLink>
+      <div className="mb-5 flex items-center justify-between gap-4">
+        <BackLink href="/dashboard/careers">Back to careers</BackLink>
+        <JobActions job={job} />
+      </div>
 
       <div className="max-w-[1050px]">
         <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-6">

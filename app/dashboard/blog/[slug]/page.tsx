@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getBlogPostBySlug, getBlogPosts } from "@/lib/firebase/content";
 import { BackLink } from "@/components/back-link";
 import { Panel, SectionHeading } from "@/components/dashboard/ui";
+import { BlogActions } from "@/components/blog-actions";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -36,9 +37,10 @@ export default async function BlogEntryPage({ params }: Params) {
 
   return (
     <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
-      <BackLink href="/dashboard/blog" className="mb-5">
-        All updates
-      </BackLink>
+      <div className="mb-5 flex items-center justify-between gap-4">
+        <BackLink href="/dashboard/blog">All updates</BackLink>
+        <BlogActions post={post} />
+      </div>
 
       <article>
         <header className="border-b border-border pb-6">
