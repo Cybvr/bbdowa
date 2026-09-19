@@ -5,7 +5,7 @@ import type { Campaign } from "@/lib/campaigns";
 import type { Client } from "@/lib/clients";
 import type { Job } from "@/lib/jobs";
 import type { Product } from "@/lib/products";
-import { USERS, type User } from "@/lib/users";
+import type { User } from "@/lib/users";
 
 type FirestoreValue = {
   nullValue?: null;
@@ -116,23 +116,10 @@ export async function getCampaigns(): Promise<Campaign[]> {
 export const getCampaignBySlug = (slug: string) => getDocument<Campaign>("campaigns", slug);
 
 export async function getUsers(): Promise<User[]> {
-  try {
-    return await getCollection<User>("users");
-  } catch {
-    // User documents are intentionally protected by Firestore rules. Server
-    // renders have no browser auth token, so retain the authored snapshot until
-    // a signed-in client can read the collection.
-    return USERS;
-  }
+  return getCollection<User>("users");
 }
 
-export async function getUserBySlug(slug: string): Promise<User | undefined> {
-  try {
-    return await getDocument<User>("users", slug);
-  } catch {
-    return USERS.find((user) => user.slug === slug);
-  }
-}
+export const getUserBySlug = (slug: string) => getDocument<User>("users", slug);
 
 export async function getUserByName(name: string): Promise<User | undefined> {
   return (await getUsers()).find((user) => user.name === name);

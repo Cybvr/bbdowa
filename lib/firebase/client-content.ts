@@ -10,12 +10,8 @@ import type { Product } from "@/lib/products";
 import type { User } from "@/lib/users";
 
 async function readCollection<T>(name: string): Promise<T[]> {
-  try {
-    const snapshot = await getDocs(collection(firebaseDb, name));
-    return snapshot.docs.map((document) => document.data() as T);
-  } catch {
-    return [];
-  }
+  const snapshot = await getDocs(collection(firebaseDb, name));
+  return snapshot.docs.map((document) => document.data() as T);
 }
 
 export async function readContentFromFirestore() {

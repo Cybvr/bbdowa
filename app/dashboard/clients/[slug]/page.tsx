@@ -11,9 +11,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { EmptyThumbnail, ImageWithFallback } from "@/components/empty-thumbnail";
-import { CAMPAIGNS, type Campaign, type CampaignStatus } from "@/lib/campaigns";
-import { CLIENTS, getClient, getClientWorkspace, type Client } from "@/lib/clients";
-import { USERS, type User } from "@/lib/users";
+import type { Campaign, CampaignStatus } from "@/lib/campaigns";
+import { getClient, getClientWorkspace, type Client } from "@/lib/clients";
+import type { User } from "@/lib/users";
 import { readContentFromFirestore } from "@/lib/firebase/client-content";
 import { campaignWorkspaceStatuses } from "@/lib/client-data";
 import { fontOptions, ctaOptions } from "@/lib/campaign-options";
@@ -127,6 +127,7 @@ export default function ClientPage() {
   const { slug } = useParams<{ slug: string }>();
   const pathname = usePathname();
   const [content, setContent] = useState<Awaited<ReturnType<typeof readContentFromFirestore>> | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -134,7 +135,10 @@ export default function ClientPage() {
       .then((nextContent) => {
         if (active) setContent(nextContent);
       })
-      .catch((error) => console.error("Unable to load Firestore content", error));
+      .catch((error) => {
+        console.error("Unable to load Firestore content", error);
+        if (active) setLoadError("Unable to load this client workspace from Firestore.");
+      });
     return () => {
       active = false;
     };
@@ -152,16 +156,32 @@ export default function ClientPage() {
             ? "media"
           : "overview";
 
+  if (loadError) {
+    return (
+      <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
+        <p className="text-sm text-muted-foreground">{loadError}</p>
+      </main>
+    );
+  }
+
+  if (!content) {
+    return (
+      <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
+        <p className="text-sm text-muted-foreground">Loading client workspace…</p>
+      </main>
+    );
+  }
+
   // key={slug} forces a remount when navigating between clients so all
   // slug-derived initial state (preset, palette, copy) re-initialises.
   return (
     <OneUtilityClientWorkspace
-      key={`${slug}-${content ? "firestore" : "local"}`}
+      key={slug}
       slug={slug}
       initialView={initialView}
-      clients={content?.clients.length ? content.clients : CLIENTS}
-      campaigns={content?.campaigns.length ? content.campaigns : CAMPAIGNS}
-      users={content?.users.length ? content.users : USERS}
+      clients={content.clients}
+      campaigns={content.campaigns}
+      users={content.users}
     />
   );
 }
