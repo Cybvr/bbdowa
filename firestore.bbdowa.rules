@@ -60,6 +60,15 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Saved creators and creator lists. Each document belongs to the person
+    // it is named after: they read and write only their own.
+    match /creatorCollections/{userId} {
+      allow read: if isSelf(userId);
+      allow create, update: if isSelf(userId)
+        && request.resource.data.uid == userId;
+      allow delete: if isSelf(userId);
+    }
+
     // Clock in / clock out. Each shift belongs to the person who created it:
     // they read and write only their own; admins can read everyone's.
     match /timeEntries/{id} {

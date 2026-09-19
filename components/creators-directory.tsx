@@ -17,6 +17,7 @@ import { LuMenu } from "react-icons/lu";
 import { LoginDialog } from "@/components/login-dialog";
 import { useOptionalAuth } from "@/components/auth-provider";
 import { ShareCreatorDialog } from "@/components/share-creator-dialog";
+import { readCreatorCollections, writeCreatorCollections, type CreatorList } from "@/lib/firebase/creator-collections";
 import type { Creator } from "@/lib/users";
 import { baseCity, creatorAddedTimestamp, creatorHref, isCreatorNew, rateFloorNgn } from "@/lib/users";
 
@@ -55,8 +56,6 @@ const RATE_CAP = 100_000;
 const PAGE_SIZE = 12;
 const SAVED_CREATORS_STORAGE_KEY = "bbdowa-my-creator-list";
 const CREATOR_LISTS_STORAGE_KEY = "bbdowa-creator-lists";
-
-type CreatorList = { id: string; name: string; slugs: string[] };
 
 function newListId() {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
@@ -963,6 +962,9 @@ export function CreatorDirectory({
   locations: string[];
 }) {
   const router = useRouter();
+  const auth = useOptionalAuth();
+  const userId = auth?.user?.uid ?? null;
+  const authLoading = auth?.loading ?? false;
   const creatorTagCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     creators.forEach((creator) => {
@@ -1075,39 +1077,93 @@ export function CreatorDirectory({
   }, [categories, creatorTags, locations]);
 
   useEffect(() => {
+    // Wait until we know whether someone is signed in before loading.
+    if (authLoading) return;
+
     const creatorSlugs = new Set(creators.map((creator) => creator.slug));
     const cleanSlugs = (value: unknown) =>
       Array.isArray(value)
         ? value.filter((slug): slug is string => typeof slug === "string" && creatorSlugs.has(slug))
         : [];
+    const cleanLists = (value: unknown): CreatorList[] =>
+      Array.isArray(value)
+        ? value
+            .filter((list) => list && typeof list.id === "string" && typeof list.name === "string")
+            .map((list) => ({ id: list.id, name: list.name, slugs: cleanSlugs(list.slugs) }))
+        : [];
 
-    try {
-      setSavedCreatorSlugs(cleanSlugs(JSON.parse(window.localStorage.getItem(SAVED_CREATORS_STORAGE_KEY) ?? "[]")));
-    } catch {
-      setSavedCreatorSlugs([]);
-    }
+    const readLocal = (): { saved: string[]; lists: CreatorList[] } => {
+      let saved: string[] = [];
+      let lists: CreatorList[] = [];
+      try {
+        saved = cleanSlugs(JSON.parse(window.localStorage.getItem(SAVED_CREATORS_STORAGE_KEY) ?? "[]"));
+      } catch {
+        saved = [];
+      }
+      try {
+        lists = cleanLists(JSON.parse(window.localStorage.getItem(CREATOR_LISTS_STORAGE_KEY) ?? "[]"));
+      } catch {
+        lists = [];
+      }
+      return { saved, lists };
+    };
 
-    try {
-      const parsed = JSON.parse(window.localStorage.getItem(CREATOR_LISTS_STORAGE_KEY) ?? "[]");
-      setLists(
-        Array.isArray(parsed)
-          ? parsed
-              .filter((list) => list && typeof list.id === "string" && typeof list.name === "string")
-              .map((list) => ({ id: list.id, name: list.name, slugs: cleanSlugs(list.slugs) }))
-          : [],
-      );
-    } catch {
-      setLists([]);
-    } finally {
+    let active = true;
+    setListsInitialized(false);
+
+    // Signed out: keep everything in this browser.
+    if (!userId) {
+      const local = readLocal();
+      setSavedCreatorSlugs(local.saved);
+      setLists(local.lists);
       setListsInitialized(true);
+      return;
     }
-  }, [creators]);
+
+    // Signed in: load from Firestore, migrating any local data on first use.
+    (async () => {
+      try {
+        const remote = await readCreatorCollections(userId);
+        if (!active) return;
+        if (remote) {
+          setSavedCreatorSlugs(cleanSlugs(remote.saved));
+          setLists(cleanLists(remote.lists));
+        } else {
+          const local = readLocal();
+          setSavedCreatorSlugs(local.saved);
+          setLists(local.lists);
+          if (local.saved.length > 0 || local.lists.length > 0) {
+            await writeCreatorCollections(userId, local);
+          }
+        }
+      } catch (error) {
+        console.error("Unable to load saved creators from Firestore", error);
+        if (active) {
+          const local = readLocal();
+          setSavedCreatorSlugs(local.saved);
+          setLists(local.lists);
+        }
+      } finally {
+        if (active) setListsInitialized(true);
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [authLoading, userId, creators]);
 
   useEffect(() => {
     if (!listsInitialized) return;
-    window.localStorage.setItem(SAVED_CREATORS_STORAGE_KEY, JSON.stringify(savedCreatorSlugs));
-    window.localStorage.setItem(CREATOR_LISTS_STORAGE_KEY, JSON.stringify(lists));
-  }, [listsInitialized, lists, savedCreatorSlugs]);
+    if (userId) {
+      writeCreatorCollections(userId, { saved: savedCreatorSlugs, lists }).catch((error) =>
+        console.error("Unable to save creators to Firestore", error),
+      );
+    } else {
+      window.localStorage.setItem(SAVED_CREATORS_STORAGE_KEY, JSON.stringify(savedCreatorSlugs));
+      window.localStorage.setItem(CREATOR_LISTS_STORAGE_KEY, JSON.stringify(lists));
+    }
+  }, [listsInitialized, lists, savedCreatorSlugs, userId]);
 
   useEffect(() => {
     if (lists.length === 0) {
