@@ -23,6 +23,14 @@ export type Client = {
 const CLIENT_RECORDS: Client[] = [
   {
     type: "client",
+    slug: "bbdo-west-africa",
+    name: "BBDO West Africa",
+    date: null,
+    industry: "Advertising",
+    profileImage: "/bbdo-west-africa.png",
+  },
+  {
+    type: "client",
     slug: "1utility",
     name: "1 Utility Bank",
     date: "2026-08-19",

@@ -8,7 +8,6 @@ import type { BlogPost } from "@/lib/blog";
 import type { Campaign } from "@/lib/campaigns";
 import type { Client } from "@/lib/clients";
 import type { Job } from "@/lib/jobs";
-import type { Product } from "@/lib/products";
 import type { User } from "@/lib/users";
 
 async function readCollection<T>(name: string): Promise<T[]> {
@@ -22,10 +21,6 @@ export function readUsersFromFirestore() {
 
 export function readCampaignsFromFirestore() {
   return readCollection<Campaign>("campaigns");
-}
-
-export function readProductsFromFirestore() {
-  return readCollection<Product>("products");
 }
 
 type FirestoreUsersState = {
@@ -71,14 +66,13 @@ export function useFirestoreUsers(): FirestoreUsersState {
 }
 
 export async function readContentFromFirestore() {
-  const [clients, campaigns, users, products, blogs, jobs] = await Promise.all([
+  const [clients, campaigns, users, blogs, jobs] = await Promise.all([
     readCollection<Client>("clients"),
     readCollection<Campaign>("campaigns"),
     readCollection<User>("users"),
-    readCollection<Product>("products"),
     readCollection<BlogPost>("blogs"),
     readCollection<Job>("jobs"),
   ]);
 
-  return { clients, campaigns, users, products, blogs, jobs };
+  return { clients, campaigns, users, blogs, jobs };
 }

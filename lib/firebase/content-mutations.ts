@@ -3,7 +3,7 @@
 import { deleteDoc, doc, getDoc, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 import { firebaseDb } from "@/lib/firebase/client";
 
-export type ContentCollection = "clients" | "campaigns" | "products" | "blogs" | "resources";
+export type ContentCollection = "clients" | "campaigns" | "blogs" | "resources";
 
 export async function renameContent(
   collectionName: ContentCollection,

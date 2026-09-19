@@ -3,12 +3,10 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { BackLink } from "@/components/back-link";
-import { productHref } from "@/lib/products";
 import { campaignHref } from "@/lib/campaigns";
-import { useFirestoreUsers, readCampaignsFromFirestore, readProductsFromFirestore } from "@/lib/firebase/client-content";
+import { useFirestoreUsers, readCampaignsFromFirestore } from "@/lib/firebase/client-content";
 import { useEffect, useState } from "react";
 import type { Campaign } from "@/lib/campaigns";
-import type { Product } from "@/lib/products";
 import { ImageWithFallback, MetaGrid, MetaItem, SectionHeading } from "@/components/dashboard/ui";
 
 const WORK_LINK =
@@ -18,18 +16,16 @@ export default function UserDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const { users, loading: usersLoading, error: usersError } = useFirestoreUsers();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
   const [contentLoading, setContentLoading] = useState(true);
   const [contentError, setContentError] = useState<string | null>(null);
   const user = users.find((candidate) => candidate.slug === slug);
 
   useEffect(() => {
     let active = true;
-    Promise.all([readCampaignsFromFirestore(), readProductsFromFirestore()])
-      .then(([campaignsData, productsData]) => {
+    readCampaignsFromFirestore()
+      .then((campaignsData) => {
         if (!active) return;
         setCampaigns(campaignsData);
-        setProducts(productsData);
         setContentLoading(false);
       })
       .catch((error) => {
@@ -49,7 +45,6 @@ export default function UserDetailPage() {
   if (!user) return <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">User not found.</main>;
 
   const linkedCampaigns = campaigns.filter((campaign) => campaign.leadUserId === user.slug);
-  const linkedProducts = products.filter((product) => product.owner?.name === user.name);
 
   return (
     <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
@@ -106,27 +101,6 @@ export default function UserDetailPage() {
           )}
         </div>
 
-        <div>
-          <SectionHeading>Products owned</SectionHeading>
-          {linkedProducts.length ? (
-            <ul className="m-0 list-none border-t border-border p-0">
-              {linkedProducts.map((product) => (
-                <li key={product.slug}>
-                  <Link href={productHref(product.slug)} className={WORK_LINK}>
-                    <span className="text-[16px] font-semibold leading-[1.15]">{product.name}</span>
-                    <span className="text-[12px] font-medium text-muted-foreground group-hover:text-primary">
-                      {product.status}
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="m-0 border-t border-border py-4 text-[14px] text-muted-foreground">
-              No linked products yet.
-            </p>
-          )}
-        </div>
       </section>
     </main>
   );

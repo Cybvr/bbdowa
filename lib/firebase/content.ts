@@ -4,7 +4,6 @@ import type { BlogPost } from "@/lib/blog";
 import type { Campaign } from "@/lib/campaigns";
 import type { Client } from "@/lib/clients";
 import type { Job } from "@/lib/jobs";
-import type { Product } from "@/lib/products";
 import type { Resource } from "@/lib/resources";
 
 type FirestoreValue = {
@@ -114,12 +113,6 @@ export async function getCampaigns(): Promise<Campaign[]> {
 }
 
 export const getCampaignBySlug = (slug: string) => getDocument<Campaign>("campaigns", slug);
-
-export async function getProducts(): Promise<Product[]> {
-  return getCollection<Product>("products");
-}
-
-export const getProductBySlug = (slug: string) => getDocument<Product>("products", slug);
 
 export async function getBlogPosts(): Promise<BlogPost[]> {
   return getCollection<BlogPost>("blogs");

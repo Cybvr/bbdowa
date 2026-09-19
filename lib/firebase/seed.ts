@@ -8,7 +8,6 @@ import { firebaseDb } from "@/lib/firebase/client";
 import { CLIENTS } from "@/lib/clients";
 import { CAMPAIGNS } from "@/lib/campaigns";
 import { USERS } from "@/lib/users";
-import { PRODUCTS } from "@/lib/products";
 import { BLOG_POSTS } from "@/lib/blog";
 import { JOBS } from "@/lib/jobs";
 import { RESOURCE_RECORDS } from "@/lib/resources";
@@ -36,7 +35,6 @@ export const SEED_GROUPS: SeedGroup[] = [
   // Directory users are keyed by slug; uid mirrors it so the users rules
   // (which require request.resource.data.uid == docId) accept the write.
   { name: "Users", collection: "users", docs: toDocs(USERS, (user) => ({ uid: user.slug })) },
-  { name: "Products", collection: "products", docs: toDocs(PRODUCTS) },
   { name: "Blog posts", collection: "blogs", docs: toDocs(BLOG_POSTS) },
   { name: "Jobs", collection: "jobs", docs: toDocs(JOBS) },
   { name: "Resources", collection: "resources", docs: toDocs(RESOURCE_RECORDS) },
