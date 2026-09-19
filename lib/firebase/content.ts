@@ -5,7 +5,6 @@ import type { Campaign } from "@/lib/campaigns";
 import type { Client } from "@/lib/clients";
 import type { Job } from "@/lib/jobs";
 import type { Product } from "@/lib/products";
-import type { User } from "@/lib/users";
 
 type FirestoreValue = {
   nullValue?: null;
@@ -114,16 +113,6 @@ export async function getCampaigns(): Promise<Campaign[]> {
 }
 
 export const getCampaignBySlug = (slug: string) => getDocument<Campaign>("campaigns", slug);
-
-export async function getUsers(): Promise<User[]> {
-  return getCollection<User>("users");
-}
-
-export const getUserBySlug = (slug: string) => getDocument<User>("users", slug);
-
-export async function getUserByName(name: string): Promise<User | undefined> {
-  return (await getUsers()).find((user) => user.name === name);
-}
 
 export async function getProducts(): Promise<Product[]> {
   return getCollection<Product>("products");

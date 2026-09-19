@@ -1,14 +1,13 @@
-import type { Metadata } from "next";
+"use client";
+
 import { creatorHref, isCreatorUser, isTeamUser, userHref } from "@/lib/users";
-import { getUsers } from "@/lib/firebase/content";
+import { useFirestoreUsers } from "@/lib/firebase/client-content";
 import { UserGraph, type GraphLink, type GraphNode } from "@/components/user-graph";
 import { PageHeader } from "@/components/dashboard/ui";
 
-export const metadata: Metadata = { title: "Users graph" };
-
 const IGNORED_COMPANIES = new Set(["Freelance", "Independent"]);
 
-function buildGraph(users: Awaited<ReturnType<typeof getUsers>>): { nodes: GraphNode[]; links: GraphLink[] } {
+function buildGraph(users: import("@/lib/users").User[]): { nodes: GraphNode[]; links: GraphLink[] } {
   const team = users.filter(isTeamUser);
   const creators = users.filter(isCreatorUser);
   const nodes: GraphNode[] = [{ id: "root", label: "BBDO WA", kind: "root" }];
@@ -51,8 +50,11 @@ function buildGraph(users: Awaited<ReturnType<typeof getUsers>>): { nodes: Graph
   return { nodes, links };
 }
 
-export default async function UsersGraphPage() {
-  const users = await getUsers();
+export default function UsersGraphPage() {
+  const { users, loading, error } = useFirestoreUsers();
+  if (loading) return <main className="flex-1 px-5 pb-10 pt-8 sm:px-8">Loading users…</main>;
+  if (error) return <main className="flex-1 px-5 pb-10 pt-8 sm:px-8 text-sm text-muted-foreground">{error}</main>;
+
   const { nodes, links } = buildGraph(users);
   const userCount = users.length;
 

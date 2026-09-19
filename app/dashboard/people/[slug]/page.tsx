@@ -1,37 +1,55 @@
-import type { Metadata } from "next";
+"use client";
+
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { useParams } from "next/navigation";
 import { BackLink } from "@/components/back-link";
 import { productHref } from "@/lib/products";
 import { campaignHref } from "@/lib/campaigns";
-import { userInitials } from "@/lib/users";
-import { getCampaigns, getProducts, getUserBySlug, getUsers } from "@/lib/firebase/content";
+import { useFirestoreUsers, readCampaignsFromFirestore, readProductsFromFirestore } from "@/lib/firebase/client-content";
+import { useEffect, useState } from "react";
+import type { Campaign } from "@/lib/campaigns";
+import type { Product } from "@/lib/products";
 import { ImageWithFallback, MetaGrid, MetaItem, SectionHeading } from "@/components/dashboard/ui";
-
-type Params = { params: Promise<{ slug: string }> };
-
-export async function generateMetadata({ params }: Params): Promise<Metadata> {
-  const { slug } = await params;
-  const user = await getUserBySlug(slug);
-  if (!user) return { title: "User not found" };
-
-  return {
-    title: user.name,
-    description: `${user.title}, ${user.department} at BBDO West Africa.`,
-  };
-}
 
 const WORK_LINK =
   "group flex items-baseline justify-between gap-5 border-b border-border py-3.5 text-foreground no-underline hover:text-primary focus-visible:text-primary focus-visible:outline-none";
 
-export default async function UserDetailPage({ params }: Params) {
-  const { slug } = await params;
-  const user = await getUserBySlug(slug);
-  if (!user) notFound();
+export default function UserDetailPage() {
+  const { slug } = useParams<{ slug: string }>();
+  const { users, loading: usersLoading, error: usersError } = useFirestoreUsers();
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [contentLoading, setContentLoading] = useState(true);
+  const [contentError, setContentError] = useState<string | null>(null);
+  const user = users.find((candidate) => candidate.slug === slug);
 
-  const [campaignsData, productsData] = await Promise.all([getCampaigns(), getProducts()]);
-  const campaigns = campaignsData.filter((campaign) => campaign.leadUserId === user.slug);
-  const products = productsData.filter((product) => product.owner?.name === user.name);
+  useEffect(() => {
+    let active = true;
+    Promise.all([readCampaignsFromFirestore(), readProductsFromFirestore()])
+      .then(([campaignsData, productsData]) => {
+        if (!active) return;
+        setCampaigns(campaignsData);
+        setProducts(productsData);
+        setContentLoading(false);
+      })
+      .catch((error) => {
+        console.error("Unable to load linked content from Firestore", error);
+        if (active) {
+          setContentLoading(false);
+          setContentError("Unable to load linked content from Firestore.");
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (usersLoading || contentLoading) return <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">Loading profile…</main>;
+  if (usersError || contentError) return <main className="flex-1 px-5 pb-16 pt-8 sm:px-8 text-sm text-muted-foreground">{usersError ?? contentError}</main>;
+  if (!user) return <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">User not found.</main>;
+
+  const linkedCampaigns = campaigns.filter((campaign) => campaign.leadUserId === user.slug);
+  const linkedProducts = products.filter((product) => product.owner?.name === user.name);
 
   return (
     <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
@@ -68,9 +86,9 @@ export default async function UserDetailPage({ params }: Params) {
       <section className="mt-12 grid grid-cols-1 gap-x-10 gap-y-10 sm:grid-cols-2" aria-label="Linked work">
         <div>
           <SectionHeading>Campaigns led</SectionHeading>
-          {campaigns.length ? (
+          {linkedCampaigns.length ? (
             <ul className="m-0 list-none border-t border-border p-0">
-              {campaigns.map((campaign) => (
+              {linkedCampaigns.map((campaign) => (
                 <li key={campaign.slug}>
                   <Link href={campaignHref(campaign.slug)} className={WORK_LINK}>
                     <span className="text-[16px] font-semibold leading-[1.15]">{campaign.name}</span>
@@ -90,9 +108,9 @@ export default async function UserDetailPage({ params }: Params) {
 
         <div>
           <SectionHeading>Products owned</SectionHeading>
-          {products.length ? (
+          {linkedProducts.length ? (
             <ul className="m-0 list-none border-t border-border p-0">
-              {products.map((product) => (
+              {linkedProducts.map((product) => (
                 <li key={product.slug}>
                   <Link href={productHref(product.slug)} className={WORK_LINK}>
                     <span className="text-[16px] font-semibold leading-[1.15]">{product.name}</span>

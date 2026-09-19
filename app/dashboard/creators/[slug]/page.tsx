@@ -1,24 +1,16 @@
-import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+"use client";
+
+import { useParams } from "next/navigation";
 import type { IconType } from "react-icons";
 import { FaBehance, FaGlobe } from "react-icons/fa";
 import { FiArrowUpRight } from "react-icons/fi";
 import { BackLink } from "@/components/back-link";
 import { isCreatorNew, isCreatorUser, type Creator } from "@/lib/users";
-import { getUserBySlug } from "@/lib/firebase/content";
+import { useFirestoreUsers } from "@/lib/firebase/client-content";
 import { longDate } from "@/lib/format";
 import { ImageWithFallback, MetaGrid, MetaItem, SectionHeading } from "@/components/dashboard/ui";
 import { SocialIcon, type SocialIconName } from "@/components/social-icon";
 import { ShareCreatorDialog } from "@/components/share-creator-dialog";
-
-type Params = { params: Promise<{ slug: string }> };
-
-export async function generateMetadata({ params }: Params): Promise<Metadata> {
-  const { slug } = await params;
-  const creator = await getUserBySlug(slug);
-  if (!creator) return { title: "Not found" };
-  return { title: `${creator.name} — Creator`, description: creator.craftNote };
-}
 
 const HISTORY_ROW = "border-t border-border py-3";
 
@@ -45,10 +37,16 @@ function ProfileMark({ creator, className }: { creator: Creator; className: stri
   );
 }
 
-export default async function CreatorDetailPage({ params }: Params) {
-  const { slug } = await params;
-  const creator = await getUserBySlug(slug);
-  if (!creator || !isCreatorUser(creator)) notFound();
+export default function CreatorDetailPage() {
+  const { slug } = useParams<{ slug: string }>();
+  const { users, loading, error } = useFirestoreUsers();
+  const creator = users.find((user) => user.slug === slug);
+
+  if (loading) return <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">Loading creator…</main>;
+  if (error) return <main className="flex-1 px-5 pb-16 pt-8 sm:px-8 text-sm text-muted-foreground">{error}</main>;
+  if (!creator || !isCreatorUser(creator)) {
+    return <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">Creator not found.</main>;
+  }
   const platforms = platformsFor(creator);
 
   return (

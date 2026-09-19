@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getCampaignBySlug, getUserBySlug } from "@/lib/firebase/content";
-import { userHref } from "@/lib/users";
+import { getCampaignBySlug } from "@/lib/firebase/content";
 import { BackLink } from "@/components/back-link";
 import { Badge, ImageWithFallback, MetaGrid, MetaItem, SectionHeading } from "@/components/dashboard/ui";
 import { ArrowUpRight } from "lucide-react";
@@ -25,7 +24,6 @@ export default async function CampaignDetailPage({ params }: Params) {
   if (!campaign) notFound();
 
   const provisional = campaign.placeholder ? "text-muted-foreground" : "";
-  const leadUser = campaign.leadUserId ? await getUserBySlug(campaign.leadUserId) : undefined;
 
   return (
     <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
@@ -122,16 +120,7 @@ export default async function CampaignDetailPage({ params }: Params) {
           <MetaItem label="Category">{campaign.category}</MetaItem>
           <MetaItem label="Campaign lead">
             <span className={campaign.leadUserId ? "" : "text-muted-foreground"}>
-              {leadUser ? (
-                <Link
-                  href={userHref(leadUser)}
-                  className="text-foreground underline decoration-border underline-offset-4 hover:text-primary focus-visible:text-primary"
-                >
-                  {leadUser.name}
-                </Link>
-              ) : (
-                campaign.leadUserId ?? "To be confirmed"
-              )}
+              {campaign.leadUserId ?? "To be confirmed"}
             </span>
           </MetaItem>
           <MetaItem label="Fee">

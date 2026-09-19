@@ -1,12 +1,14 @@
-import type { Metadata } from "next";
+"use client";
+
+import { useFirestoreUsers } from "@/lib/firebase/client-content";
 import { CreatorDirectory } from "@/components/creators-directory";
 import { baseCity, isCreatorUser } from "@/lib/users";
-import { getUsers } from "@/lib/firebase/content";
 
-export const metadata: Metadata = { title: "Creators" };
+export default function CreatorPage() {
+  const { users, loading, error } = useFirestoreUsers();
+  if (loading) return <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">Loading creators…</main>;
+  if (error) return <main className="flex-1 px-5 pb-16 pt-8 sm:px-8 text-sm text-muted-foreground">{error}</main>;
 
-export default async function CreatorPage() {
-  const users = await getUsers();
   const creators = users.filter(isCreatorUser);
   const categories = [...new Set(creators.map((creator) => creator.category))].sort();
   const locations = [...new Set(creators.map((creator) => baseCity(creator.location)))].sort();

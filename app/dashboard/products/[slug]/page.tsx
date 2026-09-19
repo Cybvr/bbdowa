@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BackLink } from "@/components/back-link";
 import { productDate, productHref } from "@/lib/products";
-import { getProductBySlug, getUsers } from "@/lib/firebase/content";
+import { getProductBySlug } from "@/lib/firebase/content";
 import { longDate } from "@/lib/format";
 import { userHref } from "@/lib/users";
 import { Badge, ImageWithFallback, MetaGrid, MetaItem, SectionHeading } from "@/components/dashboard/ui";
@@ -26,8 +26,6 @@ export default async function ProductDetailPage({ params }: Params) {
   if (!product) notFound();
 
   const date = productDate(product);
-  const users = product.owner ? await getUsers() : [];
-  const ownerUser = product.owner ? users.find((user) => user.name === product.owner?.name) : undefined;
 
   return (
     <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
@@ -63,32 +61,16 @@ export default async function ProductDetailPage({ params }: Params) {
                 aria-hidden="true"
                 className="grid h-9 w-9 flex-none place-items-center overflow-hidden rounded-full bg-primary text-[13px] font-bold text-white"
               >
-                {ownerUser ? (
-                  <ImageWithFallback
-                    src={ownerUser.profileImage}
-                    alt=""
-                    className="h-full w-full object-cover"
-                    fallbackClassName="h-full w-full"
-                  />
-                ) : product.owner ? (
+                {product.owner ? (
                   product.owner.avatar
                 ) : (
                   "—"
                 )}
               </span>
               <span>
-                {ownerUser ? (
-                  <Link
-                    href={userHref(ownerUser)}
-                    className="text-foreground underline decoration-border underline-offset-4 hover:text-primary focus-visible:text-primary"
-                  >
-                    {product.owner!.name}
-                  </Link>
-                ) : (
-                  <span className={product.owner ? "" : "text-muted-foreground"}>
-                    {product.owner ? product.owner.name : "Owner to be assigned"}
-                  </span>
-                )}
+                <span className={product.owner ? "" : "text-muted-foreground"}>
+                  {product.owner ? product.owner.name : "Owner to be assigned"}
+                </span>
                 <br />
                 <span className="text-[13px] font-normal text-muted-foreground">
                   {product.owner ? product.owner.role : "Product Owner"}

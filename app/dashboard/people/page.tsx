@@ -1,10 +1,10 @@
-import type { Metadata } from "next";
+"use client";
+
 import Link from "next/link";
 import { userHref } from "@/lib/users";
-import { getUserByName, getUsers } from "@/lib/firebase/content";
+import { useFirestoreUsers } from "@/lib/firebase/client-content";
+import type { User } from "@/lib/users";
 import { ImageWithFallback, PageHeader, SectionHeading } from "@/components/dashboard/ui";
-
-export const metadata: Metadata = { title: "Directory" };
 
 type Role = { title: string; people: string[] };
 
@@ -111,8 +111,8 @@ const CAPABILITIES = [
   },
 ];
 
-async function Person({ name, onDark = false }: { name: string; onDark?: boolean }) {
-  const user = await getUserByName(name);
+function Person({ name, users, onDark = false }: { name: string; users: User[]; onDark?: boolean }) {
+  const user = users.find((candidate) => candidate.name === name);
   const className = `mt-1.5 flex items-center gap-2 text-[12px] no-underline ${
     onDark
       ? "justify-center text-[13px] text-background/80 hover:text-background"
@@ -141,7 +141,11 @@ async function Person({ name, onDark = false }: { name: string; onDark?: boolean
   );
 }
 
-export default async function PeoplePage() {
+export default function PeoplePage() {
+  const { users, loading, error } = useFirestoreUsers();
+  if (loading) return <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">Loading directory…</main>;
+  if (error) return <main className="flex-1 px-5 pb-16 pt-8 sm:px-8 text-sm text-muted-foreground">{error}</main>;
+
   return (
     <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
       <PageHeader title="Directory" meta="Operating model" />
@@ -149,17 +153,17 @@ export default async function PeoplePage() {
       <section className="mt-10" aria-label="Agency organogram">
         <div className="mx-auto w-[min(300px,100%)] rounded-xl bg-foreground px-5 py-4 text-center text-background max-[720px]:mb-5">
           <strong className="block text-[15px] font-semibold">Casers Group Chairman</strong>
-          <Person name="Enyi Odigbo" onDark />
+          <Person name="Enyi Odigbo" users={users} onDark />
         </div>
         <div aria-hidden="true" className="mx-auto h-6 w-px bg-border max-[720px]:hidden" />
         <div className="mx-auto grid w-[min(680px,100%)] grid-cols-2 gap-3 pt-6 max-[720px]:mb-5 max-[720px]:grid-cols-1 max-[720px]:pt-0">
           <div className="rounded-xl bg-foreground px-5 py-4 text-center text-background">
             <strong className="block text-[15px] font-semibold">Managing Director</strong>
-            <Person name="Colin Framer" onDark />
+            <Person name="Colin Framer" users={users} onDark />
           </div>
           <div className="rounded-xl bg-foreground px-5 py-4 text-center text-background">
             <strong className="block text-[15px] font-semibold">Interim Group Executive Lead — Nigeria</strong>
-            <Person name="Briand Ngondi" onDark />
+            <Person name="Briand Ngondi" users={users} onDark />
           </div>
         </div>
         <div aria-hidden="true" className="mx-auto h-8 w-px bg-border max-[720px]:hidden" />
@@ -174,7 +178,7 @@ export default async function PeoplePage() {
                   <li key={role.title} className="border-t border-border p-3 text-[13px] leading-[1.3]">
                     <span className="block font-medium">{role.title}</span>
                     {role.people.map((person) => (
-                      <Person key={person} name={person} />
+                      <Person key={person} name={person} users={users} />
                     ))}
                   </li>
                 ))}

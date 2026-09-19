@@ -1,5 +1,4 @@
 import Link from "next/link";
-import type { BlogPost } from "@/lib/blog";
 import {
   campaignHref,
   campaignLiveDateLabel,
@@ -7,13 +6,11 @@ import {
   campaignsLiveNow,
   campaignsWithTrackedTarget,
 } from "@/lib/campaigns";
-import type { Campaign } from "@/lib/campaigns";
-import { getBlogPosts, getCampaigns, getUsers } from "@/lib/firebase/content";
+import { getBlogPosts, getCampaigns } from "@/lib/firebase/content";
 import { PageHeader, SectionHeading, StatItem, StatRow, TextLink } from "@/components/dashboard/ui";
 import { DashboardNotifications } from "@/components/dashboard-notifications";
-import { CreatorCarousel } from "@/components/creator-carousel";
+import { FirestoreCreatorCarousel } from "@/components/firestore-creators";
 import { NAV_ICON_SET, type NavIconComponent } from "@/components/nav-icons";
-import { isCreatorUser } from "@/lib/users";
 
 type ActionTile = {
   label: string;
@@ -35,12 +32,11 @@ const ACTIONS: ActionTile[] = [
 ];
 
 export default async function HomePage() {
-  const [posts, campaigns, users] = await Promise.all([getBlogPosts(), getCampaigns(), getUsers()]);
+  const [posts, campaigns] = await Promise.all([getBlogPosts(), getCampaigns()]);
   const latestPosts = posts.slice(0, 5);
   const liveNow = campaignsLiveNow(campaigns);
   const dueSoon = campaignsDueFrom(campaigns, new Date());
   const trackedTargets = campaignsWithTrackedTarget(campaigns);
-  const creators = users.filter(isCreatorUser);
 
   return (
     <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
@@ -106,7 +102,7 @@ export default async function HomePage() {
         </ul>
       </section>
 
-      <CreatorCarousel creators={creators} />
+      <FirestoreCreatorCarousel />
     </main>
   );
 }
