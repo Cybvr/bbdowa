@@ -31,7 +31,6 @@ export function CreatorCarousel({ creators }: { creators: Creator[] }) {
       <div className="flex items-end justify-between gap-4">
         <div>
           <SectionHeading id="new-creators-heading">New creators</SectionHeading>
-          <p className="m-0 text-[13px] text-muted-foreground">The latest people added to the creator directory.</p>
         </div>
         <div className="flex items-center gap-2">
           <button
