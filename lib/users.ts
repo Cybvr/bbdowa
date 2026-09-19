@@ -1,17 +1,4 @@
-export type UserType = "team" | "creator";
-
 export type UserRole = "admin" | "editor" | "staff" | "viewer";
-
-export type TeamUser = {
-  type: "team";
-  slug: string;
-  name: string;
-  title: string;
-  department: string;
-  role: UserRole;
-  /** Public headshot; null/absent falls back to the placeholder avatar. */
-  profileImage?: string | null;
-};
 
 export type CreatorAvailability = "open" | "busy" | "unconfirmed";
 
@@ -26,10 +13,21 @@ export type CreatorWorkHistory = {
   location?: string;
 };
 
-export type Creator = {
-  type: "creator";
+// One flat user shape. Every user has the same fields. `staff` marks agency
+// staff (team); everyone else is a creator. Fields that don't apply to a given
+// person are just empty/null. Records below author only what they need; the
+// rest is filled from USER_DEFAULTS.
+export type User = {
   slug: string;
   name: string;
+  /** true = agency staff (team); false = external creator. */
+  staff: boolean;
+  /** Staff role/permission. */
+  role: UserRole;
+  /** Staff job title. */
+  title: string;
+  /** Staff department. */
+  department: string;
   category: CreatorCategory;
   tags: string[];
   location: string;
@@ -80,19 +78,63 @@ export type Creator = {
   craftNote: string;
 };
 
-// A user is one person, of one kind: agency staff ("team") or an external
-// creator ("creator"). Both live in the single USERS collection below.
-export type User = TeamUser | Creator;
+// Team members and creators are both just users.
+export type TeamUser = User;
+export type Creator = User;
 
-export function isTeamUser(user: User): user is TeamUser {
-  return user.type === "team";
+export function isTeamUser(user: User): boolean {
+  return user.staff;
 }
 
-export function isCreatorUser(user: User): user is Creator {
-  return user.type === "creator";
+export function isCreatorUser(user: User): boolean {
+  return !user.staff;
 }
 
-const TEAM_RECORDS: Omit<TeamUser, "type" | "role">[] = [
+/** A user record as authored below: the essentials plus any subset of fields. */
+type UserRecord = Partial<User> & { slug: string; name: string };
+
+/** Fills in every field a record omits, so all users share one shape. */
+const USER_DEFAULTS: Omit<User, "slug" | "name"> = {
+  staff: false,
+  role: "viewer",
+  title: "",
+  department: "",
+  category: "Content",
+  tags: [],
+  location: "",
+  entity: "Freelancer",
+  dayRate: "",
+  rateMin: null,
+  rateCurrency: "NGN",
+  hideRate: true,
+  terms: "",
+  availability: "unconfirmed",
+  clearance: "pending",
+  vetted: false,
+  vouchedBy: "",
+  workedOn: [],
+  yearsActive: null,
+  portfolio: null,
+  behance: null,
+  email: null,
+  phone: null,
+  profileImage: null,
+  addedAt: null,
+  featuredImage: null,
+  workHistory: [],
+  linkedin: null,
+  instagram: null,
+  contactNote: null,
+  followerCount: null,
+  followerPlatform: null,
+  gender: null,
+  age: null,
+  niche: null,
+  lastEngaged: null,
+  craftNote: "",
+};
+
+const TEAM_RECORDS: UserRecord[] = [
   {
     slug: "enyi-odigbo",
     name: "Enyi Odigbo",
@@ -163,13 +205,14 @@ const TEAM_RECORDS: Omit<TeamUser, "type" | "role">[] = [
   },
 ];
 
-export const TEAM: TeamUser[] = TEAM_RECORDS.map((member) => ({
-  type: "team" as const,
-  role: "staff" as const,
+export const TEAM: User[] = TEAM_RECORDS.map((member) => ({
+  ...USER_DEFAULTS,
+  staff: true,
+  role: "staff",
   ...member,
 }));
 
-const CREATOR_RECORDS: Omit<Creator, "type">[] = [
+const CREATOR_RECORDS: UserRecord[] = [
   {
     slug: "tomiwa-jonathan",
     name: "Tomiwa J. Medaiyese",
@@ -1202,8 +1245,9 @@ const CREATOR_RECORDS: Omit<Creator, "type">[] = [
   },
 ];
 
-export const CREATORS: Creator[] = CREATOR_RECORDS.map((creator) => ({
-  type: "creator" as const,
+export const CREATORS: User[] = CREATOR_RECORDS.map((creator) => ({
+  ...USER_DEFAULTS,
+  staff: false,
   ...creator,
 }));
 
@@ -1256,9 +1300,9 @@ export function getUserByName(name: string): User | undefined {
 }
 
 export function userHref(user: User): string {
-  return user.type === "creator"
-    ? `/dashboard/creators/${user.slug}`
-    : `/dashboard/people/${user.slug}`;
+  return user.staff
+    ? `/dashboard/people/${user.slug}`
+    : `/dashboard/creators/${user.slug}`;
 }
 
 export function userInitials(user: User): string {
