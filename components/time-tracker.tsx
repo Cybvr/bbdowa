@@ -296,6 +296,10 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
   if (compact) {
     const todayOpenMs = openList.reduce((total, entry) => total + elapsedMs(entry, now), 0);
     const trackedTodayMs = todayMs + todayOpenMs;
+    // Today's history: anything still open, plus anything already stopped
+    // today, oldest first — so stopping a timer never makes it vanish.
+    const todayDone = done.filter((entry) => Date.parse(entry.startedAt) >= todayStart);
+    const todayEntries = [...openList, ...todayDone].sort((a, b) => a.startedAt.localeCompare(b.startedAt));
 
     return (
       <div className="space-y-4">
@@ -306,54 +310,65 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
           <p className="m-0 text-[13px] text-muted-foreground">tracked today</p>
         </div>
 
-        {openList.length > 0 ? (
+        {loading ? (
+          <p className="text-[13px] text-muted-foreground">Loading…</p>
+        ) : todayEntries.length > 0 ? (
           <div className="divide-y divide-border overflow-hidden rounded-xl border border-border">
-            {openList.map((entry) => (
-              <div key={entry.id} className="flex items-center justify-between gap-3 px-4 py-3">
-                <div className="min-w-0">
-                  <p className="m-0 truncate text-[14px] font-semibold">{entry.activity}</p>
-                  {entry.campaignName ? (
-                    <p className="m-0 mt-0.5 flex items-center gap-1 truncate text-[12px] text-muted-foreground">
-                      <LuArrowUpRight aria-hidden="true" className="h-3 w-3 shrink-0" />
-                      <span className="truncate">{entry.campaignName}</span>
-                    </p>
-                  ) : null}
-                </div>
-                <div className="flex shrink-0 items-center gap-3">
-                  <div className="text-right">
-                    <p className="m-0 font-mono text-[15px] font-bold tabular-nums">{formatClockFull(elapsedMs(entry, now))}</p>
-                    <p
-                      className={`m-0 mt-0.5 flex items-center justify-end gap-1.5 text-[11px] ${isPaused(entry) ? "text-muted-foreground" : "text-primary"}`}
-                    >
-                      <span className={`h-1.5 w-1.5 rounded-full ${isPaused(entry) ? "bg-muted-foreground/50" : "bg-primary"}`} />
-                      {isPaused(entry) ? "Paused" : "Running"}
-                    </p>
+            {todayEntries.map((entry) => {
+              const open = entry.endedAt === null;
+              return (
+                <div key={entry.id} className="flex items-center justify-between gap-3 px-4 py-3">
+                  <div className="min-w-0">
+                    <p className="m-0 truncate text-[14px] font-semibold">{entry.activity}</p>
+                    {entry.campaignName ? (
+                      <p className="m-0 mt-0.5 flex items-center gap-1 truncate text-[12px] text-muted-foreground">
+                        <LuArrowUpRight aria-hidden="true" className="h-3 w-3 shrink-0" />
+                        <span className="truncate">{entry.campaignName}</span>
+                      </p>
+                    ) : null}
                   </div>
-                  <button
-                    type="button"
-                    aria-label={isPaused(entry) ? "Resume timer" : "Pause timer"}
-                    title={isPaused(entry) ? "Resume timer" : "Pause timer"}
-                    onClick={() => void toggleEntry(entry)}
-                    disabled={busy}
-                    className="grid h-10 w-10 place-items-center rounded-lg bg-foreground text-background transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {isPaused(entry) ? <LuPlay aria-hidden="true" className="h-4 w-4" /> : <LuPause aria-hidden="true" className="h-4 w-4" />}
-                  </button>
-                  <button
-                    type="button"
-                    aria-label="Stop timer"
-                    title="Stop timer"
-                    onClick={() => void stopEntry(entry)}
-                    disabled={busy}
-                    className="grid h-10 w-10 place-items-center rounded-lg bg-primary text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    <LuSquare aria-hidden="true" className="h-4 w-4" />
-                  </button>
+                  <div className="flex shrink-0 items-center gap-3">
+                    <div className="text-right">
+                      <p className="m-0 font-mono text-[15px] font-bold tabular-nums">{formatClockFull(elapsedMs(entry, now))}</p>
+                      <p
+                        className={`m-0 mt-0.5 flex items-center justify-end gap-1.5 text-[11px] ${!open || isPaused(entry) ? "text-muted-foreground" : "text-primary"}`}
+                      >
+                        <span className={`h-1.5 w-1.5 rounded-full ${!open || isPaused(entry) ? "bg-muted-foreground/50" : "bg-primary"}`} />
+                        {open ? (isPaused(entry) ? "Paused" : "Running") : "Done"}
+                      </p>
+                    </div>
+                    {open ? (
+                      <>
+                        <button
+                          type="button"
+                          aria-label={isPaused(entry) ? "Resume timer" : "Pause timer"}
+                          title={isPaused(entry) ? "Resume timer" : "Pause timer"}
+                          onClick={() => void toggleEntry(entry)}
+                          disabled={busy}
+                          className="grid h-10 w-10 place-items-center rounded-lg bg-foreground text-background transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {isPaused(entry) ? <LuPlay aria-hidden="true" className="h-4 w-4" /> : <LuPause aria-hidden="true" className="h-4 w-4" />}
+                        </button>
+                        <button
+                          type="button"
+                          aria-label="Stop timer"
+                          title="Stop timer"
+                          onClick={() => void stopEntry(entry)}
+                          disabled={busy}
+                          className="grid h-10 w-10 place-items-center rounded-lg bg-primary text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          <LuSquare aria-hidden="true" className="h-4 w-4" />
+                        </button>
+                      </>
+                    ) : null}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
-        ) : null}
+        ) : (
+          <p className="text-[13px] text-muted-foreground">Nothing tracked yet today.</p>
+        )}
 
         {addingTimer ? (
           <form
