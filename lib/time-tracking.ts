@@ -29,9 +29,16 @@ export type ActivityEntry = {
 
 export const ACTIVITY_COLLECTION = "timeEntries";
 
-/** The person's currently running activity, if any. */
+/** The person's currently running (unpaused, unfinished) activity, if any. */
 export function runningEntry(entries: ActivityEntry[]): ActivityEntry | null {
-  return entries.find((entry) => entry.endedAt === null) ?? null;
+  return entries.find((entry) => entry.endedAt === null && !entry.pausedAt) ?? null;
+}
+
+/** All not-yet-stopped activities (running or paused), oldest first. */
+export function openEntries(entries: ActivityEntry[]): ActivityEntry[] {
+  return entries
+    .filter((entry) => entry.endedAt === null)
+    .sort((a, b) => a.startedAt.localeCompare(b.startedAt));
 }
 
 /** Entries newest first, by start time. */

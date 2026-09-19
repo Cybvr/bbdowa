@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { addDoc, collection, doc, getDocs, query, updateDoc, where } from "firebase/firestore";
-import { LuPause, LuPlay, LuSquare } from "react-icons/lu";
+import { LuArrowUpRight, LuPause, LuPlay, LuPlus, LuSquare } from "react-icons/lu";
 import { useAuth } from "@/components/auth-provider";
 import { firebaseDb } from "@/lib/firebase/client";
 import { EmptyState, SectionHeading, StatItem, StatRow } from "@/components/dashboard/ui";
@@ -17,15 +17,43 @@ import { Input } from "@/components/ui/input";
 import {
   ACTIVITY_COLLECTION,
   elapsedMs,
-  formatClock,
   formatClockFull,
   formatTimestamp,
   isPaused,
+  openEntries,
   parseDurationToMinutes,
   runningEntry,
   sortByStartedAt,
   type ActivityEntry,
 } from "@/lib/time-tracking";
+
+// Generic per-entry actions, shared by the full timer view (which only ever
+// acts on the one running entry) and the compact multi-timer list (which
+// can act on any open entry).
+
+async function pauseEntryDoc(entry: ActivityEntry) {
+  await updateDoc(doc(firebaseDb, ACTIVITY_COLLECTION, entry.id), {
+    pausedAt: new Date().toISOString(),
+  });
+}
+
+async function resumeEntryDoc(entry: ActivityEntry) {
+  const pausedMs =
+    (entry.pausedMs ?? 0) + (entry.pausedAt ? Math.max(0, Date.now() - Date.parse(entry.pausedAt)) : 0);
+  await updateDoc(doc(firebaseDb, ACTIVITY_COLLECTION, entry.id), { pausedAt: null, pausedMs });
+}
+
+async function stopEntryDoc(entry: ActivityEntry) {
+  const endedAt = new Date();
+  const pausedMs =
+    (entry.pausedMs ?? 0) +
+    (entry.pausedAt ? Math.max(0, endedAt.getTime() - Date.parse(entry.pausedAt)) : 0);
+  await updateDoc(doc(firebaseDb, ACTIVITY_COLLECTION, entry.id), {
+    endedAt: endedAt.toISOString(),
+    pausedAt: null,
+    pausedMs,
+  });
+}
 
 type CampaignOption = { slug: string; name: string };
 
@@ -62,6 +90,7 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
   const [now, setNow] = React.useState(() => Date.now());
 
   const [mode, setMode] = React.useState<"timer" | "manual">("timer");
+  const [addingTimer, setAddingTimer] = React.useState(false);
   const [activity, setActivity] = React.useState("");
   const [campaignSlug, setCampaignSlug] = React.useState<string>(NO_CAMPAIGN);
   const [entryDate, setEntryDate] = React.useState(() => localDateValue());
@@ -119,17 +148,22 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
     };
   }, []);
 
-  // Tick the live timer once a second while something is running.
-  const running = runningEntry(entries);
+  // The single open (not-yet-stopped) activity, whether running or paused.
+  // Compact mode can have several open at once; full mode only ever starts one.
+  const openList = openEntries(entries);
+  const current = openList[0] ?? null;
+
+  // Tick the live timer once a second while anything is running.
+  const anyRunning = openList.some((entry) => !isPaused(entry));
   React.useEffect(() => {
-    if (!running || isPaused(running)) return;
+    if (!anyRunning) return;
     const interval = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(interval);
-  }, [running]);
+  }, [anyRunning]);
 
   const manualMinutes = parseDurationToMinutes(duration);
   const hasActivity = activity.trim().length > 0;
-  const canStart = hasActivity && campaignSlug !== NO_CAMPAIGN;
+  const canStart = hasActivity;
   const canLog = hasActivity && manualMinutes !== null && Boolean(localDateTimeToDate(entryDate, entryTime));
 
   const chosenCampaign = () => campaigns.find((option) => option.slug === campaignSlug);
@@ -142,12 +176,15 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
     setDuration("");
   };
 
-  // Timer: start now and run until stopped.
+  // Timer: start now and run until stopped. Pauses whatever else is
+  // currently running first, so only one timer ever ticks at a time.
   const startActivity = async () => {
-    if (!user || !canStart || running || busy) return;
+    if (!user || !canStart || busy) return;
     setBusy(true);
     setError(null);
     try {
+      const active = runningEntry(entries);
+      if (active) await pauseEntryDoc(active);
       const chosen = chosenCampaign();
       await addDoc(collection(firebaseDb, ACTIVITY_COLLECTION), {
         uid: user.uid,
@@ -161,6 +198,7 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
         pausedMs: 0,
       });
       resetForm();
+      setAddingTimer(false);
       await load(user.uid);
     } catch (cause) {
       console.error("Unable to start activity", cause);
@@ -201,18 +239,13 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
     }
   };
 
-  const stopActivity = async () => {
-    if (!user || !running || busy) return;
+  // Stop a specific entry (running or paused) for good.
+  const stopEntry = async (entry: ActivityEntry) => {
+    if (!user || busy) return;
     setBusy(true);
     setError(null);
     try {
-      const endedAt = new Date();
-      const pausedMs = (running.pausedMs ?? 0) + (running.pausedAt ? Math.max(0, endedAt.getTime() - Date.parse(running.pausedAt)) : 0);
-      await updateDoc(doc(firebaseDb, ACTIVITY_COLLECTION, running.id), {
-        endedAt: endedAt.toISOString(),
-        pausedAt: null,
-        pausedMs,
-      });
+      await stopEntryDoc(entry);
       await load(user.uid);
     } catch (cause) {
       console.error("Unable to stop activity", cause);
@@ -222,32 +255,24 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
     }
   };
 
-  const pauseActivity = async () => {
-    if (!user || !running || isPaused(running) || busy) return;
+  // Pause or resume a specific entry. Resuming one pauses whatever else is
+  // currently running, so only one timer ever ticks at a time.
+  const toggleEntry = async (entry: ActivityEntry) => {
+    if (!user || busy) return;
     setBusy(true);
     setError(null);
     try {
-      await updateDoc(doc(firebaseDb, ACTIVITY_COLLECTION, running.id), { pausedAt: new Date().toISOString() });
+      if (isPaused(entry)) {
+        const active = runningEntry(entries);
+        if (active && active.id !== entry.id) await pauseEntryDoc(active);
+        await resumeEntryDoc(entry);
+      } else {
+        await pauseEntryDoc(entry);
+      }
       await load(user.uid);
     } catch (cause) {
-      console.error("Unable to pause activity", cause);
-      setError("Couldn’t pause that. Try again.");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const resumeActivity = async () => {
-    if (!user || !running || !isPaused(running) || busy || !running.pausedAt) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const pausedMs = (running.pausedMs ?? 0) + Math.max(0, Date.now() - Date.parse(running.pausedAt));
-      await updateDoc(doc(firebaseDb, ACTIVITY_COLLECTION, running.id), { pausedAt: null, pausedMs });
-      await load(user.uid);
-    } catch (cause) {
-      console.error("Unable to resume activity", cause);
-      setError("Couldn’t resume that. Try again.");
+      console.error("Unable to update activity", cause);
+      setError("Couldn’t update that. Try again.");
     } finally {
       setBusy(false);
     }
@@ -269,59 +294,114 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
   const recent = entries.slice(0, 30);
 
   if (compact) {
+    const todayOpenMs = openList.reduce((total, entry) => total + elapsedMs(entry, now), 0);
+    const trackedTodayMs = todayMs + todayOpenMs;
+
     return (
       <div className="space-y-4">
         {error ? <p className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-[13px] text-primary">{error}</p> : null}
-        {running ? (
-          <div className="overflow-hidden rounded-lg border border-border">
-            <table className="w-full table-fixed border-collapse text-[12px]">
-              <thead>
-                <tr className="border-b border-border bg-muted/40 text-left text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                  <th className="w-[30%] px-3 py-2.5">Activity</th>
-                  <th className="w-[26%] px-3 py-2.5">Campaign</th>
-                  <th className="w-[18%] px-3 py-2.5">Time</th>
-                  <th className="w-[26%] px-3 py-2.5 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td className="max-w-0 px-3 py-3 font-semibold"><span className="block truncate" title={running.activity}>{running.activity}</span></td>
-                  <td className="max-w-0 px-3 py-3 text-muted-foreground"><span className="block truncate" title={running.campaignName ?? undefined}>{running.campaignName ?? "—"}</span></td>
-                  <td className="whitespace-nowrap px-3 py-3 font-mono tabular-nums">{formatClock(elapsedMs(running, now))}</td>
-                  <td className="px-3 py-3">
-                    <div className="flex justify-end gap-2">
-                      <button type="button" aria-label={isPaused(running) ? "Resume timer" : "Pause timer"} title={isPaused(running) ? "Resume timer" : "Pause timer"} onClick={() => void (isPaused(running) ? resumeActivity() : pauseActivity())} disabled={busy} className="grid h-8 w-8 place-items-center rounded-md border border-border text-foreground transition hover:border-foreground disabled:cursor-not-allowed disabled:opacity-60">{isPaused(running) ? <LuPlay aria-hidden="true" className="h-3.5 w-3.5" /> : <LuPause aria-hidden="true" className="h-3.5 w-3.5" />}</button>
-                      <button type="button" aria-label="Stop timer" title="Stop timer" onClick={() => void stopActivity()} disabled={busy} className="grid h-8 w-8 place-items-center rounded-md bg-primary text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"><LuSquare aria-hidden="true" className="h-3.5 w-3.5" /></button>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+
+        <div className="flex flex-wrap items-baseline gap-2">
+          <p className="m-0 font-mono text-[32px] font-bold leading-none tabular-nums">{formatClockFull(trackedTodayMs)}</p>
+          <p className="m-0 text-[13px] text-muted-foreground">tracked today</p>
+        </div>
+
+        {openList.length > 0 ? (
+          <div className="divide-y divide-border overflow-hidden rounded-xl border border-border">
+            {openList.map((entry) => (
+              <div key={entry.id} className="flex items-center justify-between gap-3 px-4 py-3">
+                <div className="min-w-0">
+                  <p className="m-0 truncate text-[14px] font-semibold">{entry.activity}</p>
+                  {entry.campaignName ? (
+                    <p className="m-0 mt-0.5 flex items-center gap-1 truncate text-[12px] text-muted-foreground">
+                      <LuArrowUpRight aria-hidden="true" className="h-3 w-3 shrink-0" />
+                      <span className="truncate">{entry.campaignName}</span>
+                    </p>
+                  ) : null}
+                </div>
+                <div className="flex shrink-0 items-center gap-3">
+                  <div className="text-right">
+                    <p className="m-0 font-mono text-[15px] font-bold tabular-nums">{formatClockFull(elapsedMs(entry, now))}</p>
+                    <p
+                      className={`m-0 mt-0.5 flex items-center justify-end gap-1.5 text-[11px] ${isPaused(entry) ? "text-muted-foreground" : "text-primary"}`}
+                    >
+                      <span className={`h-1.5 w-1.5 rounded-full ${isPaused(entry) ? "bg-muted-foreground/50" : "bg-primary"}`} />
+                      {isPaused(entry) ? "Paused" : "Running"}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    aria-label={isPaused(entry) ? "Resume timer" : "Pause timer"}
+                    title={isPaused(entry) ? "Resume timer" : "Pause timer"}
+                    onClick={() => void toggleEntry(entry)}
+                    disabled={busy}
+                    className="grid h-10 w-10 place-items-center rounded-lg bg-foreground text-background transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {isPaused(entry) ? <LuPlay aria-hidden="true" className="h-4 w-4" /> : <LuPause aria-hidden="true" className="h-4 w-4" />}
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Stop timer"
+                    title="Stop timer"
+                    onClick={() => void stopEntry(entry)}
+                    disabled={busy}
+                    className="grid h-10 w-10 place-items-center rounded-lg bg-primary text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <LuSquare aria-hidden="true" className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
-        ) : (
-          <form onSubmit={(event) => { event.preventDefault(); void startActivity(); }} className="overflow-hidden rounded-lg border border-border">
-            <table className="w-full table-fixed border-collapse text-[12px]">
-              <thead>
-                <tr className="border-b border-border bg-muted/40 text-left text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                  <th className="w-[42%] px-3 py-2.5">Activity</th>
-                  <th className="w-[38%] px-3 py-2.5">Campaign</th>
-                  <th className="w-[20%] px-3 py-2.5 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td className="max-w-0 px-3 py-3"><Input value={activity} onChange={(event) => setActivity(event.target.value)} disabled={busy} placeholder="What are you working on?" className="h-8 min-w-0 text-xs" /></td>
-                  <td className="max-w-0 px-3 py-3">
-                    <Select value={campaignSlug === NO_CAMPAIGN ? "" : campaignSlug} onValueChange={setCampaignSlug}>
-                      <SelectTrigger className="h-8 w-full text-xs"><SelectValue placeholder="Select campaign" /></SelectTrigger>
-                      <SelectContent>{campaigns.map((option) => <SelectItem key={option.slug} value={option.slug}>{option.name}</SelectItem>)}</SelectContent>
-                    </Select>
-                  </td>
-                  <td className="px-3 py-3 text-right"><button type="submit" disabled={busy || !canStart} className="h-8 rounded-md bg-primary px-3 text-[11px] font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60">{busy ? "Saving…" : "Start"}</button></td>
-                </tr>
-              </tbody>
-            </table>
+        ) : null}
+
+        {addingTimer ? (
+          <form
+            onSubmit={(event) => { event.preventDefault(); void startActivity(); }}
+            className="space-y-2 rounded-xl border border-border p-3"
+          >
+            <div className="flex gap-2">
+              <Input
+                autoFocus
+                value={activity}
+                onChange={(event) => setActivity(event.target.value)}
+                disabled={busy}
+                placeholder="What are you working on?"
+                className="h-10 flex-1 text-sm"
+              />
+              <Select value={campaignSlug === NO_CAMPAIGN ? "" : campaignSlug} onValueChange={setCampaignSlug}>
+                <SelectTrigger className="h-10 w-[38%] text-sm"><SelectValue placeholder="Campaign (optional)" /></SelectTrigger>
+                <SelectContent>{campaigns.map((option) => <SelectItem key={option.slug} value={option.slug}>{option.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => { setAddingTimer(false); resetForm(); }}
+                disabled={busy}
+                className="h-10 shrink-0 rounded-lg border border-border px-4 text-[13px] font-semibold text-foreground transition hover:border-foreground disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={busy || !canStart}
+                className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-primary text-[13px] font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <LuPlay aria-hidden="true" className="h-3.5 w-3.5" />
+                {busy ? "Starting…" : "Start timer"}
+              </button>
+            </div>
           </form>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setAddingTimer(true)}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border py-3 text-[13px] font-semibold text-foreground transition hover:border-foreground"
+          >
+            <LuPlus aria-hidden="true" className="h-4 w-4" />
+            New timer
+          </button>
         )}
       </div>
     );
@@ -334,40 +414,40 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
       ) : null}
 
       <div className="mx-auto w-full max-w-md border-b border-border pb-10">
-        {running ? (
+        {current ? (
           <div className="flex flex-col items-center gap-7 py-4 text-center">
             <span
-              className={`inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.1em] ${isPaused(running) ? "text-muted-foreground" : "text-primary"}`}
+              className={`inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.1em] ${isPaused(current) ? "text-muted-foreground" : "text-primary"}`}
             >
-              <span className={`h-2 w-2 rounded-full ${isPaused(running) ? "bg-muted-foreground/50" : "animate-pulse bg-primary"}`} />
-              {isPaused(running) ? "Paused" : "Now tracking"}
+              <span className={`h-2 w-2 rounded-full ${isPaused(current) ? "bg-muted-foreground/50" : "animate-pulse bg-primary"}`} />
+              {isPaused(current) ? "Paused" : "Now tracking"}
             </span>
             <p className="m-0 font-mono text-[56px] font-bold leading-none tabular-nums sm:text-[68px]">
-              {formatClockFull(elapsedMs(running, now))}
+              {formatClockFull(elapsedMs(current, now))}
             </p>
             <div className="min-w-0 px-2">
-              <p className="m-0 truncate text-[18px] font-bold leading-tight">{running.activity}</p>
+              <p className="m-0 truncate text-[18px] font-bold leading-tight">{current.activity}</p>
               <p className="mb-0 mt-1 text-[13px] text-muted-foreground">
-                {running.campaignName ? `${running.campaignName} · ` : ""}
-                Started {formatTimestamp(running.startedAt)}
+                {current.campaignName ? `${current.campaignName} · ` : ""}
+                Started {formatTimestamp(current.startedAt)}
               </p>
             </div>
             <div className="flex items-center gap-5">
               <button
                 type="button"
-                aria-label={isPaused(running) ? "Resume timer" : "Pause timer"}
-                title={isPaused(running) ? "Resume timer" : "Pause timer"}
-                onClick={() => void (isPaused(running) ? resumeActivity() : pauseActivity())}
+                aria-label={isPaused(current) ? "Resume timer" : "Pause timer"}
+                title={isPaused(current) ? "Resume timer" : "Pause timer"}
+                onClick={() => void toggleEntry(current)}
                 disabled={busy}
                 className="grid h-16 w-16 place-items-center rounded-full border border-border bg-background text-foreground transition hover:border-foreground active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               >
-                {isPaused(running) ? <LuPlay aria-hidden="true" className="h-6 w-6" /> : <LuPause aria-hidden="true" className="h-6 w-6" />}
+                {isPaused(current) ? <LuPlay aria-hidden="true" className="h-6 w-6" /> : <LuPause aria-hidden="true" className="h-6 w-6" />}
               </button>
               <button
                 type="button"
                 aria-label="Stop timer"
                 title="Stop timer"
-                onClick={stopActivity}
+                onClick={() => void stopEntry(current)}
                 disabled={busy}
                 className="grid h-16 w-16 place-items-center rounded-full bg-primary text-primary-foreground shadow-sm transition hover:bg-primary/90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               >
