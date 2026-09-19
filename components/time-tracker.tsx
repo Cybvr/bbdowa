@@ -18,7 +18,7 @@ import {
   ACTIVITY_COLLECTION,
   elapsedMs,
   formatClock,
-  formatDuration,
+  formatClockFull,
   formatTimestamp,
   isPaused,
   parseDurationToMinutes,
@@ -344,22 +344,26 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
               </p>
             </div>
             <div className="flex shrink-0 items-center gap-2">
-              <span className="font-mono text-[22px] font-bold tabular-nums">{formatClock(elapsedMs(running, now))}</span>
+              <span className="font-mono text-[22px] font-bold tabular-nums">{formatClockFull(elapsedMs(running, now))}</span>
               <button
                 type="button"
+                aria-label={isPaused(running) ? "Resume timer" : "Pause timer"}
+                title={isPaused(running) ? "Resume timer" : "Pause timer"}
                 onClick={() => void (isPaused(running) ? resumeActivity() : pauseActivity())}
                 disabled={busy}
-                className="inline-flex h-11 items-center justify-center rounded-lg border border-border bg-background px-5 text-[14px] font-semibold text-foreground transition hover:border-foreground disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                className="grid h-11 w-11 place-items-center rounded-lg border border-border bg-background text-foreground transition hover:border-foreground disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               >
-                {busy ? "Saving…" : isPaused(running) ? "Resume" : "Pause"}
+                {isPaused(running) ? <LuPlay aria-hidden="true" className="h-5 w-5" /> : <LuPause aria-hidden="true" className="h-5 w-5" />}
               </button>
               <button
                 type="button"
+                aria-label="Stop timer"
+                title="Stop timer"
                 onClick={stopActivity}
                 disabled={busy}
-                className="inline-flex h-11 items-center justify-center rounded-lg border border-border bg-background px-6 text-[14px] font-semibold text-foreground transition hover:border-foreground disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                className="grid h-11 w-11 place-items-center rounded-lg bg-primary text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               >
-                {busy ? "Saving…" : "Stop"}
+                <LuSquare aria-hidden="true" className="h-5 w-5" />
               </button>
             </div>
           </div>
@@ -400,10 +404,12 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
             <div className="flex flex-wrap items-center gap-3">
               <button
                 type="submit"
+                aria-label="Start timer"
+                title="Start timer"
                 disabled={busy || !canStart}
-                className="inline-flex h-11 items-center justify-center rounded-lg bg-primary px-6 text-[14px] font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                className="grid h-11 w-11 place-items-center rounded-lg bg-primary text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               >
-                {busy ? "Saving…" : "Start timer"}
+                <LuPlay aria-hidden="true" className="h-5 w-5" />
               </button>
               <button
                 type="button"
@@ -422,7 +428,7 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
       {!compact ? (
         <>
           <StatRow>
-            <StatItem label="Today" value={formatDuration(todayMs)} />
+            <StatItem label="Today" value={formatClockFull(todayMs)} />
             <StatItem label="Activities" value={done.length} />
             <StatItem label="Campaigns" value={new Set(entries.map((entry) => entry.campaignSlug).filter(Boolean)).size} />
           </StatRow>
@@ -452,7 +458,7 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
                         <td className="hidden px-4 py-3 whitespace-nowrap sm:table-cell">{formatTimestamp(entry.startedAt)}</td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           {entry.endedAt ? (
-                            formatDuration(elapsedMs(entry, now))
+                            formatClockFull(elapsedMs(entry, now))
                           ) : (
                             <span className="font-semibold text-primary">Running…</span>
                           )}
