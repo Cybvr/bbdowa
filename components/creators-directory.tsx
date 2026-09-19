@@ -11,6 +11,8 @@ import { Badge } from "@/components/dashboard/ui";
 import { SocialIcon, type SocialIconName } from "@/components/social-icon";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { DashboardSidebarSheet } from "@/components/dashboard-sidebar";
+import { LuMenu } from "react-icons/lu";
 import { LoginDialog } from "@/components/login-dialog";
 import { useOptionalAuth } from "@/components/auth-provider";
 import { ShareCreatorDialog } from "@/components/share-creator-dialog";
@@ -451,31 +453,44 @@ function CreatorDiscoveryBar({
   };
 
   return (
-    <div className="mb-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <form role="search" onSubmit={(event) => event.preventDefault()} className="relative min-w-0 flex-1">
-        <input
-          type="search"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="What kind of creator are you looking for?"
-          aria-label="Search creators"
-          className="h-16 w-full rounded-full border border-border bg-muted/60 pl-6 pr-20 text-[15px] font-medium text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:outline-none sm:h-[72px] sm:text-base"
-        />
-        <button
-          type="submit"
-          aria-label="Search creators"
-          className="absolute right-2 top-2 grid h-12 w-12 cursor-pointer place-items-center rounded-full bg-primary text-primary-foreground transition hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:h-14 sm:w-14"
-        >
-          <FiSearch aria-hidden="true" className="h-6 w-6" />
-        </button>
-        </form>
+    <div className="mb-4 sm:mb-5">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <DashboardSidebarSheet
+            trigger={
+              <button
+                type="button"
+                aria-label="Open navigation menu"
+                className="grid h-11 w-11 shrink-0 cursor-pointer place-items-center rounded-full border border-border bg-background text-foreground transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 nav:hidden"
+              >
+                <LuMenu aria-hidden="true" className="h-5 w-5" />
+              </button>
+            }
+          />
+          <form role="search" onSubmit={(event) => event.preventDefault()} className="relative min-w-0 flex-1">
+          <input
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="What kind of creator are you looking for?"
+            aria-label="Search creators"
+            className="h-11 w-full rounded-full border border-border bg-muted/60 pl-4 pr-12 text-sm font-medium text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:outline-none sm:h-[72px] sm:pl-6 sm:pr-20 sm:text-base"
+          />
+          <button
+            type="submit"
+            aria-label="Search creators"
+            className="absolute right-1.5 top-1.5 grid h-8 w-8 cursor-pointer place-items-center rounded-full bg-primary text-primary-foreground transition hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:right-2 sm:top-2 sm:h-14 sm:w-14"
+          >
+            <FiSearch aria-hidden="true" className="h-4 w-4 sm:h-6 sm:w-6" />
+          </button>
+          </form>
+        </div>
 
         {showJoinAction ? (
           <button
             type="button"
             onClick={onJoinClick}
-            className="inline-flex h-16 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full bg-primary px-8 text-[15px] font-bold text-primary-foreground no-underline transition hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:h-[72px] sm:text-base"
+            className="inline-flex h-11 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-bold text-primary-foreground no-underline transition hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:h-[72px] sm:px-8 sm:text-base"
           >
             <FiPlus aria-hidden="true" className="h-5 w-5" />
             Join Bantaba
@@ -1282,7 +1297,7 @@ export function CreatorDirectory({
                   type="button"
                   onClick={saveResultsAsList}
                   title="Save these results as a new list"
-                  className="inline-flex min-h-[40px] cursor-pointer items-center gap-2 rounded-lg border border-border bg-transparent px-3.5 py-2 text-[13px] font-medium hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                  className="hidden min-h-[40px] cursor-pointer items-center gap-2 rounded-lg border border-border bg-transparent px-3.5 py-2 text-[13px] font-medium hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:inline-flex"
                 >
                   <FiFolderPlus aria-hidden="true" className="h-4 w-4" />
                   Save as list
