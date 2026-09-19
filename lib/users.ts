@@ -1,4 +1,4 @@
-export type UserType = "team";
+export type UserType = "team" | "creator";
 
 export type UserRole = "admin" | "editor" | "staff" | "viewer";
 
@@ -80,7 +80,17 @@ export type Creator = {
   craftNote: string;
 };
 
-export type User = TeamUser;
+// A user is one person, of one kind: agency staff ("team") or an external
+// creator ("creator"). Both live in the single USERS collection below.
+export type User = TeamUser | Creator;
+
+export function isTeamUser(user: User): user is TeamUser {
+  return user.type === "team";
+}
+
+export function isCreatorUser(user: User): user is Creator {
+  return user.type === "creator";
+}
 
 const TEAM_RECORDS: Omit<TeamUser, "type" | "role">[] = [
   {
@@ -1197,7 +1207,8 @@ export const CREATORS: Creator[] = CREATOR_RECORDS.map((creator) => ({
   ...creator,
 }));
 
-export const USERS: User[] = [...TEAM];
+// The single users collection: agency staff and creators together.
+export const USERS: User[] = [...TEAM, ...CREATORS];
 
 export const CREATOR_CATEGORIES = [...new Set(CREATORS.map((creator) => creator.category))].sort();
 
@@ -1245,7 +1256,9 @@ export function getUserByName(name: string): User | undefined {
 }
 
 export function userHref(user: User): string {
-  return `/dashboard/people/${user.slug}`;
+  return user.type === "creator"
+    ? `/dashboard/creators/${user.slug}`
+    : `/dashboard/people/${user.slug}`;
 }
 
 export function userInitials(user: User): string {

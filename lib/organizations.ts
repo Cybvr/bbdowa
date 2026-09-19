@@ -1,4 +1,5 @@
 import { PROJECTS, type Project } from "@/lib/projects";
+import { makeEmptyWorkspace, type ClientWorkspace } from "@/lib/client-workspaces";
 
 export type Organization = {
   type: "organization";
@@ -141,6 +142,22 @@ export function getOrganization(slug: string): Organization | undefined {
 /** The projects that belong to this organization. */
 export function getOrganizationProjects(slug: string): Project[] {
   return PROJECTS.filter((project) => project.organizationId === slug);
+}
+
+/**
+ * The workspace content for a client. It lives on the client's project
+ * (`project.workspace`); clients/projects without curated content get a blank
+ * template so nothing leaks in from another client.
+ */
+export function getClientWorkspace(clientSlug: string, clientName?: string): ClientWorkspace {
+  const projects = getOrganizationProjects(clientSlug);
+  const withWorkspace = projects.find((project) => project.workspace);
+  if (withWorkspace?.workspace) return withWorkspace.workspace;
+
+  const project = projects[0];
+  const name = clientName ?? getOrganization(clientSlug)?.name ?? clientSlug;
+  const website = project?.externalLinks?.find((link) => link.label === "Website")?.href ?? "";
+  return makeEmptyWorkspace({ clientName: name, category: project?.category ?? "", website });
 }
 
 export function organizationHref(slug: string): string {

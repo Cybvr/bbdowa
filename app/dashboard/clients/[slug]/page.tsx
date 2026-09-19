@@ -13,9 +13,8 @@ import {
 import { EmptyThumbnail, ImageWithFallback } from "@/components/empty-thumbnail";
 import { CAMPAIGNS } from "@/lib/campaigns";
 import type { Campaign, CampaignStatus } from "@/lib/campaigns";
-import { getOrganization } from "@/lib/organizations";
+import { getOrganization, getClientWorkspace } from "@/lib/organizations";
 import { CREATORS, getUser } from "@/lib/users";
-import { getOrganizationWorkspace } from "@/lib/client-workspaces";
 import { campaignWorkspaceStatuses } from "@/lib/client-data";
 import { fontOptions, ctaOptions } from "@/lib/campaign-options";
 import type {
@@ -376,7 +375,7 @@ function OneUtilityClientWorkspace({
 }) {
   const client = getOrganization(slug);
   const clientName = client?.name ?? "Client";
-  const workspace = getOrganizationWorkspace(slug, clientName);
+  const workspace = getClientWorkspace(slug, clientName);
   const preset = workspace.preset;
   const clientProfileImage = client?.profileImage ?? "/images/projects/project-placeholder.svg";
   const initialClientCampaigns = CAMPAIGNS.filter((campaign) => campaign.organizationId === slug);

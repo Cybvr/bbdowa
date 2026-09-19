@@ -1,10 +1,11 @@
-// Per-client workspace content for /dashboard/clients/[slug].
+// Client workspace content shown on /dashboard/clients/[slug]
+// (overview, campaigns, strategy, creatives, brand DNA).
 //
-// The client workspace (overview, campaigns, strategy, creatives, brand DNA) was
-// originally built around 1Utility and imported that brand's data statically, so
-// every client rendered 1Utility's strategy, palette, preview image and copy.
-// This module keys that content per client. Clients without curated content get a
-// blank template (see makeEmptyWorkspace) so nothing from another client leaks in.
+// A workspace belongs to a project: it lives on `project.workspace`
+// (see lib/campaigns.ts). This module holds the workspace SHAPE, the curated
+// 1Utility workspace that is attached to its project, and a blank template
+// (makeEmptyWorkspace) used for projects that have no curated content yet, so
+// nothing from another client ever leaks in.
 
 import type { CampaignMediaPlan, PhaseKey, PhaseContent, PresetData } from "./client-data";
 import {
@@ -14,7 +15,6 @@ import {
   oneUtilityCampaignMediaPlans,
   valuePropositionData,
 } from "./client-data";
-import { PROJECTS } from "./projects";
 
 export type CreativePreview = { src: string; alt: string };
 
@@ -28,8 +28,7 @@ export type ValueProposition = {
   progressModel: { stage: string; label: string; desc: string }[];
 };
 
-export type OrganizationWorkspace = {
-  organizationId: string;
+export type ClientWorkspace = {
   preset: PresetData;
   strategyMarkdown: string;
   phaseContent: Record<PhaseKey, PhaseContent>;
@@ -51,8 +50,7 @@ export type OrganizationWorkspace = {
 const PLACEHOLDER_IMAGE = "/images/projects/project-placeholder.svg";
 const NEUTRAL_PALETTE = ["#111827", "#374151", "#9CA3AF", "#F3F4F6"];
 
-const oneUtilityWorkspace: OrganizationWorkspace = {
-  organizationId: "1utility",
+export const oneUtilityWorkspace: ClientWorkspace = {
   preset: defaultPreset,
   strategyMarkdown,
   phaseContent,
@@ -148,14 +146,20 @@ function emptyPhaseContent(): Record<PhaseKey, PhaseContent> {
   };
 }
 
-function makeEmptyWorkspace(organizationId: string, organizationName: string): OrganizationWorkspace {
-  const campaign = PROJECTS.find((item) => item.organizationId === organizationId);
-  const category = campaign?.category ?? "";
-  const website = campaign?.externalLinks?.find((link) => link.label === "Website")?.href ?? "";
+/** A blank workspace for a client/project that has no curated content yet. */
+export function makeEmptyWorkspace({
+  clientName,
+  category = "",
+  website = "",
+}: {
+  clientName: string;
+  category?: string;
+  website?: string;
+}): ClientWorkspace {
   const url = website.replace(/^https?:\/\//, "").replace(/\/$/, "");
 
   const preset: PresetData = {
-    client: organizationName,
+    client: clientName,
     category,
     name: "Campaign to be defined",
     url,
@@ -168,7 +172,7 @@ function makeEmptyWorkspace(organizationId: string, organizationName: string): O
     headline: "",
     subtext: "",
     palette: NEUTRAL_PALETTE,
-    socialAccount: organizationName,
+    socialAccount: clientName,
     socialTitle: "",
     socialBody: "",
     socialCta: "",
@@ -189,9 +193,8 @@ function makeEmptyWorkspace(organizationId: string, organizationName: string): O
   };
 
   return {
-    organizationId,
     preset,
-    strategyMarkdown: `# ${organizationName}\n\nStrategy for this organization has not been added yet.`,
+    strategyMarkdown: `# ${clientName}\n\nStrategy for this client has not been added yet.`,
     phaseContent: emptyPhaseContent(),
     valueProposition: {
       coreHeadline: "",
@@ -214,20 +217,9 @@ function makeEmptyWorkspace(organizationId: string, organizationName: string): O
       print: { src: PLACEHOLDER_IMAGE, alt: "" },
     },
     fontPreview: {
-      heading: organizationName,
+      heading: clientName,
       body: "The quick brown fox jumps over the lazy dog. 1234567890",
     },
     hasContent: false,
   };
-}
-
-const ORGANIZATION_WORKSPACES: Record<string, OrganizationWorkspace> = {
-  "1utility": oneUtilityWorkspace,
-};
-
-export function getOrganizationWorkspace(
-  organizationId: string,
-  organizationName: string,
-): OrganizationWorkspace {
-  return ORGANIZATION_WORKSPACES[organizationId] ?? makeEmptyWorkspace(organizationId, organizationName);
 }
