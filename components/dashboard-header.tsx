@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { DashboardLogo, DashboardSidebarContent, DashboardSidebarSheet } from "@/components/dashboard-sidebar";
+import { TrackerIcon } from "@/components/nav-icons";
 
 export function DashboardHeader({
   hideMobile = false,
@@ -30,7 +32,16 @@ export function DashboardHeader({
         className={`${hideMobile ? "hidden" : "sticky top-0 z-40 flex"} items-center justify-between bg-primary px-[max(18px,env(safe-area-inset-left))] py-3 nav:hidden`}
       >
         <DashboardLogo />
-        <DashboardSidebarSheet />
+        <div className="flex items-center gap-1">
+          <Link
+            href="/dashboard/time"
+            aria-label="Tracker"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-foreground transition hover:bg-muted focus-visible:outline-none"
+          >
+            <TrackerIcon className="h-5 w-5" />
+          </Link>
+          <DashboardSidebarSheet />
+        </div>
       </div>
     </>
   );
