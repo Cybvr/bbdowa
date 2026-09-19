@@ -104,10 +104,7 @@ export function TimeTracker() {
           </div>
         ) : (
           <div className="space-y-4">
-            <div>
-              <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Clocked out</span>
-              <p className="mb-0 mt-1 text-[13px] text-muted-foreground">Pick a campaign and say what you’re working on, then clock in.</p>
-            </div>
+            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Clocked out</span>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Campaign</span>
@@ -124,8 +121,8 @@ export function TimeTracker() {
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">What are you doing?</span>
-                <Input value={description} onChange={(event) => setDescription(event.target.value)} disabled={busy} placeholder="e.g. Storyboarding the launch film" />
+                <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Doing</span>
+                <Input value={description} onChange={(event) => setDescription(event.target.value)} disabled={busy} placeholder="What are you working on?" />
               </div>
             </div>
             <button
@@ -141,9 +138,9 @@ export function TimeTracker() {
       </Panel>
 
       <StatRow>
-        <StatItem label="Today" value={formatDuration(todayMs)} detail="Hours logged today" />
-        <StatItem label="Status" value={current ? "In" : "Out"} detail={current ? "Currently working" : "Not working"} />
-        <StatItem label="Shifts" value={entries.length} detail="Total recorded" />
+        <StatItem label="Today" value={formatDuration(todayMs)} />
+        <StatItem label="Status" value={current ? "In" : "Out"} />
+        <StatItem label="Shifts" value={entries.length} />
       </StatRow>
 
       <section aria-labelledby="recent-shifts">
@@ -159,9 +156,9 @@ export function TimeTracker() {
                 <tr className="border-b border-border bg-muted/40 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                   <th className="px-4 py-3 font-semibold">Campaign</th>
                   <th className="px-4 py-3 font-semibold">Work</th>
-                  <th className="px-4 py-3 font-semibold">Clock in</th>
-                  <th className="px-4 py-3 font-semibold">Clock out</th>
-                  <th className="px-4 py-3 font-semibold">Duration</th>
+                  <th className="hidden px-4 py-3 font-semibold sm:table-cell">In</th>
+                  <th className="hidden px-4 py-3 font-semibold sm:table-cell">Out</th>
+                  <th className="px-4 py-3 font-semibold">Time</th>
                 </tr>
               </thead>
               <tbody>
@@ -169,8 +166,8 @@ export function TimeTracker() {
                   <tr key={entry.id} className="border-b border-border last:border-b-0 align-top">
                     <td className="px-4 py-3">{entry.campaignName ?? <span className="text-muted-foreground">—</span>}</td>
                     <td className="px-4 py-3">{entry.description ? entry.description : <span className="text-muted-foreground">—</span>}</td>
-                    <td className="px-4 py-3 whitespace-nowrap">{formatTimestamp(entry.clockInAt)}</td>
-                    <td className="px-4 py-3 whitespace-nowrap">
+                    <td className="hidden px-4 py-3 whitespace-nowrap sm:table-cell">{formatTimestamp(entry.clockInAt)}</td>
+                    <td className="hidden px-4 py-3 whitespace-nowrap sm:table-cell">
                       {entry.clockOutAt ? (
                         formatTimestamp(entry.clockOutAt)
                       ) : (

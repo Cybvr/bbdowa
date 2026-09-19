@@ -23,8 +23,11 @@ export type NavItem =
 
 export const NAV_ITEMS: NavItem[] = [
   { kind: "link", label: "Home", href: "/dashboard" },
-  { kind: "link", label: "Time", href: "/dashboard/time", requiresAuth: true },
   { kind: "link", label: "Campaigns", href: "/dashboard/campaigns", requiresAuth: true },
+  { kind: "link", label: "Clients", href: "/dashboard/clients", requiresAuth: true },
+  { kind: "link", label: "Creators", href: "/dashboard/creators" },
+  { kind: "link", label: "Team", href: "/dashboard/people", requiresAuth: true },
+  { kind: "link", label: "Tracker", href: "/dashboard/time", requiresAuth: true },
   {
     kind: "menu",
     label: "Workflows",
@@ -43,16 +46,6 @@ export const NAV_ITEMS: NavItem[] = [
     items: [
       { label: "Brand assets", href: "/dashboard/brand" },
       { label: "Resources", href: "/dashboard/resources" },
-    ],
-  },
-  {
-    kind: "menu",
-    label: "Directory",
-    match: ["/dashboard/clients", "/dashboard/people", "/dashboard/creators"],
-    items: [
-      { label: "Clients", href: "/dashboard/clients", requiresAuth: true },
-      { label: "Team", href: "/dashboard/people", requiresAuth: true },
-      { label: "Creators", href: "/dashboard/creators" },
     ],
   },
   { kind: "link", label: "Updates", href: "/dashboard/blog" },

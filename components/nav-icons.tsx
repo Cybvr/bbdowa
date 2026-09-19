@@ -192,6 +192,14 @@ export const PeopleIcon: NavIconComponent = ({ className }) => (
   </Glyph>
 );
 
+// Tracker — clock face with hands
+export const TrackerIcon: NavIconComponent = ({ className }) => (
+  <Glyph className={className}>
+    <circle cx="12" cy="12" r="8.5" />
+    <path d="M12 7.5V12l3 2" />
+  </Glyph>
+);
+
 // Blog — feed lines with a pulse dot
 export const BlogIcon: NavIconComponent = ({ className }) => (
   <Glyph className={className}>
@@ -217,6 +225,7 @@ export const NAV_ICON_SET: Record<string, NavIconComponent> = {
   Team: TeamIcon,
   Creators: CreatorsIcon,
   People: PeopleIcon,
+  Tracker: TrackerIcon,
   Updates: UpdatesIcon,
   Blog: BlogIcon,
   Company: CompanyIcon,
