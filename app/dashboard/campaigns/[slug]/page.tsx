@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getCampaignBySlug } from "@/lib/firebase/content";
 import { BackLink } from "@/components/back-link";
 import { Badge, ImageWithFallback, MetaGrid, MetaItem, SectionHeading } from "@/components/dashboard/ui";
+import { CampaignActions } from "@/components/campaign-actions";
 import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 
@@ -27,9 +28,10 @@ export default async function CampaignDetailPage({ params }: Params) {
 
   return (
     <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
-      <BackLink href="/dashboard/campaigns" className="mb-5">
-        All campaigns
-      </BackLink>
+      <div className="mb-5 flex items-center justify-between gap-4">
+        <BackLink href="/dashboard/campaigns">All campaigns</BackLink>
+        <CampaignActions campaign={campaign} />
+      </div>
 
       <section
         className="grid grid-cols-[minmax(220px,0.7fr)_minmax(0,1.3fr)] items-start gap-8 lg:gap-12 max-[720px]:grid-cols-1"

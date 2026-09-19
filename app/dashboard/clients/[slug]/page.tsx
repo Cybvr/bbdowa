@@ -15,6 +15,7 @@ import type { Campaign, CampaignStatus } from "@/lib/campaigns";
 import { getClient, getClientWorkspace, type Client } from "@/lib/clients";
 import type { User } from "@/lib/users";
 import { readContentFromFirestore } from "@/lib/firebase/client-content";
+import { ClientActions } from "@/components/client-actions";
 import { useAuth } from "@/components/auth-provider";
 import { campaignWorkspaceStatuses } from "@/lib/client-data";
 import { fontOptions, ctaOptions } from "@/lib/campaign-options";
@@ -896,7 +897,9 @@ function OneUtilityClientWorkspace({
                 })}
               </div>
             </nav>
-            <div className="ml-auto hidden shrink-0 items-center gap-3 sm:flex">
+            <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
+              {client ? <ClientActions client={client} /> : null}
+              <div className="hidden shrink-0 items-center gap-3 sm:flex">
               <div className="flex items-center -space-x-2 pr-1" aria-label="Collaborators on this campaign">
                 {collaborators.map((c) => (
                   <span
@@ -912,6 +915,7 @@ function OneUtilityClientWorkspace({
               <button onClick={handleShareCampaign} aria-label="Share" className="flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground transition hover:opacity-90 sm:h-9 sm:px-3.5">
                 <Share2 className="w-4 h-4 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">Share</span>
               </button>
+              </div>
             </div>
           </div>
 

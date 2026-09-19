@@ -11,6 +11,7 @@ import { longDate } from "@/lib/format";
 import { ImageWithFallback, MetaGrid, MetaItem, SectionHeading } from "@/components/dashboard/ui";
 import { SocialIcon, type SocialIconName } from "@/components/social-icon";
 import { ShareCreatorDialog } from "@/components/share-creator-dialog";
+import { UserActions } from "@/components/user-actions";
 
 const HISTORY_ROW = "border-t border-border py-3";
 
@@ -72,6 +73,7 @@ export default function CreatorDetailPage() {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-[13px] font-medium text-muted-foreground">{creator.availability}</span>
+              <UserActions user={creator} variant="creator" listHref="/dashboard/creators" />
               <ShareCreatorDialog creatorName={creator.name} path={`/dashboard/creators/${creator.slug}`} showLabel />
             </div>
           </div>
