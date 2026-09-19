@@ -20,7 +20,7 @@ export type Client = {
  * it (see `getClientCampaigns`). Edit a client here without
  * touching its campaigns, and vice versa.
  */
-export const CLIENTS: Client[] = [
+const CLIENT_RECORDS: Client[] = [
   {
     type: "client",
     slug: "1utility",
@@ -133,7 +133,9 @@ export const CLIENTS: Client[] = [
     industry: "Finance",
     profileImage: "/images/clients/visa.png",
   },
-].sort((a, b) => a.name.localeCompare(b.name));
+];
+
+export const CLIENTS: Client[] = [...CLIENT_RECORDS].sort((a, b) => a.name.localeCompare(b.name));
 
 export function getClient(slug: string): Client | undefined {
   return CLIENTS.find((client) => client.slug === slug);
