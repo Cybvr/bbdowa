@@ -47,6 +47,15 @@ function SettingsIcon() {
   );
 }
 
+function AdminIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" className="h-4 w-4">
+      <path d="M10 2.5 4 4.75v4.1c0 3.4 2.4 6.15 6 7.65 3.6-1.5 6-4.25 6-7.65v-4.1L10 2.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+      <path d="m7.5 10 1.75 1.75L13 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function LogOutIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" className="h-4 w-4">
@@ -76,6 +85,10 @@ export function ProfileNav({
   const logout = auth?.logout;
   const role = auth?.role ?? null;
   const roleLabel = role ? role.charAt(0).toUpperCase() + role.slice(1) : null;
+  const isAdmin = auth?.isAdmin ?? false;
+  const menuItems: readonly ProfileNavItem[] = isAdmin
+    ? [{ label: "Admin", href: "/admin", icon: <AdminIcon /> }, ...items]
+    : items;
   const displayName = name ?? user?.name ?? user?.email?.split("@")[0] ?? "BBDO User";
   const displayEmail = email ?? user?.email ?? (loading ? "Loading profile..." : "Signed in");
   const generatedInitials = displayName
@@ -143,7 +156,7 @@ export function ProfileNav({
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        {items.map((item) => (
+        {menuItems.map((item) => (
           <DropdownMenuItem key={item.label} asChild={Boolean(item.href)} onSelect={item.onSelect}>
             {item.href ? (
               <Link href={item.href}>
