@@ -4,8 +4,8 @@ import { useRef } from "react";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import type { BlogPost } from "@/lib/blog";
-import type { Client } from "@/lib/clients";
-import { clientHref } from "@/lib/clients";
+import type { Campaign } from "@/lib/campaigns";
+import { campaignHref, campaignLiveDateLabel } from "@/lib/campaigns";
 import { ImageWithFallback } from "@/components/dashboard/ui";
 
 const NEWS_IMAGES = [
@@ -55,38 +55,40 @@ function moveRail(rail: HTMLDivElement | null, direction: number) {
   rail?.scrollBy({ left: direction * 280, behavior: "smooth" });
 }
 
-export function DashboardHomeCarousels({ clients, posts }: { clients: Client[]; posts: BlogPost[] }) {
-  const clientsRail = useRef<HTMLDivElement>(null);
+export function DashboardHomeCarousels({ campaigns, posts }: { campaigns: Campaign[]; posts: BlogPost[] }) {
+  const campaignsRail = useRef<HTMLDivElement>(null);
   const newsRail = useRef<HTMLDivElement>(null);
 
   return (
     <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-2">
-      <section className="min-w-0 rounded-xl border border-border" aria-labelledby="latest-clients-heading">
+      <section className="min-w-0 rounded-xl border border-border" aria-labelledby="latest-campaigns-heading">
         <div className="flex items-center justify-between gap-4 border-b border-border px-5 py-4">
-          <h2 id="latest-clients-heading" className="m-0 text-[15px] font-semibold tracking-tight">Latest clients</h2>
+          <h2 id="latest-campaigns-heading" className="m-0 text-[15px] font-semibold tracking-tight">Latest campaigns</h2>
           <div className="flex items-center gap-3">
-            <Link href="/dashboard/clients" className="text-[12px] font-semibold text-muted-foreground underline decoration-border underline-offset-4 hover:text-foreground">
+            <Link href="/dashboard/campaigns" className="text-[12px] font-semibold text-muted-foreground underline decoration-border underline-offset-4 hover:text-foreground">
               View all
             </Link>
-            <CarouselControls label="clients" onPrevious={() => moveRail(clientsRail.current, -1)} onNext={() => moveRail(clientsRail.current, 1)} />
+            <CarouselControls label="campaigns" onPrevious={() => moveRail(campaignsRail.current, -1)} onNext={() => moveRail(campaignsRail.current, 1)} />
           </div>
         </div>
-        <div ref={clientsRail} className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto p-4">
-          {clients.map((client) => (
+        <div ref={campaignsRail} className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto p-4">
+          {campaigns.map((campaign) => (
             <Link
-              key={client.slug}
-              href={clientHref(client.slug)}
-              className="group min-w-[190px] snap-start rounded-xl border border-border bg-background p-4 text-foreground no-underline transition-colors hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:min-w-[210px]"
+              key={campaign.slug}
+              href={campaignHref(campaign.slug)}
+              className="group min-w-[250px] snap-start overflow-hidden rounded-xl border border-border bg-background text-foreground no-underline transition-colors hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:min-w-[280px]"
             >
               <ImageWithFallback
-                src={client.profileImage}
-                alt=""
-                className="h-12 w-12 rounded-full bg-white object-contain p-1"
-                fallbackClassName="h-12 w-12 rounded-full"
+                src={campaign.image}
+                alt={campaign.imageAlt}
+                className="h-28 w-full bg-muted object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                fallbackClassName="h-28 w-full"
               />
-              <strong className="mt-4 block truncate text-[15px] font-semibold">{client.name}</strong>
-              <span className="mt-1 block truncate text-[12px] text-muted-foreground">{client.industry}</span>
-              <span className="mt-5 block text-[11px] text-muted-foreground">{client.date ? formatDate(client.date) : "No date"}</span>
+              <div className="p-4">
+                <strong className="block truncate text-[15px] font-semibold">{campaign.campaign ?? campaign.name}</strong>
+                <span className="mt-1 block truncate text-[12px] text-muted-foreground">{campaign.clientName}</span>
+                <span className="mt-4 block text-[11px] text-muted-foreground">{campaignLiveDateLabel(campaign)}</span>
+              </div>
             </Link>
           ))}
         </div>

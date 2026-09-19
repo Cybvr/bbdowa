@@ -7,7 +7,7 @@ import type { Product } from "@/lib/products";
 import { productDate, productHref } from "@/lib/products";
 import { longDate, plural } from "@/lib/format";
 import { Badge, EmptyState, ImageWithFallback } from "@/components/dashboard/ui";
-import { FilterBar, type FilterTab, type SortOption } from "@/components/dashboard/filter-bar";
+import { FilterBar, type FilterTab, type SortOption, type ViewMode } from "@/components/dashboard/filter-bar";
 
 const FILTERS: FilterTab<"all" | "active" | "idea">[] = [
   { key: "all", label: "All" },
@@ -39,6 +39,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
   const [filter, setFilter] = useState<FilterKey>("all");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortKey>("name");
+  const [view, setView] = useState<ViewMode>("table");
 
   const visible = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -76,11 +77,48 @@ export function ProductsTable({ products }: { products: Product[] }) {
         activeSort={sort}
         onSortChange={setSort}
         resultCount={plural(visible.length, "product")}
+        view={view}
+        onViewChange={setView}
       />
 
       <section id="product-panel" aria-label="Products">
       {visible.length > 0 ? (
-      <div className="overflow-x-auto">
+      view === "cards" ? (
+      <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2 lg:grid-cols-3">
+        {visible.map((product) => {
+          const date = productDate(product);
+          return (
+            <li key={product.slug}>
+              <Link
+                href={productHref(product.slug)}
+                className="group flex h-full flex-col overflow-hidden rounded-xl border border-border bg-background text-foreground no-underline transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              >
+                <div className="flex h-28 items-center justify-center bg-muted px-6 py-4">
+                  <ImageWithFallback
+                    src={product.avatar}
+                    alt={product.name}
+                    className="h-full w-full object-contain mix-blend-multiply"
+                    fallbackClassName="h-full w-full"
+                  />
+                </div>
+                <div className="flex min-h-[170px] flex-col gap-3 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <h3 className="m-0 text-[16px] font-semibold leading-tight group-hover:text-primary">{product.name}</h3>
+                    <Badge tone={product.status === "active" ? "active" : "neutral"}>{product.status}</Badge>
+                  </div>
+                  <p className="m-0 line-clamp-2 text-[13px] leading-[1.4] text-muted-foreground">{product.valueLine}</p>
+                  <div className="mt-auto flex items-center justify-between gap-3 text-[12px] text-muted-foreground">
+                    <span>{product.owner?.name ?? "Unassigned"}</span>
+                    <span>{date ? longDate(date) : "—"}</span>
+                  </div>
+                </div>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+      ) : (
+      <div className="overflow-x-auto rounded-xl border border-border">
       <table className="w-full border-collapse">
         <thead>
           <tr>
@@ -159,6 +197,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
         </tbody>
       </table>
       </div>
+      )
       ) : (
         <EmptyState
           title="No products match"

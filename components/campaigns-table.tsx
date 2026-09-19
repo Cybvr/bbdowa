@@ -5,8 +5,8 @@ import { useMemo, useState } from "react";
 import type { Campaign } from "@/lib/campaigns";
 import { campaignHref, campaignLiveDateLabel } from "@/lib/campaigns";
 import { plural } from "@/lib/format";
-import { EmptyState, ImageWithFallback } from "@/components/dashboard/ui";
-import { FilterBar, type FilterTab, type SortOption } from "@/components/dashboard/filter-bar";
+import { Badge, EmptyState, ImageWithFallback } from "@/components/dashboard/ui";
+import { FilterBar, type FilterTab, type SortOption, type ViewMode } from "@/components/dashboard/filter-bar";
 
 const STATUS_TABS: FilterTab<"all" | "live" | "completed">[] = [
   { key: "all", label: "All" },
@@ -33,6 +33,7 @@ export function CampaignsTable({ campaigns }: { campaigns: Campaign[] }) {
   const [category, setCategory] = useState("all");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortKey>("recent");
+  const [view, setView] = useState<ViewMode>("cards");
 
   const categoryOptions = useMemo(
     () => [
@@ -84,37 +85,70 @@ export function CampaignsTable({ campaigns }: { campaigns: Campaign[] }) {
         activeSort={sort}
         onSortChange={setSort}
         resultCount={plural(visible.length, "campaign")}
+        view={view}
+        onViewChange={setView}
       />
 
       <section id="campaign-panel" aria-label="Campaigns">
         {visible.length > 0 ? (
-          <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2 lg:grid-cols-3">
-            {visible.map((campaign) => (
-              <li key={campaign.slug}>
-                <Link
-                  href={campaignHref(campaign.slug)}
-                  className="group flex h-full overflow-hidden rounded-xl border border-border bg-background text-foreground no-underline transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                >
-                  <div className="aspect-[4/3] w-[38%] shrink-0 bg-muted overflow-hidden">
-                    <ImageWithFallback
-                      src={campaign.image}
-                      alt={campaign.imageAlt}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                  <div className="flex min-w-0 flex-1 flex-col justify-between gap-2 p-4">
-                    <div className="space-y-1">
-                      <span className="block text-[16px] font-semibold leading-tight group-hover:text-primary">
-                        {campaign.campaign ?? campaign.name}
-                      </span>
-                      <span className="block text-[13px] text-muted-foreground">{campaign.clientName}</span>
+          view === "cards" ? (
+            <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2 lg:grid-cols-3">
+              {visible.map((campaign) => (
+                <li key={campaign.slug}>
+                  <Link
+                    href={campaignHref(campaign.slug)}
+                    className="group flex h-full overflow-hidden rounded-xl border border-border bg-background text-foreground no-underline transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                  >
+                    <div className="aspect-[4/3] w-[38%] shrink-0 overflow-hidden bg-muted">
+                      <ImageWithFallback
+                        src={campaign.image}
+                        alt={campaign.imageAlt}
+                        className="h-full w-full object-cover"
+                      />
                     </div>
-                    <span className="text-[12px] text-muted-foreground">{campaignLiveDateLabel(campaign)}</span>
-                  </div>
-                </Link>
-              </li>
-            ))}
-          </ul>
+                    <div className="flex min-w-0 flex-1 flex-col justify-between gap-2 p-4">
+                      <div className="space-y-1">
+                        <span className="block text-[16px] font-semibold leading-tight group-hover:text-primary">
+                          {campaign.campaign ?? campaign.name}
+                        </span>
+                        <span className="block text-[13px] text-muted-foreground">{campaign.clientName}</span>
+                      </div>
+                      <span className="text-[12px] text-muted-foreground">{campaignLiveDateLabel(campaign)}</span>
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="overflow-x-auto rounded-xl border border-border">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr>
+                    <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Campaign</th>
+                    <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Client</th>
+                    <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Status</th>
+                    <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Category</th>
+                    <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visible.map((campaign) => (
+                    <tr key={campaign.slug} className="border-b border-border last:border-0 hover:bg-muted/50">
+                      <td className="px-4 py-4 text-[13px] font-semibold">
+                        <Link href={campaignHref(campaign.slug)} className="text-foreground no-underline hover:text-primary focus-visible:text-primary">
+                          {campaign.campaign ?? campaign.name}
+                        </Link>
+                      </td>
+                      <td className="px-4 py-4 text-[13px] text-muted-foreground">{campaign.clientName}</td>
+                      <td className="px-4 py-4 text-[13px]"><Badge tone={campaign.status === "live" ? "active" : "neutral"}>{campaign.status}</Badge></td>
+                      <td className="px-4 py-4 text-[13px] text-muted-foreground">{campaign.category}</td>
+                      <td className="whitespace-nowrap px-4 py-4 text-[13px] text-muted-foreground">{campaignLiveDateLabel(campaign)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
         ) : (
           <EmptyState
             title="No campaigns match"

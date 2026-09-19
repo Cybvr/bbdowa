@@ -9,7 +9,7 @@
 
 import type { ReactNode } from "react";
 import { useState } from "react";
-import { Check, Filter } from "lucide-react";
+import { Check, Filter, Grid2X2, List } from "lucide-react";
 import {
   Sheet,
   SheetClose,
@@ -29,6 +29,8 @@ export type SortOption<SortKey extends string> = {
   key: SortKey;
   label: string;
 };
+
+export type ViewMode = "table" | "cards";
 
 export type SelectFilter = {
   /** Accessible label for the group. */
@@ -81,6 +83,35 @@ function OptionGroup({ label, children }: { label: string; children: ReactNode }
   );
 }
 
+export function ViewToggle({ view, onChange }: { view: ViewMode; onChange: (view: ViewMode) => void }) {
+  return (
+    <div className="flex items-center rounded-lg border border-border p-0.5" role="group" aria-label="View">
+      <button
+        type="button"
+        aria-label="Table view"
+        aria-pressed={view === "table"}
+        onClick={() => onChange("table")}
+        className={`grid h-8 w-8 cursor-pointer place-items-center rounded-md transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
+          view === "table" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
+        }`}
+      >
+        <List className="h-4 w-4" aria-hidden="true" />
+      </button>
+      <button
+        type="button"
+        aria-label="Cards view"
+        aria-pressed={view === "cards"}
+        onClick={() => onChange("cards")}
+        className={`grid h-8 w-8 cursor-pointer place-items-center rounded-md transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
+          view === "cards" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
+        }`}
+      >
+        <Grid2X2 className="h-4 w-4" aria-hidden="true" />
+      </button>
+    </div>
+  );
+}
+
 export function FilterBar<TabKey extends string, SortKey extends string>({
   panelId,
   tabs,
@@ -96,6 +127,8 @@ export function FilterBar<TabKey extends string, SortKey extends string>({
   activeSort,
   onSortChange,
   resultCount,
+  view,
+  onViewChange,
 }: {
   panelId: string;
   tabs?: FilterTab<TabKey>[];
@@ -111,6 +144,8 @@ export function FilterBar<TabKey extends string, SortKey extends string>({
   activeSort?: SortKey;
   onSortChange?: (key: SortKey) => void;
   resultCount?: string;
+  view?: ViewMode;
+  onViewChange?: (view: ViewMode) => void;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -147,6 +182,7 @@ export function FilterBar<TabKey extends string, SortKey extends string>({
       ) : null}
 
       <div className="ml-auto flex items-center gap-3">
+        {view && onViewChange ? <ViewToggle view={view} onChange={onViewChange} /> : null}
         {resultCount ? (
           <p aria-live="polite" className="m-0 text-[13px] font-medium text-muted-foreground">
             {resultCount}
