@@ -58,25 +58,31 @@ export function useTimeClock() {
 
   const current = openShift(entries);
 
-  const clockIn = React.useCallback(async () => {
-    if (!user || current || busy) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await addDoc(collection(firebaseDb, TIME_ENTRIES_COLLECTION), {
-        uid: user.uid,
-        name: user.name ?? user.email ?? null,
-        clockInAt: new Date().toISOString(),
-        clockOutAt: null,
-      });
-      await load(user.uid);
-    } catch (cause) {
-      console.error("Unable to clock in", cause);
-      setError("Unable to clock in. Try again.");
-    } finally {
-      setBusy(false);
-    }
-  }, [user, current, busy, load]);
+  const clockIn = React.useCallback(
+    async (details: { campaignSlug: string | null; campaignName: string | null; description: string }) => {
+      if (!user || current || busy) return;
+      setBusy(true);
+      setError(null);
+      try {
+        await addDoc(collection(firebaseDb, TIME_ENTRIES_COLLECTION), {
+          uid: user.uid,
+          name: user.name ?? user.email ?? null,
+          campaignSlug: details.campaignSlug,
+          campaignName: details.campaignName,
+          description: details.description,
+          clockInAt: new Date().toISOString(),
+          clockOutAt: null,
+        });
+        await load(user.uid);
+      } catch (cause) {
+        console.error("Unable to clock in", cause);
+        setError("Unable to clock in. Try again.");
+      } finally {
+        setBusy(false);
+      }
+    },
+    [user, current, busy, load],
+  );
 
   const clockOut = React.useCallback(async () => {
     if (!user || !current || busy) return;

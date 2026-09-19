@@ -1,8 +1,23 @@
 "use client";
 
+import * as React from "react";
+import { collection, getDocs } from "firebase/firestore";
 import { useTimeClock } from "@/components/use-time-clock";
+import { firebaseDb } from "@/lib/firebase/client";
 import { EmptyState, Panel, SectionHeading, StatItem, StatRow } from "@/components/dashboard/ui";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { formatDuration, formatTime, formatTimestamp, shiftDurationMs } from "@/lib/time-tracking";
+
+type CampaignOption = { slug: string; name: string };
+
+const NO_CAMPAIGN = "none";
 
 function startOfToday(): number {
   const now = new Date();
@@ -11,6 +26,39 @@ function startOfToday(): number {
 
 export function TimeTracker() {
   const { authLoading, signedIn, entries, current, loading, error, busy, now, clockIn, clockOut } = useTimeClock();
+  const [campaigns, setCampaigns] = React.useState<CampaignOption[]>([]);
+  const [campaignSlug, setCampaignSlug] = React.useState<string>(NO_CAMPAIGN);
+  const [description, setDescription] = React.useState("");
+
+  React.useEffect(() => {
+    let active = true;
+    getDocs(collection(firebaseDb, "campaigns"))
+      .then((snapshot) => {
+        if (!active) return;
+        const rows = snapshot.docs
+          .map((document) => {
+            const data = document.data() as { slug?: string; campaign?: string; name?: string };
+            return { slug: data.slug ?? document.id, name: data.campaign ?? data.name ?? document.id };
+          })
+          .sort((a, b) => a.name.localeCompare(b.name));
+        setCampaigns(rows);
+      })
+      .catch((cause) => console.error("Unable to load campaigns", cause));
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const handleClockIn = () => {
+    const chosen = campaigns.find((option) => option.slug === campaignSlug);
+    void clockIn({
+      campaignSlug: chosen?.slug ?? null,
+      campaignName: chosen?.name ?? null,
+      description: description.trim(),
+    });
+    setDescription("");
+    setCampaignSlug(NO_CAMPAIGN);
+  };
 
   if (!authLoading && !signedIn) {
     return (
@@ -32,36 +80,63 @@ export function TimeTracker() {
         <p className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-[13px] text-primary">{error}</p>
       ) : null}
 
-      <Panel className="flex flex-col items-start gap-5 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Status</span>
-          <p className="m-0 mt-1 text-[20px] font-bold leading-tight">
-            {current ? "On the clock" : "Clocked out"}
-          </p>
-          <p className="mb-0 mt-1 text-[13px] text-muted-foreground">
-            {current
-              ? `Clocked in at ${formatTime(current.clockInAt)} · ${formatDuration(shiftDurationMs(current, now))} so far`
-              : "You are not clocked in."}
-          </p>
-        </div>
+      <Panel>
         {current ? (
-          <button
-            type="button"
-            onClick={clockOut}
-            disabled={busy}
-            className="inline-flex h-11 items-center justify-center rounded-lg border border-border bg-background px-6 text-[14px] font-semibold text-foreground transition hover:border-foreground disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-          >
-            {busy ? "Saving…" : "Clock out"}
-          </button>
+          <div className="flex flex-col items-start gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">On the clock</span>
+              <p className="m-0 mt-1 text-[20px] font-bold leading-tight">
+                {current.campaignName ?? "No campaign"}
+              </p>
+              <p className="mb-0 mt-1 text-[13px] text-muted-foreground">
+                {current.description ? `${current.description} · ` : ""}
+                Since {formatTime(current.clockInAt)} · {formatDuration(shiftDurationMs(current, now))}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => void clockOut()}
+              disabled={busy}
+              className="inline-flex h-11 shrink-0 items-center justify-center rounded-lg border border-border bg-background px-6 text-[14px] font-semibold text-foreground transition hover:border-foreground disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            >
+              {busy ? "Saving…" : "Clock out"}
+            </button>
+          </div>
         ) : (
-          <button
-            type="button"
-            onClick={clockIn}
-            disabled={busy}
-            className="inline-flex h-11 items-center justify-center rounded-lg bg-primary px-6 text-[14px] font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-          >
-            {busy ? "Saving…" : "Clock in"}
-          </button>
+          <div className="space-y-4">
+            <div>
+              <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Clocked out</span>
+              <p className="mb-0 mt-1 text-[13px] text-muted-foreground">Pick a campaign and say what you’re working on, then clock in.</p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Campaign</span>
+                <Select value={campaignSlug} onValueChange={setCampaignSlug}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a campaign" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NO_CAMPAIGN}>No campaign</SelectItem>
+                    {campaigns.map((option) => (
+                      <SelectItem key={option.slug} value={option.slug}>{option.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">What are you doing?</span>
+                <Input value={description} onChange={(event) => setDescription(event.target.value)} disabled={busy} placeholder="e.g. Storyboarding the launch film" />
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleClockIn}
+              disabled={busy}
+              className="inline-flex h-11 items-center justify-center rounded-lg bg-primary px-6 text-[14px] font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            >
+              {busy ? "Saving…" : "Clock in"}
+            </button>
+          </div>
         )}
       </Panel>
 
@@ -82,6 +157,8 @@ export function TimeTracker() {
             <table className="w-full border-collapse text-[14px]">
               <thead>
                 <tr className="border-b border-border bg-muted/40 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                  <th className="px-4 py-3 font-semibold">Campaign</th>
+                  <th className="px-4 py-3 font-semibold">Work</th>
                   <th className="px-4 py-3 font-semibold">Clock in</th>
                   <th className="px-4 py-3 font-semibold">Clock out</th>
                   <th className="px-4 py-3 font-semibold">Duration</th>
@@ -89,16 +166,18 @@ export function TimeTracker() {
               </thead>
               <tbody>
                 {recent.map((entry) => (
-                  <tr key={entry.id} className="border-b border-border last:border-b-0">
-                    <td className="px-4 py-3">{formatTimestamp(entry.clockInAt)}</td>
-                    <td className="px-4 py-3">
+                  <tr key={entry.id} className="border-b border-border last:border-b-0 align-top">
+                    <td className="px-4 py-3">{entry.campaignName ?? <span className="text-muted-foreground">—</span>}</td>
+                    <td className="px-4 py-3">{entry.description ? entry.description : <span className="text-muted-foreground">—</span>}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">{formatTimestamp(entry.clockInAt)}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">
                       {entry.clockOutAt ? (
                         formatTimestamp(entry.clockOutAt)
                       ) : (
                         <span className="font-semibold text-primary">In progress</span>
                       )}
                     </td>
-                    <td className="px-4 py-3">{formatDuration(shiftDurationMs(entry, now))}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">{formatDuration(shiftDurationMs(entry, now))}</td>
                   </tr>
                 ))}
               </tbody>

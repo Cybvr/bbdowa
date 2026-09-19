@@ -10,6 +10,12 @@ export type TimeEntry = {
   uid: string;
   /** Display name captured at clock-in, for the admin view. */
   name: string | null;
+  /** Slug of the campaign being worked on, or null. */
+  campaignSlug: string | null;
+  /** Campaign name captured at clock-in, for display. */
+  campaignName: string | null;
+  /** What the person is doing this shift. */
+  description: string;
   /** ISO timestamp of clock in. */
   clockInAt: string;
   /** ISO timestamp of clock out, or null while the shift is open. */
