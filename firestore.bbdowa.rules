@@ -37,5 +37,27 @@ service cloud.firestore {
           && request.resource.data.role == resource.data.role);
       allow delete: if isAdmin() && userId != request.auth.uid;
     }
+
+    // Dashboard content collections: public to read, admin-only to write.
+    match /clients/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /campaigns/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /products/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /blogs/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /jobs/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
   }
 }
