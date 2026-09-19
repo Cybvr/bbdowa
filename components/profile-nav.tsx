@@ -23,7 +23,6 @@ export type ProfileNavProps = {
   initials?: string;
   name?: string;
   email?: string;
-  agency?: string;
   items?: readonly ProfileNavItem[];
   logoutLabel?: string;
   onLogout?: () => void;
@@ -66,7 +65,6 @@ export function ProfileNav({
   initials,
   name,
   email,
-  agency = "BBDO West Africa",
   items = DEFAULT_ITEMS,
   logoutLabel = "Log out",
   onLogout,
@@ -76,6 +74,8 @@ export function ProfileNav({
   const user = auth?.user ?? null;
   const loading = auth?.loading ?? false;
   const logout = auth?.logout;
+  const role = auth?.role ?? null;
+  const roleLabel = role ? role.charAt(0).toUpperCase() + role.slice(1) : null;
   const displayName = name ?? user?.name ?? user?.email?.split("@")[0] ?? "BBDO User";
   const displayEmail = email ?? user?.email ?? (loading ? "Loading profile..." : "Signed in");
   const generatedInitials = displayName
@@ -112,7 +112,11 @@ export function ProfileNav({
             </span>
             <span className="min-w-0 flex-1">
               <span className="block truncate text-xs font-semibold leading-tight text-foreground">{displayName}</span>
-              <span className="block truncate text-[11px] leading-tight text-muted-foreground">{displayEmail}</span>
+              {roleLabel ? (
+                <span className="mt-1 inline-block rounded-full bg-foreground/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none tracking-[0.06em] text-foreground">
+                  {roleLabel}
+                </span>
+              ) : null}
             </span>
           </button>
         ) : (
@@ -134,7 +138,7 @@ export function ProfileNav({
             </span>
             <div className="min-w-0">
               <p className="truncate text-[13px] font-extrabold">{displayName}</p>
-              <p className="truncate text-[11px] tracking-[0.08em] text-muted-foreground">{agency}</p>
+              <p className="truncate text-[11px] text-muted-foreground">{displayEmail}</p>
             </div>
           </div>
         </DropdownMenuLabel>
