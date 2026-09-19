@@ -17,6 +17,7 @@ import {
   ACTIVITY_COLLECTION,
   formatDuration,
   formatTimestamp,
+  parseDurationToMinutes,
   sortByLoggedAt,
   type ActivityEntry,
 } from "@/lib/time-tracking";
@@ -40,8 +41,7 @@ export function TimeTracker() {
 
   const [activity, setActivity] = React.useState("");
   const [campaignSlug, setCampaignSlug] = React.useState<string>(NO_CAMPAIGN);
-  const [hours, setHours] = React.useState("");
-  const [minutes, setMinutes] = React.useState("");
+  const [duration, setDuration] = React.useState("");
 
   const load = React.useCallback(async (uid: string) => {
     const snapshot = await getDocs(
@@ -94,12 +94,12 @@ export function TimeTracker() {
     };
   }, []);
 
-  const durationMinutes = (Number(hours) || 0) * 60 + (Number(minutes) || 0);
-  const canLog = activity.trim().length > 0 && durationMinutes > 0;
+  const durationMinutes = parseDurationToMinutes(duration);
+  const canLog = activity.trim().length > 0 && durationMinutes !== null;
 
   const logActivity = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!user || !canLog || busy) return;
+    if (!user || !canLog || durationMinutes === null || busy) return;
     setBusy(true);
     setError(null);
     try {
@@ -115,8 +115,7 @@ export function TimeTracker() {
       });
       setActivity("");
       setCampaignSlug(NO_CAMPAIGN);
-      setHours("");
-      setMinutes("");
+      setDuration("");
       await load(user.uid);
     } catch (cause) {
       console.error("Unable to log activity", cause);
@@ -152,7 +151,7 @@ export function TimeTracker() {
             <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Activity</span>
             <Input value={activity} onChange={(event) => setActivity(event.target.value)} disabled={busy} placeholder="What did you work on?" />
           </div>
-          <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end">
+          <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
             <div className="space-y-1.5">
               <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Campaign</span>
               <Select value={campaignSlug} onValueChange={setCampaignSlug}>
@@ -168,12 +167,8 @@ export function TimeTracker() {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Hours</span>
-              <Input type="number" min={0} inputMode="numeric" value={hours} onChange={(event) => setHours(event.target.value)} disabled={busy} placeholder="0" className="w-full sm:w-20" />
-            </div>
-            <div className="space-y-1.5">
-              <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Minutes</span>
-              <Input type="number" min={0} max={59} inputMode="numeric" value={minutes} onChange={(event) => setMinutes(event.target.value)} disabled={busy} placeholder="0" className="w-full sm:w-20" />
+              <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Time spent</span>
+              <Input value={duration} onChange={(event) => setDuration(event.target.value)} disabled={busy} placeholder="e.g. 1h 30m" className="w-full sm:w-32" />
             </div>
           </div>
           <button

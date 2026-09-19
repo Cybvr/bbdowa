@@ -121,7 +121,7 @@ export function FilterBar<TabKey extends string, SortKey extends string>({
   search,
   onSearchChange,
   searchPlaceholder = "Search",
-  searchClassName = "min-w-[140px] flex-1 sm:max-w-[280px]",
+  searchClassName = "min-w-0 flex-1 sm:max-w-[280px]",
   filters,
   sortOptions,
   activeSort,
@@ -169,7 +169,7 @@ export function FilterBar<TabKey extends string, SortKey extends string>({
   };
 
   return (
-    <div className="my-6 flex flex-wrap items-center gap-3">
+    <div className="my-6 flex items-center gap-2 sm:gap-3">
       {onSearchChange ? (
         <input
           type="search"
@@ -181,10 +181,10 @@ export function FilterBar<TabKey extends string, SortKey extends string>({
         />
       ) : null}
 
-      <div className="ml-auto flex items-center gap-3">
+      <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
         {view && onViewChange ? <ViewToggle view={view} onChange={onViewChange} /> : null}
         {resultCount ? (
-          <p aria-live="polite" className="m-0 text-[13px] font-medium text-muted-foreground">
+          <p aria-live="polite" className="m-0 whitespace-nowrap text-[13px] font-medium text-muted-foreground">
             {resultCount}
           </p>
         ) : null}

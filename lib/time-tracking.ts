@@ -39,6 +39,27 @@ export function formatDuration(minutes: number): string {
   return `${hours}h ${mins}m`;
 }
 
+/**
+ * Parse a typed duration into minutes. Accepts "1h 30m", "1h", "30m", "1.5h",
+ * or a plain number (treated as minutes). Returns null if nothing usable.
+ */
+export function parseDurationToMinutes(input: string): number | null {
+  const value = input.trim().toLowerCase();
+  if (!value) return null;
+
+  const hm = value.match(/^(?:(\d+(?:\.\d+)?)\s*h)?\s*(?:(\d+)\s*m)?$/);
+  if (hm && (hm[1] || hm[2])) {
+    const hours = parseFloat(hm[1] ?? "0");
+    const mins = parseInt(hm[2] ?? "0", 10);
+    const total = Math.round(hours * 60 + mins);
+    return total > 0 ? total : null;
+  }
+
+  const plain = Number(value);
+  if (!Number.isNaN(plain) && plain > 0) return Math.round(plain);
+  return null;
+}
+
 /** "Mon 19 Sep, 09:14" from an ISO timestamp. */
 export function formatTimestamp(value: string): string {
   const date = new Date(value);
