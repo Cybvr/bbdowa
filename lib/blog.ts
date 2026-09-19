@@ -7,6 +7,7 @@ export type BlogPost = {
   publishedAt: string;
   category: BlogCategory;
   sourceName: string;
+  image?: string | null;
   sourceUrl?: string;
 };
 

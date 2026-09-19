@@ -7,6 +7,7 @@ import type { Product } from "@/lib/products";
 import { productDate, productHref } from "@/lib/products";
 import { longDate, plural } from "@/lib/format";
 import { Badge, EmptyState, ImageWithFallback } from "@/components/dashboard/ui";
+import { DashboardCard, DashboardCardActions } from "@/components/dashboard-card";
 import { FilterBar, type FilterTab, type SortOption, type ViewMode } from "@/components/dashboard/filter-bar";
 
 const FILTERS: FilterTab<"all" | "active" | "idea">[] = [
@@ -39,7 +40,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
   const [filter, setFilter] = useState<FilterKey>("all");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortKey>("name");
-  const [view, setView] = useState<ViewMode>("table");
+  const [view, setView] = useState<ViewMode>("cards");
 
   const visible = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -89,10 +90,11 @@ export function ProductsTable({ products }: { products: Product[] }) {
           const date = productDate(product);
           return (
             <li key={product.slug}>
-              <Link
-                href={productHref(product.slug)}
-                className="group flex h-full flex-col overflow-hidden rounded-xl border border-border bg-background text-foreground no-underline transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              <DashboardCard
+                className="h-full"
+                actions={<DashboardCardActions collection="products" slug={product.slug} titleField="name" title={product.name} />}
               >
+                <Link href={productHref(product.slug)} className="group flex h-full flex-col text-foreground no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
                 <div className="flex h-28 items-center justify-center bg-muted px-6 py-4">
                   <ImageWithFallback
                     src={product.avatar}
@@ -112,7 +114,8 @@ export function ProductsTable({ products }: { products: Product[] }) {
                     <span>{date ? longDate(date) : "—"}</span>
                   </div>
                 </div>
-              </Link>
+                </Link>
+              </DashboardCard>
             </li>
           );
         })}

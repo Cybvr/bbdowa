@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { BlogCategory, BlogPost } from "@/lib/blog";
 import { plural } from "@/lib/format";
-import { EmptyState, ImageWithFallback } from "@/components/dashboard/ui";
+import { EmptyState } from "@/components/dashboard/ui";
+import { DashboardThumbnail } from "@/components/dashboard-thumbnail";
+import { DashboardCard, DashboardCardActions } from "@/components/dashboard-card";
 import { FilterBar, type SortOption, type ViewMode } from "@/components/dashboard/filter-bar";
 
 const CATEGORIES: { value: BlogCategory | "all"; label: string }[] = [
@@ -19,14 +21,6 @@ const SORTS: SortOption<"recent" | "title">[] = [
   { key: "recent", label: "Most recent" },
   { key: "title", label: "Title (A–Z)" },
 ];
-
-const UPDATE_IMAGES: Record<string, string> = {
-  "bbdo-west-africa-nigeria-independence-day": "/media/projects/jack-daniels/independence-day.jpg",
-  "bbdo-west-africa-young-lions-film-2022": "/media/projects/betano/make-we-bet-betano.png",
-  "bbdo-west-africa-cannes-lions-young-creatives-2023": "/media/projects/google/know-google-poster.jpg",
-  "bbdo-west-africa-the-work": "/media/projects/guinness/beerable-guinness.jpg",
-  "wpp-outcome-based-agency-pricing": "/media/projects/visa/not-a-tourist-visa.jpg",
-};
 
 function dateValue(value: string): number {
   const [year, month, day] = value.split("-").map(Number);
@@ -89,18 +83,12 @@ export function UpdatesDirectory({ posts }: { posts: BlogPost[] }) {
             <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2 lg:grid-cols-3">
               {visible.map((post) => (
                 <li key={post.slug}>
-                  <Link
-                    href={`/dashboard/blog/${post.slug}`}
-                    className="group flex h-full flex-col overflow-hidden rounded-xl border border-border bg-background text-foreground no-underline transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                  <DashboardCard
+                    className="h-full"
+                    actions={<DashboardCardActions collection="blogs" slug={post.slug} titleField="title" title={post.title} />}
                   >
-                    <div className="h-36 overflow-hidden bg-muted">
-                      <ImageWithFallback
-                        src={UPDATE_IMAGES[post.slug]}
-                        alt=""
-                        className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
-                        fallbackClassName="h-full w-full"
-                      />
-                    </div>
+                    <Link href={`/dashboard/blog/${post.slug}`} className="group flex h-full flex-col text-foreground no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
+                    <DashboardThumbnail src={post.image} label={post.category} className="h-36 w-full" imageClassName="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]" />
                     <div className="flex min-h-[164px] flex-col p-4">
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                         <span className="text-primary">{post.category}</span>
@@ -109,7 +97,8 @@ export function UpdatesDirectory({ posts }: { posts: BlogPost[] }) {
                       <h2 className="m-0 mt-3 text-[16px] font-semibold leading-[1.25] tracking-tight group-hover:text-primary">{post.title}</h2>
                       <span className="mt-auto pt-4 text-[12px] text-muted-foreground">{post.sourceName}</span>
                     </div>
-                  </Link>
+                    </Link>
+                  </DashboardCard>
                 </li>
               ))}
             </ul>

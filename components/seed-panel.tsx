@@ -50,8 +50,8 @@ export function SeedPanel() {
         <h2 className="m-0 text-[16px] font-semibold">Push data to Firebase</h2>
       </div>
       <p className="mb-4 mt-1.5 text-[13px] leading-[1.5] text-muted-foreground">
-        Writes the built-in {TOTAL_DOCS} records — clients, campaigns, users, products, blog posts and
-        jobs — into Firestore. Safe to run again; it updates existing records rather than duplicating them.
+        Writes the built-in {TOTAL_DOCS} records — clients, campaigns, users, products, blog posts, jobs and
+        resources — into Firestore. Safe to run again; it updates existing records rather than duplicating them.
       </p>
 
       <button

@@ -11,6 +11,7 @@ import { USERS } from "@/lib/users";
 import { PRODUCTS } from "@/lib/products";
 import { BLOG_POSTS } from "@/lib/blog";
 import { JOBS } from "@/lib/jobs";
+import { RESOURCE_RECORDS } from "@/lib/resources";
 
 type SeedDoc = { id: string; data: Record<string, unknown> };
 type SeedGroup = { name: string; collection: string; docs: SeedDoc[] };
@@ -38,6 +39,7 @@ export const SEED_GROUPS: SeedGroup[] = [
   { name: "Products", collection: "products", docs: toDocs(PRODUCTS) },
   { name: "Blog posts", collection: "blogs", docs: toDocs(BLOG_POSTS) },
   { name: "Jobs", collection: "jobs", docs: toDocs(JOBS) },
+  { name: "Resources", collection: "resources", docs: toDocs(RESOURCE_RECORDS) },
 ];
 
 const BATCH_LIMIT = 400; // Firestore allows up to 500 writes per batch.

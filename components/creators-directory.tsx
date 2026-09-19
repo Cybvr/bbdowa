@@ -7,6 +7,7 @@ import type { IconType } from "react-icons";
 import { FaBehance, FaGlobe } from "react-icons/fa";
 import { FiBookmark, FiCheck, FiChevronDown, FiEdit2, FiFilter, FiFolderPlus, FiGrid, FiList, FiMail, FiPlus, FiSearch, FiTrash2 } from "react-icons/fi";
 import { ImageWithFallback } from "@/components/empty-thumbnail";
+import { CreatorThumbnail } from "@/components/creator-thumbnail";
 import { Badge } from "@/components/dashboard/ui";
 import { SocialIcon, type SocialIconName } from "@/components/social-icon";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -31,17 +32,6 @@ export function initials(name: string): string {
     .map((part) => part[0])
     .slice(0, 2)
     .join("");
-}
-
-function Avatar({ imageSrc, className = "" }: { imageSrc?: string | null; className?: string }) {
-  return (
-    <span
-      aria-hidden="true"
-      className={`grid flex-none place-items-center overflow-hidden rounded-full ${className}`}
-    >
-      <ImageWithFallback src={imageSrc} alt="" className="h-full w-full object-cover" fallbackClassName="h-full w-full" />
-    </span>
-  );
 }
 
 type PlatformLink = { label: string; href: string | null; Icon?: IconType; brand?: SocialIconName };
@@ -1356,7 +1346,7 @@ export function CreatorDirectory({
                 aria-label={creator.name}
                 className="flex-none focus-visible:outline-none"
               >
-                <Avatar imageSrc={creator.profileImage} className="h-12 w-12" />
+                <CreatorThumbnail imageSrc={creator.profileImage} className="h-12 w-12" />
               </Link>
 
               <div className="min-w-0 flex-1">

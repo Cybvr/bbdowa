@@ -10,6 +10,7 @@ next-env.d.ts
 
 # stale build snapshots
 .next-stale-*/
+.next-dev-live*.log
 
 # pnpm (project uses npm)
 pnpm-lock.yaml

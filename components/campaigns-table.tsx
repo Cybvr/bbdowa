@@ -6,6 +6,7 @@ import type { Campaign } from "@/lib/campaigns";
 import { campaignHref, campaignLiveDateLabel } from "@/lib/campaigns";
 import { plural } from "@/lib/format";
 import { Badge, EmptyState, ImageWithFallback } from "@/components/dashboard/ui";
+import { DashboardCard, DashboardCardActions } from "@/components/dashboard-card";
 import { FilterBar, type FilterTab, type SortOption, type ViewMode } from "@/components/dashboard/filter-bar";
 
 const STATUS_TABS: FilterTab<"all" | "live" | "completed">[] = [
@@ -95,27 +96,28 @@ export function CampaignsTable({ campaigns }: { campaigns: Campaign[] }) {
             <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2 lg:grid-cols-3">
               {visible.map((campaign) => (
                 <li key={campaign.slug}>
-                  <Link
-                    href={campaignHref(campaign.slug)}
-                    className="group flex h-full overflow-hidden rounded-xl border border-border bg-background text-foreground no-underline transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                  <DashboardCard
+                    className="h-full"
+                    actions={<DashboardCardActions collection="campaigns" slug={campaign.slug} titleField="campaign" title={campaign.campaign ?? campaign.name} />}
                   >
-                    <div className="aspect-[4/3] w-[38%] shrink-0 overflow-hidden bg-muted">
+                    <Link href={campaignHref(campaign.slug)} className="group flex h-full flex-col text-foreground no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
+                    <div className="h-28 shrink-0 overflow-hidden bg-muted">
                       <ImageWithFallback
                         src={campaign.image}
                         alt={campaign.imageAlt}
                         className="h-full w-full object-cover"
                       />
                     </div>
-                    <div className="flex min-w-0 flex-1 flex-col justify-between gap-2 p-4">
-                      <div className="space-y-1">
-                        <span className="block text-[16px] font-semibold leading-tight group-hover:text-primary">
-                          {campaign.campaign ?? campaign.name}
-                        </span>
-                        <span className="block text-[13px] text-muted-foreground">{campaign.clientName}</span>
+                    <div className="flex min-h-[170px] flex-col gap-3 p-4">
+                      <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-primary">{campaign.clientName}</span>
+                      <h3 className="m-0 line-clamp-2 text-[16px] font-semibold leading-tight group-hover:text-primary">{campaign.campaign ?? campaign.name}</h3>
+                      <div className="mt-auto flex items-center justify-between gap-3 text-[12px] text-muted-foreground">
+                        <Badge tone={campaign.status === "live" ? "active" : "neutral"}>{campaign.status}</Badge>
+                        <span>{campaignLiveDateLabel(campaign)}</span>
                       </div>
-                      <span className="text-[12px] text-muted-foreground">{campaignLiveDateLabel(campaign)}</span>
                     </div>
-                  </Link>
+                    </Link>
+                  </DashboardCard>
                 </li>
               ))}
             </ul>

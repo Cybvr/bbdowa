@@ -5,6 +5,7 @@ import type { Campaign } from "@/lib/campaigns";
 import type { Client } from "@/lib/clients";
 import type { Job } from "@/lib/jobs";
 import type { Product } from "@/lib/products";
+import type { Resource } from "@/lib/resources";
 
 type FirestoreValue = {
   nullValue?: null;
@@ -73,7 +74,7 @@ function firestoreUrl(path: string, pageToken?: string): string {
 
 async function firestoreFetch<T>(path: string, pageToken?: string): Promise<T> {
   const response = await fetch(firestoreUrl(path, pageToken), {
-    next: { revalidate: 60 },
+    cache: "no-store",
   });
   if (!response.ok) {
     throw new Error(`Firestore request failed (${response.status}) for ${path}`);
@@ -96,7 +97,7 @@ async function getCollection<T>(collection: string): Promise<T[]> {
 
 async function getDocument<T>(collection: string, slug: string): Promise<T | undefined> {
   const path = `${collection}/${encodeURIComponent(slug)}`;
-  const response = await fetch(firestoreUrl(path), { next: { revalidate: 60 } });
+  const response = await fetch(firestoreUrl(path), { cache: "no-store" });
   if (response.status === 404) return undefined;
   if (!response.ok) throw new Error(`Firestore request failed (${response.status}) for ${path}`);
   return decodeDocument<T>((await response.json()) as FirestoreDocument);
@@ -128,6 +129,10 @@ export const getBlogPostBySlug = (slug: string) => getDocument<BlogPost>("blogs"
 
 export async function getJobs(): Promise<Job[]> {
   return getCollection<Job>("jobs");
+}
+
+export async function getResources(): Promise<Resource[]> {
+  return (await getCollection<Resource>("resources")).sort((a, b) => a.label.localeCompare(b.label));
 }
 
 export const getJobBySlug = (slug: string) => getDocument<Job>("jobs", slug);
