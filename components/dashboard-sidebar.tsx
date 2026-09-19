@@ -11,7 +11,7 @@ import { useOptionalAuth } from "@/components/auth-provider";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 const NAV_TEXT =
-  "flex min-h-9 w-full items-center gap-2 rounded-lg px-2 py-1.5 font-mono text-xs font-medium leading-none text-foreground no-underline transition-colors hover:bg-foreground/10 hover:text-foreground focus-visible:bg-foreground/10 focus-visible:text-foreground focus-visible:outline-none";
+  "flex min-h-12 w-full items-center gap-3 rounded-lg px-3 py-2.5 font-mono text-sm font-medium leading-none text-foreground no-underline transition-colors hover:bg-foreground/10 hover:text-foreground focus-visible:bg-foreground/10 focus-visible:text-foreground focus-visible:outline-none nav:min-h-9 nav:gap-2 nav:px-2 nav:py-1.5 nav:text-xs";
 
 const NAV_LABEL = "overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]";
 
@@ -23,8 +23,8 @@ function sentenceCase(label: string) {
 
 function NavIcon({ label }: { label: string }) {
   const Icon = NAV_ICON_SET[label];
-  if (!Icon) return <span aria-hidden="true" className="h-4 w-4" />;
-  return <Icon className="h-4 w-4" />;
+  if (!Icon) return <span aria-hidden="true" className="h-5 w-5 nav:h-4 nav:w-4" />;
+  return <Icon className="h-5 w-5 nav:h-4 nav:w-4" />;
 }
 
 export function DashboardLogo({ onNavigate }: { onNavigate?: () => void }) {
