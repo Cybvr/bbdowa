@@ -1,42 +1,67 @@
 // Activity tracker.
 //
-// One document per logged activity in the `timeEntries` collection: the person
-// records what they did, which campaign it was for, and how long it took. Admins
-// can read everyone's; each person reads and writes only their own.
+// One document per activity in the `timeEntries` collection. A person starts an
+// activity (what they're doing + which campaign); it runs until they stop it,
+// and the app measures how long it took. Admins can read everyone's; each
+// person reads and writes only their own.
 
 export type ActivityEntry = {
   id: string;
   /** Firebase uid of the person the activity belongs to. */
   uid: string;
-  /** Display name captured when logged, for the admin view. */
+  /** Display name captured at start, for the admin view. */
   name: string | null;
-  /** Slug of the campaign this was for, or null. */
+  /** Slug of the campaign this is for, or null. */
   campaignSlug: string | null;
-  /** Campaign name captured when logged, for display. */
+  /** Campaign name captured at start, for display. */
   campaignName: string | null;
-  /** What the person did. */
+  /** What the person is doing. */
   activity: string;
-  /** How long it took, in minutes. */
-  durationMinutes: number;
-  /** ISO timestamp of when it was logged. */
-  loggedAt: string;
+  /** ISO timestamp when the activity was started. */
+  startedAt: string;
+  /** ISO timestamp when it was stopped, or null while running. */
+  endedAt: string | null;
 };
 
 export const ACTIVITY_COLLECTION = "timeEntries";
 
-/** Entries newest first, by logged time. */
-export function sortByLoggedAt(entries: ActivityEntry[]): ActivityEntry[] {
-  return [...entries].sort((a, b) => b.loggedAt.localeCompare(a.loggedAt));
+/** The person's currently running activity, if any. */
+export function runningEntry(entries: ActivityEntry[]): ActivityEntry | null {
+  return entries.find((entry) => entry.endedAt === null) ?? null;
 }
 
-/** "2h 30m" from a minute count. */
-export function formatDuration(minutes: number): string {
-  const safe = Math.max(0, Math.round(minutes));
-  const hours = Math.floor(safe / 60);
-  const mins = safe % 60;
-  if (hours === 0) return `${mins}m`;
-  if (mins === 0) return `${hours}h`;
-  return `${hours}h ${mins}m`;
+/** Entries newest first, by start time. */
+export function sortByStartedAt(entries: ActivityEntry[]): ActivityEntry[] {
+  return [...entries].sort((a, b) => b.startedAt.localeCompare(a.startedAt));
+}
+
+/** Milliseconds an activity took; a running one counts up to `now`. */
+export function elapsedMs(entry: ActivityEntry, now: number = Date.now()): number {
+  const start = Date.parse(entry.startedAt);
+  const end = entry.endedAt ? Date.parse(entry.endedAt) : now;
+  if (Number.isNaN(start) || Number.isNaN(end)) return 0;
+  return Math.max(0, end - start);
+}
+
+/** "2h 30m" / "45m" from a millisecond span. */
+export function formatDuration(ms: number): string {
+  const totalMinutes = Math.floor(ms / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours === 0) return `${minutes}m`;
+  if (minutes === 0) return `${hours}h`;
+  return `${hours}h ${minutes}m`;
+}
+
+/** "1:05:23" / "05:23" live clock from a millisecond span. */
+export function formatClock(ms: number): string {
+  const totalSeconds = Math.floor(ms / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const mm = String(minutes).padStart(2, "0");
+  const ss = String(seconds).padStart(2, "0");
+  return hours > 0 ? `${hours}:${mm}:${ss}` : `${mm}:${ss}`;
 }
 
 /**
