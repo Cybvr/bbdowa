@@ -75,6 +75,18 @@ export function formatClock(ms: number): string {
   return hours > 0 ? `${hours}:${mm}:${ss}` : `${mm}:${ss}`;
 }
 
+/** "01:05:23" full clock — always hours, minutes and seconds. */
+export function formatClockFull(ms: number): string {
+  const totalSeconds = Math.floor(ms / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const hh = String(hours).padStart(2, "0");
+  const mm = String(minutes).padStart(2, "0");
+  const ss = String(seconds).padStart(2, "0");
+  return `${hh}:${mm}:${ss}`;
+}
+
 /**
  * Parse a typed duration into minutes. Accepts "1h 30m", "1h", "30m", "1.5h",
  * or a plain number (treated as minutes). Returns null if nothing usable.
@@ -112,5 +124,6 @@ export function formatTimestamp(value: string): string {
     month: "short",
     hour: "2-digit",
     minute: "2-digit",
+    second: "2-digit",
   }).format(date);
 }
