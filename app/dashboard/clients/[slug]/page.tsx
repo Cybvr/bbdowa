@@ -11,10 +11,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { EmptyThumbnail, ImageWithFallback } from "@/components/empty-thumbnail";
-import { CAMPAIGNS } from "@/lib/campaigns";
-import type { Campaign, CampaignStatus } from "@/lib/campaigns";
-import { getClient, getClientWorkspace } from "@/lib/clients";
-import { CREATORS, getUser } from "@/lib/users";
+import { CAMPAIGNS, type Campaign, type CampaignStatus } from "@/lib/campaigns";
+import { CLIENTS, getClient, getClientWorkspace, type Client } from "@/lib/clients";
+import { USERS, type User } from "@/lib/users";
+import { readContentFromFirestore } from "@/lib/firebase/client-content";
 import { campaignWorkspaceStatuses } from "@/lib/client-data";
 import { fontOptions, ctaOptions } from "@/lib/campaign-options";
 import type {
@@ -32,8 +32,8 @@ function workspaceStatusFromCampaign(status: CampaignStatus): CampaignWorkspaceS
   return "Pitch";
 }
 
-function campaignImageFor(campaignId: string): string {
-  return CAMPAIGNS.find((campaign) => campaign.slug === campaignId)?.image ?? "/images/projects/project-placeholder.svg";
+function campaignImageFor(campaignId: string, campaigns: Campaign[]): string {
+  return campaigns.find((campaign) => campaign.slug === campaignId)?.image ?? "/images/projects/project-placeholder.svg";
 }
 
 type CaseStudyDraft = Pick<Campaign, "challenge" | "insight" | "strategy" | "execution" | "outcome"> & {
@@ -126,6 +126,20 @@ import {
 export default function ClientPage() {
   const { slug } = useParams<{ slug: string }>();
   const pathname = usePathname();
+  const [content, setContent] = useState<Awaited<ReturnType<typeof readContentFromFirestore>> | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    readContentFromFirestore()
+      .then((nextContent) => {
+        if (active) setContent(nextContent);
+      })
+      .catch((error) => console.error("Unable to load Firestore content", error));
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const initialView: OneUtilityWorkspaceView = pathname.endsWith("/campaigns")
     ? "campaign"
     : pathname.endsWith("/brand-dna")
@@ -140,7 +154,16 @@ export default function ClientPage() {
 
   // key={slug} forces a remount when navigating between clients so all
   // slug-derived initial state (preset, palette, copy) re-initialises.
-  return <OneUtilityClientWorkspace key={slug} slug={slug} initialView={initialView} />;
+  return (
+    <OneUtilityClientWorkspace
+      key={`${slug}-${content ? "firestore" : "local"}`}
+      slug={slug}
+      initialView={initialView}
+      clients={content?.clients.length ? content.clients : CLIENTS}
+      campaigns={content?.campaigns.length ? content.campaigns : CAMPAIGNS}
+      users={content?.users.length ? content.users : USERS}
+    />
+  );
 }
 
 function CopyField({
@@ -369,16 +392,22 @@ type OneUtilityWorkspaceView = "overview" | "campaign" | "brand" | "moodboard" |
 function OneUtilityClientWorkspace({
   slug,
   initialView = "overview",
+  clients,
+  campaigns: availableCampaigns,
+  users: availableUsers,
 }: {
   slug: string;
   initialView?: OneUtilityWorkspaceView;
+  clients: Client[];
+  campaigns: Campaign[];
+  users: User[];
 }) {
-  const client = getClient(slug);
+  const client = getClient(slug, clients);
   const clientName = client?.name ?? "Client";
-  const workspace = getClientWorkspace(slug, clientName);
+  const workspace = getClientWorkspace(slug, clientName, availableCampaigns);
   const preset = workspace.preset;
   const clientProfileImage = client?.profileImage ?? "/images/projects/project-placeholder.svg";
-  const initialClientCampaigns = CAMPAIGNS.filter((campaign) => campaign.clientId === slug);
+  const initialClientCampaigns = availableCampaigns.filter((campaign) => campaign.clientId === slug);
   const primaryCampaign = initialClientCampaigns[0];
   const [projectName, setProjectName] = useState(
     primaryCampaign?.campaign ?? primaryCampaign?.name ?? preset.name,
@@ -442,7 +471,7 @@ function OneUtilityClientWorkspace({
   // Campaign lead mirrors the lead recorded on the campaign itself, so the
   // workspace and the public campaign page always name the same person.
   const [campaignLead, setCampaignLead] = useState(
-    getUser(initialClientCampaigns[0]?.leadUserId ?? "")?.name ?? "",
+    availableUsers.find((user) => user.slug === initialClientCampaigns[0]?.leadUserId)?.name ?? "",
   );
   const [campaignStart, setCampaignStart] = useState("2026-08-01");
   const [campaignEnd, setCampaignEnd] = useState("2026-10-31");
@@ -472,9 +501,9 @@ function OneUtilityClientWorkspace({
     { name: "Amara Obi", initials: "AO", color: "#B45309" },
     { name: "Tunde Bello", initials: "TB", color: "#1D4ED8" },
   ];
-  const selectedCreators = workspace.creatorSlugs
-    .map((creatorSlug) => CREATORS.find((creator) => creator.slug === creatorSlug))
-    .filter((creator): creator is (typeof CREATORS)[number] => Boolean(creator));
+  const selectedCreators = availableUsers.filter(
+    (user) => user.role === "creator" && workspace.creatorSlugs.includes(user.slug),
+  );
 
   const nextCampaignNumberRef = useRef(2);
 
@@ -548,8 +577,8 @@ function OneUtilityClientWorkspace({
 
     setActiveCampaignId(selectedCampaign.id);
     setProjectName(selectedCampaign.title);
-    const realCampaign = CAMPAIGNS.find((campaign) => campaign.slug === selectedCampaign.id);
-    setCampaignLead(getUser(realCampaign?.leadUserId ?? "")?.name ?? "");
+    const realCampaign = availableCampaigns.find((campaign) => campaign.slug === selectedCampaign.id);
+    setCampaignLead(availableUsers.find((user) => user.slug === realCampaign?.leadUserId)?.name ?? "");
   };
 
   const handleOpenCampaign = (campaign: CampaignListItem) => {
@@ -881,7 +910,7 @@ function OneUtilityClientWorkspace({
                       >
                         <div className="relative w-full aspect-square overflow-hidden rounded-2xl border border-border bg-muted">
                           <ImageWithFallback
-                            src={campaignImageFor(campaign.id)}
+                            src={campaignImageFor(campaign.id, availableCampaigns)}
                             alt={campaign.title}
                             className="w-full h-full object-cover"
                             iconClassName="w-10 h-10"
@@ -1181,7 +1210,7 @@ function OneUtilityClientWorkspace({
                       className="h-full w-full object-cover"
                       muted
                       preload="metadata"
-                      poster={campaignImageFor(activeCampaignId)}
+                      poster={campaignImageFor(activeCampaignId, availableCampaigns)}
                       aria-label={`${clientName} campaign film`}
                     >
                       <source src={workspace.overviewVideo} type="video/mp4" />

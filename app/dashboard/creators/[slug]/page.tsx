@@ -4,7 +4,8 @@ import type { IconType } from "react-icons";
 import { FaBehance, FaGlobe } from "react-icons/fa";
 import { FiArrowUpRight } from "react-icons/fi";
 import { BackLink } from "@/components/back-link";
-import { CREATORS, getCreator, isCreatorNew, type Creator } from "@/lib/users";
+import { isCreatorNew, isCreatorUser, type Creator } from "@/lib/users";
+import { getUserBySlug } from "@/lib/firebase/content";
 import { longDate } from "@/lib/format";
 import { ImageWithFallback, MetaGrid, MetaItem, SectionHeading } from "@/components/dashboard/ui";
 import { SocialIcon, type SocialIconName } from "@/components/social-icon";
@@ -12,13 +13,9 @@ import { ShareCreatorDialog } from "@/components/share-creator-dialog";
 
 type Params = { params: Promise<{ slug: string }> };
 
-export function generateStaticParams() {
-  return CREATORS.map((creator) => ({ slug: creator.slug }));
-}
-
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
-  const creator = getCreator(slug);
+  const creator = await getUserBySlug(slug);
   if (!creator) return { title: "Not found" };
   return { title: `${creator.name} — Creator`, description: creator.craftNote };
 }
@@ -50,8 +47,8 @@ function ProfileMark({ creator, className }: { creator: Creator; className: stri
 
 export default async function CreatorDetailPage({ params }: Params) {
   const { slug } = await params;
-  const creator = getCreator(slug);
-  if (!creator) notFound();
+  const creator = await getUserBySlug(slug);
+  if (!creator || !isCreatorUser(creator)) notFound();
   const platforms = platformsFor(creator);
 
   return (

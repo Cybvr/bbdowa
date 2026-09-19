@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { CampaignsTable } from "@/components/campaigns-table";
-import { CAMPAIGNS } from "@/lib/campaigns";
+import { getCampaigns } from "@/lib/firebase/content";
 import { PageHeader } from "@/components/dashboard/ui";
 
 export const metadata: Metadata = {
@@ -8,11 +8,13 @@ export const metadata: Metadata = {
   description: "Browse live and completed BBDO West Africa campaigns.",
 };
 
-export default function CampaignsPage() {
+export default async function CampaignsPage() {
+  const campaigns = await getCampaigns();
+
   return (
     <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
       <PageHeader title="Campaigns" />
-      <CampaignsTable campaigns={CAMPAIGNS} />
+      <CampaignsTable campaigns={campaigns} />
     </main>
   );
 }

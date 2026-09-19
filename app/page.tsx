@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { CAMPAIGNS, sortCampaignsByLatestLive } from "@/lib/campaigns";
+import { sortCampaignsByLatestLive } from "@/lib/campaigns";
+import { getCampaigns } from "@/lib/firebase/content";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { ContactForm } from "./contact-form";
@@ -10,11 +11,12 @@ const RECORD = [
   { value: "30+", label: "People in Lagos" },
 ];
 
-const WORK = sortCampaignsByLatestLive(
-  CAMPAIGNS.filter((campaign) => campaign.status !== "pitch"),
-).slice(0, 8);
+export default async function MarketingHomePage() {
+  const campaigns = await getCampaigns();
+  const work = sortCampaignsByLatestLive(
+    campaigns.filter((campaign) => campaign.status !== "pitch"),
+  ).slice(0, 8);
 
-export default function MarketingHomePage() {
   return (
     <>
       <Header />
@@ -72,7 +74,7 @@ export default function MarketingHomePage() {
           className="scroll-mt-[68px] px-[clamp(16px,3vw,40px)] pb-[clamp(28px,4vw,48px)] pt-[clamp(36px,5vw,64px)]"
         >
           <div className="grid gap-[clamp(8px,1vw,16px)] sm:grid-cols-2 lg:grid-cols-3">
-            {WORK.map((project, index) => {
+            {work.map((project, index) => {
               const featured = index === 0;
               const hoverMedia = project.media.find(
                 (item) => item.kind === "image" && item.src !== project.image,

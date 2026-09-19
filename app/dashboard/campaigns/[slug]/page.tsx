@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { CAMPAIGNS, getCampaign } from "@/lib/campaigns";
-import { getUser, userHref } from "@/lib/users";
+import { getCampaignBySlug, getUserBySlug } from "@/lib/firebase/content";
+import { userHref } from "@/lib/users";
 import { BackLink } from "@/components/back-link";
 import { Badge, ImageWithFallback, MetaGrid, MetaItem, SectionHeading } from "@/components/dashboard/ui";
 import { ArrowUpRight } from "lucide-react";
@@ -9,13 +9,9 @@ import Link from "next/link";
 
 type Params = { params: Promise<{ slug: string }> };
 
-export function generateStaticParams() {
-  return CAMPAIGNS.map((campaign) => ({ slug: campaign.slug }));
-}
-
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
-  const campaign = getCampaign(slug);
+  const campaign = await getCampaignBySlug(slug);
   if (!campaign) return { title: "Campaign not found" };
   return { title: campaign.campaign ?? campaign.name, description: campaign.summary };
 }
@@ -25,11 +21,11 @@ const BODY = "m-0 max-w-[70ch] text-[15px] leading-[1.55]";
 
 export default async function CampaignDetailPage({ params }: Params) {
   const { slug } = await params;
-  const campaign = getCampaign(slug);
+  const campaign = await getCampaignBySlug(slug);
   if (!campaign) notFound();
 
   const provisional = campaign.placeholder ? "text-muted-foreground" : "";
-  const leadUser = campaign.leadUserId ? getUser(campaign.leadUserId) : undefined;
+  const leadUser = campaign.leadUserId ? await getUserBySlug(campaign.leadUserId) : undefined;
 
   return (
     <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">

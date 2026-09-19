@@ -2,20 +2,17 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BackLink } from "@/components/back-link";
-import { PRODUCTS, productHref } from "@/lib/products";
-import { CAMPAIGNS, campaignHref } from "@/lib/campaigns";
-import { TEAM, userInitials } from "@/lib/users";
+import { productHref } from "@/lib/products";
+import { campaignHref } from "@/lib/campaigns";
+import { userInitials } from "@/lib/users";
+import { getCampaigns, getProducts, getUserBySlug, getUsers } from "@/lib/firebase/content";
 import { ImageWithFallback, MetaGrid, MetaItem, SectionHeading } from "@/components/dashboard/ui";
 
 type Params = { params: Promise<{ slug: string }> };
 
-export function generateStaticParams() {
-  return TEAM.map((user) => ({ slug: user.slug }));
-}
-
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
-  const user = TEAM.find((member) => member.slug === slug);
+  const user = await getUserBySlug(slug);
   if (!user) return { title: "User not found" };
 
   return {
@@ -29,11 +26,12 @@ const WORK_LINK =
 
 export default async function UserDetailPage({ params }: Params) {
   const { slug } = await params;
-  const user = TEAM.find((member) => member.slug === slug);
+  const user = await getUserBySlug(slug);
   if (!user) notFound();
 
-  const campaigns = CAMPAIGNS.filter((campaign) => campaign.leadUserId === user.slug);
-  const products = PRODUCTS.filter((product) => product.owner?.name === user.name);
+  const [campaignsData, productsData] = await Promise.all([getCampaigns(), getProducts()]);
+  const campaigns = campaignsData.filter((campaign) => campaign.leadUserId === user.slug);
+  const products = productsData.filter((product) => product.owner?.name === user.name);
 
   return (
     <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">

@@ -1,19 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { BLOG_POSTS, getBlogPost } from "@/lib/blog";
+import { getBlogPostBySlug, getBlogPosts } from "@/lib/firebase/content";
 import { BackLink } from "@/components/back-link";
 import { Panel, SectionHeading } from "@/components/dashboard/ui";
 
 type Params = { params: Promise<{ slug: string }> };
 
-export function generateStaticParams() {
-  return BLOG_POSTS.map((post) => ({ slug: post.slug }));
-}
-
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
-  const post = getBlogPost(slug);
+  const post = await getBlogPostBySlug(slug);
   if (!post) return { title: "Blog entry not found" };
   return { title: post.title, description: post.excerpt };
 }
@@ -33,10 +29,10 @@ function formatBlogDate(value: string) {
 
 export default async function BlogEntryPage({ params }: Params) {
   const { slug } = await params;
-  const post = getBlogPost(slug);
+  const post = await getBlogPostBySlug(slug);
   if (!post) notFound();
 
-  const relatedPosts = BLOG_POSTS.filter((entry) => entry.slug !== post.slug).slice(0, 3);
+  const relatedPosts = (await getBlogPosts()).filter((entry) => entry.slug !== post.slug).slice(0, 3);
 
   return (
     <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">

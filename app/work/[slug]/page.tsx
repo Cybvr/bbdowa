@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
-import { getCampaign } from "@/lib/campaigns";
+import { getCampaignBySlug } from "@/lib/firebase/content";
 
 type WorkPageProps = {
   params: Promise<{ slug: string }>;
@@ -10,7 +10,7 @@ type WorkPageProps = {
 
 export default async function WorkPage({ params }: WorkPageProps) {
   const { slug } = await params;
-  const campaign = getCampaign(slug);
+  const campaign = await getCampaignBySlug(slug);
 
   if (!campaign || campaign.status === "pitch") {
     notFound();

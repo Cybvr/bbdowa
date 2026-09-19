@@ -2,24 +2,20 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BackLink } from "@/components/back-link";
-import { getJob, JOBS } from "@/lib/jobs";
+import { getJobBySlug } from "@/lib/firebase/content";
 import { Badge, SectionHeading } from "@/components/dashboard/ui";
 
 type Params = { params: Promise<{ slug: string }> };
 
-export function generateStaticParams() {
-  return JOBS.map((job) => ({ slug: job.slug }));
-}
-
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
-  const job = getJob(slug);
+  const job = await getJobBySlug(slug);
   return { title: job?.title ?? "Career role" };
 }
 
 export default async function CareerDetailPage({ params }: Params) {
   const { slug } = await params;
-  const job = getJob(slug);
+  const job = await getJobBySlug(slug);
   if (!job) notFound();
 
   const isOpen = job.status === "open";

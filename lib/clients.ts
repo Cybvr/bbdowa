@@ -137,13 +137,13 @@ const CLIENT_RECORDS: Client[] = [
 
 export const CLIENTS: Client[] = [...CLIENT_RECORDS].sort((a, b) => a.name.localeCompare(b.name));
 
-export function getClient(slug: string): Client | undefined {
-  return CLIENTS.find((client) => client.slug === slug);
+export function getClient(slug: string, clients: Client[] = CLIENTS): Client | undefined {
+  return clients.find((client) => client.slug === slug);
 }
 
 /** The campaigns that belong to this client. */
-export function getClientCampaigns(slug: string): Campaign[] {
-  return CAMPAIGNS.filter((project) => project.clientId === slug);
+export function getClientCampaigns(slug: string, campaigns: Campaign[] = CAMPAIGNS): Campaign[] {
+  return campaigns.filter((project) => project.clientId === slug);
 }
 
 /**
@@ -151,8 +151,12 @@ export function getClientCampaigns(slug: string): Campaign[] {
  * directly on the client's project; clients/campaigns without curated content
  * get a blank template so nothing leaks in from another client.
  */
-export function getClientWorkspace(clientSlug: string, clientName?: string): ClientWorkspace {
-  const campaigns = getClientCampaigns(clientSlug);
+export function getClientWorkspace(
+  clientSlug: string,
+  clientName?: string,
+  campaignsSource: Campaign[] = CAMPAIGNS,
+): ClientWorkspace {
+  const campaigns = getClientCampaigns(clientSlug, campaignsSource);
   const project = campaigns.find((item) => item.hasContent) ?? campaigns[0];
   const name = clientName ?? getClient(clientSlug)?.name ?? clientSlug;
   const website = project?.externalLinks?.find((link) => link.label === "Website")?.href ?? "";

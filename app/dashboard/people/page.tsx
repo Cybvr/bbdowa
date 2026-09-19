@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getUserByName, userHref } from "@/lib/users";
+import { userHref } from "@/lib/users";
+import { getUserByName, getUsers } from "@/lib/firebase/content";
 import { ImageWithFallback, PageHeader, SectionHeading } from "@/components/dashboard/ui";
 
 export const metadata: Metadata = { title: "Directory" };
@@ -110,8 +111,8 @@ const CAPABILITIES = [
   },
 ];
 
-function Person({ name, onDark = false }: { name: string; onDark?: boolean }) {
-  const user = getUserByName(name);
+async function Person({ name, onDark = false }: { name: string; onDark?: boolean }) {
+  const user = await getUserByName(name);
   const className = `mt-1.5 flex items-center gap-2 text-[12px] no-underline ${
     onDark
       ? "justify-center text-[13px] text-background/80 hover:text-background"
@@ -140,7 +141,7 @@ function Person({ name, onDark = false }: { name: string; onDark?: boolean }) {
   );
 }
 
-export default function PeoplePage() {
+export default async function PeoplePage() {
   return (
     <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
       <PageHeader title="Directory" meta="Operating model" />

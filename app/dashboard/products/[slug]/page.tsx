@@ -2,20 +2,17 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BackLink } from "@/components/back-link";
-import { PRODUCTS, getProduct, productDate, productHref } from "@/lib/products";
+import { productDate, productHref } from "@/lib/products";
+import { getProductBySlug, getUsers } from "@/lib/firebase/content";
 import { longDate } from "@/lib/format";
-import { getUserByName, userHref } from "@/lib/users";
+import { userHref } from "@/lib/users";
 import { Badge, ImageWithFallback, MetaGrid, MetaItem, SectionHeading } from "@/components/dashboard/ui";
 
 type Params = { params: Promise<{ slug: string }> };
 
-export function generateStaticParams() {
-  return PRODUCTS.map((product) => ({ slug: product.slug }));
-}
-
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
-  const product = getProduct(slug);
+  const product = await getProductBySlug(slug);
   if (!product) return { title: "Product not found" };
   return { title: product.name, description: product.description };
 }
@@ -25,11 +22,12 @@ const BRIEF_ITEM =
 
 export default async function ProductDetailPage({ params }: Params) {
   const { slug } = await params;
-  const product = getProduct(slug);
+  const product = await getProductBySlug(slug);
   if (!product) notFound();
 
   const date = productDate(product);
-  const ownerUser = product.owner ? getUserByName(product.owner.name) : undefined;
+  const users = product.owner ? await getUsers() : [];
+  const ownerUser = product.owner ? users.find((user) => user.name === product.owner?.name) : undefined;
 
   return (
     <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
