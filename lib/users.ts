@@ -1,4 +1,5 @@
-export type UserRole = "admin" | "editor" | "staff" | "viewer";
+// Every user is exactly one of these.
+export type UserRole = "admin" | "manager" | "creator";
 
 export type CreatorAvailability = "open" | "busy" | "unconfirmed";
 
@@ -13,20 +14,18 @@ export type CreatorWorkHistory = {
   location?: string;
 };
 
-// One flat user shape. Every user has the same fields. `staff` marks agency
-// staff (team); everyone else is a creator. Fields that don't apply to a given
-// person are just empty/null. Records below author only what they need; the
-// rest is filled from USER_DEFAULTS.
+// One flat user shape. Every user has the same fields, and `role` says who they
+// are: admin, manager or creator. Fields that don't apply to a given person are
+// just empty/null. Records below author only what they need; the rest is filled
+// from USER_DEFAULTS.
 export type User = {
   slug: string;
   name: string;
-  /** true = agency staff (team); false = external creator. */
-  staff: boolean;
-  /** Staff role/permission. */
+  /** admin | manager | creator. */
   role: UserRole;
-  /** Staff job title. */
+  /** Job title (agency staff). */
   title: string;
-  /** Staff department. */
+  /** Department (agency staff). */
   department: string;
   category: CreatorCategory;
   tags: string[];
@@ -82,12 +81,13 @@ export type User = {
 export type TeamUser = User;
 export type Creator = User;
 
+/** Agency staff = admin or manager (i.e. not a creator). */
 export function isTeamUser(user: User): boolean {
-  return user.staff;
+  return user.role !== "creator";
 }
 
 export function isCreatorUser(user: User): boolean {
-  return !user.staff;
+  return user.role === "creator";
 }
 
 /** A user record as authored below: the essentials plus any subset of fields. */
@@ -95,8 +95,7 @@ type UserRecord = Partial<User> & { slug: string; name: string };
 
 /** Fills in every field a record omits, so all users share one shape. */
 const USER_DEFAULTS: Omit<User, "slug" | "name"> = {
-  staff: false,
-  role: "viewer",
+  role: "creator",
   title: "",
   department: "",
   category: "Content",
@@ -207,8 +206,7 @@ const TEAM_RECORDS: UserRecord[] = [
 
 export const TEAM: User[] = TEAM_RECORDS.map((member) => ({
   ...USER_DEFAULTS,
-  staff: true,
-  role: "staff",
+  role: "manager",
   ...member,
 }));
 
@@ -1247,7 +1245,7 @@ const CREATOR_RECORDS: UserRecord[] = [
 
 export const CREATORS: User[] = CREATOR_RECORDS.map((creator) => ({
   ...USER_DEFAULTS,
-  staff: false,
+  role: "creator",
   ...creator,
 }));
 
@@ -1300,9 +1298,9 @@ export function getUserByName(name: string): User | undefined {
 }
 
 export function userHref(user: User): string {
-  return user.staff
-    ? `/dashboard/people/${user.slug}`
-    : `/dashboard/creators/${user.slug}`;
+  return user.role === "creator"
+    ? `/dashboard/creators/${user.slug}`
+    : `/dashboard/people/${user.slug}`;
 }
 
 export function userInitials(user: User): string {
