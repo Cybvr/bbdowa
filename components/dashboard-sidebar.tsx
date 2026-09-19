@@ -3,12 +3,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LuChevronDown, LuChevronLeft, LuChevronRight, LuMenu } from "react-icons/lu";
+import { collection, doc, onSnapshot, query, updateDoc, where } from "firebase/firestore";
+import { LuChevronDown, LuChevronLeft, LuChevronRight, LuMenu, LuPause, LuPlay, LuSquare } from "react-icons/lu";
 import { NAV_ITEMS } from "@/lib/nav";
 import { NAV_ICON_SET } from "@/components/nav-icons";
 import { ProfileNav } from "@/components/profile-nav";
 import { useOptionalAuth } from "@/components/auth-provider";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { firebaseDb } from "@/lib/firebase/client";
+import { ACTIVITY_COLLECTION, elapsedMs, formatClock, isPaused, runningEntry, type ActivityEntry } from "@/lib/time-tracking";
 
 const NAV_TEXT =
   "flex min-h-12 w-full items-center gap-3 rounded-lg px-3 py-2.5 font-mono text-sm font-medium leading-none text-foreground no-underline transition-colors hover:bg-foreground/10 hover:text-foreground focus-visible:bg-foreground/10 focus-visible:text-foreground focus-visible:outline-none nav:min-h-9 nav:gap-2 nav:px-2 nav:py-1.5 nav:text-xs";
@@ -49,7 +52,73 @@ export function DashboardNavList({ onNavigate, collapsed = false }: { onNavigate
   const pathname = usePathname();
   const auth = useOptionalAuth();
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [running, setRunning] = useState<ActivityEntry | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+  const [trackerBusy, setTrackerBusy] = useState(false);
   const visibleItems = NAV_ITEMS.filter((item) => !item.requiresAuth || Boolean(auth?.user));
+
+  useEffect(() => {
+    const uid = auth?.user?.uid;
+    if (!uid) {
+      setRunning(null);
+      return;
+    }
+
+    return onSnapshot(
+      query(collection(firebaseDb, ACTIVITY_COLLECTION), where("uid", "==", uid)),
+      (snapshot) => {
+        const entries = snapshot.docs.map((document) => ({
+          id: document.id,
+          ...(document.data() as Omit<ActivityEntry, "id">),
+        }));
+        setRunning(runningEntry(entries));
+      },
+      (error) => console.error("Unable to load tracker status", error),
+    );
+  }, [auth?.user?.uid]);
+
+  useEffect(() => {
+    if (!running || isPaused(running)) return;
+    const interval = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(interval);
+  }, [running]);
+
+  const togglePause = async () => {
+    const uid = auth?.user?.uid;
+    if (!uid || !running || trackerBusy) return;
+    setTrackerBusy(true);
+    try {
+      if (isPaused(running) && running.pausedAt) {
+        const pausedMs = (running.pausedMs ?? 0) + Math.max(0, Date.now() - Date.parse(running.pausedAt));
+        await updateDoc(doc(firebaseDb, ACTIVITY_COLLECTION, running.id), { pausedAt: null, pausedMs });
+      } else {
+        await updateDoc(doc(firebaseDb, ACTIVITY_COLLECTION, running.id), { pausedAt: new Date().toISOString() });
+      }
+    } catch (error) {
+      console.error("Unable to update tracker status", error);
+    } finally {
+      setTrackerBusy(false);
+    }
+  };
+
+  const stopRunning = async () => {
+    const uid = auth?.user?.uid;
+    if (!uid || !running || trackerBusy) return;
+    setTrackerBusy(true);
+    try {
+      const endedAt = new Date();
+      const pausedMs = (running.pausedMs ?? 0) + (running.pausedAt ? Math.max(0, endedAt.getTime() - Date.parse(running.pausedAt)) : 0);
+      await updateDoc(doc(firebaseDb, ACTIVITY_COLLECTION, running.id), {
+        endedAt: endedAt.toISOString(),
+        pausedAt: null,
+        pausedMs,
+      });
+    } catch (error) {
+      console.error("Unable to stop tracker", error);
+    } finally {
+      setTrackerBusy(false);
+    }
+  };
 
   useEffect(() => {
     const activeMenu = NAV_ITEMS.find(
@@ -70,6 +139,27 @@ export function DashboardNavList({ onNavigate, collapsed = false }: { onNavigate
           const current =
             pathname === item.href ||
             (item.href !== "/dashboard" && pathname.startsWith(`${item.href}/`));
+
+          if (item.label === "Tracker" && !collapsed && running) {
+            return (
+              <li key={item.label} className="w-full">
+                <div className={`${NAV_TEXT} ${current ? NAV_ACTIVE : ""}`}>
+                  <Link href={item.href} aria-current={current ? "page" : undefined} onClick={onNavigate} className="flex min-w-0 flex-1 items-center gap-3 no-underline nav:gap-2">
+                    <NavIcon label={item.label} />
+                    <span className="overflow-hidden whitespace-nowrap text-xs">{sentenceCase(item.label)}</span>
+                  </Link>
+                  <span className="font-mono text-[11px] font-semibold tabular-nums text-primary">{formatClock(elapsedMs(running, now))}</span>
+                  <button type="button" aria-label={isPaused(running) ? "Resume timer" : "Pause timer"} title={isPaused(running) ? "Resume timer" : "Pause timer"} onClick={() => void togglePause()} disabled={trackerBusy} className="grid h-6 w-6 shrink-0 cursor-pointer place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-wait disabled:opacity-50">
+                    {isPaused(running) ? <LuPlay aria-hidden="true" className="h-3.5 w-3.5" /> : <LuPause aria-hidden="true" className="h-3.5 w-3.5" />}
+                  </button>
+                  <button type="button" aria-label="Stop timer" title="Stop timer" onClick={() => void stopRunning()} disabled={trackerBusy} className="grid h-6 w-6 shrink-0 cursor-pointer place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-wait disabled:opacity-50">
+                    <LuSquare aria-hidden="true" className="h-3 w-3" />
+                  </button>
+                </div>
+              </li>
+            );
+          }
+
           return (
             <li key={item.label} className="w-full">
               <Link
@@ -83,6 +173,11 @@ export function DashboardNavList({ onNavigate, collapsed = false }: { onNavigate
                 <span className={`${NAV_LABEL} ${collapsed ? "max-w-0 opacity-0" : "max-w-[140px] opacity-100"}`}>
                   {sentenceCase(item.label)}
                 </span>
+                {item.label === "Tracker" && !collapsed && running ? (
+                  <span className="ml-auto font-mono text-[11px] font-semibold tabular-nums text-primary">
+                    {formatClock(elapsedMs(running, now))}
+                  </span>
+                ) : null}
               </Link>
             </li>
           );

@@ -1,8 +1,17 @@
 "use client";
 
-import Link from "next/link";
+import { useState } from "react";
 import { DashboardLogo, DashboardSidebarContent, DashboardSidebarSheet } from "@/components/dashboard-sidebar";
 import { TrackerIcon } from "@/components/nav-icons";
+import { TimeTracker } from "@/components/time-tracker";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 export function DashboardHeader({
   hideMobile = false,
@@ -13,6 +22,8 @@ export function DashboardHeader({
   sidebarCollapsed?: boolean;
   onToggleSidebar?: () => void;
 }) {
+  const [trackerOpen, setTrackerOpen] = useState(false);
+
   return (
     <>
       {/* Desktop sidebar */}
@@ -33,13 +44,24 @@ export function DashboardHeader({
       >
         <DashboardLogo />
         <div className="flex items-center gap-1">
-          <Link
-            href="/dashboard/time"
-            aria-label="Tracker"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-foreground transition hover:bg-muted focus-visible:outline-none"
-          >
-            <TrackerIcon className="h-5 w-5" />
-          </Link>
+          <Dialog open={trackerOpen} onOpenChange={setTrackerOpen}>
+            <DialogTrigger asChild>
+              <button
+                type="button"
+                aria-label="Open tracker"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-foreground transition hover:bg-muted focus-visible:outline-none"
+              >
+                <TrackerIcon className="h-5 w-5" />
+              </button>
+            </DialogTrigger>
+            <DialogContent className="max-h-[calc(100dvh-2rem)] max-w-xl overflow-x-hidden overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Tracker</DialogTitle>
+                <DialogDescription>Start a timer or log time from your phone.</DialogDescription>
+              </DialogHeader>
+              <TimeTracker compact />
+            </DialogContent>
+          </Dialog>
           <DashboardSidebarSheet />
         </div>
       </div>

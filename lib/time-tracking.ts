@@ -21,6 +21,10 @@ export type ActivityEntry = {
   startedAt: string;
   /** ISO timestamp when it was stopped, or null while running. */
   endedAt: string | null;
+  /** ISO timestamp when the activity was paused, or null while active. */
+  pausedAt?: string | null;
+  /** Total milliseconds spent paused before the current pause, if any. */
+  pausedMs?: number;
 };
 
 export const ACTIVITY_COLLECTION = "timeEntries";
@@ -40,7 +44,14 @@ export function elapsedMs(entry: ActivityEntry, now: number = Date.now()): numbe
   const start = Date.parse(entry.startedAt);
   const end = entry.endedAt ? Date.parse(entry.endedAt) : now;
   if (Number.isNaN(start) || Number.isNaN(end)) return 0;
-  return Math.max(0, end - start);
+  const pausedBeforeCurrent = entry.pausedMs ?? 0;
+  const pauseStart = entry.pausedAt ? Date.parse(entry.pausedAt) : Number.NaN;
+  const currentPause = Number.isNaN(pauseStart) ? 0 : Math.max(0, end - pauseStart);
+  return Math.max(0, end - start - pausedBeforeCurrent - currentPause);
+}
+
+export function isPaused(entry: ActivityEntry): boolean {
+  return Boolean(entry.pausedAt) && !entry.endedAt;
 }
 
 /** "2h 30m" / "45m" from a millisecond span. */
@@ -71,6 +82,12 @@ export function formatClock(ms: number): string {
 export function parseDurationToMinutes(input: string): number | null {
   const value = input.trim().toLowerCase();
   if (!value) return null;
+
+  const clock = value.match(/^(\d{1,2}):([0-5]\d)$/);
+  if (clock) {
+    const total = Number(clock[1]) * 60 + Number(clock[2]);
+    return total > 0 ? total : null;
+  }
 
   const hm = value.match(/^(?:(\d+(?:\.\d+)?)\s*h)?\s*(?:(\d+)\s*m)?$/);
   if (hm && (hm[1] || hm[2])) {
