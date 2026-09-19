@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { QuickCreate } from "@/components/quick-create";
 
 /**
  * Shared Operate-mode primitives for the dashboard.
@@ -37,6 +38,7 @@ export function PageHeader({
           <span className="text-[13px] font-medium text-muted-foreground">{meta}</span>
         ) : null}
         {actions}
+        <QuickCreate />
       </div>
     </div>
   );
