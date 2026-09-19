@@ -224,6 +224,8 @@ type FilterControlsProps = {
   selectedTags: string[];
   setSelectedTags: (value: string[]) => void;
   locations: string[];
+  sort: AddedSort;
+  setSort: (value: AddedSort) => void;
   activeFilterCount: number;
   onClear: () => void;
 };
@@ -289,11 +291,26 @@ function FilterControls({
   selectedTags,
   setSelectedTags,
   locations,
+  sort,
+  setSort,
   activeFilterCount,
   onClear,
 }: FilterControlsProps) {
   return (
     <div className="flex flex-col gap-2">
+      <label className="flex flex-col gap-1.5 border-b border-border pb-2.5 sm:hidden">
+        <span className="text-[13px] font-medium text-foreground">Sort by</span>
+        <select
+          value={sort}
+          onChange={(event) => setSort(event.target.value as AddedSort)}
+          aria-label="Sort creators"
+          className="h-10 w-full cursor-pointer appearance-none rounded-lg border border-border bg-background px-3 text-[13px] font-medium text-foreground focus-visible:border-primary focus-visible:outline-none"
+        >
+          <option value="popular">Popular</option>
+          <option value="newest">Newest first</option>
+          <option value="oldest">Oldest first</option>
+        </select>
+      </label>
       <FilterAccordion label="Location" value={location === "all" ? "All" : location}>
         <FilterOption selected={location === "all"} onClick={() => setLocation("all")}>
           All locations
@@ -526,7 +543,9 @@ function CreatorDiscoveryBar({
             })}
           </div>
         </div>
-        <SortSelect sort={sort} setSort={setSort} />
+        <div className="hidden sm:flex">
+          <SortSelect sort={sort} setSort={setSort} />
+        </div>
       </div>
     </div>
   );
@@ -1517,6 +1536,8 @@ export function CreatorDirectory({
               selectedTags={selectedTags}
               setSelectedTags={updateTags}
               locations={locations}
+              sort={sort}
+              setSort={updateSort}
               activeFilterCount={activeFilterCount}
               onClear={clearFilters}
             />
