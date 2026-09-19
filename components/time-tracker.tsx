@@ -61,6 +61,7 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
   const [busy, setBusy] = React.useState(false);
   const [now, setNow] = React.useState(() => Date.now());
 
+  const [mode, setMode] = React.useState<"timer" | "manual">("timer");
   const [activity, setActivity] = React.useState("");
   const [campaignSlug, setCampaignSlug] = React.useState<string>(NO_CAMPAIGN);
   const [entryDate, setEntryDate] = React.useState(() => localDateValue());
@@ -332,28 +333,35 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
         <p className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-[13px] text-primary">{error}</p>
       ) : null}
 
-      <div className="max-w-4xl border-b border-border pb-8">
+      <div className="mx-auto w-full max-w-md border-b border-border pb-10">
         {running ? (
-          <div className="flex flex-col items-start gap-5 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">{isPaused(running) ? "Paused" : "Now tracking"}</span>
-              <p className="m-0 mt-1 truncate text-[20px] font-bold leading-tight">{running.activity}</p>
+          <div className="flex flex-col items-center gap-7 py-4 text-center">
+            <span
+              className={`inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.1em] ${isPaused(running) ? "text-muted-foreground" : "text-primary"}`}
+            >
+              <span className={`h-2 w-2 rounded-full ${isPaused(running) ? "bg-muted-foreground/50" : "animate-pulse bg-primary"}`} />
+              {isPaused(running) ? "Paused" : "Now tracking"}
+            </span>
+            <p className="m-0 font-mono text-[56px] font-bold leading-none tabular-nums sm:text-[68px]">
+              {formatClockFull(elapsedMs(running, now))}
+            </p>
+            <div className="min-w-0 px-2">
+              <p className="m-0 truncate text-[18px] font-bold leading-tight">{running.activity}</p>
               <p className="mb-0 mt-1 text-[13px] text-muted-foreground">
                 {running.campaignName ? `${running.campaignName} · ` : ""}
                 Started {formatTimestamp(running.startedAt)}
               </p>
             </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <span className="font-mono text-[22px] font-bold tabular-nums">{formatClockFull(elapsedMs(running, now))}</span>
+            <div className="flex items-center gap-5">
               <button
                 type="button"
                 aria-label={isPaused(running) ? "Resume timer" : "Pause timer"}
                 title={isPaused(running) ? "Resume timer" : "Pause timer"}
                 onClick={() => void (isPaused(running) ? resumeActivity() : pauseActivity())}
                 disabled={busy}
-                className="grid h-11 w-11 place-items-center rounded-lg border border-border bg-background text-foreground transition hover:border-foreground disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                className="grid h-16 w-16 place-items-center rounded-full border border-border bg-background text-foreground transition hover:border-foreground active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               >
-                {isPaused(running) ? <LuPlay aria-hidden="true" className="h-5 w-5" /> : <LuPause aria-hidden="true" className="h-5 w-5" />}
+                {isPaused(running) ? <LuPlay aria-hidden="true" className="h-6 w-6" /> : <LuPause aria-hidden="true" className="h-6 w-6" />}
               </button>
               <button
                 type="button"
@@ -361,23 +369,53 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
                 title="Stop timer"
                 onClick={stopActivity}
                 disabled={busy}
-                className="grid h-11 w-11 place-items-center rounded-lg bg-primary text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                className="grid h-16 w-16 place-items-center rounded-full bg-primary text-primary-foreground shadow-sm transition hover:bg-primary/90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               >
-                <LuSquare aria-hidden="true" className="h-5 w-5" />
+                <LuSquare aria-hidden="true" className="h-6 w-6" />
               </button>
             </div>
           </div>
         ) : (
-          <form onSubmit={(event) => { event.preventDefault(); void startActivity(); }} className="space-y-4">
-            <div className="space-y-1.5">
-              <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Activity</span>
-              <Input value={activity} onChange={(event) => setActivity(event.target.value)} disabled={busy} placeholder="What are you working on?" />
+          <div>
+            <div className="grid grid-cols-2 gap-1 rounded-full border border-border bg-muted/40 p-1 text-[13px] font-semibold">
+              <button
+                type="button"
+                onClick={() => setMode("timer")}
+                className={`rounded-full py-2 transition ${mode === "timer" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                Timer
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode("manual")}
+                className={`rounded-full py-2 transition ${mode === "manual" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                Manual
+              </button>
             </div>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="space-y-1.5">
-                <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Campaign</span>
+
+            {mode === "timer" ? (
+              <form onSubmit={(event) => { event.preventDefault(); void startActivity(); }} className="mt-6 space-y-3">
+                <div className="flex items-center gap-3">
+                  <Input
+                    value={activity}
+                    onChange={(event) => setActivity(event.target.value)}
+                    disabled={busy}
+                    placeholder="What are you working on?"
+                    className="h-14 flex-1 rounded-xl text-[15px]"
+                  />
+                  <button
+                    type="submit"
+                    aria-label="Start timer"
+                    title="Start timer"
+                    disabled={busy || !canStart}
+                    className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground shadow-sm transition hover:bg-primary/90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                  >
+                    <LuPlay aria-hidden="true" className="h-6 w-6" />
+                  </button>
+                </div>
                 <Select value={campaignSlug} onValueChange={setCampaignSlug}>
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="h-12 w-full rounded-xl">
                     <SelectValue placeholder="Select a campaign" />
                   </SelectTrigger>
                   <SelectContent>
@@ -387,41 +425,52 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-              <div className="space-y-1.5">
-                <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Date</span>
-                <Input type="date" value={entryDate} onChange={(event) => setEntryDate(event.target.value)} disabled={busy} />
-              </div>
-              <div className="space-y-1.5">
-                <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Start time</span>
-                <Input type="time" step={60} value={entryTime} onChange={(event) => setEntryTime(event.target.value)} disabled={busy} />
-              </div>
-              <div className="space-y-1.5">
-                <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Time spent</span>
-                <Input type="time" step={60} value={duration} onChange={(event) => setDuration(event.target.value)} disabled={busy} aria-describedby="time-entry-help" />
-              </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="submit"
-                aria-label="Start timer"
-                title="Start timer"
-                disabled={busy || !canStart}
-                className="grid h-11 w-11 place-items-center rounded-lg bg-primary text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-              >
-                <LuPlay aria-hidden="true" className="h-5 w-5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => void logActivity()}
-                disabled={busy || !canLog}
-                className="inline-flex h-11 items-center justify-center rounded-lg border border-border bg-background px-6 text-[14px] font-semibold text-foreground transition hover:border-foreground disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-              >
-                Log time
-              </button>
-            </div>
-            <p id="time-entry-help" className="m-0 text-[12px] text-muted-foreground">Start the timer for now, or choose a date, start time and duration to log past work.</p>
-          </form>
+                <p className="m-0 pt-1 text-center text-[12px] text-muted-foreground">Pick a campaign, then hit play to start the clock.</p>
+              </form>
+            ) : (
+              <form onSubmit={(event) => { event.preventDefault(); void logActivity(); }} className="mt-6 space-y-3">
+                <Input
+                  value={activity}
+                  onChange={(event) => setActivity(event.target.value)}
+                  disabled={busy}
+                  placeholder="What did you work on?"
+                  className="h-12 rounded-xl text-[15px]"
+                />
+                <Select value={campaignSlug} onValueChange={setCampaignSlug}>
+                  <SelectTrigger className="h-12 w-full rounded-xl">
+                    <SelectValue placeholder="Select a campaign" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NO_CAMPAIGN}>No campaign</SelectItem>
+                    {campaigns.map((option) => (
+                      <SelectItem key={option.slug} value={option.slug}>{option.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Date</span>
+                    <Input type="date" value={entryDate} onChange={(event) => setEntryDate(event.target.value)} disabled={busy} className="h-12 rounded-xl" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Start time</span>
+                    <Input type="time" step={60} value={entryTime} onChange={(event) => setEntryTime(event.target.value)} disabled={busy} className="h-12 rounded-xl" />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Time spent</span>
+                  <Input type="time" step={60} value={duration} onChange={(event) => setDuration(event.target.value)} disabled={busy} className="h-12 rounded-xl" />
+                </div>
+                <button
+                  type="submit"
+                  disabled={busy || !canLog}
+                  className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-primary px-6 text-[15px] font-semibold text-primary-foreground transition hover:bg-primary/90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                >
+                  Log time
+                </button>
+              </form>
+            )}
+          </div>
         )}
       </div>
 
