@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import type { Organization } from "@/lib/organizations";
+import type { Client } from "@/lib/clients";
 import { longDate, plural } from "@/lib/format";
 import { Badge, EmptyState, ImageWithFallback } from "@/components/dashboard/ui";
 import { FilterBar, type SortOption } from "@/components/dashboard/filter-bar";
@@ -15,7 +15,7 @@ const SORTS: SortOption<"name" | "date" | "industry">[] = [
 
 type SortKey = (typeof SORTS)[number]["key"];
 
-export function ClientsDirectory({ clients }: { clients: Organization[] }) {
+export function ClientsDirectory({ clients }: { clients: Client[] }) {
   const [industry, setIndustry] = useState("all");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortKey>("name");

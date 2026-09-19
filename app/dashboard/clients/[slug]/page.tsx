@@ -13,7 +13,7 @@ import {
 import { EmptyThumbnail, ImageWithFallback } from "@/components/empty-thumbnail";
 import { CAMPAIGNS } from "@/lib/campaigns";
 import type { Campaign, CampaignStatus } from "@/lib/campaigns";
-import { getOrganization, getClientWorkspace } from "@/lib/organizations";
+import { getClient, getClientWorkspace } from "@/lib/clients";
 import { CREATORS, getUser } from "@/lib/users";
 import { campaignWorkspaceStatuses } from "@/lib/client-data";
 import { fontOptions, ctaOptions } from "@/lib/campaign-options";
@@ -373,12 +373,12 @@ function OneUtilityClientWorkspace({
   slug: string;
   initialView?: OneUtilityWorkspaceView;
 }) {
-  const client = getOrganization(slug);
+  const client = getClient(slug);
   const clientName = client?.name ?? "Client";
   const workspace = getClientWorkspace(slug, clientName);
   const preset = workspace.preset;
   const clientProfileImage = client?.profileImage ?? "/images/projects/project-placeholder.svg";
-  const initialClientCampaigns = CAMPAIGNS.filter((campaign) => campaign.organizationId === slug);
+  const initialClientCampaigns = CAMPAIGNS.filter((campaign) => campaign.clientId === slug);
   const primaryCampaign = initialClientCampaigns[0];
   const [projectName, setProjectName] = useState(
     primaryCampaign?.campaign ?? primaryCampaign?.name ?? preset.name,

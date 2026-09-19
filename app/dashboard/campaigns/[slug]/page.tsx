@@ -115,12 +115,12 @@ export default async function CampaignDetailPage({ params }: Params) {
 
       <section className="mt-10" aria-label="Campaign information">
         <MetaGrid>
-          <MetaItem label="Organization">
+          <MetaItem label="Client">
             <Link
-              href={`/dashboard/clients/${campaign.organizationId}/overview`}
+              href={`/dashboard/clients/${campaign.clientId}/overview`}
               className="text-foreground underline decoration-border underline-offset-4 hover:text-primary focus-visible:text-primary"
             >
-              {campaign.organizationName}
+              {campaign.clientName}
             </Link>
           </MetaItem>
           <MetaItem label="Category">{campaign.category}</MetaItem>

@@ -16,10 +16,10 @@ const STATUS_TABS: FilterTab<"all" | "live" | "completed">[] = [
 
 type StatusKey = (typeof STATUS_TABS)[number]["key"];
 
-const SORTS: SortOption<"recent" | "name" | "organization">[] = [
+const SORTS: SortOption<"recent" | "name" | "client">[] = [
   { key: "recent", label: "Most recent" },
   { key: "name", label: "Name (A–Z)" },
-  { key: "organization", label: "Organization (A–Z)" },
+  { key: "client", label: "Client (A–Z)" },
 ];
 
 type SortKey = (typeof SORTS)[number]["key"];
@@ -52,7 +52,7 @@ export function CampaignsTable({ campaigns }: { campaigns: Campaign[] }) {
       const matchesCategory = category === "all" || campaign.category === category;
       const matchesSearch =
         !query ||
-        [campaign.campaign, campaign.name, campaign.organizationName, campaign.category, campaign.leadUserId]
+        [campaign.campaign, campaign.name, campaign.clientName, campaign.category, campaign.leadUserId]
           .join(" ")
           .toLowerCase()
           .includes(query);
@@ -61,7 +61,7 @@ export function CampaignsTable({ campaigns }: { campaigns: Campaign[] }) {
 
     return [...filtered].sort((a, b) => {
       if (sort === "name") return a.name.localeCompare(b.name);
-      if (sort === "organization") return a.organizationName.localeCompare(b.organizationName);
+      if (sort === "client") return a.clientName.localeCompare(b.clientName);
       return liveTime(b) - liveTime(a);
     });
   }, [campaigns, status, category, search, sort]);
@@ -107,7 +107,7 @@ export function CampaignsTable({ campaigns }: { campaigns: Campaign[] }) {
                       <span className="block text-[16px] font-semibold leading-tight group-hover:text-primary">
                         {campaign.campaign ?? campaign.name}
                       </span>
-                      <span className="block text-[13px] text-muted-foreground">{campaign.organizationName}</span>
+                      <span className="block text-[13px] text-muted-foreground">{campaign.clientName}</span>
                     </div>
                     <span className="text-[12px] text-muted-foreground">{campaignLiveDateLabel(campaign)}</span>
                   </div>

@@ -23,7 +23,7 @@ export type ProfileNavProps = {
   initials?: string;
   name?: string;
   email?: string;
-  organization?: string;
+  agency?: string;
   items?: readonly ProfileNavItem[];
   logoutLabel?: string;
   onLogout?: () => void;
@@ -66,7 +66,7 @@ export function ProfileNav({
   initials,
   name,
   email,
-  organization = "BBDO West Africa",
+  agency = "BBDO West Africa",
   items = DEFAULT_ITEMS,
   logoutLabel = "Log out",
   onLogout,
@@ -134,7 +134,7 @@ export function ProfileNav({
             </span>
             <div className="min-w-0">
               <p className="truncate text-[13px] font-extrabold">{displayName}</p>
-              <p className="truncate text-[11px] tracking-[0.08em] text-muted-foreground">{organization}</p>
+              <p className="truncate text-[11px] tracking-[0.08em] text-muted-foreground">{agency}</p>
             </div>
           </div>
         </DropdownMenuLabel>

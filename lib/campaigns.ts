@@ -24,8 +24,8 @@ export type Project = {
   slug: string;
   name: string;
   campaign?: string;
-  organizationId: string;
-  organizationName: string;
+  clientId: string;
+  clientName: string;
   category: string;
   year: number | null;
   liveAt?: CampaignLiveDate;
@@ -58,8 +58,8 @@ export const PROJECTS: Project[] = [
     slug: "thats-naija-thats-jack",
     name: "Jack Daniel’s",
     campaign: "That’s Naija, That’s Jack",
-    organizationId: "brown-forman",
-    organizationName: "Brown-Forman",
+    clientId: "brown-forman",
+    clientName: "Brown-Forman",
     category: "Food & beverages",
     year: 2026,
     liveAt: { date: "2026-08-01" },
@@ -97,8 +97,8 @@ export const PROJECTS: Project[] = [
     slug: "make-we-bet",
     name: "Betano",
     campaign: "Make We Bet",
-    organizationId: "keizen-games",
-    organizationName: "Keizen Games",
+    clientId: "keizen-games",
+    clientName: "Keizen Games",
     category: "Entertainment",
     year: 2026,
     liveAt: { date: "2026-01-15" },
@@ -128,8 +128,8 @@ export const PROJECTS: Project[] = [
   {
     slug: "proforce-nigeria",
     name: "Proforce Nigeria",
-    organizationId: "proforce-nigeria",
-    organizationName: "Proforce Nigeria",
+    clientId: "proforce-nigeria",
+    clientName: "Proforce Nigeria",
     category: "Defence & manufacturing",
     year: 2026,
     liveAt: { date: "2026-03-15" },
@@ -162,8 +162,8 @@ export const PROJECTS: Project[] = [
     slug: "leap-of-faith",
     name: "1 Utility Bank",
     campaign: "Leap of Faith",
-    organizationId: "1utility",
-    organizationName: "1 Utility Bank",
+    clientId: "1utility",
+    clientName: "1 Utility Bank",
     category: "Finance",
     year: 2026,
     liveAt: { date: "2026-08-19" },
@@ -211,8 +211,8 @@ export const PROJECTS: Project[] = [
   {
     slug: "cbn",
     name: "CBN",
-    organizationId: "central-bank-of-nigeria",
-    organizationName: "Central Bank of Nigeria",
+    clientId: "central-bank-of-nigeria",
+    clientName: "Central Bank of Nigeria",
     category: "Finance",
     year: 2026,
     liveAt: { date: "2026-08-15" },
@@ -236,8 +236,8 @@ export const PROJECTS: Project[] = [
   {
     slug: "benin-tourism",
     name: "Benin Tourism",
-    organizationId: "benin-tourism",
-    organizationName: "Benin Tourism",
+    clientId: "benin-tourism",
+    clientName: "Benin Tourism",
     category: "Travel & tourism",
     year: 2026,
     liveAt: { date: "2026-05-15" },
@@ -261,8 +261,8 @@ export const PROJECTS: Project[] = [
   {
     slug: "interswitch-verve",
     name: "Verve",
-    organizationId: "interswitch",
-    organizationName: "Interswitch",
+    clientId: "interswitch",
+    clientName: "Interswitch",
     category: "Finance",
     year: 2021,
     liveAt: { date: "2021-04-15" },
@@ -293,8 +293,8 @@ export const PROJECTS: Project[] = [
     slug: "made-of-black",
     name: "Guinness",
     campaign: "Made of Black",
-    organizationId: "diageo",
-    organizationName: "Diageo",
+    clientId: "diageo",
+    clientName: "Diageo",
     category: "Food & beverages",
     year: 2021,
     liveAt: { date: "2021-07-15" },
@@ -347,8 +347,8 @@ export const PROJECTS: Project[] = [
     slug: "not-a-tourist",
     name: "Visa",
     campaign: "Not a Tourist",
-    organizationId: "visa",
-    organizationName: "Visa",
+    clientId: "visa",
+    clientName: "Visa",
     category: "Finance",
     year: 2016,
     liveAt: { date: "2016-08-05" },
@@ -389,8 +389,8 @@ export const PROJECTS: Project[] = [
     slug: "know-google",
     name: "Google",
     campaign: "Know Google",
-    organizationId: "google",
-    organizationName: "Google",
+    clientId: "google",
+    clientName: "Google",
     category: "Technology",
     year: null,
     liveAt: { date: "2020-06-15" },
@@ -428,8 +428,8 @@ export const PROJECTS: Project[] = [
     slug: "live-original",
     name: "Orijin",
     campaign: "Live Original",
-    organizationId: "orijin",
-    organizationName: "Orijin",
+    clientId: "orijin",
+    clientName: "Orijin",
     category: "Food & beverages",
     year: null,
     liveAt: { date: "2019-09-15" },
@@ -461,8 +461,8 @@ export const PROJECTS: Project[] = [
     slug: "cool-days",
     name: "Pringles",
     campaign: "Cool Days",
-    organizationId: "pringles",
-    organizationName: "Pringles",
+    clientId: "pringles",
+    clientName: "Pringles",
     category: "Food & beverages",
     year: null,
     liveAt: { date: "2018-07-15" },
@@ -493,8 +493,8 @@ export const PROJECTS: Project[] = [
     slug: "easter-anti-violence",
     name: "Chicken Republic",
     campaign: "Easter / Anti-Violence",
-    organizationId: "chicken-republic",
-    organizationName: "Chicken Republic",
+    clientId: "chicken-republic",
+    clientName: "Chicken Republic",
     category: "Food & beverages",
     year: null,
     liveAt: { date: "2020-04-15" },
@@ -530,8 +530,8 @@ export const PROJECTS: Project[] = [
     slug: "closer-is-better",
     name: "Unilever",
     campaign: "Closer Is Better",
-    organizationId: "unilever",
-    organizationName: "Unilever",
+    clientId: "unilever",
+    clientName: "Unilever",
     category: "Consumer goods",
     year: 2026,
     liveAt: { date: "2026-02-15" },
@@ -562,7 +562,7 @@ export const PROJECTS: Project[] = [
 ];
 
 // Backwards-compatible name for existing campaign pages while the domain
-// model is now represented as organization-owned projects.
+// model is now represented as client-owned projects.
 export const CAMPAIGNS: Campaign[] = PROJECTS;
 
 export function getCampaign(slug: string): Campaign | undefined {

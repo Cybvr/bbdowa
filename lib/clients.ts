@@ -1,28 +1,28 @@
 import { PROJECTS, type Project } from "@/lib/projects";
 import { makeEmptyWorkspace, type ClientWorkspace } from "@/lib/client-workspaces";
 
-export type Organization = {
-  type: "organization";
+export type Client = {
+  type: "client";
   slug: string;
   name: string;
   /** First live/engagement date; used to sort the clients directory. */
   date: string | null;
   industry: string;
-  /** Optional short bio shown on the client page; editable per organization. */
+  /** Optional short bio shown on the client page; editable per client. */
   description?: string | null;
   /** Client logo/headshot; null/absent falls back to the placeholder. */
   profileImage?: string | null;
 };
 
 /**
- * Organizations are their own records. A project belongs to one organization
- * via its `organizationId`; an organization "has" the projects that point at
- * it (see `getOrganizationProjects`). Edit an organization here without
+ * Clients are their own records. A project belongs to one client
+ * via its `clientId`; an client "has" the projects that point at
+ * it (see `getClientProjects`). Edit an client here without
  * touching its projects, and vice versa.
  */
-export const ORGANIZATIONS: Organization[] = [
+export const CLIENTS: Client[] = [
   {
-    type: "organization",
+    type: "client",
     slug: "1utility",
     name: "1 Utility Bank",
     date: "2026-08-19",
@@ -30,7 +30,7 @@ export const ORGANIZATIONS: Organization[] = [
     profileImage: "/images/one-utility-logo.svg",
   },
   {
-    type: "organization",
+    type: "client",
     slug: "benin-tourism",
     name: "Benin Tourism",
     date: "2026-05-15",
@@ -38,7 +38,7 @@ export const ORGANIZATIONS: Organization[] = [
     profileImage: "/images/clients/benin-tourism.png",
   },
   {
-    type: "organization",
+    type: "client",
     slug: "brown-forman",
     name: "Brown-Forman",
     date: "2026-08-01",
@@ -46,7 +46,7 @@ export const ORGANIZATIONS: Organization[] = [
     profileImage: "/images/clients/brown-forman.png",
   },
   {
-    type: "organization",
+    type: "client",
     slug: "central-bank-of-nigeria",
     name: "Central Bank of Nigeria",
     date: "2026-08-15",
@@ -54,7 +54,7 @@ export const ORGANIZATIONS: Organization[] = [
     profileImage: "/images/clients/central-bank-of-nigeria.png",
   },
   {
-    type: "organization",
+    type: "client",
     slug: "chicken-republic",
     name: "Chicken Republic",
     date: "2020-04-15",
@@ -62,7 +62,7 @@ export const ORGANIZATIONS: Organization[] = [
     profileImage: "/images/clients/chicken-republic.png",
   },
   {
-    type: "organization",
+    type: "client",
     slug: "diageo",
     name: "Diageo",
     date: "2021-07-15",
@@ -70,7 +70,7 @@ export const ORGANIZATIONS: Organization[] = [
     profileImage: "/images/clients/diageo.png",
   },
   {
-    type: "organization",
+    type: "client",
     slug: "google",
     name: "Google",
     date: "2020-06-15",
@@ -78,7 +78,7 @@ export const ORGANIZATIONS: Organization[] = [
     profileImage: "/images/clients/google.png",
   },
   {
-    type: "organization",
+    type: "client",
     slug: "interswitch",
     name: "Interswitch",
     date: "2021-04-15",
@@ -86,7 +86,7 @@ export const ORGANIZATIONS: Organization[] = [
     profileImage: "/images/clients/interswitch.png",
   },
   {
-    type: "organization",
+    type: "client",
     slug: "keizen-games",
     name: "Keizen Games",
     date: "2026-01-15",
@@ -94,7 +94,7 @@ export const ORGANIZATIONS: Organization[] = [
     profileImage: "/images/clients/keizen-games.png",
   },
   {
-    type: "organization",
+    type: "client",
     slug: "orijin",
     name: "Orijin",
     date: "2019-09-15",
@@ -102,7 +102,7 @@ export const ORGANIZATIONS: Organization[] = [
     profileImage: "/images/clients/orijin.png",
   },
   {
-    type: "organization",
+    type: "client",
     slug: "pringles",
     name: "Pringles",
     date: "2018-07-15",
@@ -110,7 +110,7 @@ export const ORGANIZATIONS: Organization[] = [
     profileImage: "/images/clients/pringles.png",
   },
   {
-    type: "organization",
+    type: "client",
     slug: "proforce-nigeria",
     name: "Proforce Nigeria",
     date: "2026-03-15",
@@ -118,7 +118,7 @@ export const ORGANIZATIONS: Organization[] = [
     profileImage: "/images/clients/proforce-nigeria.png",
   },
   {
-    type: "organization",
+    type: "client",
     slug: "unilever",
     name: "Unilever",
     date: "2026-02-15",
@@ -126,7 +126,7 @@ export const ORGANIZATIONS: Organization[] = [
     profileImage: "/images/clients/unilever.png",
   },
   {
-    type: "organization",
+    type: "client",
     slug: "visa",
     name: "Visa",
     date: "2016-08-05",
@@ -135,13 +135,13 @@ export const ORGANIZATIONS: Organization[] = [
   },
 ].sort((a, b) => a.name.localeCompare(b.name));
 
-export function getOrganization(slug: string): Organization | undefined {
-  return ORGANIZATIONS.find((organization) => organization.slug === slug);
+export function getClient(slug: string): Client | undefined {
+  return CLIENTS.find((client) => client.slug === slug);
 }
 
-/** The projects that belong to this organization. */
-export function getOrganizationProjects(slug: string): Project[] {
-  return PROJECTS.filter((project) => project.organizationId === slug);
+/** The projects that belong to this client. */
+export function getClientProjects(slug: string): Project[] {
+  return PROJECTS.filter((project) => project.clientId === slug);
 }
 
 /**
@@ -150,16 +150,16 @@ export function getOrganizationProjects(slug: string): Project[] {
  * template so nothing leaks in from another client.
  */
 export function getClientWorkspace(clientSlug: string, clientName?: string): ClientWorkspace {
-  const projects = getOrganizationProjects(clientSlug);
+  const projects = getClientProjects(clientSlug);
   const withWorkspace = projects.find((project) => project.workspace);
   if (withWorkspace?.workspace) return withWorkspace.workspace;
 
   const project = projects[0];
-  const name = clientName ?? getOrganization(clientSlug)?.name ?? clientSlug;
+  const name = clientName ?? getClient(clientSlug)?.name ?? clientSlug;
   const website = project?.externalLinks?.find((link) => link.label === "Website")?.href ?? "";
   return makeEmptyWorkspace({ clientName: name, category: project?.category ?? "", website });
 }
 
-export function organizationHref(slug: string): string {
+export function clientHref(slug: string): string {
   return `/dashboard/clients/${slug}/overview`;
 }
