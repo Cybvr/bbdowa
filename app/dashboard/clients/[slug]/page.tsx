@@ -1575,7 +1575,7 @@ function OneUtilityClientWorkspace({
                             setBrandUrl(e.target.value);
                             setBusinessProfileDirty(true);
                           }}
-                          className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none transition"
+                          className="w-full bg-background border-0 border-b border-input focus:border-primary focus:ring-0 rounded-none px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none transition"
                         />
                       </div>
                     </div>
@@ -1592,7 +1592,7 @@ function OneUtilityClientWorkspace({
                           setFootprint(e.target.value);
                           setBusinessProfileDirty(true);
                         }}
-                        className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm text-foreground outline-none transition"
+                        className="w-full bg-background border-0 border-b border-input focus:border-primary focus:ring-0 rounded-none px-3 py-2 text-sm text-foreground outline-none transition"
                       />
                     </div>
 
