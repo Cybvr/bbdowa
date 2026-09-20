@@ -125,6 +125,7 @@ export function EditSheet({
   deleteConfirm = "Delete this record? This can’t be undone.",
   onSave,
   onDelete,
+  trigger,
   children,
 }: {
   title: string;
@@ -134,6 +135,7 @@ export function EditSheet({
   deleteConfirm?: string;
   onSave: () => Promise<void>;
   onDelete: () => Promise<void>;
+  trigger?: (open: () => void, remove: () => void) => React.ReactNode;
   children: React.ReactNode;
 }) {
   const { isAdmin } = useAuth();
@@ -172,16 +174,22 @@ export function EditSheet({
     }
   };
 
+  const triggerContent = trigger ? (
+    trigger(() => setOpen(true), () => void remove())
+  ) : (
+    <button
+      type="button"
+      onClick={() => setOpen(true)}
+      className="inline-flex h-9 items-center gap-1.5 rounded-md border border-border bg-background px-3 text-[13px] font-semibold text-foreground transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+    >
+      <Pencil aria-hidden="true" className="h-3.5 w-3.5" />
+      {triggerLabel}
+    </button>
+  );
+
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="inline-flex h-9 items-center gap-1.5 rounded-md border border-border bg-background px-3 text-[13px] font-semibold text-foreground transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-      >
-        <Pencil aria-hidden="true" className="h-3.5 w-3.5" />
-        {triggerLabel}
-      </button>
+      {triggerContent}
 
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent side="right" className="w-[min(520px,94vw)] bg-background text-foreground sm:max-w-none">

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
-import { Plus } from "lucide-react";
+import { MoreHorizontal, Plus, Trash2 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import {
   Dialog,
@@ -13,6 +13,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { firebaseDb } from "@/lib/firebase/client";
 import type { CreativePreview } from "@/lib/client-workspaces";
 
@@ -111,5 +117,66 @@ export function ClientMediaAddAction({
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+export function ClientMediaDeleteAction({
+  campaignId,
+  clientName,
+  mediaItems,
+  mediaIndex,
+  onSaved,
+  onError,
+}: {
+  campaignId: string | null;
+  clientName: string;
+  mediaItems: CreativePreview[];
+  mediaIndex: number;
+  onSaved: (mediaItems: CreativePreview[]) => void;
+  onError?: (message: string) => void;
+}) {
+  const { isAdmin } = useAuth();
+  const [busy, setBusy] = React.useState(false);
+
+  if (!isAdmin || !campaignId) return null;
+
+  const remove = async () => {
+    const media = mediaItems[mediaIndex];
+    if (!media || busy || !window.confirm(`Delete this media from ${clientName}? This can’t be undone.`)) return;
+
+    setBusy(true);
+    try {
+      const nextMediaItems = mediaItems.filter((_, index) => index !== mediaIndex);
+      await updateDoc(doc(firebaseDb, "campaigns", campaignId), {
+        moodboardImages: nextMediaItems,
+        updatedAt: serverTimestamp(),
+      });
+      onSaved(nextMediaItems);
+    } catch (cause) {
+      console.error("Unable to delete client media", cause);
+      onError?.("Couldn’t delete this media. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label={`Actions for ${mediaItems[mediaIndex]?.alt ?? "media"}`}
+          disabled={busy}
+          className="grid h-8 w-8 place-items-center rounded-lg border border-border bg-background/95 text-muted-foreground shadow-sm backdrop-blur transition hover:border-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-wait disabled:opacity-50"
+        >
+          <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-36">
+        <DropdownMenuItem variant="destructive" onSelect={() => void remove()}>
+          <Trash2 className="h-4 w-4" />Delete
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

@@ -54,16 +54,18 @@ function SelectControl({
   onChange,
   options,
   className = "min-w-28",
+  fullWidth = false,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   options: { value: string; label: string }[];
   className?: string;
+  fullWidth?: boolean;
 }) {
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger aria-label={label} className={`${FIELD} ${className}`}>
+      <SelectTrigger aria-label={label} className={`${FIELD} ${className} ${fullWidth ? "!w-full" : "!w-auto"}`}>
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
@@ -93,6 +95,7 @@ function SheetSelect({
         onChange={onChange}
         options={options}
         className="w-full"
+        fullWidth
       />
     </label>
   );
@@ -192,7 +195,7 @@ export function FilterBar<TabKey extends string, SortKey extends string>({
             onChange={(event) => onSearchChange(event.target.value)}
             placeholder={searchPlaceholder}
             aria-label={searchPlaceholder}
-            className={`${FIELD} ${searchClassName} max-w-full flex-1 placeholder:text-muted-foreground`}
+            className={`${FIELD} ${searchClassName} w-full max-w-full flex-1 placeholder:text-muted-foreground sm:w-auto`}
           />
         ) : null}
         {hasStatus || filters?.length || hasSort ? (

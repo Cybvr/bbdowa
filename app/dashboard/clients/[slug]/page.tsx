@@ -4,17 +4,16 @@ import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import { EmptyThumbnail, ImageWithFallback } from "@/components/empty-thumbnail";
-import { DashboardCard } from "@/components/dashboard-card";
 import { Badge as DashboardBadge } from "@/components/dashboard/ui";
 import type { Campaign, CampaignStatus } from "@/lib/campaigns";
 import { getClient, getClientWorkspace, type Client } from "@/lib/clients";
 import type { User } from "@/lib/users";
 import { readContentFromFirestore } from "@/lib/firebase/client-content";
 import { ClientActions } from "@/components/client-actions";
-import { CampaignActions } from "@/components/campaign-actions";
 import { ClientCreatorAddAction } from "@/components/client-creator-add-action";
-import { ClientMediaAddAction } from "@/components/client-media-add-action";
+import { ClientMediaAddAction, ClientMediaDeleteAction } from "@/components/client-media-add-action";
 import { ClientWorkspaceContent, ClientWorkspaceHeading } from "@/components/client-workspace-heading";
+import { DashboardCard, DashboardCardActions } from "@/components/dashboard-card";
 import { FilterBar, type FilterTab, type SortOption, type ViewMode } from "@/components/dashboard/filter-bar";
 import { useAuth } from "@/components/auth-provider";
 import { UserActions } from "@/components/user-actions";
@@ -525,6 +524,7 @@ function OneUtilityClientWorkspace({
   const [campaignView, setCampaignView] = useState<"home" | "editor">("home");
   const [campaignSubTab, setCampaignSubTab] = useState<"overview" | "case-study" | "strategy" | "creative" | "marketing">("overview");
   const [selectedCreative, setSelectedCreative] = useState<{ src: string; alt: string } | null>(null);
+  const [selectedMediaIndex, setSelectedMediaIndex] = useState<number | null>(null);
   const [campaigns, setCampaigns] = useState<CampaignListItem[]>(() =>
     initialClientCampaigns.length > 0
       ? initialClientCampaigns.map((campaign) => ({
@@ -1043,7 +1043,7 @@ function OneUtilityClientWorkspace({
                               <li key={campaign.id}>
                                 <DashboardCard
                                   className="h-full"
-                                  actions={record ? <CampaignActions campaign={record} /> : undefined}
+                                  actions={record ? <DashboardCardActions collection="campaigns" slug={record.slug} titleField="campaign" title={record.campaign ?? record.name} showCopy={false} /> : undefined}
                                 >
                                   <button
                                     type="button"
@@ -1554,7 +1554,7 @@ function OneUtilityClientWorkspace({
             <ClientWorkspaceContent>
                 <ClientWorkspaceHeading title="Brand DNA" actions={contentEditAction} />
                 {/* BUSINESS PROFILE & IDENTITY */}
-                <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
+                <div className="grid w-full max-w-2xl grid-cols-1 items-start gap-6">
                   {/* BUSINESS PROFILE */}
                   <section className="space-y-5">
                     <div className="border-b border-border pb-3">
@@ -1851,18 +1851,87 @@ function OneUtilityClientWorkspace({
                   }
                 />
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
-                  {mediaItems.map((image) => (
-                    <button
-                      key={image.src}
-                      type="button"
-                      onClick={() => setSelectedCreative(image)}
-                      className="aspect-[3/4] overflow-hidden rounded-md bg-muted text-left"
-                      aria-label={`Open ${image.alt}`}
+                  {mediaItems.map((image, mediaIndex) => (
+                    <DashboardCard
+                      key={`${image.src}-${mediaIndex}`}
+                      className="h-full"
+                      actions={
+                        <ClientMediaDeleteAction
+                          campaignId={primaryCampaign?.slug ?? null}
+                          clientName={clientName}
+                          mediaItems={mediaItems}
+                          mediaIndex={mediaIndex}
+                          onSaved={setMediaItems}
+                          onError={showToast}
+                        />
+                      }
                     >
-                      <ImageWithFallback src={image.src} alt={image.alt} className="h-full w-full object-cover" />
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedMediaIndex(mediaIndex)}
+                        className="aspect-square w-full overflow-hidden bg-muted text-left"
+                        aria-label={`Open ${image.alt}`}
+                      >
+                        <ImageWithFallback src={image.src} alt={image.alt} className="h-full w-full object-cover" />
+                      </button>
+                    </DashboardCard>
                   ))}
                 </div>
+                {selectedMediaIndex !== null && mediaItems[selectedMediaIndex] ? (
+                  <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 sm:p-8"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label={mediaItems[selectedMediaIndex].alt}
+                    onClick={() => setSelectedMediaIndex(null)}
+                  >
+                    <button
+                      type="button"
+                      aria-label="Back to media"
+                      onClick={() => setSelectedMediaIndex(null)}
+                      className="absolute left-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-white/15 text-white hover:bg-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white sm:left-6 sm:top-6"
+                    >
+                      <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Close image"
+                      onClick={() => setSelectedMediaIndex(null)}
+                      className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-white/15 text-white hover:bg-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white sm:right-6 sm:top-6"
+                    >
+                      <X className="h-5 w-5" aria-hidden="true" />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Previous image"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setSelectedMediaIndex((current) => current === null ? null : current === 0 ? mediaItems.length - 1 : current - 1);
+                      }}
+                      className="absolute left-4 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-white/15 text-white hover:bg-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white sm:left-6"
+                    >
+                      <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Next image"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setSelectedMediaIndex((current) => current === null ? null : current === mediaItems.length - 1 ? 0 : current + 1);
+                      }}
+                      className="absolute right-4 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-white/15 text-white hover:bg-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white sm:right-6"
+                    >
+                      <ChevronRight className="h-5 w-5" aria-hidden="true" />
+                    </button>
+                    <div className="max-h-full max-w-full" onClick={(event) => event.stopPropagation()}>
+                      <ImageWithFallback
+                        src={mediaItems[selectedMediaIndex].src}
+                        alt={mediaItems[selectedMediaIndex].alt}
+                        className="max-h-[calc(100vh-6rem)] max-w-[calc(100vw-6rem)] rounded-xl object-contain"
+                      />
+                    </div>
+                  </div>
+                ) : null}
             </ClientWorkspaceContent>
           )}
 
@@ -1912,7 +1981,7 @@ function OneUtilityClientWorkspace({
                             <li key={creator.slug}>
                               <DashboardCard
                                 className="h-full"
-                                actions={<UserActions user={creator} variant="creator" listHref={`/dashboard/clients/${slug}/creators`} />}
+                                actions={<UserActions user={creator} variant="creator" listHref={`/dashboard/clients/${slug}/creators`} compactMenu />}
                               >
                                 <Link
                                   href={`/dashboard/creators/${creator.slug}`}

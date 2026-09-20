@@ -45,12 +45,14 @@ export function DashboardCardActions({
   titleField,
   title,
   onMutated,
+  showCopy = true,
 }: {
   collection: ContentCollection;
   slug: string;
   titleField: string;
   title: string;
   onMutated?: () => void | Promise<void>;
+  showCopy?: boolean;
 }) {
   const router = useRouter();
   const { isAdmin } = useAuth();
@@ -117,7 +119,7 @@ export function DashboardCardActions({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-36">
         <DropdownMenuItem disabled={busy} onSelect={handleRenameOpen}><Pencil className="h-4 w-4" />Rename</DropdownMenuItem>
-        <DropdownMenuItem disabled={busy} onSelect={handleCopy}><Copy className="h-4 w-4" />Copy</DropdownMenuItem>
+        {showCopy ? <DropdownMenuItem disabled={busy} onSelect={handleCopy}><Copy className="h-4 w-4" />Copy</DropdownMenuItem> : null}
         <DropdownMenuItem disabled={busy} variant="destructive" onSelect={() => setDeleteOpen(true)}><Trash2 className="h-4 w-4" />Delete</DropdownMenuItem>
       </DropdownMenuContent>
       </DropdownMenu>

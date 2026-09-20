@@ -2,12 +2,19 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { deleteDoc, doc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { firebaseDb } from "@/lib/firebase/client";
 import { EditSheet, SelectField, TextField, TextareaField } from "@/components/detail-editor";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { Campaign } from "@/lib/campaigns";
 
-export function CampaignActions({ campaign }: { campaign: Campaign }) {
+export function CampaignActions({ campaign, compactMenu = false }: { campaign: Campaign; compactMenu?: boolean }) {
   const router = useRouter();
 
   const [name, setName] = React.useState(campaign.name ?? "");
@@ -70,6 +77,23 @@ export function CampaignActions({ campaign }: { campaign: Campaign }) {
       onSave={save}
       onDelete={remove}
       deleteConfirm="Delete this campaign? This can’t be undone."
+      trigger={compactMenu ? (open, removeFromMenu) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              aria-label={`Actions for ${campaign.campaign ?? campaign.name}`}
+              className="grid h-8 w-8 place-items-center rounded-lg border border-border bg-background/95 text-muted-foreground shadow-sm backdrop-blur transition hover:border-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            >
+              <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-36">
+            <DropdownMenuItem onSelect={open}><Pencil className="h-4 w-4" />Edit</DropdownMenuItem>
+            <DropdownMenuItem variant="destructive" onSelect={removeFromMenu}><Trash2 className="h-4 w-4" />Delete</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : undefined}
     >
       <TextField label="Client (brand)" value={name} onChange={setName} />
       <TextField label="Campaign title" value={title} onChange={setTitle} />
