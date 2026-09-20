@@ -161,7 +161,6 @@ import {
   Palette,
   Smartphone,
   Info,
-  Globe,
   Layers,
   Feather,
   ScanLine,
@@ -593,16 +592,9 @@ function OneUtilityClientWorkspace({
   const [brandArchetype, setBrandArchetype] = useState(workspace.brandArchetype);
   const [toneVal, setToneVal] = useState(preset.toneVal);
   const [toneLabel, setToneLabel] = useState(preset.toneText);
-  const [statusNotification, setStatusNotification] = useState<string | null>(null);
 
   // Brand DNA: editable core value proposition
   const [valueProp, setValueProp] = useState(workspace.valueProposition.coreHeadline);
-  const [progressStages, setProgressStages] = useState(() =>
-    workspace.valueProposition.progressModel.map((item) => ({
-      ...item,
-      stage: item.stage.replace(/^\d+\.\s*/, ""),
-    }))
-  );
   // Page accent follows the client's primary brand colour.
   const [primaryColor] = useState<string>(workspace.primaryColor);
   const [selectedCreatorSlugs, setSelectedCreatorSlugs] = useState(workspace.creatorSlugs);
@@ -691,7 +683,7 @@ function OneUtilityClientWorkspace({
 
   const handleSaveBrandDna = () => {
     setDesignDirty(false);
-    showToast("Brand DNA saved.");
+    showToast("Profile saved.");
   };
 
   const handleShareCampaign = async () => {
@@ -732,7 +724,6 @@ function OneUtilityClientWorkspace({
     setToneVal(preset.toneVal);
     setToneLabel(preset.toneText);
     setCampaignCopy(workspace.phaseContent.launch);
-    setStatusNotification(null);
     setActiveMainTab("campaign");
     setCampaignView("editor");
     showToast("New campaign draft created.");
@@ -769,15 +760,6 @@ function OneUtilityClientWorkspace({
         campaign.id === activeCampaignId ? { ...campaign, status } : campaign
       )
     );
-  };
-
-  const handleSimulateScrape = () => {
-    setStatusNotification(`Reviewing ${brandUrl} as a client reference...`);
-    setTimeout(() => {
-      setStatusNotification(
-        `Reference queued from ${brandUrl}. Confirm approved assets before production.`
-      );
-    }, 900);
   };
 
   const updateTone = (val: number) => {
@@ -1544,43 +1526,15 @@ function OneUtilityClientWorkspace({
             </ClientWorkspaceContent>
           )}
 
-          {/* BRAND DNA VIEW */}
+          {/* PROFILE VIEW */}
           {activeMainTab === "brand" && (
             <ClientWorkspaceContent>
-                <ClientWorkspaceHeading title="Brand DNA" actions={contentEditAction} />
-                {/* BUSINESS PROFILE & IDENTITY */}
+                <ClientWorkspaceHeading title="Profile" actions={contentEditAction} />
                 <div className="grid w-full max-w-2xl grid-cols-1 items-start gap-6">
-                  {/* BUSINESS PROFILE */}
                   <section className="space-y-5">
-                    <div className="border-b border-border pb-3">
-                      <span className="text-xs font-mono uppercase tracking-widest text-primary font-semibold">
-                        Profile
-                      </span>
-                      <h2 className="text-base font-semibold text-foreground mt-0.5">Business Profile</h2>
-                    </div>
-
                     <div className="space-y-1.5">
-                      <span className="text-sm font-medium text-foreground block">Client profile image</span>
-                      <div className="h-10 flex items-center">
-                        <ImageWithFallback
-                          src={clientProfileImage}
-                          alt={`${preset.client} profile image`}
-                          className="h-8 w-auto object-contain"
-                          fallbackClassName="h-8 w-16 rounded border border-border"
-                          iconClassName="w-4 h-4"
-                        />
-                      </div>
-                    </div>
-
-                    {statusNotification && (
-                      <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg text-sm text-primary">
-                        {statusNotification}
-                      </div>
-                    )}
-
-                    <div className="space-y-1.5">
-                      <label htmlFor="brandUrl" className="text-sm font-medium text-foreground flex items-center gap-1.5">
-                        <Globe className="w-3.5 h-3.5 text-primary" /> Website
+                      <label htmlFor="brandUrl" className="text-sm font-medium text-foreground">
+                        Website
                       </label>
                       <div className="relative">
                         <input
@@ -1591,20 +1545,14 @@ function OneUtilityClientWorkspace({
                             setBrandUrl(e.target.value);
                             setBusinessProfileDirty(true);
                           }}
-                          className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg pl-3 pr-20 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none transition"
+                          className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none transition"
                         />
-                        <button
-                          onClick={handleSimulateScrape}
-                          className="absolute right-1 top-1 bottom-1 px-2.5 bg-secondary text-secondary-foreground hover:bg-secondary/90 text-sm rounded border border-border transition flex items-center gap-1"
-                        >
-                          <ScanLine className="w-3 h-3" /> Read
-                        </button>
                       </div>
                     </div>
 
                     <div className="space-y-1.5">
-                      <label htmlFor="footprintInput" className="text-sm font-medium text-foreground flex items-center gap-1.5">
-                        <Globe className="w-3.5 h-3.5 text-primary" /> Target Audience
+                      <label htmlFor="footprintInput" className="text-sm font-medium text-foreground">
+                        Target Audience
                       </label>
                       <input
                         type="text"
@@ -1616,21 +1564,6 @@ function OneUtilityClientWorkspace({
                         }}
                         className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm text-foreground outline-none transition"
                       />
-                    </div>
-
-                    {/* 4-Stage Utility Progress Model */}
-                    <div className="space-y-2 border-t border-border pt-4">
-                      <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                        <TrendingUp className="w-4 h-4 text-primary" /> The 4-Stage Progress Model
-                      </span>
-                      <p className="max-w-[72ch] text-sm leading-7 text-muted-foreground">
-                        {progressStages.map((item, idx) => (
-                          <span key={item.stage}>
-                            <span className="font-medium text-foreground">{item.stage}: {item.label}.</span>{" "}
-                            {item.desc}{idx < progressStages.length - 1 ? " " : ""}
-                          </span>
-                        ))}
-                      </p>
                     </div>
 
                     <div className="flex items-center justify-end border-t border-border pt-4">
