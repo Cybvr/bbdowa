@@ -22,18 +22,21 @@ export function Header() {
         />
       </Link>
 
-      <button
-        type="button"
-        aria-expanded={open}
-        aria-controls="marketing-nav"
-        aria-label={open ? "Close menu" : "Open menu"}
-        onClick={() => setOpen((current) => !current)}
-        className="ml-auto hidden h-11 w-11 flex-col items-center justify-center gap-[5px] bg-white/10 text-white hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white max-[760px]:flex"
-      >
-        <span aria-hidden="true" className={`h-[2px] w-[18px] bg-current transition-transform ${open ? "translate-y-[7px] rotate-45" : ""}`} />
-        <span aria-hidden="true" className={`h-[2px] w-[18px] bg-current ${open ? "opacity-0" : ""}`} />
-        <span aria-hidden="true" className={`h-[2px] w-[18px] bg-current transition-transform ${open ? "-translate-y-[7px] -rotate-45" : ""}`} />
-      </button>
+      <div className="ml-auto hidden items-center gap-2 max-[760px]:flex">
+        <ProfileNav />
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-controls="marketing-nav"
+          aria-label={open ? "Close menu" : "Open menu"}
+          onClick={() => setOpen((current) => !current)}
+          className="flex h-11 w-11 flex-col items-center justify-center gap-[5px] bg-white/10 text-white hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+        >
+          <span aria-hidden="true" className={`h-[2px] w-[18px] bg-current transition-transform ${open ? "translate-y-[7px] rotate-45" : ""}`} />
+          <span aria-hidden="true" className={`h-[2px] w-[18px] bg-current ${open ? "opacity-0" : ""}`} />
+          <span aria-hidden="true" className={`h-[2px] w-[18px] bg-current transition-transform ${open ? "-translate-y-[7px] -rotate-45" : ""}`} />
+        </button>
+      </div>
 
       <nav
         id="marketing-nav"
@@ -53,7 +56,7 @@ export function Header() {
         </ul>
       </nav>
 
-      <div className="shrink-0 max-[760px]:ml-auto">
+      <div className="shrink-0 max-[760px]:hidden">
         <ProfileNav />
       </div>
     </header>

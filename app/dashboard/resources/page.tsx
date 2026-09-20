@@ -10,7 +10,7 @@ export default async function ResourcesPage() {
 
   return (
     <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
-      <PageHeader title="Resources" />
+      <PageHeader title="Resources" createType="resource" />
       <ResourcesDirectory resources={resources} />
     </main>
   );

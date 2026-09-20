@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { LuMenu } from "react-icons/lu";
 import { DashboardLogo, DashboardSidebarContent, DashboardSidebarSheet } from "@/components/dashboard-sidebar";
+import { ProfileNav } from "@/components/profile-nav";
 import { TrackerIcon } from "@/components/nav-icons";
 import { TimeTracker } from "@/components/time-tracker";
 import {
@@ -42,14 +44,27 @@ export function DashboardHeader({
       <div
         className={`${hideMobile ? "hidden" : "sticky top-0 z-40 flex"} items-center justify-between bg-primary px-[max(18px,env(safe-area-inset-left))] py-3 nav:hidden`}
       >
-        <DashboardLogo />
+        <div className="flex min-w-0 items-center gap-2">
+          <DashboardSidebarSheet
+            trigger={
+              <button
+                type="button"
+                aria-label="Open dashboard menu"
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-primary-foreground transition hover:bg-primary-foreground/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-foreground/60"
+              >
+                <LuMenu aria-hidden="true" className="h-5 w-5" />
+              </button>
+            }
+          />
+          <DashboardLogo light />
+        </div>
         <div className="flex items-center gap-1">
           <Dialog open={trackerOpen} onOpenChange={setTrackerOpen}>
             <DialogTrigger asChild>
               <button
                 type="button"
                 aria-label="Open tracker"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-foreground transition hover:bg-muted focus-visible:outline-none"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-primary-foreground transition hover:bg-primary-foreground/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-foreground/60"
               >
                 <TrackerIcon className="h-5 w-5" />
               </button>
@@ -62,7 +77,7 @@ export function DashboardHeader({
               <TimeTracker compact />
             </DialogContent>
           </Dialog>
-          <DashboardSidebarSheet />
+          <ProfileNav variant="avatar" />
         </div>
       </div>
     </>

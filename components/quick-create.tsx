@@ -2,8 +2,8 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { collection, doc, getDocs, serverTimestamp, setDoc } from "firebase/firestore";
 import { Plus } from "lucide-react";
-import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import {
   Dialog,
   DialogContent,
@@ -23,7 +23,32 @@ import {
 import { useAuth } from "@/components/auth-provider";
 import { firebaseDb } from "@/lib/firebase/client";
 
-type CreateType = "update" | "resource";
+export type CreateType = "update" | "resource" | "client" | "campaign";
+type CampaignStatus = "live" | "pitch" | "completed";
+type ClientOption = { slug: string; name: string };
+
+const CREATE_COPY: Record<CreateType, { button: string; title: string; description: string }> = {
+  update: {
+    button: "New update",
+    title: "New update",
+    description: "Publish a new agency update.",
+  },
+  resource: {
+    button: "New resource",
+    title: "New resource",
+    description: "Add a resource to the agency library.",
+  },
+  client: {
+    button: "New client",
+    title: "New client",
+    description: "Create a client record. You can add more detail from the client workspace.",
+  },
+  campaign: {
+    button: "New campaign",
+    title: "New campaign",
+    description: "Create a campaign record, then complete its case-study details.",
+  },
+};
 
 function slugify(value: string): string {
   const base = value
@@ -35,36 +60,87 @@ function slugify(value: string): string {
 }
 
 const UPDATE_CATEGORIES = ["News", "People", "Work", "Industry"] as const;
+const CAMPAIGN_STATUSES: { value: CampaignStatus; label: string }[] = [
+  { value: "pitch", label: "Pitch" },
+  { value: "live", label: "Live" },
+  { value: "completed", label: "Completed" },
+];
 
-const LABEL =
-  "block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground";
+const LABEL = "block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground";
 const TEXTAREA =
   "flex min-h-[90px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-xs shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50";
 
-export function QuickCreate() {
+export function QuickCreate({ type }: { type: CreateType }) {
   const router = useRouter();
   const { isAdmin } = useAuth();
   const [open, setOpen] = React.useState(false);
-  const [type, setType] = React.useState<CreateType>("update");
   const [busy, setBusy] = React.useState(false);
+  const [loadingClients, setLoadingClients] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [clients, setClients] = React.useState<ClientOption[]>([]);
 
-  // Update fields
+  // Update fields.
   const [title, setTitle] = React.useState("");
   const [category, setCategory] = React.useState<(typeof UPDATE_CATEGORIES)[number]>("News");
   const [excerpt, setExcerpt] = React.useState("");
   const [sourceName, setSourceName] = React.useState("BBDO West Africa");
 
-  // Resource fields
+  // Resource fields.
   const [label, setLabel] = React.useState("");
   const [group, setGroup] = React.useState("");
   const [meta, setMeta] = React.useState("");
   const [href, setHref] = React.useState("");
 
+  // Client fields.
+  const [clientName, setClientName] = React.useState("");
+  const [industry, setIndustry] = React.useState("");
+  const [clientDate, setClientDate] = React.useState("");
+  const [profileImage, setProfileImage] = React.useState("");
+  const [clientDescription, setClientDescription] = React.useState("");
+
+  // Campaign fields.
+  const [campaignTitle, setCampaignTitle] = React.useState("");
+  const [campaignClientId, setCampaignClientId] = React.useState("");
+  const [campaignCategory, setCampaignCategory] = React.useState("");
+  const [campaignStatus, setCampaignStatus] = React.useState<CampaignStatus>("pitch");
+  const [campaignYear, setCampaignYear] = React.useState("");
+  const [campaignLiveDate, setCampaignLiveDate] = React.useState("");
+
+  const copy = CREATE_COPY[type];
+
+  React.useEffect(() => {
+    if (!open || type !== "campaign") return;
+
+    let active = true;
+    setLoadingClients(true);
+    getDocs(collection(firebaseDb, "clients"))
+      .then((snapshot) => {
+        if (!active) return;
+        const options = snapshot.docs
+          .map((document) => {
+            const data = document.data() as { name?: string; slug?: string };
+            return { slug: data.slug ?? document.id, name: data.name ?? document.id };
+          })
+          .sort((a, b) => a.name.localeCompare(b.name));
+        setClients(options);
+        setCampaignClientId((current) => current || options[0]?.slug || "");
+      })
+      .catch((cause) => {
+        console.error("Unable to load clients for campaign creation", cause);
+        if (active) setError("Unable to load clients. Try again.");
+      })
+      .finally(() => {
+        if (active) setLoadingClients(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [open, type]);
+
   if (!isAdmin) return null;
 
   const reset = () => {
-    setType("update");
     setTitle("");
     setCategory("News");
     setExcerpt("");
@@ -73,6 +149,17 @@ export function QuickCreate() {
     setGroup("");
     setMeta("");
     setHref("");
+    setClientName("");
+    setIndustry("");
+    setClientDate("");
+    setProfileImage("");
+    setClientDescription("");
+    setCampaignTitle("");
+    setCampaignClientId("");
+    setCampaignCategory("");
+    setCampaignStatus("pitch");
+    setCampaignYear("");
+    setCampaignLiveDate("");
     setError(null);
   };
 
@@ -81,13 +168,21 @@ export function QuickCreate() {
     if (!next) reset();
   };
 
-  const canSave = type === "update" ? title.trim().length > 0 : label.trim().length > 0;
+  const canSave =
+    type === "update"
+      ? title.trim().length > 0
+      : type === "resource"
+        ? label.trim().length > 0
+        : type === "client"
+          ? clientName.trim().length > 0 && industry.trim().length > 0
+          : campaignTitle.trim().length > 0 && Boolean(campaignClientId) && !loadingClients;
 
   const handleSave = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!canSave || busy) return;
     setBusy(true);
     setError(null);
+
     try {
       if (type === "update") {
         const slug = slugify(title);
@@ -104,7 +199,7 @@ export function QuickCreate() {
         setOpen(false);
         reset();
         router.push(`/dashboard/blog/${slug}`);
-      } else {
+      } else if (type === "resource") {
         const slug = slugify(label);
         await setDoc(doc(firebaseDb, "resources", slug), {
           type: "resource",
@@ -120,11 +215,66 @@ export function QuickCreate() {
         setOpen(false);
         reset();
         router.push("/dashboard/resources");
+      } else if (type === "client") {
+        const slug = slugify(clientName);
+        await setDoc(doc(firebaseDb, "clients", slug), {
+          type: "client",
+          slug,
+          name: clientName.trim(),
+          date: clientDate || null,
+          industry: industry.trim(),
+          profileImage: profileImage.trim() || null,
+          description: clientDescription.trim() || null,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+        setOpen(false);
+        reset();
+        router.push(`/dashboard/clients/${slug}/overview`);
+      } else {
+        const selectedClient = clients.find((client) => client.slug === campaignClientId);
+        if (!selectedClient) throw new Error("Choose a client before creating the campaign.");
+
+        const slug = slugify(campaignTitle);
+        const parsedYear = campaignYear.trim() ? Number(campaignYear) : null;
+        const campaignName = campaignTitle.trim();
+        await setDoc(doc(firebaseDb, "campaigns", slug), {
+          slug,
+          name: campaignName,
+          campaign: campaignName,
+          clientId: selectedClient.slug,
+          clientName: selectedClient.name,
+          category: campaignCategory.trim() || "General",
+          year: Number.isFinite(parsedYear as number) ? parsedYear : null,
+          liveAt: campaignLiveDate ? { date: campaignLiveDate } : null,
+          status: campaignStatus,
+          leadUserId: null,
+          publishedBy: null,
+          fee: "To be confirmed",
+          target: "To be confirmed",
+          result: "To be confirmed",
+          image: "/images/projects/project-placeholder.svg",
+          imageAlt: `${campaignName} campaign placeholder`,
+          media: [],
+          summary: "Campaign details will be added.",
+          challenge: "Challenge details coming soon.",
+          insight: "Insight details coming soon.",
+          strategy: "Strategy details coming soon.",
+          platform: ["Channels to be confirmed"],
+          execution: "Execution details coming soon.",
+          outcome: "Outcome details coming soon.",
+          placeholder: true,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+        setOpen(false);
+        reset();
+        router.push(`/dashboard/campaigns/${slug}`);
       }
       router.refresh();
     } catch (cause) {
       console.error("Unable to create record", cause);
-      setError("Couldn’t save. Try again.");
+      setError(cause instanceof Error ? cause.message : "Couldn’t save. Try again.");
       setBusy(false);
     }
   };
@@ -134,79 +284,122 @@ export function QuickCreate() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label="New"
+        aria-label={copy.button}
         className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-primary px-2.5 text-[13px] font-semibold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:px-4"
       >
         <Plus className="h-4 w-4" aria-hidden="true" />
-        <span className="hidden sm:inline">New</span>
+        <span>{copy.button}</span>
       </button>
 
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>New</DialogTitle>
-            <DialogDescription>Add a few details. Saving opens the new item.</DialogDescription>
+            <DialogTitle>{copy.title}</DialogTitle>
+            <DialogDescription>{copy.description}</DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleSave} className="space-y-4">
-            <div className="space-y-1.5">
-              <span className={LABEL}>Type</span>
-              <Select value={type} onValueChange={(value) => setType(value as CreateType)}>
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="update">Update</SelectItem>
-                  <SelectItem value="resource">Resource</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
+          <form onSubmit={handleSave} className="max-h-[min(70vh,620px)] space-y-4 overflow-y-auto pr-1">
             {type === "update" ? (
               <>
                 <div className="space-y-1.5">
                   <span className={LABEL}>Title</span>
-                  <Input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} disabled={busy} placeholder="Headline" />
+                  <Input autoFocus value={title} onChange={(event) => setTitle(event.target.value)} disabled={busy} placeholder="Headline" />
                 </div>
                 <div className="space-y-1.5">
                   <span className={LABEL}>Category</span>
                   <Select value={category} onValueChange={(value) => setCategory(value as (typeof UPDATE_CATEGORIES)[number])}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {UPDATE_CATEGORIES.map((option) => (
-                        <SelectItem key={option} value={option}>{option}</SelectItem>
-                      ))}
-                    </SelectContent>
+                    <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                    <SelectContent>{UPDATE_CATEGORIES.map((option) => <SelectItem key={option} value={option}>{option}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-1.5">
                   <span className={LABEL}>Summary</span>
-                  <textarea value={excerpt} onChange={(e) => setExcerpt(e.target.value)} disabled={busy} className={TEXTAREA} placeholder="Short summary" />
+                  <textarea value={excerpt} onChange={(event) => setExcerpt(event.target.value)} disabled={busy} className={TEXTAREA} placeholder="Short summary" />
                 </div>
                 <div className="space-y-1.5">
                   <span className={LABEL}>Source</span>
-                  <Input value={sourceName} onChange={(e) => setSourceName(e.target.value)} disabled={busy} />
+                  <Input value={sourceName} onChange={(event) => setSourceName(event.target.value)} disabled={busy} />
+                </div>
+              </>
+            ) : type === "resource" ? (
+              <>
+                <div className="space-y-1.5">
+                  <span className={LABEL}>Name</span>
+                  <Input autoFocus value={label} onChange={(event) => setLabel(event.target.value)} disabled={busy} placeholder="Resource name" />
+                </div>
+                <div className="space-y-1.5">
+                  <span className={LABEL}>Group</span>
+                  <Input value={group} onChange={(event) => setGroup(event.target.value)} disabled={busy} placeholder="e.g. Internal" />
+                </div>
+                <div className="space-y-1.5">
+                  <span className={LABEL}>Detail</span>
+                  <Input value={meta} onChange={(event) => setMeta(event.target.value)} disabled={busy} placeholder="Short description" />
+                </div>
+                <div className="space-y-1.5">
+                  <span className={LABEL}>Link</span>
+                  <Input value={href} onChange={(event) => setHref(event.target.value)} disabled={busy} placeholder="https://" />
+                </div>
+              </>
+            ) : type === "client" ? (
+              <>
+                <div className="space-y-1.5">
+                  <span className={LABEL}>Name</span>
+                  <Input autoFocus value={clientName} onChange={(event) => setClientName(event.target.value)} disabled={busy} placeholder="Client name" />
+                </div>
+                <div className="space-y-1.5">
+                  <span className={LABEL}>Industry</span>
+                  <Input value={industry} onChange={(event) => setIndustry(event.target.value)} disabled={busy} placeholder="e.g. Finance" />
+                </div>
+                <div className="space-y-1.5">
+                  <span className={LABEL}>First live date</span>
+                  <Input type="date" value={clientDate} onChange={(event) => setClientDate(event.target.value)} disabled={busy} />
+                </div>
+                <div className="space-y-1.5">
+                  <span className={LABEL}>Logo / image URL</span>
+                  <Input value={profileImage} onChange={(event) => setProfileImage(event.target.value)} disabled={busy} placeholder="https://" />
+                </div>
+                <div className="space-y-1.5">
+                  <span className={LABEL}>Description</span>
+                  <textarea value={clientDescription} onChange={(event) => setClientDescription(event.target.value)} disabled={busy} className={TEXTAREA} placeholder="Short client description" />
                 </div>
               </>
             ) : (
               <>
                 <div className="space-y-1.5">
-                  <span className={LABEL}>Name</span>
-                  <Input autoFocus value={label} onChange={(e) => setLabel(e.target.value)} disabled={busy} placeholder="Resource name" />
+                  <span className={LABEL}>Campaign title</span>
+                  <Input autoFocus value={campaignTitle} onChange={(event) => setCampaignTitle(event.target.value)} disabled={busy} placeholder="Campaign name" />
                 </div>
                 <div className="space-y-1.5">
-                  <span className={LABEL}>Group</span>
-                  <Input value={group} onChange={(e) => setGroup(e.target.value)} disabled={busy} placeholder="e.g. Internal" />
+                  <span className={LABEL}>Client</span>
+                  {clients.length > 0 ? (
+                    <Select value={campaignClientId} onValueChange={setCampaignClientId} disabled={busy || loadingClients}>
+                      <SelectTrigger className="w-full"><SelectValue placeholder={loadingClients ? "Loading clients…" : "Select a client"} /></SelectTrigger>
+                      <SelectContent>{clients.map((client) => <SelectItem key={client.slug} value={client.slug}>{client.name}</SelectItem>)}</SelectContent>
+                    </Select>
+                  ) : (
+                    <p className="m-0 rounded-md border border-dashed border-border px-3 py-2 text-xs text-muted-foreground">Create a client first, then add a campaign to it.</p>
+                  )}
                 </div>
                 <div className="space-y-1.5">
-                  <span className={LABEL}>Detail</span>
-                  <Input value={meta} onChange={(e) => setMeta(e.target.value)} disabled={busy} placeholder="Short description" />
+                  <span className={LABEL}>Category</span>
+                  <Input value={campaignCategory} onChange={(event) => setCampaignCategory(event.target.value)} disabled={busy} placeholder="e.g. Finance" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <span className={LABEL}>Status</span>
+                    <Select value={campaignStatus} onValueChange={(value) => setCampaignStatus(value as CampaignStatus)} disabled={busy}>
+                      <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                      <SelectContent>{CAMPAIGN_STATUSES.map((option) => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <span className={LABEL}>Year</span>
+                    <Input type="number" value={campaignYear} onChange={(event) => setCampaignYear(event.target.value)} disabled={busy} placeholder="2026" />
+                  </div>
                 </div>
                 <div className="space-y-1.5">
-                  <span className={LABEL}>Link</span>
-                  <Input value={href} onChange={(e) => setHref(e.target.value)} disabled={busy} placeholder="https://" />
+                  <span className={LABEL}>Live date</span>
+                  <Input type="date" value={campaignLiveDate} onChange={(event) => setCampaignLiveDate(event.target.value)} disabled={busy} />
                 </div>
               </>
             )}
@@ -215,7 +408,7 @@ export function QuickCreate() {
 
             <DialogFooter>
               <button type="button" onClick={() => handleOpenChange(false)} disabled={busy} className="h-9 rounded-md border border-border px-4 text-xs font-semibold text-foreground transition hover:border-foreground disabled:opacity-50">Cancel</button>
-              <button type="submit" disabled={busy || !canSave} className="h-9 rounded-md bg-primary px-4 text-xs font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50">{busy ? "Saving…" : "Save"}</button>
+              <button type="submit" disabled={busy || !canSave} className="h-9 rounded-md bg-primary px-4 text-xs font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50">{busy ? "Saving…" : `Create ${type}`}</button>
             </DialogFooter>
           </form>
         </DialogContent>

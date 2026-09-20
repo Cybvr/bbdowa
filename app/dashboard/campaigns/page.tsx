@@ -13,7 +13,7 @@ export default async function CampaignsPage() {
 
   return (
     <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
-      <PageHeader title="Campaigns" />
+      <PageHeader title="Campaigns" createType="campaign" />
       <CampaignsTable campaigns={campaigns} />
     </main>
   );

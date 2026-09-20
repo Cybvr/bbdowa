@@ -13,7 +13,7 @@ export default async function ClientsPage() {
 
   return (
     <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
-      <PageHeader title="Clients" />
+      <PageHeader title="Clients" createType="client" />
       <ClientsDirectory clients={clients} />
     </main>
   );

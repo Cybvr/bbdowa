@@ -14,7 +14,7 @@ import { firebaseDb } from "@/lib/firebase/client";
 import { ACTIVITY_COLLECTION, elapsedMs, formatClock, isPaused, runningEntry, type ActivityEntry } from "@/lib/time-tracking";
 
 const NAV_TEXT =
-  "flex min-h-12 w-full items-center gap-3 rounded-lg px-3 py-2.5 font-mono text-sm font-medium leading-none text-foreground no-underline transition-colors hover:bg-foreground/10 hover:text-foreground focus-visible:bg-foreground/10 focus-visible:text-foreground focus-visible:outline-none nav:min-h-9 nav:gap-2 nav:px-2 nav:py-1.5 nav:text-xs";
+  "flex min-h-11 w-full items-center gap-2 rounded-lg px-2.5 py-2 font-mono text-[13px] font-medium leading-none text-foreground no-underline transition-colors hover:bg-foreground/10 hover:text-foreground focus-visible:bg-foreground/10 focus-visible:text-foreground focus-visible:outline-none nav:min-h-9 nav:gap-2 nav:px-2 nav:py-1.5 nav:text-xs";
 
 const NAV_LABEL = "overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]";
 
@@ -30,7 +30,7 @@ function NavIcon({ label }: { label: string }) {
   return <Icon className="h-5 w-5 nav:h-4 nav:w-4" />;
 }
 
-export function DashboardLogo({ onNavigate }: { onNavigate?: () => void }) {
+export function DashboardLogo({ onNavigate, light = false }: { onNavigate?: () => void; light?: boolean }) {
   return (
     <Link
       href="/dashboard"
@@ -42,7 +42,7 @@ export function DashboardLogo({ onNavigate }: { onNavigate?: () => void }) {
       <img
         src="/bbdo-west-africa.png"
         alt="BBDO West Africa"
-        className="block h-auto w-[clamp(112px,10vw,138px)] max-w-full brightness-0"
+        className={`block h-auto w-[clamp(112px,10vw,138px)] max-w-full ${light ? "brightness-0 invert" : "brightness-0"}`}
       />
     </Link>
   );
@@ -133,7 +133,7 @@ export function DashboardNavList({ onNavigate, collapsed = false }: { onNavigate
   }, [pathname]);
 
   return (
-    <ul className="m-0 flex list-none flex-col items-stretch gap-0.5 p-0">
+    <ul className="m-0 flex list-none flex-col items-stretch gap-0 p-0 nav:gap-0.5">
       {visibleItems.map((item) => {
         if (item.kind === "link") {
           const current =
@@ -144,7 +144,7 @@ export function DashboardNavList({ onNavigate, collapsed = false }: { onNavigate
             return (
               <li key={item.label} className="w-full">
                 <div className={`${NAV_TEXT} ${current ? NAV_ACTIVE : ""}`}>
-                  <Link href={item.href} aria-current={current ? "page" : undefined} onClick={onNavigate} className="flex min-w-0 flex-1 items-center gap-3 no-underline nav:gap-2">
+                  <Link href={item.href} aria-current={current ? "page" : undefined} onClick={onNavigate} className="flex min-w-0 flex-1 items-center gap-2 no-underline">
                     <NavIcon label={item.label} />
                     <span className="overflow-hidden whitespace-nowrap text-xs">{sentenceCase(item.label)}</span>
                   </Link>
@@ -212,7 +212,7 @@ export function DashboardNavList({ onNavigate, collapsed = false }: { onNavigate
               }`}
             >
               <div className="min-h-0 overflow-hidden">
-                <ul className="m-0 mt-1 w-full list-none rounded-lg p-1">
+                <ul className="m-0 mt-0.5 w-full list-none rounded-lg p-0.5 nav:mt-1 nav:p-1">
                   {item.items
                     .filter((entry) => !entry.requiresAuth || Boolean(auth?.user))
                     .map((entry) => {
@@ -247,7 +247,7 @@ export function DashboardNavList({ onNavigate, collapsed = false }: { onNavigate
 
 export function DashboardNavFooter({ collapsed = false }: { collapsed?: boolean }) {
   return (
-    <div className="mt-auto pt-3">
+    <div className="mt-auto pt-2 nav:pt-3">
       <ProfileNav variant={collapsed ? "avatar" : "row"} />
     </div>
   );
@@ -313,7 +313,7 @@ export function DashboardSidebarSheet({ trigger }: { trigger?: React.ReactNode }
           </button>
         )}
       </SheetTrigger>
-      <SheetContent side="left" className="w-[min(264px,84vw)] gap-2 overflow-y-auto rounded-2xl border-0 bg-background p-2.5 text-foreground shadow-2xl">
+      <SheetContent side="left" className="w-[min(264px,84vw)] gap-1 overflow-y-auto rounded-2xl border-0 bg-background p-2 text-foreground shadow-2xl">
         <SheetHeader className="sr-only">
           <SheetTitle>Navigation</SheetTitle>
         </SheetHeader>
