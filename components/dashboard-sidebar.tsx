@@ -14,7 +14,7 @@ import { firebaseDb } from "@/lib/firebase/client";
 import { ACTIVITY_COLLECTION, elapsedMs, formatClock, isPaused, runningEntry, type ActivityEntry } from "@/lib/time-tracking";
 
 const NAV_TEXT =
-  "flex min-h-11 w-full items-center gap-2 rounded-lg px-2.5 py-2 font-mono text-[13px] font-medium leading-none text-foreground no-underline transition-colors hover:bg-foreground/10 hover:text-foreground focus-visible:bg-foreground/10 focus-visible:text-foreground focus-visible:outline-none nav:min-h-9 nav:gap-2 nav:px-2 nav:py-1.5 nav:text-xs";
+  "flex min-h-11 w-full items-center gap-2 rounded-lg px-2.5 py-2 font-mono text-[13px] font-medium leading-none text-foreground no-underline transition-colors hover:bg-foreground/10 hover:text-foreground focus-visible:bg-foreground/10 focus-visible:text-foreground focus-visible:outline-none nav:min-h-9 nav:gap-2 nav:px-2 nav:py-1.5 nav:text-sm";
 
 const NAV_LABEL = "overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]";
 
@@ -150,7 +150,7 @@ export function DashboardNavList({ onNavigate, collapsed = false }: { onNavigate
                 <div className={`${NAV_TEXT} ${current ? NAV_ACTIVE : ""}`}>
                   <Link href={item.href} aria-current={current ? "page" : undefined} onClick={onNavigate} className="flex min-w-0 flex-1 items-center gap-2 no-underline">
                     <NavIcon label={item.label} />
-                    <span className="overflow-hidden whitespace-nowrap text-xs">{sentenceCase(item.label)}</span>
+                    <span className="overflow-hidden whitespace-nowrap text-sm">{sentenceCase(item.label)}</span>
                   </Link>
                   <span className="font-mono text-[11px] font-semibold tabular-nums text-primary">{formatClock(elapsedMs(running, now))}</span>
                   <button type="button" aria-label={isPaused(running) ? "Resume timer" : "Pause timer"} title={isPaused(running) ? "Resume timer" : "Pause timer"} onClick={() => void togglePause()} disabled={trackerBusy} className="grid h-6 w-6 shrink-0 cursor-pointer place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-wait disabled:opacity-50">

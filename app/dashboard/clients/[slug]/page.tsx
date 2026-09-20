@@ -587,6 +587,7 @@ function OneUtilityClientWorkspace({
   const [campaignDeadline, setCampaignDeadline] = useState("2026-07-25");
 
   // Settings state
+  const [clientDescription, setClientDescription] = useState(client?.description?.trim() ?? "");
   const [brandUrl, setBrandUrl] = useState(preset.url);
   const [footprint, setFootprint] = useState(preset.footprint);
   const [aesthetic, setAesthetic] = useState(preset.aesthetic);
@@ -1535,7 +1536,7 @@ function OneUtilityClientWorkspace({
                   <nav aria-label="Profile sections" className="border-b border-border/70 md:border-b-0 md:border-r md:pr-4">
                     <div role="tablist" aria-orientation="vertical" className="flex flex-col gap-1">
                       {[
-                        { id: "company" as const, label: "Company Profile" },
+                        { id: "company" as const, label: "About" },
                         { id: "design" as const, label: "Design" },
                       ].map((section) => {
                         const isActive = profileSection === section.id;
@@ -1561,7 +1562,14 @@ function OneUtilityClientWorkspace({
 
                   <div className="min-w-0">
                   {profileSection === "company" && (
-                  <section id="profile-panel-company" role="tabpanel" aria-label="Company Profile" className="space-y-5">
+                  <section id="profile-panel-company" role="tabpanel" aria-label="About" className="space-y-5">
+                    <div className="border-b border-border pb-3">
+                      <span className="text-xs font-mono uppercase tracking-widest text-primary font-semibold">
+                        About
+                      </span>
+                      <h2 className="text-base font-semibold text-foreground mt-0.5">Profile</h2>
+                    </div>
+
                     <div className="space-y-1.5">
                       <label htmlFor="brandUrl" className="text-sm font-medium text-foreground">
                         Website
@@ -1596,6 +1604,23 @@ function OneUtilityClientWorkspace({
                       />
                     </div>
 
+                    <div className="space-y-1.5">
+                      <label htmlFor="clientDescription" className="text-sm font-medium text-foreground">
+                        Description
+                      </label>
+                      <textarea
+                        id="clientDescription"
+                        rows={4}
+                        value={clientDescription}
+                        onChange={(e) => {
+                          setClientDescription(e.target.value);
+                          setBusinessProfileDirty(true);
+                        }}
+                        className="min-h-[112px] w-full resize-y border-0 border-b border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-0"
+                        placeholder="Add a short description of this client"
+                      />
+                    </div>
+
                     <div className="flex items-center justify-end border-t border-border pt-4">
                       <button
                         type="button"
@@ -1615,7 +1640,7 @@ function OneUtilityClientWorkspace({
                     {/* BRAND & DESIGN */}
                     <div className="border-b border-border pb-3">
                       <span className="text-xs font-mono uppercase tracking-widest text-primary font-semibold">
-                        Identity
+                        Design
                       </span>
                       <h2 className="text-base font-semibold text-foreground mt-0.5">Brand</h2>
                     </div>

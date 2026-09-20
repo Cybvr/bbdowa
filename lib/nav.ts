@@ -26,13 +26,12 @@ export const NAV_ITEMS: NavItem[] = [
   { kind: "link", label: "Campaigns", href: "/dashboard/campaigns", requiresAuth: true },
   { kind: "link", label: "Clients", href: "/dashboard/clients", requiresAuth: true },
   { kind: "link", label: "Creators", href: "/dashboard/creators" },
-  { kind: "link", label: "Team", href: "/dashboard/people", requiresAuth: true },
   { kind: "link", label: "Tracker", href: "/dashboard/tracker", requiresAuth: true },
   {
     kind: "menu",
     label: "Resources",
     requiresAuth: true,
-    match: ["/dashboard/workflows", "/dashboard/brand", "/dashboard/resources", "/dashboard/about", "/dashboard/careers"],
+    match: ["/dashboard/workflows", "/dashboard/brand", "/dashboard/resources", "/dashboard/about", "/dashboard/careers", "/dashboard/people"],
     items: [
       { label: "Agency workflow", href: "/dashboard/workflows/agency" },
       { label: "Pitch workflow", href: "/dashboard/workflows/pitch" },
@@ -40,6 +39,7 @@ export const NAV_ITEMS: NavItem[] = [
       { label: "Resources", href: "/dashboard/resources" },
       { label: "About", href: "/dashboard/about" },
       { label: "Careers", href: "/dashboard/careers" },
+      { label: "Team", href: "/dashboard/people" },
     ],
   },
   { kind: "link", label: "Updates", href: "/dashboard/blog" },
