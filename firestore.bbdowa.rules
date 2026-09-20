@@ -16,12 +16,24 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin";
     }
 
+    function isManager() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "manager";
+    }
+
+    // Admins and managers both run the agency side of the dashboard: giving
+    // out tasks, drafting agreements, and looking up who's a creator.
+    function isStaff() {
+      return isAdmin() || isManager();
+    }
+
     function validRole() {
       return request.resource.data.role in ["pending", "admin", "manager", "creator"];
     }
 
     match /users/{userId} {
-      allow read: if isAdmin() || isSelf(userId);
+      allow read: if isStaff() || isSelf(userId);
       allow create: if (isAdmin()
         && request.resource.data.uid == userId
         && validRole())
@@ -81,6 +93,40 @@ service cloud.firestore {
         && request.resource.data.uid == request.auth.uid;
       allow delete: if isAdmin()
         || (signedIn() && resource.data.uid == request.auth.uid);
+    }
+
+    // Tasks admins/managers assign to a creator. The creator can move a task
+    // through status but can't edit what it says or reassign it.
+    match /creatorTasks/{id} {
+      allow read: if isStaff()
+        || (signedIn() && resource.data.assignedTo == request.auth.uid);
+      allow create: if isStaff() && request.resource.data.createdBy == request.auth.uid;
+      allow update: if isStaff()
+        || (signedIn()
+          && resource.data.assignedTo == request.auth.uid
+          && request.resource.data.assignedTo == resource.data.assignedTo
+          && request.resource.data.createdBy == resource.data.createdBy
+          && request.resource.data.title == resource.data.title
+          && request.resource.data.description == resource.data.description
+          && request.resource.data.dueDate == resource.data.dueDate);
+      allow delete: if isStaff();
+    }
+
+    // NDAs and other agreements admins/managers draft for a creator to sign.
+    // The creator can only add a signature, never touch the agreement text.
+    match /contracts/{id} {
+      allow read: if isStaff()
+        || (signedIn() && resource.data.assignedTo == request.auth.uid);
+      allow create: if isStaff() && request.resource.data.createdBy == request.auth.uid;
+      allow update: if isStaff()
+        || (signedIn()
+          && resource.data.assignedTo == request.auth.uid
+          && request.resource.data.assignedTo == resource.data.assignedTo
+          && request.resource.data.title == resource.data.title
+          && request.resource.data.body == resource.data.body
+          && resource.data.status == "pending"
+          && request.resource.data.status == "signed");
+      allow delete: if isStaff();
     }
   }
 }

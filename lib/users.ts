@@ -20,6 +20,8 @@ export type CreatorWorkHistory = {
 // compatibility field for existing Firestore records.
 export type User = {
   slug: string;
+  /** Firebase Auth uid, present once this person has signed in and holds an account. */
+  uid?: string | null;
   name: string;
   /** Primary role retained for older records and auth compatibility. */
   role: UserAccountRole;
