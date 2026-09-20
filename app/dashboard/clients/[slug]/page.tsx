@@ -57,6 +57,22 @@ function caseStudyFromCampaign(campaign?: Campaign): CaseStudyDraft {
   };
 }
 
+function dateOnly(value: unknown): string | undefined {
+  if (typeof value === "string") return value.slice(0, 10);
+  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  if (!value || typeof value !== "object") return undefined;
+
+  const timestamp = value as {
+    toDate?: () => Date;
+    toMillis?: () => number;
+    seconds?: number;
+  };
+  if (typeof timestamp.toDate === "function") return timestamp.toDate().toISOString().slice(0, 10);
+  if (typeof timestamp.toMillis === "function") return new Date(timestamp.toMillis()).toISOString().slice(0, 10);
+  if (typeof timestamp.seconds === "number") return new Date(timestamp.seconds * 1000).toISOString().slice(0, 10);
+  return undefined;
+}
+
 function ClientWorkspaceHero({
   clientName,
   title,
@@ -1038,7 +1054,7 @@ function OneUtilityClientWorkspace({
                               <li key={campaign.id}>
                                 <DashboardCard
                                   className="h-full"
-                                  actions={record ? <DashboardCardActions collection="campaigns" slug={record.slug} titleField="campaign" title={record.campaign ?? record.name} showCopy={false} /> : undefined}
+                                  actions={record ? <DashboardCardActions collection="campaigns" slug={record.slug} titleField="campaign" title={record.campaign ?? record.name} copyLabel="Duplicate" /> : undefined}
                                 >
                                   <button
                                     type="button"
@@ -1082,6 +1098,7 @@ function OneUtilityClientWorkspace({
                                 <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Status</th>
                                 <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Category</th>
                                 <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Year</th>
+                                <th className="whitespace-nowrap border-b border-border px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Actions</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -1097,6 +1114,19 @@ function OneUtilityClientWorkspace({
                                     <td className="px-4 py-3.5 text-[13px]"><DashboardBadge tone={campaign.status === "Live" ? "active" : "neutral"}>{campaign.status}</DashboardBadge></td>
                                     <td className="px-4 py-3.5 text-[13px] text-muted-foreground">{record?.category ?? "—"}</td>
                                     <td className="whitespace-nowrap px-4 py-3.5 text-[13px] text-muted-foreground">{record?.year ?? "—"}</td>
+                                    <td className="px-4 py-3.5 text-right">
+                                      {record ? (
+                                        <span className="inline-flex">
+                                          <DashboardCardActions
+                                            collection="campaigns"
+                                            slug={record.slug}
+                                            titleField="campaign"
+                                            title={record.campaign ?? record.name}
+                                            copyLabel="Duplicate"
+                                          />
+                                        </span>
+                                      ) : null}
+                                    </td>
                                   </tr>
                                 );
                               })}
@@ -1549,11 +1579,11 @@ function OneUtilityClientWorkspace({
                       </div>
                       <div className="space-y-1">
                         <dt className="text-[10px] uppercase text-muted-foreground">Date created</dt>
-                        <dd className="m-0 text-[13px] font-medium text-foreground">{longDate(activeCampaignRecord?.createdAt?.slice(0, 10))}</dd>
+                        <dd className="m-0 text-[13px] font-medium text-foreground">{longDate(dateOnly(activeCampaignRecord?.createdAt))}</dd>
                       </div>
                       <div className="space-y-1">
                         <dt className="text-[10px] uppercase text-muted-foreground">Date modified</dt>
-                        <dd className="m-0 text-[13px] font-medium text-foreground">{longDate(activeCampaignRecord?.updatedAt?.slice(0, 10))}</dd>
+                        <dd className="m-0 text-[13px] font-medium text-foreground">{longDate(dateOnly(activeCampaignRecord?.updatedAt))}</dd>
                       </div>
                       <div className="space-y-1">
                         <dt className="text-[10px] uppercase text-muted-foreground">Status</dt>
