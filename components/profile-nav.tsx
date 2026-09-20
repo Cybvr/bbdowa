@@ -67,7 +67,7 @@ function LogOutIcon() {
 
 const DEFAULT_ITEMS: readonly ProfileNavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: <UserIcon /> },
-  { label: "Settings", icon: <SettingsIcon /> },
+  { label: "Settings", href: "/dashboard/settings", icon: <SettingsIcon /> },
 ];
 
 export function ProfileNav({
