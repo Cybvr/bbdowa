@@ -1,14 +1,17 @@
 "use client";
 
+import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { IconType } from "react-icons";
 import { FaBehance, FaGlobe } from "react-icons/fa";
-import { Briefcase, CheckSquare, Clock, FileSignature, FileText, Mail, Timer, Users } from "lucide-react";
+import { Briefcase, Clock, FileSignature, FileText, Mail, Megaphone, Timer, Users } from "lucide-react";
 import { creatorCategoryOptions, isCreatorNew, isCreatorUser, type Creator } from "@/lib/users";
 import { useAuth } from "@/components/auth-provider";
-import { useFirestoreUsers, useOwnUser } from "@/lib/firebase/client-content";
+import { readCampaignsFromFirestore, readClientsFromFirestore, useFirestoreUsers, useOwnUser } from "@/lib/firebase/client-content";
 import { longDate } from "@/lib/format";
+import { campaignHref, type Campaign } from "@/lib/campaigns";
+import { getCreatorCampaigns, type Client } from "@/lib/clients";
 import {
   DetailBreadcrumb,
   ProfileBanner,
@@ -23,7 +26,6 @@ import { SocialIcon, type SocialIconName } from "@/components/social-icon";
 import { ShareCreatorDialog } from "@/components/share-creator-dialog";
 import { UserActions } from "@/components/user-actions";
 import { ProfilePageSkeleton } from "@/components/dashboard/loading-skeleton";
-import { CreatorTasksPanel } from "@/components/tasks-view";
 import { CreatorContractsPanel } from "@/components/contracts-view";
 import { CreatorHoursPanel } from "@/components/creator-hours-panel";
 
@@ -42,7 +44,7 @@ function platformsFor(creator: Creator): CreatorPlatform[] {
   return platforms;
 }
 
-type CreatorTab = "overview" | "work-history" | "hours" | "tasks" | "contracts";
+type CreatorTab = "overview" | "work-history" | "campaigns" | "hours" | "contracts";
 
 export default function CreatorDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -51,6 +53,23 @@ export default function CreatorDetailPage() {
   const staff = useFirestoreUsers();
   const own = useOwnUser();
   const [tab, setTab] = useState<CreatorTab>("overview");
+
+  // Public collections — no auth needed, so every viewer can see this.
+  const [clients, setClients] = useState<Client[]>([]);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  useEffect(() => {
+    let active = true;
+    Promise.all([readClientsFromFirestore(), readCampaignsFromFirestore()])
+      .then(([clientsData, campaignsData]) => {
+        if (!active) return;
+        setClients(clientsData);
+        setCampaigns(campaignsData);
+      })
+      .catch((cause) => console.error("Unable to load clients/campaigns", cause));
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Staff can browse every creator; everyone else can only ever land on their
   // own profile (Firestore only lets a person read their own `users` doc).
@@ -65,12 +84,13 @@ export default function CreatorDetailPage() {
     return <main className="flex-1 px-3 pb-10 pt-3 sm:px-8 sm:pb-16 sm:pt-8">Creator not found.</main>;
   }
   const platforms = platformsFor(creator);
+  const creatorCampaigns = getCreatorCampaigns(creator.slug, clients, campaigns);
 
   const tabs: { id: CreatorTab; label: string }[] = [
     { id: "overview", label: "Overview" },
     { id: "work-history", label: "Work history" },
+    { id: "campaigns", label: "Campaigns" },
     { id: "hours", label: "Hours" },
-    { id: "tasks", label: "Tasks" },
     { id: "contracts", label: "Contracts" },
   ];
 
@@ -202,19 +222,30 @@ export default function CreatorDetailPage() {
           </ProfileSection>
         )}
 
-        {tab === "hours" && authUser && (
-          <ProfileSection icon={<Timer aria-hidden="true" className="h-3.5 w-3.5" />} title="Hours logged">
-            <CreatorHoursPanel creatorUid={creator.uid} creatorName={creator.name} isSelf={authUser.uid === creator.uid} />
+        {tab === "campaigns" && (
+          <ProfileSection icon={<Megaphone aria-hidden="true" className="h-3.5 w-3.5" />} title="Campaigns">
+            {creatorCampaigns.length ? (
+              <div>
+                {creatorCampaigns.map((campaign) => (
+                  <Link
+                    key={campaign.slug}
+                    href={campaignHref(campaign.slug)}
+                    className="group flex items-baseline justify-between gap-3 border-t border-border py-3 text-foreground no-underline first:border-t-0 hover:text-primary focus-visible:text-primary focus-visible:outline-none"
+                  >
+                    <span className="min-w-0 truncate text-[14px] font-semibold">{campaign.campaign ?? campaign.name}</span>
+                    <span className="shrink-0 text-[12px] font-medium capitalize text-muted-foreground group-hover:text-primary">{campaign.status}</span>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <p className="m-0 text-[13px] text-muted-foreground">No campaigns linked yet.</p>
+            )}
           </ProfileSection>
         )}
 
-        {tab === "tasks" && authUser && (
-          <ProfileSection icon={<CheckSquare aria-hidden="true" className="h-3.5 w-3.5" />} title="Tasks">
-            <CreatorTasksPanel
-              creatorUid={creator.uid}
-              creatorName={creator.name}
-              viewer={{ uid: authUser.uid, name: authUser.name ?? authUser.email, isStaff }}
-            />
+        {tab === "hours" && authUser && (
+          <ProfileSection icon={<Timer aria-hidden="true" className="h-3.5 w-3.5" />} title="Hours logged">
+            <CreatorHoursPanel creatorUid={creator.uid} creatorName={creator.name} isSelf={authUser.uid === creator.uid} />
           </ProfileSection>
         )}
 

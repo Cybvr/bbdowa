@@ -37,6 +37,16 @@ export function getClientCampaigns(slug: string, campaigns: Campaign[]): Campaig
 }
 
 /**
+ * Campaigns for the clients a creator is rostered on (set from the client
+ * workspace's Team tab). There's no per-campaign creator assignment yet, so
+ * this is the closest real link between a creator and the work they're on.
+ */
+export function getCreatorCampaigns(creatorSlug: string, clients: Client[], campaigns: Campaign[]): Campaign[] {
+  const clientSlugs = new Set(clients.filter((client) => client.creatorSlugs?.includes(creatorSlug)).map((client) => client.slug));
+  return campaigns.filter((campaign) => clientSlugs.has(campaign.clientId));
+}
+
+/**
  * The workspace content for a client, assembled from the fields that live
  * directly on the client's project; clients/campaigns without curated content
  * get a blank template so nothing leaks in from another client.

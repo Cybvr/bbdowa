@@ -23,6 +23,10 @@ export function readCampaignsFromFirestore() {
   return readCollection<Campaign>("campaigns");
 }
 
+export function readClientsFromFirestore() {
+  return readCollection<Client>("clients");
+}
+
 type FirestoreUsersState = {
   users: User[];
   loading: boolean;
