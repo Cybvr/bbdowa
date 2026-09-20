@@ -14,7 +14,7 @@ import {
   where,
 } from "firebase/firestore";
 import { firebaseDb } from "@/lib/firebase/client";
-import { EditSheet, SelectField, TextField, TextareaField } from "@/components/detail-editor";
+import { CreatableSelectField, EditSheet, SelectField, TextField, TextareaField } from "@/components/detail-editor";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,6 +34,7 @@ export function UserActions({
   listHref,
   compactMenu = false,
   includeEditAction = false,
+  categoryOptions = [],
   onMutated,
 }: {
   user: User;
@@ -41,6 +42,7 @@ export function UserActions({
   listHref: string;
   compactMenu?: boolean;
   includeEditAction?: boolean;
+  categoryOptions?: string[];
   onMutated?: () => void;
 }) {
   const router = useRouter();
@@ -188,18 +190,13 @@ export function UserActions({
       ) : null}
       {roles.includes("creator") ? (
         <>
-          <SelectField
+          <CreatableSelectField
             label="Category"
             value={category}
-            onChange={(value) => setCategory(value as User["category"])}
-            options={[
-              { value: "Art", label: "Art" },
-              { value: "Writing", label: "Writing" },
-              { value: "UX", label: "UX" },
-              { value: "Strategy", label: "Strategy" },
-              { value: "Film", label: "Film" },
-              { value: "Content", label: "Content" },
-            ]}
+            onChange={setCategory}
+            options={categoryOptions}
+            addLabel="Add new category…"
+            placeholder="e.g. Photography"
           />
           <TextField label="Day rate" value={dayRate} onChange={setDayRate} />
           <SelectField

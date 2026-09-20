@@ -6,7 +6,7 @@ export type CreatorAvailability = "open" | "busy" | "unconfirmed";
 
 export type CreatorClearance = "cleared" | "pending";
 
-export type CreatorCategory = "Art" | "Writing" | "UX" | "Strategy" | "Film" | "Content";
+export const DEFAULT_CREATOR_CATEGORIES = ["Art", "Content", "Film", "Strategy", "UX", "Writing"] as const;
 
 export type CreatorWorkHistory = {
   role: string;
@@ -29,7 +29,8 @@ export type User = {
   title: string;
   /** Department (agency staff). */
   department: string;
-  category: CreatorCategory;
+  /** Creator discipline. Not a closed set — admins can add new ones from the edit form. */
+  category: string;
   tags: string[];
   location: string;
   entity: "Freelancer" | "Studio";
@@ -1277,6 +1278,13 @@ export const CREATORS: User[] = CREATOR_RECORDS.map((creator) => ({
 export const USERS: User[] = [...TEAM, ...CREATORS];
 
 export const CREATOR_CATEGORIES = [...new Set(CREATORS.map((creator) => creator.category))].sort();
+
+/** Known categories plus the defaults, so an admin picks from what's in use and can still add a new one. */
+export function creatorCategoryOptions(users: Pick<User, "category">[]): string[] {
+  const known = new Set([...DEFAULT_CREATOR_CATEGORIES, ...users.map((user) => user.category)]);
+  known.delete("");
+  return [...known].sort();
+}
 
 /** Working rate for comparing dollar quotes against naira budgets. Update when the rate moves. */
 export const NGN_PER_USD = 1500;

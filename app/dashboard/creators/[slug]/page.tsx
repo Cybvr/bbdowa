@@ -5,7 +5,7 @@ import type { IconType } from "react-icons";
 import { FaBehance, FaGlobe } from "react-icons/fa";
 import { FiArrowUpRight } from "react-icons/fi";
 import { BackLink } from "@/components/back-link";
-import { isCreatorNew, isCreatorUser, type Creator } from "@/lib/users";
+import { creatorCategoryOptions, isCreatorNew, isCreatorUser, type Creator } from "@/lib/users";
 import { useFirestoreUsers } from "@/lib/firebase/client-content";
 import { longDate } from "@/lib/format";
 import { ImageWithFallback, MetaGrid, MetaItem, SectionHeading } from "@/components/dashboard/ui";
@@ -73,7 +73,7 @@ export default function CreatorDetailPage() {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-[13px] font-medium text-muted-foreground">{creator.availability}</span>
-              <UserActions user={creator} variant="creator" listHref="/dashboard/creators" />
+              <UserActions user={creator} variant="creator" listHref="/dashboard/creators" categoryOptions={creatorCategoryOptions(users)} />
               <ShareCreatorDialog creatorName={creator.name} path={`/dashboard/creators/${creator.slug}`} showLabel />
             </div>
           </div>

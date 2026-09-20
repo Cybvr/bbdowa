@@ -7,7 +7,7 @@ import { EmptyThumbnail, ImageWithFallback } from "@/components/empty-thumbnail"
 import { Badge as DashboardBadge } from "@/components/dashboard/ui";
 import type { Campaign, CampaignStatus } from "@/lib/campaigns";
 import { getClient, getClientWorkspace, type Client } from "@/lib/clients";
-import { isCreatorUser, type User } from "@/lib/users";
+import { creatorCategoryOptions as knownCreatorCategories, isCreatorUser, type User } from "@/lib/users";
 import { readContentFromFirestore } from "@/lib/firebase/client-content";
 import { ClientActions } from "@/components/client-actions";
 import { ClientCreatorAddAction } from "@/components/client-creator-add-action";
@@ -1981,7 +1981,7 @@ function OneUtilityClientWorkspace({
                             <li key={creator.slug}>
                               <DashboardCard
                                 className="h-full"
-                                actions={<UserActions user={creator} variant="creator" listHref={`/dashboard/clients/${slug}/creators`} compactMenu />}
+                                actions={<UserActions user={creator} variant="creator" listHref={`/dashboard/clients/${slug}/creators`} compactMenu categoryOptions={knownCreatorCategories(availableUsers)} />}
                               >
                                 <Link
                                   href={`/dashboard/creators/${creator.slug}`}

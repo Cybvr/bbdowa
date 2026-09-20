@@ -9,7 +9,7 @@ import { ImageWithFallback, PageHeader } from "@/components/dashboard/ui";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useFirestoreUsers } from "@/lib/firebase/client-content";
-import { isCreatorUser, isTeamUser, userRoles, type User, type UserRole } from "@/lib/users";
+import { creatorCategoryOptions, isCreatorUser, isTeamUser, userRoles, type User, type UserRole } from "@/lib/users";
 
 type RoleFilter = "all" | UserRole | "pending";
 
@@ -31,7 +31,7 @@ function PendingBadge() {
   return <span className="inline-flex items-center rounded-full bg-amber-500/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.06em] text-amber-700">Pending</span>;
 }
 
-function UserRow({ user }: { user: User }) {
+function UserRow({ user, categoryOptions }: { user: User; categoryOptions: string[] }) {
   const variant = isCreatorUser(user) && !isTeamUser(user) ? "creator" : "team";
   return (
     <tr className="border-t border-border align-middle first:border-t-0">
@@ -63,6 +63,7 @@ function UserRow({ user }: { user: User }) {
           listHref="/admin/users"
           compactMenu
           includeEditAction
+          categoryOptions={categoryOptions}
           onMutated={() => window.location.reload()}
         />
       </td>
@@ -88,6 +89,8 @@ export default function AdminUsersPage() {
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [query, roleFilter, users]);
 
+  const categoryOptions = React.useMemo(() => creatorCategoryOptions(users), [users]);
+
   if (authLoading || loading) {
     return <main className="mx-auto w-full max-w-6xl flex-1 px-5 pb-16 pt-8 sm:px-8">Loading users…</main>;
   }
@@ -106,7 +109,7 @@ export default function AdminUsersPage() {
         title="Users"
         description="Manage every user profile, including admins, team members, creators, and people with multiple roles."
         meta={`${users.length} ${users.length === 1 ? "person" : "people"}`}
-        actions={<UserCreateAction existingSlugs={users.map((user) => user.slug)} />}
+        actions={<UserCreateAction existingSlugs={users.map((user) => user.slug)} categoryOptions={categoryOptions} />}
       />
 
       <section className="mt-6 overflow-hidden rounded-xl border border-border bg-background">
@@ -141,7 +144,7 @@ export default function AdminUsersPage() {
                 </tr>
               </thead>
               <tbody>
-                {visibleUsers.map((user, index) => <UserRow key={`${user.slug || "user"}-${user.email || "record"}-${index}`} user={user} />)}
+                {visibleUsers.map((user, index) => <UserRow key={`${user.slug || "user"}-${user.email || "record"}-${index}`} user={user} categoryOptions={categoryOptions} />)}
               </tbody>
             </table>
           </div>

@@ -112,6 +112,79 @@ export function SelectField({
   );
 }
 
+const ADD_NEW_OPTION = "__add_new__";
+
+/**
+ * Like SelectField, but the last option lets the admin type a value that
+ * isn't in the list yet — for fields like creator category that grow over
+ * time instead of staying a fixed enum.
+ */
+export function CreatableSelectField({
+  label,
+  value,
+  onChange,
+  options,
+  addLabel = "Add new…",
+  placeholder = "Type a new value",
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: string[];
+  addLabel?: string;
+  placeholder?: string;
+}) {
+  const [customMode, setCustomMode] = React.useState(false);
+  const knownOptions = value && !options.includes(value) ? [value, ...options] : options;
+
+  if (customMode) {
+    return (
+      <Field label={label}>
+        <div className="flex items-center gap-2">
+          <Input autoFocus value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} />
+          {options.length ? (
+            <button
+              type="button"
+              onClick={() => setCustomMode(false)}
+              className="shrink-0 text-[12px] font-semibold text-muted-foreground underline decoration-border underline-offset-4 hover:text-foreground"
+            >
+              Choose existing
+            </button>
+          ) : null}
+        </div>
+      </Field>
+    );
+  }
+
+  return (
+    <Field label={label}>
+      <Select
+        value={value || undefined}
+        onValueChange={(next) => {
+          if (next === ADD_NEW_OPTION) {
+            onChange("");
+            setCustomMode(true);
+            return;
+          }
+          onChange(next);
+        }}
+      >
+        <SelectTrigger className="w-full">
+          <SelectValue placeholder="Select…" />
+        </SelectTrigger>
+        <SelectContent>
+          {knownOptions.map((option) => (
+            <SelectItem key={option} value={option}>
+              {option}
+            </SelectItem>
+          ))}
+          <SelectItem value={ADD_NEW_OPTION}>+ {addLabel}</SelectItem>
+        </SelectContent>
+      </Select>
+    </Field>
+  );
+}
+
 /**
  * The edit button + slide-over shell. Callers own the field state and pass
  * `onSave` / `onDelete`; this component owns busy + error state and the layout.

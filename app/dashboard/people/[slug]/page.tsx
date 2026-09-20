@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import type { Campaign } from "@/lib/campaigns";
 import { ImageWithFallback, MetaGrid, MetaItem, SectionHeading } from "@/components/dashboard/ui";
 import { UserActions } from "@/components/user-actions";
+import { creatorCategoryOptions } from "@/lib/users";
 
 const WORK_LINK =
   "group flex items-baseline justify-between gap-5 border-b border-border py-3.5 text-foreground no-underline hover:text-primary focus-visible:text-primary focus-visible:outline-none";
@@ -51,7 +52,7 @@ export default function UserDetailPage() {
     <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
       <div className="mb-5 flex items-center justify-between gap-4">
         <BackLink href="/dashboard/people">Back to directory</BackLink>
-        <UserActions user={user} variant="team" listHref="/dashboard/people" />
+        <UserActions user={user} variant="team" listHref="/dashboard/people" categoryOptions={creatorCategoryOptions(users)} />
       </div>
 
       <section className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-6 border-b border-border pb-8 max-[560px]:grid-cols-1">

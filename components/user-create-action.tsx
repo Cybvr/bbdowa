@@ -3,7 +3,7 @@
 import * as React from "react";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { Plus } from "lucide-react";
-import { EditSheet, SelectField, TextField } from "@/components/detail-editor";
+import { CreatableSelectField, EditSheet, SelectField, TextField } from "@/components/detail-editor";
 import { firebaseDb } from "@/lib/firebase/client";
 import type { UserRole } from "@/lib/users";
 
@@ -18,7 +18,15 @@ function slugify(value: string) {
   return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "user";
 }
 
-export function UserCreateAction({ existingSlugs, onCreated }: { existingSlugs: string[]; onCreated?: () => void }) {
+export function UserCreateAction({
+  existingSlugs,
+  categoryOptions = [],
+  onCreated,
+}: {
+  existingSlugs: string[];
+  categoryOptions?: string[];
+  onCreated?: () => void;
+}) {
   const [name, setName] = React.useState("");
   const [roles, setRoles] = React.useState<UserRole[]>(["manager"]);
   const [title, setTitle] = React.useState("");
@@ -129,18 +137,13 @@ export function UserCreateAction({ existingSlugs, onCreated }: { existingSlugs: 
       <TextField label="Department" value={department} onChange={setDepartment} placeholder="e.g. Client service" />
       {roles.includes("creator") ? (
         <>
-          <SelectField
+          <CreatableSelectField
             label="Category"
             value={category}
             onChange={setCategory}
-            options={[
-              { value: "Art", label: "Art" },
-              { value: "Writing", label: "Writing" },
-              { value: "UX", label: "UX" },
-              { value: "Strategy", label: "Strategy" },
-              { value: "Film", label: "Film" },
-              { value: "Content", label: "Content" },
-            ]}
+            options={categoryOptions}
+            addLabel="Add new category…"
+            placeholder="e.g. Photography"
           />
           <TextField label="Day rate" value={dayRate} onChange={setDayRate} />
           <SelectField
