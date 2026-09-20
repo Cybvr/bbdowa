@@ -11,6 +11,8 @@ next-env.d.ts
 # stale build snapshots
 .next-stale-*/
 .next-dev-live*.log
+.next-dev-restart*.log
+firebase-debug.log
 
 # pnpm (project uses npm)
 pnpm-lock.yaml

@@ -3,20 +3,22 @@
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
-import { Badge } from "@/components/ui/badge";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { EmptyThumbnail, ImageWithFallback } from "@/components/empty-thumbnail";
+import { DashboardCard } from "@/components/dashboard-card";
+import { Badge as DashboardBadge } from "@/components/dashboard/ui";
 import type { Campaign, CampaignStatus } from "@/lib/campaigns";
 import { getClient, getClientWorkspace, type Client } from "@/lib/clients";
 import type { User } from "@/lib/users";
 import { readContentFromFirestore } from "@/lib/firebase/client-content";
 import { ClientActions } from "@/components/client-actions";
+import { CampaignActions } from "@/components/campaign-actions";
+import { ClientCreatorAddAction } from "@/components/client-creator-add-action";
+import { ClientMediaAddAction } from "@/components/client-media-add-action";
+import { ClientWorkspaceContent, ClientWorkspaceHeading } from "@/components/client-workspace-heading";
+import { FilterBar, type FilterTab, type SortOption, type ViewMode } from "@/components/dashboard/filter-bar";
 import { useAuth } from "@/components/auth-provider";
+import { UserActions } from "@/components/user-actions";
+import { plural } from "@/lib/format";
 import { campaignWorkspaceStatuses } from "@/lib/client-data";
 import { fontOptions, ctaOptions } from "@/lib/campaign-options";
 import type {
@@ -56,37 +58,98 @@ function caseStudyFromCampaign(campaign?: Campaign): CaseStudyDraft {
 function ClientWorkspaceHero({
   clientName,
   title,
-  children,
+  heroImage,
+  clientProfileImage,
+  onHome,
+  shareAction,
+  creators,
+  navigation,
 }: {
   clientName: string;
   title: string;
-  children?: React.ReactNode;
+  heroImage: string;
+  clientProfileImage: string;
+  onHome: () => void;
+  shareAction: React.ReactNode;
+  creators: Array<Pick<User, "slug" | "name" | "profileImage" | "featuredImage">>;
+  navigation?: React.ReactNode;
 }) {
+  const visibleCreators = creators.slice(0, 5);
+  const remainingCreators = Math.max(creators.length - visibleCreators.length, 0);
+
   return (
-    <div className="relative h-[220px] overflow-hidden rounded-2xl border border-border bg-muted sm:h-[350px]">
-      {children ?? (
-        <ImageWithFallback
-          src="/images/bbdowa-red-pattern-placeholder.png"
-          alt="BBDO West Africa placeholder pattern"
-          className="h-full w-full object-cover"
-        />
-      )}
-      <div className="absolute inset-x-0 top-0 bg-gradient-to-b from-black/65 to-transparent px-5 py-5 text-white sm:px-6">
-        <nav aria-label="Breadcrumb">
-          <ol className="m-0 flex list-none flex-wrap items-center gap-x-1.5 gap-y-0.5 p-0 text-xs text-white/75">
+    <div>
+      <div className="mb-2 flex items-center justify-between gap-4 px-1">
+        <nav aria-label="Breadcrumb" className="min-w-0">
+          <ol className="m-0 flex list-none flex-wrap items-center gap-x-2 gap-y-1 p-0 text-xs text-muted-foreground sm:text-sm">
             <li>
-              <Link href="/dashboard/clients" className="transition hover:text-white">
+              <Link href="/dashboard/clients" className="transition hover:text-foreground">
                 All
               </Link>
             </li>
-            <li aria-hidden="true"><ChevronRight className="h-3 w-3" /></li>
-            <li>{clientName}</li>
-            <li aria-hidden="true"><ChevronRight className="h-3 w-3" /></li>
-            <li aria-current="page">{title}</li>
+            <li aria-hidden="true"><ChevronRight className="h-3.5 w-3.5" /></li>
+            <li>
+              <button
+                type="button"
+                onClick={onHome}
+                className="text-left transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              >
+                {clientName}
+              </button>
+            </li>
+            <li aria-hidden="true"><ChevronRight className="h-3.5 w-3.5" /></li>
+            <li aria-current="page" className="text-foreground">{title}</li>
           </ol>
         </nav>
-        <h1 className="mb-0 mt-2 text-xl font-bold tracking-tight sm:text-2xl">{title}</h1>
+        <div className="shrink-0">{shareAction}</div>
       </div>
+
+      <div className="relative h-[140px] overflow-hidden rounded-2xl bg-muted sm:h-[180px]">
+        <ImageWithFallback
+          src={heroImage}
+          alt={`${clientName} campaign`}
+          className="h-full w-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/5 to-black/20" aria-hidden="true" />
+        <button
+          type="button"
+          onClick={onHome}
+          aria-label={`${clientName} home`}
+          className="absolute bottom-0 left-4 flex h-12 w-20 items-center justify-center rounded-t-xl bg-card p-2 sm:left-6 sm:h-16 sm:w-24 sm:p-3"
+        >
+          <ImageWithFallback
+            src={clientProfileImage}
+            alt={`${clientName} logo`}
+            className="h-full w-full object-contain"
+            fallbackClassName="h-full w-full rounded-xl"
+          />
+        </button>
+        <div className="absolute bottom-4 right-4 flex items-center -space-x-1.5 sm:bottom-10 sm:right-6" aria-label={`${creators.length} selected creators`}>
+          {visibleCreators.map((creator) => (
+            <span
+              key={creator.slug}
+              title={creator.name}
+              className="h-8 w-8 overflow-hidden rounded-full border border-white bg-muted"
+            >
+              <ImageWithFallback
+                src={creator.profileImage ?? creator.featuredImage}
+                alt={creator.name}
+                className="h-full w-full object-cover"
+                fallbackClassName="h-full w-full rounded-full"
+              />
+            </span>
+          ))}
+          {remainingCreators > 0 ? (
+            <span
+              title={`${remainingCreators} more creators`}
+              className="grid h-8 min-w-8 place-items-center rounded-full border border-white bg-foreground px-1.5 text-[10px] font-semibold text-background"
+            >
+              +{remainingCreators}
+            </span>
+          ) : null}
+        </div>
+      </div>
+      <div className="mt-2">{navigation}</div>
     </div>
   );
 }
@@ -120,7 +183,6 @@ import {
   List,
   Heading2,
   Pilcrow,
-  CircleDollarSign,
   Save,
   X,
 } from "lucide-react";
@@ -158,12 +220,10 @@ export default function ClientPage() {
     ? "campaign"
     : pathname.endsWith("/brand-dna")
       ? "brand"
-      : pathname.endsWith("/moodboard")
+      : pathname.endsWith("/moodboard") || pathname.endsWith("/media")
         ? "moodboard"
         : pathname.endsWith("/creators")
           ? "creators"
-          : pathname.endsWith("/media")
-            ? "media"
           : "overview";
 
   if (loadError) {
@@ -417,7 +477,24 @@ function StrategyEditor({ markdown }: { markdown: string }) {
   );
 }
 
-type OneUtilityWorkspaceView = "overview" | "campaign" | "brand" | "moodboard" | "creators" | "media";
+type OneUtilityWorkspaceView = "overview" | "campaign" | "brand" | "moodboard" | "creators";
+type ClientCampaignFilter = "all" | CampaignWorkspaceStatus;
+type ClientCampaignSort = "recent" | "name";
+type ClientCreatorSort = "name" | "category" | "availability";
+
+const CLIENT_CAMPAIGN_FILTERS: FilterTab<ClientCampaignFilter>[] = [
+  { key: "all", label: "All" },
+  ...campaignWorkspaceStatuses.map((status) => ({ key: status, label: status })),
+];
+const CLIENT_CAMPAIGN_SORTS: SortOption<ClientCampaignSort>[] = [
+  { key: "recent", label: "Most recent" },
+  { key: "name", label: "Name (A–Z)" },
+];
+const CLIENT_CREATOR_SORTS: SortOption<ClientCreatorSort>[] = [
+  { key: "name", label: "Name (A–Z)" },
+  { key: "category", label: "Category (A–Z)" },
+  { key: "availability", label: "Availability" },
+];
 
 function OneUtilityClientWorkspace({
   slug,
@@ -457,6 +534,10 @@ function OneUtilityClientWorkspace({
       }))
       : [{ id: "client-campaign", title: "Campaign to be defined", status: "Draft" }]
   );
+  const [campaignSearch, setCampaignSearch] = useState("");
+  const [campaignFilter, setCampaignFilter] = useState<ClientCampaignFilter>("all");
+  const [campaignSort, setCampaignSort] = useState<ClientCampaignSort>("recent");
+  const [campaignListView, setCampaignListView] = useState<ViewMode>("cards");
   const [activeCampaignId, setActiveCampaignId] = useState(() => initialClientCampaigns[0]?.slug ?? "client-campaign");
   const [campaignDescriptions, setCampaignDescriptions] = useState<Record<string, string>>(() =>
     Object.fromEntries(initialClientCampaigns.map((campaign) => [campaign.slug, campaign.summary])),
@@ -526,14 +607,72 @@ function OneUtilityClientWorkspace({
   );
   // Page accent follows the client's primary brand colour.
   const [primaryColor] = useState<string>(workspace.primaryColor);
-  const collaborators = [
-    { name: "Jide Pinheiro", initials: "JP", color: "#0B3B2E" },
-    { name: "Amara Obi", initials: "AO", color: "#B45309" },
-    { name: "Tunde Bello", initials: "TB", color: "#1D4ED8" },
-  ];
-  const selectedCreators = availableUsers.filter(
-    (user) => user.role === "creator" && workspace.creatorSlugs.includes(user.slug),
+  const [selectedCreatorSlugs, setSelectedCreatorSlugs] = useState(workspace.creatorSlugs);
+  const [mediaItems, setMediaItems] = useState(workspace.moodboardImages);
+  const [creatorSearch, setCreatorSearch] = useState("");
+  const [creatorCategory, setCreatorCategory] = useState("all");
+  const [creatorSort, setCreatorSort] = useState<ClientCreatorSort>("name");
+  const [creatorListView, setCreatorListView] = useState<ViewMode>("cards");
+  const selectedCreators = React.useMemo(
+    () => availableUsers.filter(
+      (user) => user.role === "creator" && selectedCreatorSlugs.includes(user.slug),
+    ),
+    [availableUsers, selectedCreatorSlugs],
   );
+  const visibleCampaigns = React.useMemo(() => {
+    const query = campaignSearch.trim().toLowerCase();
+    const filtered = campaigns.filter((campaign) => {
+      const matchesStatus = campaignFilter === "all" || campaign.status === campaignFilter;
+      const matchesSearch = !query || [campaign.title, campaign.status].join(" ").toLowerCase().includes(query);
+      return matchesStatus && matchesSearch;
+    });
+
+    return [...filtered].sort((a, b) => {
+      if (campaignSort === "name") return a.title.localeCompare(b.title);
+      const aDate = availableCampaigns.find((campaign) => campaign.slug === a.id)?.liveAt?.date ?? "";
+      const bDate = availableCampaigns.find((campaign) => campaign.slug === b.id)?.liveAt?.date ?? "";
+      return bDate.localeCompare(aDate);
+    });
+  }, [availableCampaigns, campaignFilter, campaignSearch, campaignSort, campaigns]);
+  const creatorCategoryOptions = React.useMemo(
+    () => [
+      { value: "all", label: "All categories" },
+      ...[...new Set(selectedCreators.map((creator) => creator.category))]
+        .sort((a, b) => a.localeCompare(b))
+        .map((category) => ({ value: category, label: category })),
+    ],
+    [selectedCreators],
+  );
+  const visibleCreators = React.useMemo(() => {
+    const query = creatorSearch.trim().toLowerCase();
+    const filtered = selectedCreators.filter((creator) => {
+      const matchesCategory = creatorCategory === "all" || creator.category === creatorCategory;
+      const matchesSearch =
+        !query ||
+        [creator.name, creator.category, creator.location, creator.availability, ...creator.tags]
+          .join(" ")
+          .toLowerCase()
+          .includes(query);
+      return matchesCategory && matchesSearch;
+    });
+
+    return [...filtered].sort((a, b) => {
+      if (creatorSort === "category") return a.category.localeCompare(b.category) || a.name.localeCompare(b.name);
+      if (creatorSort === "availability") return a.availability.localeCompare(b.availability) || a.name.localeCompare(b.name);
+      return a.name.localeCompare(b.name);
+    });
+  }, [creatorCategory, creatorSearch, creatorSort, selectedCreators]);
+  const latestCampaigns = React.useMemo(
+    () => [...campaigns]
+      .sort((a, b) => {
+        const aDate = availableCampaigns.find((campaign) => campaign.slug === a.id)?.liveAt?.date ?? "";
+        const bDate = availableCampaigns.find((campaign) => campaign.slug === b.id)?.liveAt?.date ?? "";
+        return bDate.localeCompare(aDate);
+      })
+      .slice(0, 3),
+    [availableCampaigns, campaigns],
+  );
+  const latestCreators = selectedCreators.slice(0, 4);
 
   const nextCampaignNumberRef = useRef(2);
 
@@ -712,6 +851,8 @@ function OneUtilityClientWorkspace({
   const activeCampaign =
     campaigns.find((campaign) => campaign.id === activeCampaignId) ?? campaigns[0];
   const campaignDescription = campaignDescriptions[activeCampaignId] ?? "";
+  const activeCampaignRecord = availableCampaigns.find((campaign) => campaign.slug === activeCampaign?.id);
+  const overviewDescription = client?.description?.trim() || campaignDescription.trim() || activeCampaignRecord?.summary || "No description available yet.";
   const updateCampaignDescription = (value: string) =>
     setCampaignDescriptions((previous) => ({ ...previous, [activeCampaignId]: value }));
   const activeCampaignMediaPlan = workspace.campaignMediaPlans[activeCampaignId];
@@ -737,26 +878,79 @@ function OneUtilityClientWorkspace({
   const workspaceTabs: {
     view: OneUtilityWorkspaceView;
     label: string;
-    href: string;
-    onSelect?: () => void;
+    onSelect: () => void;
   }[] = [
+    {
+      view: "overview",
+      label: "Home",
+      onSelect: () => setActiveMainTab("overview"),
+    },
     {
       view: "campaign",
       label: "Campaigns",
-      href: `/dashboard/clients/${slug}/campaigns`,
       onSelect: () => {
         setActiveMainTab("campaign");
         setCampaignView("home");
       },
     },
-    { view: "brand", label: "DNA", href: `/dashboard/clients/${slug}/brand-dna` },
-    { view: "moodboard", label: "Moodboard", href: `/dashboard/clients/${slug}/moodboard` },
-    { view: "creators", label: "Creators", href: `/dashboard/clients/${slug}/creators` },
-    { view: "media", label: "Media", href: `/dashboard/clients/${slug}/media` },
+    { view: "brand", label: "DNA", onSelect: () => setActiveMainTab("brand") },
+    { view: "moodboard", label: "Media", onSelect: () => setActiveMainTab("moodboard") },
+    { view: "creators", label: "Creators", onSelect: () => setActiveMainTab("creators") },
   ];
-  const mobileWorkspaceTabs = workspaceTabs.slice(0, 3);
-  const mobileMoreTabs = workspaceTabs.slice(3);
-  const isMobileMoreActive = mobileMoreTabs.some((tab) => tab.view === activeMainTab);
+  const activeWorkspaceTabRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    activeWorkspaceTabRef.current?.scrollIntoView({ block: "nearest", inline: "center" });
+  }, [activeMainTab]);
+
+  const workspaceNavigation = (
+    <nav aria-label="Client workspace">
+      <div role="tablist" className="no-scrollbar flex touch-pan-x items-center gap-1 overflow-x-auto overscroll-x-contain border-b border-border/70 px-0.5">
+        {workspaceTabs.map((tab) => {
+          const isActive = activeMainTab === tab.view;
+          return (
+            <button
+              type="button"
+              role="tab"
+              key={tab.view}
+              ref={isActive ? activeWorkspaceTabRef : undefined}
+              onClick={tab.onSelect}
+              aria-selected={isActive}
+              className={`relative flex h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-md px-3 text-[13px] font-semibold tracking-tight transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${isActive
+                ? "text-primary after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:bg-primary"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+    </nav>
+  );
+  const workspaceHeroProps = {
+    clientName,
+    heroImage: campaignImageFor(activeCampaignId, availableCampaigns),
+    clientProfileImage,
+    onHome: () => setActiveMainTab("overview"),
+    creators: selectedCreators,
+    navigation: workspaceNavigation,
+    shareAction: (
+      <button
+        type="button"
+        onClick={handleShareCampaign}
+        aria-label="Share"
+        className="flex h-7 items-center justify-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-xs font-semibold text-foreground transition hover:bg-muted"
+      >
+        <Share2 className="h-3.5 w-3.5" aria-hidden="true" />
+        Share
+      </button>
+    ),
+  };
+  const contentEditAction = client ? <ClientActions client={client} /> : null;
+  const activeWorkspaceTitle =
+    activeMainTab === "overview"
+      ? "Overview"
+      : workspaceTabs.find((tab) => tab.view === activeMainTab)?.label ?? "Overview";
 
   const campaignSubTabs: { id: typeof campaignSubTab; label: string }[] = [
     { id: "overview", label: "Overview" },
@@ -796,175 +990,135 @@ function OneUtilityClientWorkspace({
       <div className="flex flex-col gap-2">
         {/* MAIN CANVAS: TABS + CONTENT */}
         <main className="order-1">
-
-          {/* TOP-LEVEL VIEW TABS */}
-          <div className="mx-2 flex items-center gap-1 rounded-xl bg-card p-2 sm:mx-5 sm:gap-x-3 sm:px-4">
-            <Link
-              href="/dashboard/clients"
-              aria-label="Back to clients"
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Link>
-            <Link
-              href={`/dashboard/clients/${slug}/overview`}
-              onClick={() => setActiveMainTab("overview")}
-              aria-label={`${clientName} overview`}
-              className="flex h-10 w-10 shrink-0 items-center justify-center sm:h-12 sm:w-14"
-            >
-              <ImageWithFallback
-                src={clientProfileImage}
-                alt=""
-                className="h-full w-full object-contain"
-                fallbackClassName="h-full w-full rounded-md"
-              />
-            </Link>
-            <nav
-              aria-label="Client workspace"
-              className="flex min-w-0 flex-1 items-center sm:hidden"
-            >
-              <div className="flex min-w-0 flex-1 items-center justify-end gap-0.5">
-                {mobileWorkspaceTabs.map((tab) => {
-                  const isActive = activeMainTab === tab.view;
-                  return (
-                    <Link
-                      key={tab.view}
-                      href={tab.href}
-                      onClick={tab.onSelect}
-                      aria-current={isActive ? "page" : undefined}
-                      className={`relative flex h-10 shrink-0 items-center whitespace-nowrap rounded-md px-1 text-xs font-semibold tracking-tight transition ${isActive
-                        ? "text-primary after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:bg-primary"
-                        : "text-muted-foreground hover:text-foreground"
-                        }`}
-                    >
-                      {tab.label}
-                    </Link>
-                  );
-                })}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      type="button"
-                      aria-label="More client sections"
-                      className={`relative flex h-10 shrink-0 items-center gap-0.5 rounded-md px-1 text-xs font-semibold tracking-tight transition ${isMobileMoreActive
-                        ? "text-primary after:absolute after:inset-x-1 after:bottom-0 after:h-0.5 after:bg-primary"
-                        : "text-muted-foreground hover:text-foreground"
-                        }`}
-                    >
-                      More
-                      <ChevronDown className="h-3 w-3" aria-hidden="true" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" sideOffset={6} className="w-40">
-                    {mobileMoreTabs.map((tab) => (
-                      <DropdownMenuItem key={tab.view} asChild className="px-3 py-2.5">
-                        <Link
-                          href={tab.href}
-                          onClick={tab.onSelect}
-                          aria-current={activeMainTab === tab.view ? "page" : undefined}
-                          className={activeMainTab === tab.view ? "font-semibold text-primary" : undefined}
-                        >
-                          {tab.label}
-                        </Link>
-                      </DropdownMenuItem>
-                    ))}
-                    <DropdownMenuItem onSelect={handleShareCampaign} className="px-3 py-2.5">
-                      <Share2 className="h-4 w-4" aria-hidden="true" />
-                      Share
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </nav>
-            <nav aria-label="Client workspace" className="hidden min-w-0 flex-1 sm:block">
-              <div className="flex items-center gap-1">
-                {workspaceTabs.map((tab) => {
-                  const isActive = activeMainTab === tab.view;
-                  return (
-                    <Link
-                      key={tab.view}
-                      href={tab.href}
-                      onClick={tab.onSelect}
-                      aria-current={isActive ? "page" : undefined}
-                      className={`relative flex shrink-0 items-center whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold transition ${isActive
-                        ? "text-primary after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:bg-primary"
-                        : "text-muted-foreground hover:text-foreground"
-                        }`}
-                    >
-                      {tab.label}
-                    </Link>
-                  );
-                })}
-              </div>
-            </nav>
-            <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
-              {client ? <ClientActions client={client} /> : null}
-              <div className="hidden shrink-0 items-center gap-3 sm:flex">
-              <div className="flex items-center -space-x-2 pr-1" aria-label="Collaborators on this campaign">
-                {collaborators.map((c) => (
-                  <span
-                    key={c.name}
-                    title={c.name}
-                    className="grid h-7 w-7 place-items-center rounded-full border-2 border-card text-sm font-semibold text-white"
-                    style={{ backgroundColor: c.color }}
-                  >
-                    {c.initials}
-                  </span>
-                ))}
-              </div>
-              <button onClick={handleShareCampaign} aria-label="Share" className="flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground transition hover:opacity-90 sm:h-9 sm:px-3.5">
-                <Share2 className="w-4 h-4 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">Share</span>
-              </button>
-              </div>
+          <div className="px-4 pt-2 sm:px-6">
+            <div className="mx-auto w-full max-w-7xl">
+              <ClientWorkspaceHero {...workspaceHeroProps} title={activeWorkspaceTitle} />
             </div>
           </div>
 
           {/* CAMPAIGN VIEW */}
           {activeMainTab === "campaign" && (
             campaignView === "home" ? (
-              <div className="px-4 py-4 sm:px-6">
-                <div className="w-full max-w-5xl mx-auto space-y-4 pb-8">
-                  <ClientWorkspaceHero clientName={clientName} title="Campaigns" />
-                  <div className="flex justify-end">
-                    <button
-                      onClick={handleNewCampaign}
-                      className="px-3 py-1.5 text-sm font-medium text-primary-foreground bg-primary hover:opacity-90 rounded-md transition flex items-center gap-1.5"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      New campaign
-                    </button>
-                  </div>
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {campaigns.map((campaign) => (
-                      <button
-                        key={campaign.id}
-                        onClick={() => handleOpenCampaign(campaign)}
-                        className="overflow-hidden text-left flex flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 rounded-2xl"
-                      >
-                        <div className="relative w-full aspect-square overflow-hidden rounded-2xl border border-border bg-muted">
-                          <ImageWithFallback
-                            src={campaignImageFor(campaign.id, availableCampaigns)}
-                            alt={campaign.title}
-                            className="w-full h-full object-cover"
-                            iconClassName="w-10 h-10"
-                          />
-                          <span className="absolute top-3 left-3 rounded-md bg-background/90 backdrop-blur-sm px-2 py-0.5 text-xs font-mono uppercase tracking-wide text-primary font-semibold border border-border">
-                            {campaign.status}
-                          </span>
+              <ClientWorkspaceContent>
+                  <ClientWorkspaceHeading
+                    title="Campaigns"
+                    actions={
+                      <>
+                        {contentEditAction}
+                        <button
+                          type="button"
+                          onClick={handleNewCampaign}
+                          className="flex h-9 items-center gap-1.5 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground transition hover:opacity-90"
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                          New
+                        </button>
+                      </>
+                    }
+                  />
+                  <FilterBar
+                    panelId="client-campaign-filter-panel"
+                    tabs={CLIENT_CAMPAIGN_FILTERS}
+                    activeTab={campaignFilter}
+                    onTabChange={setCampaignFilter}
+                    tabsLabel="Status"
+                    search={campaignSearch}
+                    onSearchChange={setCampaignSearch}
+                    searchPlaceholder="Search campaigns"
+                    sortOptions={CLIENT_CAMPAIGN_SORTS}
+                    activeSort={campaignSort}
+                    onSortChange={setCampaignSort}
+                    resultCount={plural(visibleCampaigns.length, "campaign")}
+                    view={campaignListView}
+                    onViewChange={setCampaignListView}
+                    className="my-0"
+                  />
+                  <section id="client-campaign-filter-panel" aria-label={`${clientName} campaigns`} className="pt-2">
+                    {visibleCampaigns.length > 0 ? (
+                      campaignListView === "cards" ? (
+                        <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2 lg:grid-cols-3">
+                          {visibleCampaigns.map((campaign) => {
+                            const record = availableCampaigns.find((item) => item.slug === campaign.id);
+                            return (
+                              <li key={campaign.id}>
+                                <DashboardCard
+                                  className="h-full"
+                                  actions={record ? <CampaignActions campaign={record} /> : undefined}
+                                >
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenCampaign(campaign)}
+                                    className="group flex h-full w-full flex-col text-left text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                                  >
+                                    <div className="h-28 shrink-0 overflow-hidden bg-muted">
+                                      <ImageWithFallback
+                                        src={campaignImageFor(campaign.id, availableCampaigns)}
+                                        alt={record?.imageAlt ?? campaign.title}
+                                        className="h-full w-full object-cover"
+                                        iconClassName="h-10 w-10"
+                                      />
+                                    </div>
+                                    <div className="flex min-h-[170px] flex-col gap-3 p-4">
+                                      <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-primary">
+                                        {clientName}
+                                      </span>
+                                      <h3 className="m-0 line-clamp-2 text-[16px] font-semibold leading-tight group-hover:text-primary">
+                                        {campaign.title}
+                                      </h3>
+                                      <div className="mt-auto flex items-center justify-between gap-3 text-[12px] text-muted-foreground">
+                                        <DashboardBadge tone={campaign.status === "Live" ? "active" : "neutral"}>
+                                          {campaign.status}
+                                        </DashboardBadge>
+                                        <span>{record?.category ?? "Campaign"}</span>
+                                      </div>
+                                    </div>
+                                  </button>
+                                </DashboardCard>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      ) : (
+                        <div className="overflow-x-auto rounded-xl border border-border">
+                          <table className="w-full border-collapse">
+                            <thead>
+                              <tr>
+                                <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Campaign</th>
+                                <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Status</th>
+                                <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Category</th>
+                                <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Year</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {visibleCampaigns.map((campaign) => {
+                                const record = availableCampaigns.find((item) => item.slug === campaign.id);
+                                return (
+                                  <tr key={campaign.id} className="border-b border-border last:border-0 hover:bg-muted/50">
+                                    <td className="px-4 py-3.5 text-[13px] font-semibold">
+                                      <button type="button" onClick={() => handleOpenCampaign(campaign)} className="text-left text-foreground hover:text-primary focus-visible:text-primary">
+                                        {campaign.title}
+                                      </button>
+                                    </td>
+                                    <td className="px-4 py-3.5 text-[13px]"><DashboardBadge tone={campaign.status === "Live" ? "active" : "neutral"}>{campaign.status}</DashboardBadge></td>
+                                    <td className="px-4 py-3.5 text-[13px] text-muted-foreground">{record?.category ?? "—"}</td>
+                                    <td className="whitespace-nowrap px-4 py-3.5 text-[13px] text-muted-foreground">{record?.year ?? "—"}</td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
                         </div>
-                        <div className="pt-3 flex flex-col flex-1 justify-between space-y-1">
-                          <span className="block text-sm font-semibold text-foreground">{campaign.title}</span>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
+                      )
+                    ) : (
+                      <p className="m-0 py-8 text-center text-sm text-muted-foreground">
+                        No campaigns match this search or filter.
+                      </p>
+                    )}
+                  </section>
+              </ClientWorkspaceContent>
             ) : (
-              <div>
+              <ClientWorkspaceContent>
                 {/* TAB CONTENT AREA */}
-                <div className="px-4 py-4 sm:px-6">
-                  <div className="mx-auto w-full max-w-5xl space-y-4">
                     <div className="flex flex-wrap items-center justify-between gap-3 shrink-0 border-b border-border pb-3">
                       <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto sm:flex-1">
                         <button
@@ -1226,90 +1380,179 @@ function OneUtilityClientWorkspace({
                         </section>
                       </div>
                     )}
-                  </div>
-                </div>
-              </div>
+              </ClientWorkspaceContent>
             )
           )}
 
           {/* OVERVIEW VIEW */}
           {activeMainTab === "overview" && (
-            <div className="px-4 py-4 sm:px-6">
-              <div className="w-full max-w-5xl mx-auto space-y-4 pb-8">
-                {/* CAMPAIGN FILM */}
-                <ClientWorkspaceHero clientName={clientName} title="Overview">
-                  {workspace.overviewVideo ? (
-                    <video
-                      className="h-full w-full object-cover"
-                      muted
-                      preload="metadata"
-                      poster={campaignImageFor(activeCampaignId, availableCampaigns)}
-                      aria-label={`${clientName} campaign film`}
-                    >
-                      <source src={workspace.overviewVideo} type="video/mp4" />
-                      Your browser does not support this video.
-                    </video>
-                  ) : (
-                    <EmptyThumbnail
-                      className="h-full w-full"
-                      iconClassName="w-12 h-12 text-muted-foreground/35"
-                      label="No campaign video available"
-                    />
-                  )}
-                </ClientWorkspaceHero>
+            <ClientWorkspaceContent>
+                <ClientWorkspaceHeading title="Overview" actions={contentEditAction} />
+                <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_230px]">
+                  <div className="space-y-8">
+                    <div className="grid items-stretch gap-4 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
+                      <div className="aspect-video overflow-hidden rounded-sm bg-muted">
+                        {workspace.overviewVideo ? (
+                          <video
+                            className="h-full w-full object-cover"
+                            controls
+                            preload="metadata"
+                            poster={campaignImageFor(activeCampaignId, availableCampaigns)}
+                            aria-label={`${clientName} campaign film`}
+                          >
+                            <source src={workspace.overviewVideo} type="video/mp4" />
+                            Your browser does not support this video.
+                          </video>
+                        ) : (
+                          <EmptyThumbnail
+                            className="h-full w-full"
+                            iconClassName="h-12 w-12 text-muted-foreground/35"
+                            label="No campaign video available"
+                          />
+                        )}
+                      </div>
+                      <div className="flex items-center">
+                        <p className="m-0 text-sm leading-relaxed text-muted-foreground">{overviewDescription}</p>
+                      </div>
+                    </div>
 
-                {/* OVERVIEW GRID */}
-                <div className="overflow-hidden rounded-2xl border border-border">
-                  <dl className="m-0 grid grid-cols-2 gap-px bg-border sm:grid-cols-3">
-                    <div className="bg-background p-4 space-y-1">
-                      <dt className="text-muted-foreground font-mono text-xs uppercase">Client</dt>
-                      <dd className="m-0 text-sm text-foreground font-medium">{clientName}</dd>
+                    <div className="grid gap-8 lg:grid-cols-2">
+                  <section className="space-y-3" aria-labelledby="latest-campaigns-heading">
+                    <div className="flex items-center justify-between gap-3">
+                      <h3 id="latest-campaigns-heading" className="m-0 text-base font-semibold text-foreground">Latest campaigns</h3>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveMainTab("campaign");
+                          setCampaignView("home");
+                        }}
+                        className="text-xs font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                      >
+                        View all
+                      </button>
                     </div>
-                    <div className="bg-background p-4 space-y-1">
-                      <dt className="text-muted-foreground font-mono text-xs uppercase">Selected campaign</dt>
-                      <dd className="m-0 text-sm text-foreground font-medium">{activeCampaign?.title ?? "No campaign selected"}</dd>
+                    {latestCampaigns.length ? (
+                      <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+                        {latestCampaigns.map((campaign) => {
+                          const record = availableCampaigns.find((item) => item.slug === campaign.id);
+                          return (
+                            <DashboardCard key={campaign.id}>
+                              <button
+                                type="button"
+                                onClick={() => handleOpenCampaign(campaign)}
+                                className="group flex w-full items-center gap-3 p-3 text-left text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                              >
+                                <div className="h-16 w-20 shrink-0 overflow-hidden rounded-md bg-muted">
+                                  <ImageWithFallback
+                                    src={campaignImageFor(campaign.id, availableCampaigns)}
+                                    alt={record?.imageAlt ?? campaign.title}
+                                    className="h-full w-full object-cover"
+                                  />
+                                </div>
+                                <div className="min-w-0 space-y-1">
+                                  <h4 className="m-0 truncate text-sm font-semibold group-hover:text-primary">{campaign.title}</h4>
+                                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                    <DashboardBadge tone={campaign.status === "Live" ? "active" : "neutral"}>{campaign.status}</DashboardBadge>
+                                    <span className="truncate">{record?.category ?? "Campaign"}</span>
+                                  </div>
+                                </div>
+                              </button>
+                            </DashboardCard>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="m-0 text-sm text-muted-foreground">No campaigns yet.</p>
+                    )}
+                  </section>
+
+                  <section className="space-y-3" aria-labelledby="latest-creators-heading">
+                    <div className="flex items-center justify-between gap-3">
+                      <h3 id="latest-creators-heading" className="m-0 text-base font-semibold text-foreground">Latest creators</h3>
+                      <button
+                        type="button"
+                        onClick={() => setActiveMainTab("creators")}
+                        className="text-xs font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                      >
+                        View all
+                      </button>
                     </div>
-                    <div className="bg-background p-4 space-y-1">
-                      <dt className="text-muted-foreground font-mono text-xs uppercase">Campaign lead</dt>
-                      <dd className="m-0 text-sm text-foreground font-medium">{campaignLead || "To be confirmed"}</dd>
+                    {latestCreators.length ? (
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {latestCreators.map((creator) => (
+                          <DashboardCard key={creator.slug}>
+                            <Link
+                              href={`/dashboard/creators/${creator.slug}`}
+                              className="group flex items-center gap-3 p-3 text-foreground no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                            >
+                              <ImageWithFallback
+                                src={creator.profileImage ?? creator.featuredImage ?? "/images/projects/project-placeholder.svg"}
+                                alt={`${creator.name} profile`}
+                                className="h-12 w-12 shrink-0 rounded-full bg-muted object-cover"
+                                fallbackClassName="h-12 w-12 rounded-full"
+                              />
+                              <div className="min-w-0 space-y-1">
+                                <h4 className="m-0 truncate text-sm font-semibold group-hover:text-primary">{creator.name}</h4>
+                                <p className="m-0 truncate text-xs text-muted-foreground">{creator.category} · {creator.availability}</p>
+                              </div>
+                            </Link>
+                          </DashboardCard>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="m-0 text-sm text-muted-foreground">No creators assigned yet.</p>
+                    )}
+                  </section>
                     </div>
-                    <div className="bg-background p-4 space-y-1">
-                      <dt className="text-muted-foreground font-mono text-xs uppercase">Target Audience</dt>
-                      <dd className="m-0 text-sm text-foreground font-medium">{marketAudience}</dd>
-                    </div>
-                    <div className="bg-background p-4 space-y-1">
-                      <dt className="text-muted-foreground font-mono text-xs uppercase">Number of campaigns</dt>
-                      <dd className="m-0 text-sm text-foreground font-medium">{campaigns.length}</dd>
-                    </div>
-                    <div className="bg-background p-4 space-y-1">
-                      <dt className="text-muted-foreground font-mono text-xs uppercase">Date Created</dt>
-                      <dd className="m-0 text-sm text-foreground font-medium">Sep 01, 2026</dd>
-                    </div>
-                    <div className="bg-background p-4 space-y-1">
-                      <dt className="text-muted-foreground font-mono text-xs uppercase">Date Modified</dt>
-                      <dd className="m-0 text-sm text-foreground font-medium">Sep 04, 2026</dd>
-                    </div>
-                    <div className="bg-background p-4 space-y-1">
-                      <dt className="text-muted-foreground font-mono text-xs uppercase">Status</dt>
-                      <dd className="m-0 flex items-center gap-1.5 text-sm text-foreground font-medium">
-                        <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                        {activeCampaign?.status ?? "Draft"}
-                      </dd>
-                    </div>
-                    <div className="hidden bg-background sm:block" aria-hidden="true" />
-                  </dl>
+                  </div>
+
+                  <aside className="rounded-2xl border border-border bg-background p-5 lg:min-h-full">
+                    <dl className="m-0 space-y-5">
+                      <div className="space-y-1">
+                        <dt className="text-[10px] uppercase text-muted-foreground">Client</dt>
+                        <dd className="m-0 text-[13px] font-medium text-foreground">{clientName}</dd>
+                      </div>
+                      <div className="space-y-1">
+                        <dt className="text-[10px] uppercase text-muted-foreground">Selected campaign</dt>
+                        <dd className="m-0 text-[13px] font-medium text-foreground">{activeCampaign?.title ?? "No campaign selected"}</dd>
+                      </div>
+                      <div className="space-y-1">
+                        <dt className="text-[10px] uppercase text-muted-foreground">Campaign lead</dt>
+                        <dd className="m-0 text-[13px] font-medium text-foreground">{campaignLead || "To be confirmed"}</dd>
+                      </div>
+                      <div className="space-y-1">
+                        <dt className="text-[10px] uppercase text-muted-foreground">Target audience</dt>
+                        <dd className="m-0 break-words text-[13px] font-medium leading-relaxed text-foreground">{marketAudience}</dd>
+                      </div>
+                      <div className="space-y-1">
+                        <dt className="text-[10px] uppercase text-muted-foreground">Number of campaigns</dt>
+                        <dd className="m-0 text-[13px] font-medium text-foreground">{campaigns.length}</dd>
+                      </div>
+                      <div className="space-y-1">
+                        <dt className="text-[10px] uppercase text-muted-foreground">Date created</dt>
+                        <dd className="m-0 text-[13px] font-medium text-foreground">Sep 01, 2026</dd>
+                      </div>
+                      <div className="space-y-1">
+                        <dt className="text-[10px] uppercase text-muted-foreground">Date modified</dt>
+                        <dd className="m-0 text-[13px] font-medium text-foreground">Sep 04, 2026</dd>
+                      </div>
+                      <div className="space-y-1">
+                        <dt className="text-[10px] uppercase text-muted-foreground">Status</dt>
+                        <dd className="m-0 flex items-center gap-1.5 text-[13px] font-medium text-foreground">
+                          <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                          {activeCampaign?.status ?? "Draft"}
+                        </dd>
+                      </div>
+                    </dl>
+                  </aside>
                 </div>
-
-              </div>
-            </div>
+            </ClientWorkspaceContent>
           )}
 
           {/* BRAND DNA VIEW */}
           {activeMainTab === "brand" && (
-            <div className="px-4 py-4 sm:px-6">
-              <div className="w-full max-w-5xl mx-auto space-y-4 pb-8">
-                <ClientWorkspaceHero clientName={clientName} title="Brand DNA" />
-
+            <ClientWorkspaceContent>
+                <ClientWorkspaceHeading title="Brand DNA" actions={contentEditAction} />
                 {/* BUSINESS PROFILE & IDENTITY */}
                 <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
                   {/* BUSINESS PROFILE */}
@@ -1591,16 +1834,24 @@ function OneUtilityClientWorkspace({
                     </div>
                   </section>
                 </div>
-              </div>
-            </div>
+            </ClientWorkspaceContent>
           )}
 
           {activeMainTab === "moodboard" && (
-            <div className="px-4 py-4 sm:px-6">
-              <div className="mx-auto w-full max-w-5xl space-y-4 pb-8">
-                <ClientWorkspaceHero clientName={clientName} title="Moodboard" />
+            <ClientWorkspaceContent>
+                <ClientWorkspaceHeading
+                  title="Media"
+                  actions={
+                    <ClientMediaAddAction
+                      campaignId={primaryCampaign?.slug ?? null}
+                      clientName={clientName}
+                      mediaItems={mediaItems}
+                      onSaved={setMediaItems}
+                    />
+                  }
+                />
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
-                  {workspace.moodboardImages.map((image) => (
+                  {mediaItems.map((image) => (
                     <button
                       key={image.src}
                       type="button"
@@ -1612,110 +1863,129 @@ function OneUtilityClientWorkspace({
                     </button>
                   ))}
                 </div>
-              </div>
-            </div>
+            </ClientWorkspaceContent>
           )}
 
           {activeMainTab === "creators" && (
-            <div className="px-4 py-6 sm:px-6">
-              <div className="mx-auto w-full max-w-5xl">
-                <ClientWorkspaceHero clientName={clientName} title="Creators" />
-                <p className="mt-4 text-sm text-muted-foreground">Selected creators for {clientName}.</p>
+            <ClientWorkspaceContent>
+                <ClientWorkspaceHeading
+                  title="Creators"
+                  actions={
+                    <>
+                      <ClientCreatorAddAction
+                        campaignId={primaryCampaign?.slug ?? null}
+                        clientName={clientName}
+                        creators={availableUsers}
+                        selectedSlugs={selectedCreatorSlugs}
+                        onSaved={setSelectedCreatorSlugs}
+                      />
+                    </>
+                  }
+                />
+                <FilterBar
+                  panelId="client-creator-filter-panel"
+                  search={creatorSearch}
+                  onSearchChange={setCreatorSearch}
+                  searchPlaceholder="Search creators"
+                  filters={[
+                    {
+                      label: "Category",
+                      value: creatorCategory,
+                      onChange: setCreatorCategory,
+                      options: creatorCategoryOptions,
+                    },
+                  ]}
+                  sortOptions={CLIENT_CREATOR_SORTS}
+                  activeSort={creatorSort}
+                  onSortChange={setCreatorSort}
+                  resultCount={plural(visibleCreators.length, "creator")}
+                  view={creatorListView}
+                  onViewChange={setCreatorListView}
+                  className="my-0"
+                />
                 {selectedCreators.length ? (
-                  <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    {selectedCreators.map((creator) => (
-                      <Link
-                        key={creator.slug}
-                        href={`/dashboard/creators/${creator.slug}`}
-                        className="group overflow-hidden rounded-xl border border-border bg-background transition hover:border-primary"
-                      >
-                        <div className="aspect-[4/3] bg-muted">
-                          <ImageWithFallback
-                            src={creator.profileImage ?? creator.featuredImage ?? "/images/projects/project-placeholder.svg"}
-                            alt={`${creator.name} profile`}
-                            className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
-                          />
+                  <section id="client-creator-filter-panel" aria-label={`${clientName} creators`} className="pt-2">
+                    {visibleCreators.length > 0 ? (
+                      creatorListView === "cards" ? (
+                        <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2 lg:grid-cols-4">
+                          {visibleCreators.map((creator) => (
+                            <li key={creator.slug}>
+                              <DashboardCard
+                                className="h-full"
+                                actions={<UserActions user={creator} variant="creator" listHref={`/dashboard/clients/${slug}/creators`} />}
+                              >
+                                <Link
+                                  href={`/dashboard/creators/${creator.slug}`}
+                                  className="group flex h-full flex-col text-foreground no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                                >
+                                  <div className="h-28 shrink-0 overflow-hidden bg-muted">
+                                    <ImageWithFallback
+                                      src={creator.profileImage ?? creator.featuredImage ?? "/images/projects/project-placeholder.svg"}
+                                      alt={`${creator.name} profile`}
+                                      className="h-full w-full object-cover"
+                                    />
+                                  </div>
+                                  <div className="flex min-h-[170px] flex-col gap-3 p-4">
+                                    <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-primary">{creator.category}</span>
+                                    <h3 className="m-0 line-clamp-2 text-[16px] font-semibold leading-tight group-hover:text-primary">{creator.name}</h3>
+                                    <div className="mt-auto flex items-center justify-between gap-3 text-[12px] text-muted-foreground">
+                                      <DashboardBadge tone={creator.availability === "open" ? "active" : "neutral"}>{creator.availability}</DashboardBadge>
+                                      <span>{!creator.hideRate && creator.rateMin !== null ? creator.dayRate : creator.location}</span>
+                                    </div>
+                                  </div>
+                                </Link>
+                              </DashboardCard>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <div className="overflow-x-auto rounded-xl border border-border">
+                          <table className="w-full border-collapse">
+                            <thead>
+                              <tr>
+                                <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Creator</th>
+                                <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Category</th>
+                                <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Availability</th>
+                                <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Location</th>
+                                <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Rate</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {visibleCreators.map((creator) => (
+                                <tr key={creator.slug} className="border-b border-border last:border-0 hover:bg-muted/50">
+                                  <td className="px-4 py-3.5 text-[13px] font-semibold">
+                                    <Link href={`/dashboard/creators/${creator.slug}`} className="inline-flex items-center gap-3 text-foreground no-underline hover:text-primary focus-visible:text-primary">
+                                      <ImageWithFallback
+                                        src={creator.profileImage ?? creator.featuredImage}
+                                        alt=""
+                                        className="h-8 w-8 rounded-full bg-muted object-cover"
+                                        fallbackClassName="h-8 w-8 rounded-full"
+                                      />
+                                      {creator.name}
+                                    </Link>
+                                  </td>
+                                  <td className="px-4 py-3.5 text-[13px] text-muted-foreground">{creator.category}</td>
+                                  <td className="px-4 py-3.5 text-[13px]"><DashboardBadge tone={creator.availability === "open" ? "active" : "neutral"}>{creator.availability}</DashboardBadge></td>
+                                  <td className="whitespace-nowrap px-4 py-3.5 text-[13px] text-muted-foreground">{creator.location || "—"}</td>
+                                  <td className="whitespace-nowrap px-4 py-3.5 text-[13px] text-muted-foreground">{!creator.hideRate && creator.rateMin !== null ? creator.dayRate : "—"}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
                         </div>
-                        <div className="space-y-1 p-4">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <Badge variant="secondary">{creator.category}</Badge>
-                            <Badge variant="outline">{creator.availability}</Badge>
-                          </div>
-                          <h2 className="text-base font-semibold text-foreground">{creator.name}</h2>
-                          {!creator.hideRate && creator.rateMin !== null && (
-                            <p className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
-                              <CircleDollarSign className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
-                              {creator.dayRate}
-                            </p>
-                          )}
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
+                      )
+                    ) : (
+                      <p className="m-0 py-8 text-center text-sm text-muted-foreground">
+                        No creators match this search or filter.
+                      </p>
+                    )}
+                  </section>
                 ) : (
-                  <p className="mt-6 text-sm text-muted-foreground">No creators assigned to this client yet.</p>
+                  <p className="text-sm text-muted-foreground">No creators assigned to this client yet.</p>
                 )}
-              </div>
-            </div>
+            </ClientWorkspaceContent>
           )}
 
-          {activeMainTab === "media" && (
-            <div className="px-4 py-4 sm:px-6">
-              <div className="mx-auto w-full max-w-5xl space-y-6 pb-8">
-                <ClientWorkspaceHero clientName={clientName} title="Media" />
-                {campaigns.map((campaign) => {
-                  const mediaPlan = workspace.campaignMediaPlans[campaign.id];
-                  if (!mediaPlan) return null;
-
-                  return (
-                    <section key={campaign.id} className="space-y-5">
-                      <h2 className="text-lg font-semibold text-foreground">{campaign.title}</h2>
-                      <div className="space-y-3">
-                        <h3 className="text-base font-semibold text-foreground">Media buying</h3>
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                          {mediaPlan.mediaBuying.map((card, index) => {
-                            const Icon = [BarChart3, TrendingUp, ScanLine][index] ?? BarChart3;
-                            return (
-                              <div key={card.title} className="space-y-3 rounded-2xl border border-border bg-card p-5 shadow-sm">
-                                <span className="flex items-center gap-1.5 font-mono text-xs text-primary">
-                                  <Icon className="h-3.5 w-3.5" /> {card.title}
-                                </span>
-                                <ul className="space-y-1.5 text-sm">
-                                  {card.rows.map((row) => (
-                                    <li key={row.label} className="flex justify-between gap-2"><span className="text-muted-foreground">{row.label}</span><span className="font-medium text-foreground">{row.value}</span></li>
-                                  ))}
-                                </ul>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                      <div className="space-y-3">
-                        <h3 className="text-base font-semibold text-foreground">Influencer marketing</h3>
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                          {mediaPlan.influencerMarketing.map((card, index) => {
-                            const Icon = [Users, Film, BarChart3][index] ?? Users;
-                            return (
-                              <div key={card.title} className="space-y-3 rounded-2xl border border-border bg-card p-5 shadow-sm">
-                                <span className="flex items-center gap-1.5 font-mono text-xs text-primary">
-                                  <Icon className="h-3.5 w-3.5" /> {card.title}
-                                </span>
-                                <ul className="space-y-1.5 text-sm">
-                                  {card.rows.map((row) => (
-                                    <li key={row.label} className="flex justify-between gap-2"><span className="text-muted-foreground">{row.label}</span><span className="font-medium text-foreground">{row.value}</span></li>
-                                  ))}
-                                </ul>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </section>
-                  );
-                })}
-              </div>
-            </div>
-          )}
         </main>
       </div>
     </div>
