@@ -124,7 +124,7 @@ function ClientWorkspaceHero({
             fallbackClassName="h-full w-full rounded-xl"
           />
         </button>
-        <div className="absolute bottom-4 right-4 flex items-center -space-x-1.5 sm:bottom-10 sm:right-6" aria-label={`${creators.length} selected creators`}>
+        <div className="absolute bottom-4 right-4 flex items-center -space-x-1.5 sm:bottom-10 sm:right-6" aria-label={`${creators.length} selected team members`}>
           {visibleCreators.map((creator) => (
             <span
               key={creator.slug}
@@ -142,7 +142,7 @@ function ClientWorkspaceHero({
           ))}
           {remainingCreators > 0 ? (
             <span
-              title={`${remainingCreators} more creators`}
+              title={`${remainingCreators} more team members`}
               className="grid h-8 min-w-8 place-items-center rounded-full border border-white bg-foreground px-1.5 text-[10px] font-semibold text-background"
             >
               +{remainingCreators}
@@ -893,7 +893,7 @@ function OneUtilityClientWorkspace({
     },
     { view: "brand", label: "DNA", onSelect: () => setActiveMainTab("brand") },
     { view: "moodboard", label: "Media", onSelect: () => setActiveMainTab("moodboard") },
-    { view: "creators", label: "Creators", onSelect: () => setActiveMainTab("creators") },
+    { view: "creators", label: "Team", onSelect: () => setActiveMainTab("creators") },
   ];
   const activeWorkspaceTabRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
@@ -1466,7 +1466,7 @@ function OneUtilityClientWorkspace({
 
                   <section className="space-y-3" aria-labelledby="latest-creators-heading">
                     <div className="flex items-center justify-between gap-3">
-                      <h3 id="latest-creators-heading" className="m-0 text-base font-semibold text-foreground">Latest creators</h3>
+                      <h3 id="latest-creators-heading" className="m-0 text-base font-semibold text-foreground">Latest team</h3>
                       <button
                         type="button"
                         onClick={() => setActiveMainTab("creators")}
@@ -1499,7 +1499,7 @@ function OneUtilityClientWorkspace({
                         ))}
                       </div>
                     ) : (
-                      <p className="m-0 text-sm text-muted-foreground">No creators assigned yet.</p>
+                      <p className="m-0 text-sm text-muted-foreground">No team assigned yet.</p>
                     )}
                   </section>
                     </div>
@@ -1937,7 +1937,7 @@ function OneUtilityClientWorkspace({
           {activeMainTab === "creators" && (
             <ClientWorkspaceContent>
                 <ClientWorkspaceHeading
-                  title="Creators"
+                  title="Team"
                   actions={
                     <>
                       <ClientCreatorAddAction
@@ -1954,7 +1954,7 @@ function OneUtilityClientWorkspace({
                   panelId="client-creator-filter-panel"
                   search={creatorSearch}
                   onSearchChange={setCreatorSearch}
-                  searchPlaceholder="Search creators"
+                  searchPlaceholder="Search team"
                   filters={[
                     {
                       label: "Category",
@@ -1966,13 +1966,13 @@ function OneUtilityClientWorkspace({
                   sortOptions={CLIENT_CREATOR_SORTS}
                   activeSort={creatorSort}
                   onSortChange={setCreatorSort}
-                  resultCount={plural(visibleCreators.length, "creator")}
+                  resultCount={plural(visibleCreators.length, "team member")}
                   view={creatorListView}
                   onViewChange={setCreatorListView}
                   className="my-0"
                 />
                 {selectedCreators.length ? (
-                  <section id="client-creator-filter-panel" aria-label={`${clientName} creators`} className="pt-2">
+                  <section id="client-creator-filter-panel" aria-label={`${clientName} team`} className="pt-2">
                     {visibleCreators.length > 0 ? (
                       creatorListView === "cards" ? (
                         <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2 lg:grid-cols-4">
@@ -2046,12 +2046,12 @@ function OneUtilityClientWorkspace({
                       )
                     ) : (
                       <p className="m-0 py-8 text-center text-sm text-muted-foreground">
-                        No creators match this search or filter.
+                        No team members match this search or filter.
                       </p>
                     )}
                   </section>
                 ) : (
-                  <p className="text-sm text-muted-foreground">No creators assigned to this client yet.</p>
+                  <p className="text-sm text-muted-foreground">No team assigned to this client yet.</p>
                 )}
             </ClientWorkspaceContent>
           )}
