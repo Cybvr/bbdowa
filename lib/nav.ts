@@ -43,7 +43,6 @@ export const NAV_ITEMS: NavItem[] = [
     ],
   },
   { kind: "link", label: "Updates", href: "/dashboard/blog" },
-  { kind: "link", label: "Admin", href: "/admin", requiresAuth: true, requiresAdmin: true },
 ];
 
 export const ADMIN_NAV_ITEMS: NavItem[] = [
