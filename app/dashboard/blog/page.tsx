@@ -13,7 +13,7 @@ export default async function BlogPage() {
 
   return (
     <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
-      <PageHeader title="Updates" />
+      <PageHeader title="Updates" createType="update" />
       <UpdatesDirectory posts={posts} />
     </main>
   );

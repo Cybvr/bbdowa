@@ -584,13 +584,13 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
             ) : recent.length === 0 ? (
               <EmptyState title="Nothing logged yet" description="Start your first activity above." />
             ) : (
-              <div className="overflow-hidden rounded-xl border border-border">
-                <table className="w-full border-collapse text-[14px]">
+              <div className="overflow-x-auto rounded-xl border border-border">
+                <table className="min-w-[680px] w-full border-collapse text-[14px]">
                   <thead>
                     <tr className="border-b border-border bg-muted/40 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                       <th className="px-4 py-3 font-semibold">Activity</th>
-                      <th className="hidden px-4 py-3 font-semibold sm:table-cell">Campaign</th>
-                      <th className="hidden px-4 py-3 font-semibold sm:table-cell">When</th>
+                      <th className="px-4 py-3 font-semibold">Campaign</th>
+                      <th className="px-4 py-3 font-semibold">When</th>
                       <th className="px-4 py-3 font-semibold">Time</th>
                     </tr>
                   </thead>
@@ -598,8 +598,8 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
                     {recent.map((entry) => (
                       <tr key={entry.id} className="border-b border-border last:border-b-0 align-top">
                         <td className="px-4 py-3">{entry.activity || <span className="text-muted-foreground">—</span>}</td>
-                        <td className="hidden px-4 py-3 sm:table-cell">{entry.campaignName ?? <span className="text-muted-foreground">—</span>}</td>
-                        <td className="hidden px-4 py-3 whitespace-nowrap sm:table-cell">{formatTimestamp(entry.startedAt)}</td>
+                        <td className="px-4 py-3">{entry.campaignName ?? <span className="text-muted-foreground">—</span>}</td>
+                        <td className="whitespace-nowrap px-4 py-3">{formatTimestamp(entry.startedAt)}</td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           {entry.endedAt ? (
                             formatClockFull(elapsedMs(entry, now))

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { MoreHorizontal, Trash2 } from "lucide-react";
 import {
   collection,
   deleteDoc,
@@ -14,6 +15,12 @@ import {
 } from "firebase/firestore";
 import { firebaseDb } from "@/lib/firebase/client";
 import { EditSheet, SelectField, TextField, TextareaField } from "@/components/detail-editor";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { User } from "@/lib/users";
 
 /**
@@ -26,10 +33,12 @@ export function UserActions({
   user,
   variant,
   listHref,
+  compactMenu = false,
 }: {
   user: User;
   variant: "team" | "creator";
   listHref: string;
+  compactMenu?: boolean;
 }) {
   const router = useRouter();
 
@@ -107,6 +116,22 @@ export function UserActions({
       onSave={save}
       onDelete={remove}
       deleteConfirm="Delete this person? This can’t be undone."
+      trigger={compactMenu ? (_open, removeFromMenu) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              aria-label={`Actions for ${user.name}`}
+              className="grid h-8 w-8 place-items-center rounded-lg border border-border bg-background/95 text-muted-foreground shadow-sm backdrop-blur transition hover:border-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            >
+              <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-36">
+            <DropdownMenuItem variant="destructive" onSelect={removeFromMenu}><Trash2 className="h-4 w-4" />Delete</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : undefined}
     >
       <TextField label="Name" value={name} onChange={setName} />
       <SelectField

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { QuickCreate } from "@/components/quick-create";
+import { QuickCreate, type CreateType } from "@/components/quick-create";
 
 /**
  * Shared Operate-mode primitives for the dashboard.
@@ -17,11 +17,13 @@ export function PageHeader({
   description,
   meta,
   actions,
+  createType,
 }: {
   title: string;
   description?: string;
   meta?: string;
   actions?: ReactNode;
+  createType?: CreateType;
 }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
@@ -38,7 +40,7 @@ export function PageHeader({
           <span className="text-[13px] font-medium text-muted-foreground">{meta}</span>
         ) : null}
         {actions}
-        <QuickCreate />
+        {createType ? <QuickCreate type={createType} /> : null}
       </div>
     </div>
   );
@@ -88,7 +90,7 @@ export function Badge({
 }) {
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold leading-none ${BADGE_TONE[tone]}`}
+      className={`inline-flex w-fit items-center rounded-full px-2.5 py-1 text-[11px] font-semibold leading-none ${BADGE_TONE[tone]}`}
     >
       {children}
     </span>
