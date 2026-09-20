@@ -4,6 +4,7 @@ import { useState } from "react";
 import { FiDatabase, FiCheck, FiLoader } from "react-icons/fi";
 import { useAuth } from "@/components/auth-provider";
 import { seedFirestore, SEED_GROUPS, type SeedResult } from "@/lib/firebase/seed";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const TOTAL_DOCS = SEED_GROUPS.reduce((sum, group) => sum + group.docs.length, 0);
 
@@ -34,7 +35,7 @@ export function SeedPanel() {
   };
 
   if (loading) {
-    return <p className="text-[14px] text-muted-foreground">Checking access…</p>;
+    return <Skeleton className="h-5 w-32" role="status" aria-label="Checking access" />;
   }
   if (!user) {
     return <p className="text-[14px] text-muted-foreground">Sign in to continue.</p>;

@@ -17,6 +17,7 @@ import type { Campaign } from "@/lib/campaigns";
 import type { User } from "@/lib/users";
 import { baseCity, creatorAddedTimestamp, creatorHref, isCreatorNew, isCreatorUser } from "@/lib/users";
 import { campaignHref, campaignLiveDateLabel } from "@/lib/campaigns";
+import { CreatorRailSkeleton, DashboardHomeSkeleton } from "@/components/dashboard/loading-skeleton";
 
 async function readDashboardCollection<T>(name: string): Promise<T[]> {
   const snapshot = await getDocs(collection(firebaseDb, name));
@@ -107,6 +108,7 @@ export default function HomePage() {
       </header>
 
       {creatorsError ? <p className="mt-10 text-sm text-muted-foreground">{creatorsError}</p> : null}
+      {creatorsLoading ? <CreatorRailSkeleton /> : null}
       {!creatorsLoading && latestCreators.length > 0 ? (
         <section className="mt-6" aria-labelledby="new-creators-heading">
           <div className="flex items-center justify-between gap-4">
@@ -134,6 +136,7 @@ export default function HomePage() {
       ) : null}
 
       {content.error ? <p className="mt-8 text-sm text-muted-foreground">{content.error}</p> : null}
+      {content.loading ? <DashboardHomeSkeleton /> : null}
       {!content.loading && !content.error ? (
         <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-5">
           <section className="min-w-0" aria-labelledby="latest-campaigns-heading">

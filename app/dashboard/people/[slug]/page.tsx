@@ -10,6 +10,7 @@ import type { Campaign } from "@/lib/campaigns";
 import { ImageWithFallback, MetaGrid, MetaItem, SectionHeading } from "@/components/dashboard/ui";
 import { UserActions } from "@/components/user-actions";
 import { creatorCategoryOptions } from "@/lib/users";
+import { ProfilePageSkeleton } from "@/components/dashboard/loading-skeleton";
 
 const WORK_LINK =
   "group flex items-baseline justify-between gap-5 border-b border-border py-3.5 text-foreground no-underline hover:text-primary focus-visible:text-primary focus-visible:outline-none";
@@ -42,7 +43,7 @@ export default function UserDetailPage() {
     };
   }, []);
 
-  if (usersLoading || contentLoading) return <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">Loading profile…</main>;
+  if (usersLoading || contentLoading) return <ProfilePageSkeleton />;
   if (usersError || contentError) return <main className="flex-1 px-5 pb-16 pt-8 sm:px-8 text-sm text-muted-foreground">{usersError ?? contentError}</main>;
   if (!user) return <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">User not found.</main>;
 

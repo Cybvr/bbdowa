@@ -4,6 +4,7 @@ import { useState } from "react";
 import { FiArrowRight, FiCheck, FiLoader } from "react-icons/fi";
 import { useAuth } from "@/components/auth-provider";
 import { migrateProductsToCampaigns, type MigrationResult } from "@/lib/firebase/migrate-products";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function MigratePanel() {
   const { user, loading, isAdmin } = useAuth();
@@ -24,7 +25,7 @@ export function MigratePanel() {
     }
   };
 
-  if (loading) return <p className="text-[14px] text-muted-foreground">Checking access…</p>;
+  if (loading) return <Skeleton className="h-5 w-32" role="status" aria-label="Checking access" />;
   if (!user) return <p className="text-[14px] text-muted-foreground">Sign in to continue.</p>;
   if (!isAdmin) return <p className="text-[14px] text-muted-foreground">Admins only — your account can’t run this.</p>;
 

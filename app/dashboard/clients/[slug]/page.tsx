@@ -20,6 +20,7 @@ import { UserActions } from "@/components/user-actions";
 import { plural } from "@/lib/format";
 import { campaignWorkspaceStatuses } from "@/lib/client-data";
 import { fontOptions, ctaOptions } from "@/lib/campaign-options";
+import { ClientWorkspaceSkeleton } from "@/components/dashboard/loading-skeleton";
 import type {
   PhaseContent,
   CampaignListItem,
@@ -234,11 +235,7 @@ export default function ClientPage() {
   }
 
   if (!content) {
-    return (
-      <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
-        <p className="text-sm text-muted-foreground">Loading client workspace…</p>
-      </main>
-    );
+    return <ClientWorkspaceSkeleton />;
   }
 
   // key={slug} forces a remount when navigating between clients so all

@@ -12,6 +12,7 @@ import { ImageWithFallback, MetaGrid, MetaItem, SectionHeading } from "@/compone
 import { SocialIcon, type SocialIconName } from "@/components/social-icon";
 import { ShareCreatorDialog } from "@/components/share-creator-dialog";
 import { UserActions } from "@/components/user-actions";
+import { ProfilePageSkeleton } from "@/components/dashboard/loading-skeleton";
 
 const HISTORY_ROW = "border-t border-border py-3";
 
@@ -43,7 +44,7 @@ export default function CreatorDetailPage() {
   const { users, loading, error } = useFirestoreUsers();
   const creator = users.find((user) => user.slug === slug);
 
-  if (loading) return <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">Loading creator…</main>;
+  if (loading) return <ProfilePageSkeleton />;
   if (error) return <main className="flex-1 px-5 pb-16 pt-8 sm:px-8 text-sm text-muted-foreground">{error}</main>;
   if (!creator || !isCreatorUser(creator)) {
     return <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">Creator not found.</main>;

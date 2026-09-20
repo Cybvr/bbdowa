@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useFirestoreUsers } from "@/lib/firebase/client-content";
 import { creatorCategoryOptions, isCreatorUser, isTeamUser, userRoles, type User, type UserRole } from "@/lib/users";
+import { UsersTableSkeleton } from "@/components/dashboard/loading-skeleton";
 
 type RoleFilter = "all" | UserRole | "pending";
 
@@ -92,7 +93,7 @@ export default function AdminUsersPage() {
   const categoryOptions = React.useMemo(() => creatorCategoryOptions(users), [users]);
 
   if (authLoading || loading) {
-    return <main className="mx-auto w-full max-w-6xl flex-1 px-5 pb-16 pt-8 sm:px-8">Loading users…</main>;
+    return <UsersTableSkeleton />;
   }
 
   if (!isAdmin) {

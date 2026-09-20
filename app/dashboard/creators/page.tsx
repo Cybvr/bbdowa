@@ -3,10 +3,11 @@
 import { useFirestoreUsers } from "@/lib/firebase/client-content";
 import { CreatorDirectory } from "@/components/creators-directory";
 import { baseCity, isCreatorUser } from "@/lib/users";
+import { PageLoadingSkeleton } from "@/components/dashboard/loading-skeleton";
 
 export default function CreatorPage() {
   const { users, loading, error } = useFirestoreUsers();
-  if (loading) return <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">Loading creators…</main>;
+  if (loading) return <PageLoadingSkeleton titleWidth="w-40" />;
   if (error) return <main className="flex-1 px-5 pb-16 pt-8 sm:px-8 text-sm text-muted-foreground">{error}</main>;
 
   const creators = users.filter(isCreatorUser);

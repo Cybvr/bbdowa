@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   ACTIVITY_COLLECTION,
   elapsedMs,
@@ -311,7 +312,7 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
         </div>
 
         {loading ? (
-          <p className="text-[13px] text-muted-foreground">Loading…</p>
+          <div role="status" aria-label="Loading today’s activity" className="space-y-2"><Skeleton className="h-12 w-full rounded-xl" /><Skeleton className="h-12 w-full rounded-xl" /></div>
         ) : todayEntries.length > 0 ? (
           <div className="divide-y divide-border overflow-hidden rounded-xl border border-border">
             {todayEntries.map((entry) => {
@@ -580,7 +581,7 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
           <section aria-labelledby="recent-activity">
             <SectionHeading id="recent-activity">Recent activity</SectionHeading>
             {loading ? (
-              <p className="text-[14px] text-muted-foreground">Loading…</p>
+              <div role="status" aria-label="Loading recent activity" className="overflow-hidden rounded-xl border border-border"><Skeleton className="h-12 w-full rounded-none" /><Skeleton className="h-12 w-full rounded-none" /><Skeleton className="h-12 w-full rounded-none" /></div>
             ) : recent.length === 0 ? (
               <EmptyState title="Nothing logged yet" description="Start your first activity above." />
             ) : (

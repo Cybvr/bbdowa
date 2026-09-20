@@ -5,6 +5,7 @@ import { userHref } from "@/lib/users";
 import { useFirestoreUsers } from "@/lib/firebase/client-content";
 import type { User } from "@/lib/users";
 import { ImageWithFallback, PageHeader, SectionHeading } from "@/components/dashboard/ui";
+import { PageLoadingSkeleton } from "@/components/dashboard/loading-skeleton";
 
 type Role = { title: string; people: string[] };
 
@@ -143,7 +144,7 @@ function Person({ name, users, onDark = false }: { name: string; users: User[]; 
 
 export default function PeoplePage() {
   const { users, loading, error } = useFirestoreUsers();
-  if (loading) return <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">Loading directory…</main>;
+  if (loading) return <PageLoadingSkeleton titleWidth="w-36" />;
   if (error) return <main className="flex-1 px-5 pb-16 pt-8 sm:px-8 text-sm text-muted-foreground">{error}</main>;
 
   return (
