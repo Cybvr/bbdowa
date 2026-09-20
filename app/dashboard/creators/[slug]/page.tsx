@@ -4,8 +4,7 @@ import { useParams } from "next/navigation";
 import { useState } from "react";
 import type { IconType } from "react-icons";
 import { FaBehance, FaGlobe } from "react-icons/fa";
-import { FiArrowUpRight } from "react-icons/fi";
-import { Briefcase, Calendar, CheckSquare, Clock, FileSignature, FileText, Link2, Mail, MapPin, ShieldCheck, Tag, UserCheck, Users } from "lucide-react";
+import { Briefcase, CheckSquare, Clock, FileSignature, FileText, Mail, Users } from "lucide-react";
 import { creatorCategoryOptions, isCreatorNew, isCreatorUser, type Creator } from "@/lib/users";
 import { useAuth } from "@/components/auth-provider";
 import { useFirestoreUsers, useOwnUser } from "@/lib/firebase/client-content";
@@ -42,7 +41,7 @@ function platformsFor(creator: Creator): CreatorPlatform[] {
   return platforms;
 }
 
-type CreatorTab = "overview" | "work-history" | "contact" | "tasks" | "contracts";
+type CreatorTab = "overview" | "work-history" | "tasks" | "contracts";
 
 export default function CreatorDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -60,22 +59,21 @@ export default function CreatorDetailPage() {
   const categorySource = isStaff ? staff.users : own.user ? [own.user] : [];
 
   if (loading) return <ProfilePageSkeleton />;
-  if (error) return <main className="flex-1 px-5 pb-16 pt-8 sm:px-8 text-sm text-muted-foreground">{error}</main>;
+  if (error) return <main className="flex-1 px-3 pb-10 pt-3 text-sm text-muted-foreground sm:px-8 sm:pb-16 sm:pt-8">{error}</main>;
   if (!creator || !isCreatorUser(creator)) {
-    return <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">Creator not found.</main>;
+    return <main className="flex-1 px-3 pb-10 pt-3 sm:px-8 sm:pb-16 sm:pt-8">Creator not found.</main>;
   }
   const platforms = platformsFor(creator);
 
   const tabs: { id: CreatorTab; label: string }[] = [
     { id: "overview", label: "Overview" },
     { id: "work-history", label: "Work history" },
-    { id: "contact", label: "Contact" },
     { id: "tasks", label: "Tasks" },
     { id: "contracts", label: "Contracts" },
   ];
 
   return (
-    <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
+    <main className="flex-1 px-3 pb-10 pt-3 sm:px-8 sm:pb-16 sm:pt-8">
       <DetailBreadcrumb
         crumbs={[{ label: "All creators", href: "/dashboard/creators" }, { label: creator.name }]}
         actions={
@@ -124,17 +122,30 @@ export default function CreatorDetailPage() {
             )}
 
             <ProfileFacts>
-              <ProfileFact icon={<Calendar aria-hidden="true" className="h-4 w-4" />} label="Added to directory" value={longDate(creator.addedAt?.slice(0, 10))} />
-              <ProfileFact icon={<Briefcase aria-hidden="true" className="h-4 w-4" />} label="Category" value={creator.category || "—"} />
-              <ProfileFact icon={<Users aria-hidden="true" className="h-4 w-4" />} label="Engages as" value={creator.entity} />
-              <ProfileFact icon={<MapPin aria-hidden="true" className="h-4 w-4" />} label="Location" value={creator.location || "—"} />
-              <ProfileFact
-                icon={<ShieldCheck aria-hidden="true" className="h-4 w-4" />}
-                label="Clearance"
-                value={creator.clearance === "cleared" ? "Cleared to engage" : "Sign-off pending"}
-              />
-              <ProfileFact icon={<UserCheck aria-hidden="true" className="h-4 w-4" />} label="Vouched by" value={creator.vouchedBy || "—"} />
+              <ProfileFact label="Added" value={longDate(creator.addedAt?.slice(0, 10))} />
+              <ProfileFact label="Category" value={creator.category || "—"} />
+              <ProfileFact label="Engages as" value={creator.entity} />
+              <ProfileFact label="Location" value={creator.location || "—"} />
+              <ProfileFact label="Clearance" value={creator.clearance === "cleared" ? "Cleared" : "Sign-off pending"} />
+              <ProfileFact label="Vouched by" value={creator.vouchedBy || "—"} />
+              {creator.email ? (
+                <ProfileFact label="Email" value={<a href={`mailto:${creator.email}`} className="hover:text-primary">{creator.email}</a>} />
+              ) : null}
+              {creator.phone ? <ProfileFact label="Phone" value={creator.phone} /> : null}
+              {!creator.email && !creator.phone && creator.contactNote ? (
+                <ProfileFact label="Contact" value={creator.contactNote} />
+              ) : null}
             </ProfileFacts>
+
+            {creator.tags.length ? (
+              <div className="flex flex-wrap gap-1.5">
+                {creator.tags.map((tag) => (
+                  <span key={tag} className="rounded-full bg-muted px-2.5 py-1 text-[11px] text-foreground">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            ) : null}
           </>
         }
       >
@@ -201,72 +212,6 @@ export default function CreatorDetailPage() {
               }))}
             />
           </ProfileSection>
-        )}
-
-        {tab === "contact" && (
-          <>
-            <ProfileSection icon={<Link2 aria-hidden="true" className="h-3.5 w-3.5" />} title="Platforms">
-              {platforms.length ? (
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  {platforms.map(({ label, href, Icon, brand }) => (
-                    <a
-                      key={label}
-                      href={href}
-                      target="_blank"
-                      rel="noreferrer"
-                      aria-label={`Open ${creator.name} on ${label}`}
-                      className="group flex items-center justify-between gap-3 rounded-lg border border-border p-3 text-foreground no-underline transition-colors hover:border-foreground hover:bg-muted focus-visible:outline-none"
-                    >
-                      <span className="flex items-center gap-3">
-                        <span className="grid h-9 w-9 place-items-center rounded-full bg-foreground text-background group-hover:bg-primary">
-                          {brand ? <SocialIcon name={brand} className="h-5 w-5" /> : Icon ? <Icon aria-hidden="true" className="h-4 w-4" /> : null}
-                        </span>
-                        <span>
-                          <strong className="block text-[14px] font-semibold leading-none">{label}</strong>
-                          <span className="mt-1 block text-[12px] text-muted-foreground">Open profile</span>
-                        </span>
-                      </span>
-                      <FiArrowUpRight aria-hidden="true" className="h-4 w-4 flex-none text-muted-foreground group-hover:text-foreground" />
-                    </a>
-                  ))}
-                </div>
-              ) : (
-                <p className="m-0 text-[13px] text-muted-foreground">Public platform links not yet confirmed.</p>
-              )}
-            </ProfileSection>
-
-            <ProfileSection icon={<Mail aria-hidden="true" className="h-3.5 w-3.5" />} title="Direct contact">
-              <ul className="m-0 list-none p-0 text-[15px] leading-[1.35]">
-                {creator.email ? (
-                  <li className="border-t border-border py-2.5 first:border-t-0 first:pt-0">
-                    <a href={`mailto:${creator.email}`} className="text-foreground hover:text-primary">
-                      {creator.email}
-                    </a>
-                  </li>
-                ) : null}
-                {creator.phone ? <li className="border-t border-border py-2.5 first:border-t-0 first:pt-0">{creator.phone}</li> : null}
-                {!creator.email && !creator.phone ? (
-                  <li className="text-muted-foreground">{creator.contactNote ?? "Public contact links not yet confirmed."}</li>
-                ) : creator.contactNote ? (
-                  <li className="border-t border-border py-2.5 text-muted-foreground">{creator.contactNote}</li>
-                ) : null}
-              </ul>
-            </ProfileSection>
-
-            <ProfileSection icon={<Tag aria-hidden="true" className="h-3.5 w-3.5" />} title="Tags">
-              {creator.tags.length ? (
-                <div className="flex flex-wrap gap-1.5">
-                  {creator.tags.map((tag) => (
-                    <span key={tag} className="rounded-full bg-muted px-2.5 py-1 text-[12px] text-foreground">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <p className="m-0 text-[13px] text-muted-foreground">No tags yet.</p>
-              )}
-            </ProfileSection>
-          </>
         )}
 
         {tab === "tasks" && authUser && (

@@ -11,6 +11,7 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
   const isApplication = pathname === "/dashboard/careers/apply";
   const isClientDetail = /^\/dashboard\/clients\/[^/]+(?:\/|$)/.test(pathname);
   const isCreators = pathname === "/dashboard/creators";
+  const isCreatorDetail = /^\/dashboard\/creators\/[^/]+$/.test(pathname);
 
   useEffect(() => {
     setSidebarCollapsed(pathname === "/dashboard/creators");
@@ -22,7 +23,7 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
     <AuthProvider>
       <div className="flex min-h-screen flex-1 flex-col nav:flex-row">
         <DashboardHeader
-          hideMobile={isClientDetail || isCreators}
+          hideMobile={isClientDetail || isCreators || isCreatorDetail}
           sidebarCollapsed={sidebarCollapsed}
           onToggleSidebar={() => setSidebarCollapsed((value) => !value)}
         />
