@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 import { firebaseDb } from "@/lib/firebase/client";
 import { useAuth } from "@/components/auth-provider";
 import type { BlogPost } from "@/lib/blog";
@@ -30,7 +30,8 @@ type FirestoreUsersState = {
 };
 
 export function useFirestoreUsers(): FirestoreUsersState {
-  const { loading: authLoading, user, isAdmin } = useAuth();
+  const { loading: authLoading, user, isAdmin, role } = useAuth();
+  const isStaff = isAdmin || role === "manager";
   const [state, setState] = useState<FirestoreUsersState>({ users: [], loading: true, error: null });
 
   useEffect(() => {
@@ -41,8 +42,8 @@ export function useFirestoreUsers(): FirestoreUsersState {
       return;
     }
 
-    if (!isAdmin) {
-      setState({ users: [], loading: false, error: "An admin account is required to view users." });
+    if (!isStaff) {
+      setState({ users: [], loading: false, error: "An admin or manager account is required to view users." });
       return;
     }
 
@@ -60,7 +61,49 @@ export function useFirestoreUsers(): FirestoreUsersState {
     return () => {
       active = false;
     };
-  }, [authLoading, isAdmin, user]);
+  }, [authLoading, isStaff, user]);
+
+  return state;
+}
+
+type OwnUserState = {
+  user: User | null;
+  loading: boolean;
+  error: string | null;
+};
+
+/**
+ * The signed-in person's own directory record, read directly by uid. Unlike
+ * `useFirestoreUsers`, this works for anyone signed in (not just staff),
+ * since the Firestore rules let a person always read their own `users` doc.
+ */
+export function useOwnUser(): OwnUserState {
+  const { loading: authLoading, user } = useAuth();
+  const [state, setState] = useState<OwnUserState>({ user: null, loading: true, error: null });
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      setState({ user: null, loading: false, error: null });
+      return;
+    }
+
+    let active = true;
+    setState((current) => ({ ...current, loading: true, error: null }));
+    getDoc(doc(firebaseDb, "users", user.uid))
+      .then((snapshot) => {
+        if (!active) return;
+        setState({ user: snapshot.exists() ? normalizeUser(snapshot.data() as User) : null, loading: false, error: null });
+      })
+      .catch((error) => {
+        console.error("Unable to load your profile from Firestore", error);
+        if (active) setState({ user: null, loading: false, error: "Unable to load your profile." });
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [authLoading, user]);
 
   return state;
 }

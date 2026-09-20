@@ -27,8 +27,6 @@ export const NAV_ITEMS: NavItem[] = [
   { kind: "link", label: "Clients", href: "/dashboard/clients", requiresAuth: true },
   { kind: "link", label: "Creators", href: "/dashboard/creators" },
   { kind: "link", label: "Tracker", href: "/dashboard/tracker", requiresAuth: true },
-  { kind: "link", label: "Tasks", href: "/dashboard/tasks", requiresAuth: true },
-  { kind: "link", label: "Contracts", href: "/dashboard/contracts", requiresAuth: true },
   {
     kind: "menu",
     label: "Resources",

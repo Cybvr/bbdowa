@@ -3,12 +3,9 @@
 import * as React from "react";
 import { addDoc, collection, deleteDoc, doc, getDocs, query, updateDoc, where } from "firebase/firestore";
 import { MoreHorizontal, Plus, Trash2 } from "lucide-react";
-import { useAuth } from "@/components/auth-provider";
 import { firebaseDb } from "@/lib/firebase/client";
-import { readUsersFromFirestore } from "@/lib/firebase/client-content";
-import { isCreatorUser, type User } from "@/lib/users";
-import { EmptyState, SectionHeading } from "@/components/dashboard/ui";
-import { PageLoadingSkeleton } from "@/components/dashboard/loading-skeleton";
+import { EmptyState } from "@/components/dashboard/ui";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
@@ -19,7 +16,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,6 +23,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { CONTRACT_COLLECTION, formatDate, sortContracts, type Contract } from "@/lib/contracts";
+
+/** Who's looking at this creator's agreements: staff draft and manage them, the creator only signs. */
+export type ContractViewer = { uid: string; name: string | null; isStaff: boolean };
 
 function StatusBadge({ signed }: { signed: boolean }) {
   return (
@@ -38,8 +37,9 @@ function StatusBadge({ signed }: { signed: boolean }) {
   );
 }
 
-function NewContractDialog({ creators, createdBy, createdByName, onCreated }: {
-  creators: User[];
+function NewContractDialog({ creatorUid, creatorName, createdBy, createdByName, onCreated }: {
+  creatorUid: string;
+  creatorName: string;
   createdBy: string;
   createdByName: string | null;
   onCreated: () => void;
@@ -47,14 +47,12 @@ function NewContractDialog({ creators, createdBy, createdByName, onCreated }: {
   const [open, setOpen] = React.useState(false);
   const [title, setTitle] = React.useState("");
   const [body, setBody] = React.useState("");
-  const [assignedTo, setAssignedTo] = React.useState("");
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
   const reset = () => {
     setTitle("");
     setBody("");
-    setAssignedTo("");
     setError(null);
   };
 
@@ -63,7 +61,7 @@ function NewContractDialog({ creators, createdBy, createdByName, onCreated }: {
     if (!next) reset();
   };
 
-  const canSave = title.trim().length > 0 && body.trim().length > 0 && assignedTo.length > 0 && !busy;
+  const canSave = title.trim().length > 0 && body.trim().length > 0 && !busy;
 
   const save = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -71,12 +69,11 @@ function NewContractDialog({ creators, createdBy, createdByName, onCreated }: {
     setBusy(true);
     setError(null);
     try {
-      const assignee = creators.find((creator) => creator.uid === assignedTo);
       await addDoc(collection(firebaseDb, CONTRACT_COLLECTION), {
         title: title.trim(),
         body: body.trim(),
-        assignedTo,
-        assignedToName: assignee?.name ?? null,
+        assignedTo: creatorUid,
+        assignedToName: creatorName,
         createdBy,
         createdByName,
         status: "pending",
@@ -110,24 +107,13 @@ function NewContractDialog({ creators, createdBy, createdByName, onCreated }: {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>New agreement</DialogTitle>
-            <DialogDescription>Send an NDA or other agreement for a creator to sign.</DialogDescription>
+            <DialogDescription>Send an NDA or other agreement to {creatorName} to sign.</DialogDescription>
           </DialogHeader>
 
           <form onSubmit={save} className="space-y-4">
             <div className="space-y-1.5">
               <label htmlFor="contract-title" className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Title</label>
               <Input id="contract-title" value={title} onChange={(event) => setTitle(event.target.value)} disabled={busy} placeholder="Mutual NDA" required />
-            </div>
-            <div className="space-y-1.5">
-              <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Assign to</span>
-              <Select value={assignedTo} onValueChange={setAssignedTo}>
-                <SelectTrigger aria-required="true" className="h-10 w-full"><SelectValue placeholder="Select a creator" /></SelectTrigger>
-                <SelectContent>
-                  {creators.map((creator) => (
-                    <SelectItem key={creator.uid} value={creator.uid as string}>{creator.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
             <div className="space-y-1.5">
               <label htmlFor="contract-body" className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Agreement text</label>
@@ -223,39 +209,27 @@ function SignDialog({ contract, defaultName, onSigned }: { contract: Contract; d
   );
 }
 
-export function ContractsView() {
-  const { user, role, loading: authLoading } = useAuth();
-  const isStaff = role === "admin" || role === "manager";
-
+/** Agreements for one creator, shown on their profile page. Staff draft and manage them; the creator only signs. */
+export function CreatorContractsPanel({ creatorUid, creatorName, viewer }: { creatorUid: string | null | undefined; creatorName: string; viewer: ContractViewer }) {
   const [contracts, setContracts] = React.useState<Contract[]>([]);
-  const [creators, setCreators] = React.useState<User[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [busyId, setBusyId] = React.useState<string | null>(null);
 
-  const load = React.useCallback(async (uid: string, staff: boolean) => {
-    const snapshot = staff
-      ? await getDocs(collection(firebaseDb, CONTRACT_COLLECTION))
-      : await getDocs(query(collection(firebaseDb, CONTRACT_COLLECTION), where("assignedTo", "==", uid)));
+  const load = React.useCallback(async (uid: string) => {
+    const snapshot = await getDocs(query(collection(firebaseDb, CONTRACT_COLLECTION), where("assignedTo", "==", uid)));
     const rows = snapshot.docs.map((document) => ({ id: document.id, ...(document.data() as Omit<Contract, "id">) }));
     setContracts(sortContracts(rows));
   }, []);
 
   React.useEffect(() => {
-    if (authLoading) return;
-    if (!user) {
+    if (!creatorUid) {
       setLoading(false);
       return;
     }
     let active = true;
     setLoading(true);
-    Promise.all([
-      load(user.uid, isStaff),
-      isStaff ? readUsersFromFirestore().then((users) => users.filter((u) => isCreatorUser(u) && u.uid)) : Promise.resolve([]),
-    ])
-      .then(([, creatorUsers]) => {
-        if (active) setCreators(creatorUsers);
-      })
+    load(creatorUid)
       .catch((cause) => {
         console.error("Unable to load agreements from Firestore", cause);
         if (active) setError("Unable to load agreements.");
@@ -266,10 +240,10 @@ export function ContractsView() {
     return () => {
       active = false;
     };
-  }, [authLoading, user, isStaff, load]);
+  }, [creatorUid, load]);
 
   const reload = () => {
-    if (user) void load(user.uid, isStaff);
+    if (creatorUid) void load(creatorUid);
   };
 
   const removeContract = async (contract: Contract) => {
@@ -287,105 +261,106 @@ export function ContractsView() {
     }
   };
 
-  if (authLoading || loading) return <PageLoadingSkeleton titleWidth="w-32" />;
+  if (!creatorUid) {
+    return viewer.isStaff ? (
+      <EmptyState title="No account yet" description={`${creatorName} hasn’t signed in yet, so agreements can’t be sent until they do.`} />
+    ) : null;
+  }
 
-  if (!user) {
-    return <EmptyState title="Sign in to view agreements" description="NDAs and other agreements sent to you show up here once you’re signed in." />;
+  if (loading) {
+    return (
+      <div role="status" aria-label="Loading agreements" className="space-y-2">
+        <Skeleton className="h-14 w-full rounded-xl" />
+        <Skeleton className="h-14 w-full rounded-xl" />
+      </div>
+    );
   }
 
   return (
-    <div className="mt-8 space-y-6">
+    <div className="space-y-4">
       {error ? <p className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-[13px] text-primary">{error}</p> : null}
 
-      {isStaff ? (
+      {viewer.isStaff ? (
         <div className="flex justify-end">
-          <NewContractDialog creators={creators} createdBy={user.uid} createdByName={user.name ?? user.email} onCreated={reload} />
+          <NewContractDialog creatorUid={creatorUid} creatorName={creatorName} createdBy={viewer.uid} createdByName={viewer.name} onCreated={reload} />
         </div>
       ) : null}
 
       {contracts.length === 0 ? (
         <EmptyState
-          title={isStaff ? "No agreements yet" : "Nothing to sign yet"}
-          description={isStaff ? "Send an NDA or other agreement to a creator." : "Agreements your team sends you will show up here."}
+          title={viewer.isStaff ? "No agreements yet" : "Nothing to sign yet"}
+          description={viewer.isStaff ? `Send an NDA or other agreement to ${creatorName}.` : "Agreements your team sends you will show up here."}
         />
-      ) : isStaff ? (
-        <section aria-labelledby="all-contracts">
-          <SectionHeading id="all-contracts">All agreements</SectionHeading>
-          <div className="overflow-x-auto rounded-xl border border-border">
-            <table className="min-w-[640px] w-full border-collapse text-[14px]">
-              <thead>
-                <tr className="border-b border-border bg-muted/40 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                  <th className="px-4 py-3">Agreement</th>
-                  <th className="px-4 py-3">Creator</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Signed</th>
-                  <th className="px-4 py-3 text-right">Actions</th>
+      ) : viewer.isStaff ? (
+        <div className="overflow-x-auto rounded-xl border border-border">
+          <table className="min-w-[560px] w-full border-collapse text-[14px]">
+            <thead>
+              <tr className="border-b border-border bg-muted/40 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                <th className="px-4 py-3">Agreement</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Signed</th>
+                <th className="px-4 py-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {contracts.map((contract) => (
+                <tr key={contract.id} className="border-b border-border last:border-b-0 align-top">
+                  <td className="px-4 py-3 font-semibold">{contract.title}</td>
+                  <td className="px-4 py-3"><StatusBadge signed={contract.status === "signed"} /></td>
+                  <td className="px-4 py-3">
+                    {contract.status === "signed" && contract.signedAt ? (
+                      <span>{contract.signedName} · {formatDate(contract.signedAt)}</span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          type="button"
+                          aria-label={`Actions for ${contract.title}`}
+                          disabled={busyId === contract.id}
+                          className="grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground transition hover:border-foreground hover:text-foreground disabled:opacity-50"
+                        >
+                          <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-36">
+                        <DropdownMenuItem variant="destructive" onSelect={() => void removeContract(contract)}>
+                          <Trash2 className="h-4 w-4" />Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {contracts.map((contract) => (
-                  <tr key={contract.id} className="border-b border-border last:border-b-0 align-top">
-                    <td className="px-4 py-3 font-semibold">{contract.title}</td>
-                    <td className="px-4 py-3">{contract.assignedToName ?? "—"}</td>
-                    <td className="px-4 py-3"><StatusBadge signed={contract.status === "signed"} /></td>
-                    <td className="px-4 py-3">
-                      {contract.status === "signed" && contract.signedAt ? (
-                        <span>{contract.signedName} · {formatDate(contract.signedAt)}</span>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button
-                            type="button"
-                            aria-label={`Actions for ${contract.title}`}
-                            disabled={busyId === contract.id}
-                            className="grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground transition hover:border-foreground hover:text-foreground disabled:opacity-50"
-                          >
-                            <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-36">
-                          <DropdownMenuItem variant="destructive" onSelect={() => void removeContract(contract)}>
-                            <Trash2 className="h-4 w-4" />Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : (
-        <section aria-labelledby="my-contracts">
-          <SectionHeading id="my-contracts">Your agreements</SectionHeading>
-          <div className="space-y-3">
-            {contracts.map((contract) => (
-              <div key={contract.id} className="rounded-xl border border-border p-4 sm:p-5">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="m-0 text-[15px] font-semibold">{contract.title}</p>
-                    <p className="mb-0 mt-1 text-[12px] text-muted-foreground">
-                      {contract.status === "signed" && contract.signedAt
-                        ? `Signed ${formatDate(contract.signedAt)} as ${contract.signedName}`
-                        : `Sent ${formatDate(contract.createdAt)}${contract.createdByName ? ` by ${contract.createdByName}` : ""}`}
-                    </p>
-                  </div>
-                  <StatusBadge signed={contract.status === "signed"} />
+        <div className="space-y-3">
+          {contracts.map((contract) => (
+            <div key={contract.id} className="rounded-xl border border-border p-4 sm:p-5">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="m-0 text-[15px] font-semibold">{contract.title}</p>
+                  <p className="mb-0 mt-1 text-[12px] text-muted-foreground">
+                    {contract.status === "signed" && contract.signedAt
+                      ? `Signed ${formatDate(contract.signedAt)} as ${contract.signedName}`
+                      : `Sent ${formatDate(contract.createdAt)}${contract.createdByName ? ` by ${contract.createdByName}` : ""}`}
+                  </p>
                 </div>
-                {contract.status === "pending" ? (
-                  <div className="mt-4">
-                    <SignDialog contract={contract} defaultName={user.name ?? ""} onSigned={reload} />
-                  </div>
-                ) : null}
+                <StatusBadge signed={contract.status === "signed"} />
               </div>
-            ))}
-          </div>
-        </section>
+              {contract.status === "pending" ? (
+                <div className="mt-4">
+                  <SignDialog contract={contract} defaultName={viewer.name ?? ""} onSigned={reload} />
+                </div>
+              ) : null}
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );

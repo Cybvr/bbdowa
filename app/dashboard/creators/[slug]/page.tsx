@@ -5,9 +5,10 @@ import { useState } from "react";
 import type { IconType } from "react-icons";
 import { FaBehance, FaGlobe } from "react-icons/fa";
 import { FiArrowUpRight } from "react-icons/fi";
-import { Briefcase, Calendar, Clock, FileText, Link2, Mail, MapPin, ShieldCheck, Tag, UserCheck, Users } from "lucide-react";
+import { Briefcase, Calendar, CheckSquare, Clock, FileSignature, FileText, Link2, Mail, MapPin, ShieldCheck, Tag, UserCheck, Users } from "lucide-react";
 import { creatorCategoryOptions, isCreatorNew, isCreatorUser, type Creator } from "@/lib/users";
-import { useFirestoreUsers } from "@/lib/firebase/client-content";
+import { useAuth } from "@/components/auth-provider";
+import { useFirestoreUsers, useOwnUser } from "@/lib/firebase/client-content";
 import { longDate } from "@/lib/format";
 import {
   DetailBreadcrumb,
@@ -23,6 +24,8 @@ import { SocialIcon, type SocialIconName } from "@/components/social-icon";
 import { ShareCreatorDialog } from "@/components/share-creator-dialog";
 import { UserActions } from "@/components/user-actions";
 import { ProfilePageSkeleton } from "@/components/dashboard/loading-skeleton";
+import { CreatorTasksPanel } from "@/components/tasks-view";
+import { CreatorContractsPanel } from "@/components/contracts-view";
 
 type CreatorPlatform = { label: string; href: string; Icon?: IconType; brand?: SocialIconName };
 
@@ -39,13 +42,22 @@ function platformsFor(creator: Creator): CreatorPlatform[] {
   return platforms;
 }
 
-type CreatorTab = "overview" | "work-history" | "contact";
+type CreatorTab = "overview" | "work-history" | "contact" | "tasks" | "contracts";
 
 export default function CreatorDetailPage() {
   const { slug } = useParams<{ slug: string }>();
-  const { users, loading, error } = useFirestoreUsers();
-  const creator = users.find((user) => user.slug === slug);
+  const { user: authUser, role, loading: authLoading } = useAuth();
+  const isStaff = role === "admin" || role === "manager";
+  const staff = useFirestoreUsers();
+  const own = useOwnUser();
   const [tab, setTab] = useState<CreatorTab>("overview");
+
+  // Staff can browse every creator; everyone else can only ever land on their
+  // own profile (Firestore only lets a person read their own `users` doc).
+  const loading = isStaff ? staff.loading : authLoading || own.loading;
+  const error = isStaff ? staff.error : null;
+  const creator = isStaff ? staff.users.find((user) => user.slug === slug) : own.user?.slug === slug ? own.user : undefined;
+  const categorySource = isStaff ? staff.users : own.user ? [own.user] : [];
 
   if (loading) return <ProfilePageSkeleton />;
   if (error) return <main className="flex-1 px-5 pb-16 pt-8 sm:px-8 text-sm text-muted-foreground">{error}</main>;
@@ -58,6 +70,8 @@ export default function CreatorDetailPage() {
     { id: "overview", label: "Overview" },
     { id: "work-history", label: "Work history" },
     { id: "contact", label: "Contact" },
+    { id: "tasks", label: "Tasks" },
+    { id: "contracts", label: "Contracts" },
   ];
 
   return (
@@ -66,7 +80,7 @@ export default function CreatorDetailPage() {
         crumbs={[{ label: "All creators", href: "/dashboard/creators" }, { label: creator.name }]}
         actions={
           <div className="flex items-center gap-2">
-            <UserActions user={creator} variant="creator" listHref="/dashboard/creators" categoryOptions={creatorCategoryOptions(users)} />
+            <UserActions user={creator} variant="creator" listHref="/dashboard/creators" categoryOptions={creatorCategoryOptions(categorySource)} />
             <ShareCreatorDialog creatorName={creator.name} path={`/dashboard/creators/${creator.slug}`} showLabel />
           </div>
         }
@@ -253,6 +267,26 @@ export default function CreatorDetailPage() {
               )}
             </ProfileSection>
           </>
+        )}
+
+        {tab === "tasks" && authUser && (
+          <ProfileSection icon={<CheckSquare aria-hidden="true" className="h-3.5 w-3.5" />} title="Tasks">
+            <CreatorTasksPanel
+              creatorUid={creator.uid}
+              creatorName={creator.name}
+              viewer={{ uid: authUser.uid, name: authUser.name ?? authUser.email, isStaff }}
+            />
+          </ProfileSection>
+        )}
+
+        {tab === "contracts" && authUser && (
+          <ProfileSection icon={<FileSignature aria-hidden="true" className="h-3.5 w-3.5" />} title="Contracts">
+            <CreatorContractsPanel
+              creatorUid={creator.uid}
+              creatorName={creator.name}
+              viewer={{ uid: authUser.uid, name: authUser.name ?? authUser.email, isStaff }}
+            />
+          </ProfileSection>
         )}
       </ProfileLayout>
     </main>
