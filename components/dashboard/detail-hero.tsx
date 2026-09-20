@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { ChevronRight } from "lucide-react";
 import { ImageWithFallback } from "@/components/dashboard/ui";
+import { DashboardSidebarSheet } from "@/components/dashboard-sidebar";
 
 /**
  * Shared banner + breadcrumb + horizontal tabs shell, matching the client
@@ -16,24 +17,32 @@ export type DetailCrumb = { label: string; href?: string };
 export function DetailBreadcrumb({ crumbs, actions }: { crumbs: DetailCrumb[]; actions?: ReactNode }) {
   return (
     <div className="mb-2 flex items-center justify-between gap-4 px-1">
-      <nav aria-label="Breadcrumb" className="min-w-0">
-        <ol className="m-0 flex list-none flex-wrap items-center gap-x-2 gap-y-1 p-0 text-xs text-muted-foreground sm:text-sm">
-          {crumbs.map((crumb, index) => (
-            <li key={crumb.label} className="flex items-center gap-2">
-              {index > 0 ? <ChevronRight aria-hidden="true" className="h-3.5 w-3.5" /> : null}
-              {crumb.href ? (
-                <Link href={crumb.href} className="transition hover:text-foreground">
-                  {crumb.label}
-                </Link>
-              ) : (
-                <span aria-current="page" className="text-foreground">
-                  {crumb.label}
-                </span>
-              )}
-            </li>
-          ))}
-        </ol>
-      </nav>
+      <div className="flex min-w-0 items-center gap-1.5">
+        {/* The dashboard's own mobile header is hidden on these detail pages
+         * (see DashboardChrome), so this is the only way back into the nav
+         * drawer below the "nav" breakpoint. */}
+        <div className="shrink-0 nav:hidden">
+          <DashboardSidebarSheet />
+        </div>
+        <nav aria-label="Breadcrumb" className="min-w-0">
+          <ol className="m-0 flex list-none flex-wrap items-center gap-x-2 gap-y-1 p-0 text-xs text-muted-foreground sm:text-sm">
+            {crumbs.map((crumb, index) => (
+              <li key={crumb.label} className="flex items-center gap-2">
+                {index > 0 ? <ChevronRight aria-hidden="true" className="h-3.5 w-3.5" /> : null}
+                {crumb.href ? (
+                  <Link href={crumb.href} className="transition hover:text-foreground">
+                    {crumb.label}
+                  </Link>
+                ) : (
+                  <span aria-current="page" className="text-foreground">
+                    {crumb.label}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ol>
+        </nav>
+      </div>
       {actions ? <div className="shrink-0">{actions}</div> : null}
     </div>
   );

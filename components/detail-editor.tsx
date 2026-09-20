@@ -358,7 +358,7 @@ export function EditSheet({
       className="inline-flex h-9 items-center gap-1.5 rounded-md border border-border bg-background px-3 text-[13px] font-semibold text-foreground transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
     >
       <Pencil aria-hidden="true" className="h-3.5 w-3.5" />
-      {triggerLabel}
+      <span className="hidden nav:inline">{triggerLabel}</span>
     </button>
   );
 

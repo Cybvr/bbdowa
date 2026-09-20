@@ -83,7 +83,7 @@ export function ShareCreatorDialog({ creatorName, path, className, showLabel = f
         className={className ?? "inline-flex h-9 items-center gap-2 rounded-lg bg-muted px-3 text-[13px] font-medium text-foreground transition hover:bg-muted/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"}
       >
         <FiShare2 aria-hidden="true" className="h-4 w-4" />
-        {showLabel ? <span>Share</span> : null}
+        {showLabel ? <span className="hidden nav:inline">Share</span> : null}
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
