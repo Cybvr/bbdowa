@@ -224,22 +224,22 @@ export default function CreatorDetailPage() {
 
         {tab === "campaigns" && (
           <ProfileSection icon={<Megaphone aria-hidden="true" className="h-3.5 w-3.5" />} title="Campaigns">
-            {creatorCampaigns.length ? (
-              <div>
-                {creatorCampaigns.map((campaign) => (
-                  <Link
-                    key={campaign.slug}
-                    href={campaignHref(campaign.slug)}
-                    className="group flex items-baseline justify-between gap-3 border-t border-border py-3 text-foreground no-underline first:border-t-0 hover:text-primary focus-visible:text-primary focus-visible:outline-none"
-                  >
-                    <span className="min-w-0 truncate text-[14px] font-semibold">{campaign.campaign ?? campaign.name}</span>
-                    <span className="shrink-0 text-[12px] font-medium capitalize text-muted-foreground group-hover:text-primary">{campaign.status}</span>
+            <ProfileTable
+              columns={[
+                { key: "campaign", label: "Campaign" },
+                { key: "client", label: "Client" },
+                { key: "status", label: "Status" },
+              ]}
+              rows={creatorCampaigns.map((campaign) => ({
+                campaign: (
+                  <Link href={campaignHref(campaign.slug)} className="font-semibold text-foreground hover:text-primary">
+                    {campaign.campaign ?? campaign.name}
                   </Link>
-                ))}
-              </div>
-            ) : (
-              <p className="m-0 text-[13px] text-muted-foreground">No campaigns linked yet.</p>
-            )}
+                ),
+                client: campaign.clientName,
+                status: <span className="capitalize">{campaign.status}</span>,
+              }))}
+            />
           </ProfileSection>
         )}
 
