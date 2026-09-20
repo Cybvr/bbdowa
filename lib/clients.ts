@@ -10,6 +10,8 @@ export type Client = {
   industry: string;
   /** Optional short bio shown on the client page; editable per client. */
   description?: string | null;
+  /** Optional audience description shown in the client workspace. */
+  targetAudience?: string | null;
   /** Client logo/headshot; null/absent falls back to the placeholder. */
   profileImage?: string | null;
 };

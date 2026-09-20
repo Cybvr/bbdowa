@@ -556,7 +556,7 @@ function OneUtilityClientWorkspace({
     setActiveSection((prev) => (prev === id ? null : id));
 
   // Strategy input fields state
-  const [marketAudience, setMarketAudience] = useState(preset.footprintShort);
+  const [marketAudience, setMarketAudience] = useState(client?.targetAudience?.trim() || preset.footprintShort);
 
   // Brand DNA state
   const [palette, setPalette] = useState<string[]>(workspace.palette);
@@ -891,9 +891,9 @@ function OneUtilityClientWorkspace({
         setCampaignView("home");
       },
     },
-    { view: "brand", label: "DNA", onSelect: () => setActiveMainTab("brand") },
     { view: "moodboard", label: "Media", onSelect: () => setActiveMainTab("moodboard") },
     { view: "creators", label: "Team", onSelect: () => setActiveMainTab("creators") },
+    { view: "brand", label: "Profile", onSelect: () => setActiveMainTab("brand") },
   ];
   const activeWorkspaceTabRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
