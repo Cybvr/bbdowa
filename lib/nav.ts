@@ -32,24 +32,17 @@ export const NAV_ITEMS: NavItem[] = [
     kind: "menu",
     label: "Resources",
     requiresAuth: true,
-    match: ["/dashboard/workflows", "/dashboard/brand", "/dashboard/resources"],
+    match: ["/dashboard/workflows", "/dashboard/brand", "/dashboard/resources", "/dashboard/about", "/dashboard/careers"],
     items: [
       { label: "Agency workflow", href: "/dashboard/workflows/agency" },
       { label: "Pitch workflow", href: "/dashboard/workflows/pitch" },
       { label: "Brand assets", href: "/dashboard/brand" },
       { label: "Resources", href: "/dashboard/resources" },
-    ],
-  },
-  { kind: "link", label: "Updates", href: "/dashboard/blog" },
-  {
-    kind: "menu",
-    label: "Company",
-    match: ["/dashboard/about", "/dashboard/careers"],
-    items: [
       { label: "About", href: "/dashboard/about" },
       { label: "Careers", href: "/dashboard/careers" },
     ],
   },
+  { kind: "link", label: "Updates", href: "/dashboard/blog" },
   { kind: "link", label: "Admin", href: "/admin", requiresAuth: true, requiresAdmin: true },
 ];
 
