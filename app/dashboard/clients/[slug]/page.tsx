@@ -1531,9 +1531,9 @@ function OneUtilityClientWorkspace({
           {activeMainTab === "brand" && (
             <ClientWorkspaceContent>
                 <ClientWorkspaceHeading title="Profile" actions={contentEditAction} />
-                <div className="w-full max-w-2xl">
-                  <nav aria-label="Profile sections" className="border-b border-border/70">
-                    <div role="tablist" className="no-scrollbar flex touch-pan-x items-center gap-1 overflow-x-auto overscroll-x-contain">
+                <div className="grid w-full max-w-4xl grid-cols-1 items-start gap-6 md:grid-cols-[11rem_minmax(0,1fr)] md:gap-8">
+                  <nav aria-label="Profile sections" className="border-b border-border/70 md:border-b-0 md:border-r md:pr-4">
+                    <div role="tablist" aria-orientation="vertical" className="flex flex-col gap-1">
                       {[
                         { id: "company" as const, label: "Company Profile" },
                         { id: "design" as const, label: "Design" },
@@ -1547,8 +1547,8 @@ function OneUtilityClientWorkspace({
                             aria-selected={isActive}
                             aria-controls={`profile-panel-${section.id}`}
                             onClick={() => setProfileSection(section.id)}
-                            className={`relative flex h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-md px-3 text-[13px] font-semibold tracking-tight transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${isActive
-                              ? "text-primary after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:bg-primary"
+                            className={`relative flex min-h-10 w-full items-center justify-start whitespace-nowrap rounded-md px-3 text-left text-[13px] font-semibold tracking-tight transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 after:absolute after:bottom-0 after:left-3 after:right-3 after:h-0.5 md:after:bottom-3 md:after:left-auto md:after:right-[-1px] md:after:top-3 md:after:h-auto md:after:w-0.5 ${isActive
+                              ? "bg-primary/5 text-primary after:bg-primary"
                               : "text-muted-foreground hover:bg-muted hover:text-foreground"
                               }`}
                           >
@@ -1559,7 +1559,7 @@ function OneUtilityClientWorkspace({
                     </div>
                   </nav>
 
-                  <div className="pt-6">
+                  <div className="min-w-0">
                   {profileSection === "company" && (
                   <section id="profile-panel-company" role="tabpanel" aria-label="Company Profile" className="space-y-5">
                     <div className="space-y-1.5">
