@@ -2,19 +2,12 @@
 // (overview, campaigns, strategy, creatives, brand DNA).
 //
 // The workspace fields live directly on the project (they are spread onto it in
-// lib/campaigns.ts). This module holds the workspace field SHAPE, the curated
-// 1Utility workspace that is spread onto its project, and a blank template
-// (makeEmptyWorkspace) used for projects that have no curated content yet, so
-// nothing from another client ever leaks in.
+// lib/campaigns.ts, and persisted through Firestore). This module holds the
+// workspace field SHAPE and a blank template (makeEmptyWorkspace) used for
+// projects that have no curated content yet, so nothing from another client
+// ever leaks in.
 
 import type { CampaignMediaPlan, PhaseKey, PhaseContent, PresetData } from "./client-data";
-import {
-  defaultPreset,
-  strategyMarkdown,
-  phaseContent,
-  oneUtilityCampaignMediaPlans,
-  valuePropositionData,
-} from "./client-data";
 
 export type CreativePreview = { src: string; alt: string };
 
@@ -36,7 +29,6 @@ export type ClientWorkspace = {
   palette: string[];
   primaryColor: string;
   brandArchetype: string;
-  creatorSlugs: string[];
   moodboardImages: CreativePreview[];
   campaignMediaPlans: Record<string, CampaignMediaPlan>;
   creativePreviews: Record<CreativeChannel, CreativePreview>;
@@ -49,66 +41,6 @@ export type ClientWorkspace = {
 
 const PLACEHOLDER_IMAGE = "/images/projects/project-placeholder.svg";
 const NEUTRAL_PALETTE = ["#111827", "#374151", "#9CA3AF", "#F3F4F6"];
-
-export const oneUtilityWorkspace: ClientWorkspace = {
-  preset: defaultPreset,
-  strategyMarkdown,
-  phaseContent,
-  valueProposition: valuePropositionData,
-  palette: ["#1B3FC2", "#2237B4", "#72B7FF", "#F3F2F2"],
-  primaryColor: "#1B3FC2",
-  brandArchetype: "The Everyman",
-  creatorSlugs: [
-    "joseph-adeyemo",
-    "king-elisha",
-    "akinbinu-akintayo",
-    "priscilla-ibiteye",
-    "the-house-studios",
-    "iszy-media",
-    "adeola-fadola",
-    "loup-garou-films",
-    "tmofilms",
-    "ibst-media",
-    "film-factory",
-  ],
-  moodboardImages: [
-    { src: "/sites/1ub/campaign/deck/uploads/overview-product-utility-v2.jpg", alt: "1Utility Bank utility product artwork" },
-    { src: "/sites/1ub/campaign/deck/uploads/overview-challenge-community-v2.jpg", alt: "1Utility Bank community artwork" },
-    { src: "/sites/1ub/campaign/deck/uploads/creative-moodboard.png", alt: "1Utility Bank creative moodboard" },
-    { src: "/sites/1ub/campaign/deck/uploads/concept-everyday-oracle-v2.png", alt: "1Utility Bank Everyday Oracle concept artwork" },
-    { src: "/images/one-utility-bank-campaign-preview.png", alt: "1Utility Bank Leap of Faith campaign artwork" },
-    { src: "/sites/1ub/campaign/deck/uploads/1u-audience-lifestyle.jpg", alt: "1Utility Bank audience lifestyle photography" },
-  ],
-  campaignMediaPlans: oneUtilityCampaignMediaPlans,
-  creativePreviews: {
-    social: {
-      src: "/media/clients/1utility/social.png",
-      alt: "Nigerian woman using 1Utility Bank on a Lagos balcony",
-    },
-    film: {
-      src: "/media/clients/1utility/film.png",
-      alt: "Nigerian family at home after a utility payment",
-    },
-    audio: {
-      src: "/media/clients/1utility/audio.png",
-      alt: "Nigerian radio presenter in a blue broadcast studio",
-    },
-    ooh: {
-      src: "/media/clients/1utility/ooh.png",
-      alt: "1Utility Bank out-of-home billboard in Lagos",
-    },
-    print: {
-      src: "/media/clients/1utility/print.png",
-      alt: "Nigerian father and daughter at home after a utility payment",
-    },
-  },
-  fontPreview: {
-    heading: "One Bill. No Leap of Faith.",
-    body: "OneUtility puts you in control of the essentials that keep life running, giving you peace of mind. 1234567890",
-  },
-  overviewVideo: "/upload-latertofirebase/sites/1ub/campaign/deck/uploads/hero-audience-v3-video.mp4",
-  hasContent: true,
-};
 
 const emptyPhase: PhaseContent = {
   socialTitle: "",
@@ -206,7 +138,6 @@ export function makeEmptyWorkspace({
     palette: NEUTRAL_PALETTE,
     primaryColor: NEUTRAL_PALETTE[0],
     brandArchetype: "The Everyman",
-    creatorSlugs: [],
     moodboardImages: [],
     campaignMediaPlans: {},
     creativePreviews: {

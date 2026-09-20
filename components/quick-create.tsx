@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { useAuth } from "@/components/auth-provider";
 import { firebaseDb } from "@/lib/firebase/client";
+import { ImageUploadField } from "@/components/detail-editor";
 
 export type CreateType = "update" | "resource" | "client" | "campaign";
 type CampaignStatus = "live" | "pitch" | "completed";
@@ -342,6 +343,7 @@ export function QuickCreate({ type }: { type: CreateType }) {
               </>
             ) : type === "client" ? (
               <>
+                <ImageUploadField label="Avatar" value={profileImage} onChange={setProfileImage} variant="avatar" disabled={busy} />
                 <div className="space-y-1.5">
                   <span className={LABEL}>Name</span>
                   <Input autoFocus value={clientName} onChange={(event) => setClientName(event.target.value)} disabled={busy} placeholder="Client name" />
@@ -353,10 +355,6 @@ export function QuickCreate({ type }: { type: CreateType }) {
                 <div className="space-y-1.5">
                   <span className={LABEL}>First live date</span>
                   <Input type="date" value={clientDate} onChange={(event) => setClientDate(event.target.value)} disabled={busy} />
-                </div>
-                <div className="space-y-1.5">
-                  <span className={LABEL}>Logo / image URL</span>
-                  <Input value={profileImage} onChange={(event) => setProfileImage(event.target.value)} disabled={busy} placeholder="https://" />
                 </div>
                 <div className="space-y-1.5">
                   <span className={LABEL}>Description</span>

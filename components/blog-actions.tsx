@@ -4,7 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { deleteDoc, doc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { firebaseDb } from "@/lib/firebase/client";
-import { EditSheet, SelectField, TextField, TextareaField } from "@/components/detail-editor";
+import { EditSheet, ImageUploadField, SelectField, TextField, TextareaField } from "@/components/detail-editor";
 import type { BlogPost } from "@/lib/blog";
 
 export function BlogActions({ post }: { post: BlogPost }) {
@@ -45,6 +45,7 @@ export function BlogActions({ post }: { post: BlogPost }) {
       onDelete={remove}
       deleteConfirm="Delete this update? This can’t be undone."
     >
+      <ImageUploadField label="Image" value={image} onChange={setImage} />
       <TextField label="Title" value={title} onChange={setTitle} />
       <TextareaField label="Excerpt" value={excerpt} onChange={setExcerpt} rows={4} />
       <TextField label="Published date" value={publishedAt} onChange={setPublishedAt} type="date" />
@@ -61,7 +62,6 @@ export function BlogActions({ post }: { post: BlogPost }) {
       />
       <TextField label="Source name" value={sourceName} onChange={setSourceName} />
       <TextField label="Source URL" value={sourceUrl} onChange={setSourceUrl} />
-      <TextField label="Image URL" value={image} onChange={setImage} />
     </EditSheet>
   );
 }

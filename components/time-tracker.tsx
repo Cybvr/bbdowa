@@ -81,6 +81,12 @@ function startOfToday(): number {
   return new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
 }
 
+function startOfWeek(): number {
+  const now = new Date();
+  const mondayOffset = (now.getDay() + 6) % 7;
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate() - mondayOffset).getTime();
+}
+
 export function TimeTracker({ compact = false }: { compact?: boolean }) {
   const { user, loading: authLoading } = useAuth();
   const [entries, setEntries] = React.useState<ActivityEntry[]>([]);
@@ -164,8 +170,9 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
 
   const manualMinutes = parseDurationToMinutes(duration);
   const hasActivity = activity.trim().length > 0;
-  const canStart = hasActivity;
-  const canLog = hasActivity && manualMinutes !== null && Boolean(localDateTimeToDate(entryDate, entryTime));
+  const hasCampaign = campaignSlug !== NO_CAMPAIGN;
+  const canStart = hasActivity && hasCampaign;
+  const canLog = hasActivity && hasCampaign && manualMinutes !== null && Boolean(localDateTimeToDate(entryDate, entryTime));
 
   const chosenCampaign = () => campaigns.find((option) => option.slug === campaignSlug);
 
@@ -292,11 +299,13 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
   const todayMs = done
     .filter((entry) => Date.parse(entry.startedAt) >= todayStart)
     .reduce((total, entry) => total + elapsedMs(entry, now), 0);
+  const weekStart = startOfWeek();
+  const weekMs = entries
+    .filter((entry) => Date.parse(entry.startedAt) >= weekStart)
+    .reduce((total, entry) => total + elapsedMs(entry, now), 0);
   const recent = entries.slice(0, 30);
 
   if (compact) {
-    const todayOpenMs = openList.reduce((total, entry) => total + elapsedMs(entry, now), 0);
-    const trackedTodayMs = todayMs + todayOpenMs;
     // Today's history: anything still open, plus anything already stopped
     // today, oldest first — so stopping a timer never makes it vanish.
     const todayDone = done.filter((entry) => Date.parse(entry.startedAt) >= todayStart);
@@ -307,8 +316,8 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
         {error ? <p className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-[13px] text-primary">{error}</p> : null}
 
         <div className="flex flex-wrap items-baseline gap-2">
-          <p className="m-0 font-mono text-[32px] font-bold leading-none tabular-nums">{formatClockFull(trackedTodayMs)}</p>
-          <p className="m-0 text-[13px] text-muted-foreground">tracked today</p>
+          <p className="m-0 font-mono text-[32px] font-bold leading-none tabular-nums">{formatClockFull(weekMs)}</p>
+          <p className="m-0 text-[13px] text-muted-foreground">tracked this week</p>
         </div>
 
         {loading ? (
@@ -386,7 +395,7 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
                 className="h-10 flex-1 text-sm"
               />
               <Select value={campaignSlug === NO_CAMPAIGN ? "" : campaignSlug} onValueChange={setCampaignSlug}>
-                <SelectTrigger className="h-10 w-[38%] text-sm"><SelectValue placeholder="Campaign (optional)" /></SelectTrigger>
+                <SelectTrigger aria-required="true" className="h-10 w-[38%] text-sm"><SelectValue placeholder="Select a campaign" /></SelectTrigger>
                 <SelectContent>{campaigns.map((option) => <SelectItem key={option.slug} value={option.slug}>{option.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
@@ -510,12 +519,11 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
                     <LuPlay aria-hidden="true" className="h-6 w-6" />
                   </button>
                 </div>
-                <Select value={campaignSlug} onValueChange={setCampaignSlug}>
-                  <SelectTrigger className="h-12 w-full rounded-xl">
+                <Select value={campaignSlug === NO_CAMPAIGN ? "" : campaignSlug} onValueChange={setCampaignSlug}>
+                  <SelectTrigger aria-required="true" className="h-12 w-full rounded-xl">
                     <SelectValue placeholder="Select a campaign" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={NO_CAMPAIGN}>No campaign</SelectItem>
                     {campaigns.map((option) => (
                       <SelectItem key={option.slug} value={option.slug}>{option.name}</SelectItem>
                     ))}
@@ -532,12 +540,11 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
                   placeholder="What did you work on?"
                   className="h-12 rounded-xl text-[15px]"
                 />
-                <Select value={campaignSlug} onValueChange={setCampaignSlug}>
-                  <SelectTrigger className="h-12 w-full rounded-xl">
+                <Select value={campaignSlug === NO_CAMPAIGN ? "" : campaignSlug} onValueChange={setCampaignSlug}>
+                  <SelectTrigger aria-required="true" className="h-12 w-full rounded-xl">
                     <SelectValue placeholder="Select a campaign" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={NO_CAMPAIGN}>No campaign</SelectItem>
                     {campaigns.map((option) => (
                       <SelectItem key={option.slug} value={option.slug}>{option.name}</SelectItem>
                     ))}

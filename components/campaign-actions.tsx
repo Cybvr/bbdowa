@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { deleteDoc, doc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { firebaseDb } from "@/lib/firebase/client";
-import { EditSheet, SelectField, TextField, TextareaField } from "@/components/detail-editor";
+import { useFirestoreUsers } from "@/lib/firebase/client-content";
+import { EditSheet, ImageUploadField, SelectField, TextField, TextareaField } from "@/components/detail-editor";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +17,11 @@ import type { Campaign } from "@/lib/campaigns";
 
 export function CampaignActions({ campaign, compactMenu = false }: { campaign: Campaign; compactMenu?: boolean }) {
   const router = useRouter();
+  const { users } = useFirestoreUsers();
+  const leadOptions = React.useMemo(
+    () => [...users].sort((a, b) => a.name.localeCompare(b.name)),
+    [users],
+  );
 
   const [name, setName] = React.useState(campaign.name ?? "");
   const [title, setTitle] = React.useState(campaign.campaign ?? "");
@@ -95,6 +101,7 @@ export function CampaignActions({ campaign, compactMenu = false }: { campaign: C
         </DropdownMenu>
       ) : undefined}
     >
+      <ImageUploadField label="Cover image" value={image} onChange={setImage} />
       <TextField label="Client (brand)" value={name} onChange={setName} />
       <TextField label="Campaign title" value={title} onChange={setTitle} />
       <TextField label="Client name" value={clientName} onChange={setClientName} />
@@ -110,11 +117,18 @@ export function CampaignActions({ campaign, compactMenu = false }: { campaign: C
         ]}
       />
       <TextField label="Year" value={year} onChange={setYear} type="number" />
-      <TextField label="Campaign lead (user slug)" value={leadUserId} onChange={setLeadUserId} />
+      <SelectField
+        label="Campaign lead"
+        value={leadUserId || "unassigned"}
+        onChange={(value) => setLeadUserId(value === "unassigned" ? "" : value)}
+        options={[
+          { value: "unassigned", label: "Unassigned" },
+          ...leadOptions.map((person) => ({ value: person.slug, label: person.name })),
+        ]}
+      />
       <TextField label="Fee" value={fee} onChange={setFee} />
       <TextField label="Target" value={target} onChange={setTarget} />
       <TextField label="Result so far" value={result} onChange={setResult} />
-      <TextField label="Cover image URL" value={image} onChange={setImage} />
       <TextField label="Cover image alt text" value={imageAlt} onChange={setImageAlt} />
       <TextareaField label="Summary" value={summary} onChange={setSummary} />
       <TextareaField label="Challenge" value={challenge} onChange={setChallenge} />

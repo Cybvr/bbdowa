@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Pencil } from "lucide-react";
+import { Pencil, Upload } from "lucide-react";
 import {
   Sheet,
   SheetClose,
@@ -40,6 +40,105 @@ export function Field({ label, children }: { label: string; children: React.Reac
       <span className={LABEL}>{label}</span>
       {children}
     </div>
+  );
+}
+
+export function ImageUploadField({
+  label,
+  value,
+  onChange,
+  variant = "cover",
+  disabled = false,
+  accept = "image/*",
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  variant?: "avatar" | "cover";
+  disabled?: boolean;
+  accept?: string;
+}) {
+  const inputRef = React.useRef<HTMLInputElement>(null);
+  const [dragging, setDragging] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const readImage = (file: File | undefined) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setError("Choose an image file.");
+      return;
+    }
+    if (file.size > 750 * 1024) {
+      setError("Choose an image smaller than 750 KB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setError(null);
+      onChange(typeof reader.result === "string" ? reader.result : "");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  return (
+    <Field label={label}>
+      <div
+        role="button"
+        tabIndex={disabled ? -1 : 0}
+        aria-disabled={disabled}
+        onClick={() => {
+          if (!disabled) inputRef.current?.click();
+        }}
+        onKeyDown={(event) => {
+          if (!disabled && (event.key === "Enter" || event.key === " ")) {
+            event.preventDefault();
+            inputRef.current?.click();
+          }
+        }}
+        onDragOver={(event) => {
+          event.preventDefault();
+          if (!disabled) setDragging(true);
+        }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={(event) => {
+          event.preventDefault();
+          setDragging(false);
+          if (!disabled) readImage(event.dataTransfer.files[0]);
+        }}
+        className={`relative cursor-pointer overflow-hidden border border-dashed p-3 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${variant === "avatar" ? "rounded-xl" : "rounded-lg"} ${dragging ? "border-primary bg-primary/5" : "border-border hover:border-foreground/50"} ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
+      >
+        <input
+          ref={inputRef}
+          type="file"
+          accept={accept}
+          disabled={disabled}
+          onChange={(event) => readImage(event.target.files?.[0])}
+          className="sr-only"
+        />
+        {value ? (
+          <div className={`flex items-center gap-3 ${variant === "avatar" ? "" : "min-h-28"}`}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={value}
+              alt=""
+              className={variant === "avatar" ? "h-20 w-20 rounded-full object-cover" : "h-28 w-40 rounded-md object-cover"}
+            />
+            <div className="min-w-0">
+              <p className="m-0 text-[13px] font-semibold text-foreground">Replace image</p>
+              <p className="m-0 mt-1 text-xs text-muted-foreground">Select a new image or drop one here.</p>
+            </div>
+          </div>
+        ) : (
+          <div className="flex min-h-24 flex-col items-center justify-center gap-2 text-center">
+            <Upload aria-hidden="true" className="h-5 w-5 text-primary" />
+            <p className="m-0 text-[13px] font-semibold text-foreground">Select or drop an image</p>
+            <p className="m-0 text-xs text-muted-foreground">PNG, JPG, GIF or WebP · max 750 KB</p>
+          </div>
+        )}
+      </div>
+      {error ? <p className="m-0 text-xs font-medium text-destructive">{error}</p> : null}
+    </Field>
   );
 }
 

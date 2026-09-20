@@ -3,12 +3,14 @@
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
+import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { EmptyThumbnail, ImageWithFallback } from "@/components/empty-thumbnail";
 import { Badge as DashboardBadge } from "@/components/dashboard/ui";
 import type { Campaign, CampaignStatus } from "@/lib/campaigns";
 import { getClient, getClientWorkspace, type Client } from "@/lib/clients";
-import { creatorCategoryOptions as knownCreatorCategories, isCreatorUser, type User } from "@/lib/users";
+import { creatorCategoryOptions as knownCreatorCategories, isCreatorUser, userHref, type User } from "@/lib/users";
 import { readContentFromFirestore } from "@/lib/firebase/client-content";
+import { firebaseDb } from "@/lib/firebase/client";
 import { ClientActions } from "@/components/client-actions";
 import { ClientCreatorAddAction } from "@/components/client-creator-add-action";
 import { ClientMediaAddAction, ClientMediaDeleteAction } from "@/components/client-media-add-action";
@@ -17,7 +19,7 @@ import { DashboardCard, DashboardCardActions } from "@/components/dashboard-card
 import { FilterBar, type FilterTab, type SortOption, type ViewMode } from "@/components/dashboard/filter-bar";
 import { useAuth } from "@/components/auth-provider";
 import { UserActions } from "@/components/user-actions";
-import { plural } from "@/lib/format";
+import { longDate, plural } from "@/lib/format";
 import { campaignWorkspaceStatuses } from "@/lib/client-data";
 import { fontOptions, ctaOptions } from "@/lib/campaign-options";
 import { ClientWorkspaceSkeleton } from "@/components/dashboard/loading-skeleton";
@@ -577,11 +579,10 @@ function OneUtilityClientWorkspace({
   };
 
   // Campaign overview state
-  // Campaign lead mirrors the lead recorded on the campaign itself, so the
-  // workspace and the public campaign page always name the same person.
-  const [campaignLead, setCampaignLead] = useState(
-    availableUsers.find((user) => user.slug === initialClientCampaigns[0]?.leadUserId)?.name ?? "",
-  );
+  // Campaign lead is stored as the person's slug (leadUserId on the real
+  // campaign record), so the workspace and the public campaign page always
+  // resolve to the same person.
+  const [campaignLeadSlug, setCampaignLeadSlug] = useState(initialClientCampaigns[0]?.leadUserId ?? "");
   const [campaignStart, setCampaignStart] = useState("2026-08-01");
   const [campaignEnd, setCampaignEnd] = useState("2026-10-31");
   const [campaignDeadline, setCampaignDeadline] = useState("2026-07-25");
@@ -599,16 +600,14 @@ function OneUtilityClientWorkspace({
   const [valueProp, setValueProp] = useState(workspace.valueProposition.coreHeadline);
   // Page accent follows the client's primary brand colour.
   const [primaryColor] = useState<string>(workspace.primaryColor);
-  const [selectedCreatorSlugs, setSelectedCreatorSlugs] = useState(workspace.creatorSlugs);
+  const [selectedCreatorSlugs, setSelectedCreatorSlugs] = useState(client?.creatorSlugs ?? []);
   const [mediaItems, setMediaItems] = useState(workspace.moodboardImages);
   const [creatorSearch, setCreatorSearch] = useState("");
   const [creatorCategory, setCreatorCategory] = useState("all");
   const [creatorSort, setCreatorSort] = useState<ClientCreatorSort>("name");
   const [creatorListView, setCreatorListView] = useState<ViewMode>("cards");
   const selectedCreators = React.useMemo(
-    () => availableUsers.filter(
-      (user) => isCreatorUser(user) && selectedCreatorSlugs.includes(user.slug),
-    ),
+    () => availableUsers.filter((user) => selectedCreatorSlugs.includes(user.slug)),
     [availableUsers, selectedCreatorSlugs],
   );
   const visibleCampaigns = React.useMemo(() => {
@@ -738,7 +737,7 @@ function OneUtilityClientWorkspace({
     setActiveCampaignId(selectedCampaign.id);
     setProjectName(selectedCampaign.title);
     const realCampaign = availableCampaigns.find((campaign) => campaign.slug === selectedCampaign.id);
-    setCampaignLead(availableUsers.find((user) => user.slug === realCampaign?.leadUserId)?.name ?? "");
+    setCampaignLeadSlug(realCampaign?.leadUserId ?? "");
   };
 
   const handleOpenCampaign = (campaign: CampaignListItem) => {
@@ -835,6 +834,20 @@ function OneUtilityClientWorkspace({
   const campaignDescription = campaignDescriptions[activeCampaignId] ?? "";
   const activeCampaignRecord = availableCampaigns.find((campaign) => campaign.slug === activeCampaign?.id);
   const overviewDescription = client?.description?.trim() || campaignDescription.trim() || activeCampaignRecord?.summary || "No description available yet.";
+  const campaignLeadUser = availableUsers.find((user) => user.slug === campaignLeadSlug);
+  const updateCampaignLead = async (nextSlug: string) => {
+    setCampaignLeadSlug(nextSlug);
+    if (!activeCampaignRecord) return;
+    try {
+      await updateDoc(doc(firebaseDb, "campaigns", activeCampaignRecord.slug), {
+        leadUserId: nextSlug || null,
+        updatedAt: serverTimestamp(),
+      });
+    } catch (error) {
+      console.error("Unable to update campaign lead", error);
+      showToast("Couldn’t update the campaign lead. Try again.");
+    }
+  };
   const updateCampaignDescription = (value: string) =>
     setCampaignDescriptions((previous) => ({ ...previous, [activeCampaignId]: value }));
   const activeCampaignMediaPlan = workspace.campaignMediaPlans[activeCampaignId];
@@ -1188,11 +1201,27 @@ function OneUtilityClientWorkspace({
                             </select>
                           </div>
 
-                          <CopyField
-                            label="Campaign lead"
-                            value={campaignLead}
-                            onChange={setCampaignLead}
-                          />
+                          <div className="space-y-1.5">
+                            <label htmlFor="campaignLeadOverview" className="text-sm font-medium text-foreground">
+                              Campaign lead
+                            </label>
+                            <select
+                              id="campaignLeadOverview"
+                              value={campaignLeadSlug}
+                              onChange={(e) => void updateCampaignLead(e.target.value)}
+                              className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm text-foreground outline-none transition"
+                            >
+                              <option value="">Unassigned</option>
+                              {selectedCreators.map((person) => (
+                                <option key={person.slug} value={person.slug}>
+                                  {person.name}
+                                </option>
+                              ))}
+                            </select>
+                            {selectedCreators.length === 0 ? (
+                              <p className="m-0 text-xs text-muted-foreground">Add people to the Team tab first to pick a lead.</p>
+                            ) : null}
+                          </div>
 
                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div className="space-y-1.5">
@@ -1497,7 +1526,18 @@ function OneUtilityClientWorkspace({
                       </div>
                       <div className="space-y-1">
                         <dt className="text-[10px] uppercase text-muted-foreground">Campaign lead</dt>
-                        <dd className="m-0 text-[13px] font-medium text-foreground">{campaignLead || "To be confirmed"}</dd>
+                        <dd className="m-0 text-[13px] font-medium text-foreground">
+                          {campaignLeadUser ? (
+                            <Link
+                              href={userHref(campaignLeadUser, isCreatorUser(campaignLeadUser) ? "creator" : "team")}
+                              className="text-foreground underline decoration-border underline-offset-4 hover:text-primary"
+                            >
+                              {campaignLeadUser.name}
+                            </Link>
+                          ) : (
+                            "To be confirmed"
+                          )}
+                        </dd>
                       </div>
                       <div className="space-y-1">
                         <dt className="text-[10px] uppercase text-muted-foreground">Target audience</dt>
@@ -1509,11 +1549,11 @@ function OneUtilityClientWorkspace({
                       </div>
                       <div className="space-y-1">
                         <dt className="text-[10px] uppercase text-muted-foreground">Date created</dt>
-                        <dd className="m-0 text-[13px] font-medium text-foreground">Sep 01, 2026</dd>
+                        <dd className="m-0 text-[13px] font-medium text-foreground">{longDate(activeCampaignRecord?.createdAt?.slice(0, 10))}</dd>
                       </div>
                       <div className="space-y-1">
                         <dt className="text-[10px] uppercase text-muted-foreground">Date modified</dt>
-                        <dd className="m-0 text-[13px] font-medium text-foreground">Sep 04, 2026</dd>
+                        <dd className="m-0 text-[13px] font-medium text-foreground">{longDate(activeCampaignRecord?.updatedAt?.slice(0, 10))}</dd>
                       </div>
                       <div className="space-y-1">
                         <dt className="text-[10px] uppercase text-muted-foreground">Status</dt>
@@ -1930,7 +1970,7 @@ function OneUtilityClientWorkspace({
                   actions={
                     <>
                       <ClientCreatorAddAction
-                        campaignId={primaryCampaign?.slug ?? null}
+                        clientSlug={slug}
                         clientName={clientName}
                         creators={availableUsers}
                         selectedSlugs={selectedCreatorSlugs}

@@ -4,16 +4,19 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { Campaign } from "@/lib/campaigns";
 import { campaignHref, campaignLiveDateLabel } from "@/lib/campaigns";
-import { plural } from "@/lib/format";
-import { getCreator, type Creator } from "@/lib/users";
+import type { Client } from "@/lib/clients";
+import { longDate, plural } from "@/lib/format";
+import type { Creator, User } from "@/lib/users";
+import { useFirestoreUsers } from "@/lib/firebase/client-content";
 import { Badge, EmptyState, ImageWithFallback } from "@/components/dashboard/ui";
 import { DashboardCard, DashboardCardActions } from "@/components/dashboard-card";
 import { CreatorAvatarStack } from "@/components/creator-avatar-stack";
 import { FilterBar, type FilterTab, type SortOption, type ViewMode } from "@/components/dashboard/filter-bar";
 
-function campaignCreators(campaign: Campaign): Creator[] {
-  return (campaign.creatorSlugs ?? [])
-    .map((slug) => getCreator(slug))
+function campaignCreators(campaign: Campaign, clients: Client[], users: User[]): Creator[] {
+  const client = clients.find((item) => item.slug === campaign.clientId);
+  return (client?.creatorSlugs ?? [])
+    .map((slug) => users.find((user) => user.slug === slug))
     .filter((creator): creator is Creator => Boolean(creator));
 }
 
@@ -25,10 +28,11 @@ const STATUS_TABS: FilterTab<"all" | "live" | "completed">[] = [
 
 type StatusKey = (typeof STATUS_TABS)[number]["key"];
 
-const SORTS: SortOption<"recent" | "name" | "client">[] = [
+const SORTS: SortOption<"recent" | "name" | "client" | "modified">[] = [
   { key: "recent", label: "Most recent" },
   { key: "name", label: "Name (A–Z)" },
   { key: "client", label: "Client (A–Z)" },
+  { key: "modified", label: "Recently updated" },
 ];
 
 type SortKey = (typeof SORTS)[number]["key"];
@@ -37,7 +41,13 @@ function liveTime(campaign: Campaign): number {
   return campaign.liveAt ? Date.parse(`${campaign.liveAt.date}T00:00:00Z`) : 0;
 }
 
-export function CampaignsTable({ campaigns }: { campaigns: Campaign[] }) {
+/** Formats an ISO datetime (e.g. Firestore's updatedAt) using the date-only formatter. */
+function updatedDate(iso: string | null | undefined): string {
+  return longDate(iso?.slice(0, 10));
+}
+
+export function CampaignsTable({ campaigns, clients }: { campaigns: Campaign[]; clients: Client[] }) {
+  const { users } = useFirestoreUsers();
   const [status, setStatus] = useState<StatusKey>("all");
   const [category, setCategory] = useState("all");
   const [search, setSearch] = useState("");
@@ -72,6 +82,7 @@ export function CampaignsTable({ campaigns }: { campaigns: Campaign[] }) {
     return [...filtered].sort((a, b) => {
       if (sort === "name") return a.name.localeCompare(b.name);
       if (sort === "client") return a.clientName.localeCompare(b.clientName);
+      if (sort === "modified") return (b.updatedAt ?? "").localeCompare(a.updatedAt ?? "");
       return liveTime(b) - liveTime(a);
     });
   }, [campaigns, status, category, search, sort]);
@@ -119,10 +130,15 @@ export function CampaignsTable({ campaigns }: { campaigns: Campaign[] }) {
                     <div className="flex min-h-[170px] flex-col gap-3 p-4">
                       <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-primary">{campaign.clientName}</span>
                       <h3 className="m-0 line-clamp-2 text-[16px] font-semibold leading-tight group-hover:text-primary">{campaign.campaign ?? campaign.name}</h3>
-                      <CreatorAvatarStack creators={campaignCreators(campaign)} />
-                      <div className="mt-auto flex items-center justify-between gap-3 text-[12px] text-muted-foreground">
-                        <Badge tone={campaign.status === "live" ? "active" : "neutral"}>{campaign.status}</Badge>
-                        <span>{campaignLiveDateLabel(campaign)}</span>
+                      <CreatorAvatarStack creators={campaignCreators(campaign, clients, users)} />
+                      <div className="mt-auto flex flex-col gap-1">
+                        <div className="flex items-center justify-between gap-3 text-[12px] text-muted-foreground">
+                          <Badge tone={campaign.status === "live" ? "active" : "neutral"}>{campaign.status}</Badge>
+                          <span>{campaignLiveDateLabel(campaign)}</span>
+                        </div>
+                        {campaign.updatedAt ? (
+                          <span className="text-[11px] text-muted-foreground">Updated {updatedDate(campaign.updatedAt)}</span>
+                        ) : null}
                       </div>
                     </div>
                     </Link>
@@ -140,6 +156,7 @@ export function CampaignsTable({ campaigns }: { campaigns: Campaign[] }) {
                     <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Status</th>
                     <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Category</th>
                     <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Date</th>
+                    <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Updated</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -154,6 +171,7 @@ export function CampaignsTable({ campaigns }: { campaigns: Campaign[] }) {
                       <td className="px-4 py-4 text-[13px]"><Badge tone={campaign.status === "live" ? "active" : "neutral"}>{campaign.status}</Badge></td>
                       <td className="px-4 py-4 text-[13px] text-muted-foreground">{campaign.category}</td>
                       <td className="whitespace-nowrap px-4 py-4 text-[13px] text-muted-foreground">{campaignLiveDateLabel(campaign)}</td>
+                      <td className="whitespace-nowrap px-4 py-4 text-[13px] text-muted-foreground">{campaign.updatedAt ? updatedDate(campaign.updatedAt) : "—"}</td>
                     </tr>
                   ))}
                 </tbody>

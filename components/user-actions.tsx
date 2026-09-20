@@ -14,7 +14,7 @@ import {
   where,
 } from "firebase/firestore";
 import { firebaseDb } from "@/lib/firebase/client";
-import { CreatableSelectField, EditSheet, SelectField, TextField, TextareaField } from "@/components/detail-editor";
+import { CreatableSelectField, EditSheet, ImageUploadField, SelectField, TextField, TextareaField } from "@/components/detail-editor";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -151,6 +151,7 @@ export function UserActions({
         </DropdownMenu>
       ) : undefined}
     >
+      <ImageUploadField label="Avatar" value={profileImage} onChange={setProfileImage} variant="avatar" />
       <TextField label="Name" value={name} onChange={setName} />
       <div className="space-y-1.5">
         <span className="text-[13px] font-medium text-foreground">Roles</span>
@@ -214,7 +215,6 @@ export function UserActions({
       <TextField label="Location" value={location} onChange={setLocation} />
       <TextField label="Email" value={email} onChange={setEmail} type="email" />
       <TextField label="Phone" value={phone} onChange={setPhone} />
-      <TextField label="Profile image URL" value={profileImage} onChange={setProfileImage} />
       {roles.includes("creator") ? (
         <>
           <TextField label="Portfolio URL" value={portfolio} onChange={setPortfolio} />

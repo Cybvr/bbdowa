@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SeedPanel } from "@/components/seed-panel";
-import { MigratePanel } from "@/components/migrate-panel";
 import { PageHeader } from "@/components/dashboard/ui";
 
 export const metadata: Metadata = { title: "Admin" };
@@ -17,8 +15,6 @@ export default function AdminPage() {
         </span>
         <span aria-hidden="true" className="text-lg text-muted-foreground">→</span>
       </Link>
-      <SeedPanel />
-      <MigratePanel />
     </main>
   );
 }

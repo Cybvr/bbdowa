@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { CampaignsTable } from "@/components/campaigns-table";
-import { getCampaigns } from "@/lib/firebase/content";
+import { getCampaigns, getClients } from "@/lib/firebase/content";
 import { PageHeader } from "@/components/dashboard/ui";
 
 export const metadata: Metadata = {
@@ -9,12 +9,12 @@ export const metadata: Metadata = {
 };
 
 export default async function CampaignsPage() {
-  const campaigns = await getCampaigns();
+  const [campaigns, clients] = await Promise.all([getCampaigns(), getClients()]);
 
   return (
     <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
       <PageHeader title="Campaigns" createType="campaign" />
-      <CampaignsTable campaigns={campaigns} />
+      <CampaignsTable campaigns={campaigns} clients={clients} />
     </main>
   );
 }

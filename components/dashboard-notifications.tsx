@@ -16,7 +16,7 @@ export function DashboardNotifications({ posts }: { posts: BlogPost[] }) {
         <button
           type="button"
           aria-label={`Open latest updates (${posts.length} new)`}
-          className="relative inline-flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-background text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg border-0 bg-transparent text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
         >
           <BellIcon className="h-4 w-4" aria-hidden="true" />
           {posts.length > 0 ? (

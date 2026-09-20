@@ -1,4 +1,4 @@
-import { CAMPAIGNS, type Campaign } from "@/lib/campaigns";
+import type { Campaign } from "@/lib/campaigns";
 import { makeEmptyWorkspace, type ClientWorkspace } from "@/lib/client-workspaces";
 
 export type Client = {
@@ -14,145 +14,25 @@ export type Client = {
   targetAudience?: string | null;
   /** Client logo/headshot; null/absent falls back to the placeholder. */
   profileImage?: string | null;
+  /** Creators assigned to this client, set from the client workspace's Team tab. */
+  creatorSlugs?: string[];
+  /** ISO timestamp of the last write to this client's record; set by Firestore. */
+  updatedAt?: string | null;
+  /** ISO timestamp of when this client's record was created; set by Firestore. */
+  createdAt?: string | null;
 };
 
 /**
- * Clients are their own records. A project belongs to one client
- * via its `clientId`; an client "has" the campaigns that point at
- * it (see `getClientCampaigns`). Edit a client here without
- * touching its campaigns, and vice versa.
+ * Clients are their own Firestore records. A campaign belongs to one client
+ * via its `clientId`; a client "has" the campaigns that point at it (see
+ * `getClientCampaigns`).
  */
-const CLIENT_RECORDS: Client[] = [
-  {
-    type: "client",
-    slug: "bbdo-west-africa",
-    name: "BBDO West Africa",
-    date: null,
-    industry: "Advertising",
-    profileImage: "/bbdo-west-africa.png",
-  },
-  {
-    type: "client",
-    slug: "1utility",
-    name: "1 Utility Bank",
-    date: "2026-08-19",
-    industry: "Finance",
-    profileImage: "/images/one-utility-logo.svg",
-  },
-  {
-    type: "client",
-    slug: "benin-tourism",
-    name: "Benin Tourism",
-    date: "2026-05-15",
-    industry: "Travel & tourism",
-    profileImage: "/images/clients/benin-tourism.png",
-  },
-  {
-    type: "client",
-    slug: "brown-forman",
-    name: "Brown-Forman",
-    date: "2026-08-01",
-    industry: "Food & beverages",
-    profileImage: "/images/clients/brown-forman.png",
-  },
-  {
-    type: "client",
-    slug: "central-bank-of-nigeria",
-    name: "Central Bank of Nigeria",
-    date: "2026-08-15",
-    industry: "Finance",
-    profileImage: "/images/clients/central-bank-of-nigeria.png",
-  },
-  {
-    type: "client",
-    slug: "chicken-republic",
-    name: "Chicken Republic",
-    date: "2020-04-15",
-    industry: "Food & beverages",
-    profileImage: "/images/clients/chicken-republic.png",
-  },
-  {
-    type: "client",
-    slug: "diageo",
-    name: "Diageo",
-    date: "2021-07-15",
-    industry: "Food & beverages",
-    profileImage: "/images/clients/diageo.png",
-  },
-  {
-    type: "client",
-    slug: "google",
-    name: "Google",
-    date: "2020-06-15",
-    industry: "Technology",
-    profileImage: "/images/clients/google.png",
-  },
-  {
-    type: "client",
-    slug: "interswitch",
-    name: "Interswitch",
-    date: "2021-04-15",
-    industry: "Finance",
-    profileImage: "/images/clients/interswitch.png",
-  },
-  {
-    type: "client",
-    slug: "keizen-games",
-    name: "Keizen Games",
-    date: "2026-01-15",
-    industry: "Entertainment",
-    profileImage: "/images/clients/keizen-games.png",
-  },
-  {
-    type: "client",
-    slug: "orijin",
-    name: "Orijin",
-    date: "2019-09-15",
-    industry: "Food & beverages",
-    profileImage: "/images/clients/orijin.png",
-  },
-  {
-    type: "client",
-    slug: "pringles",
-    name: "Pringles",
-    date: "2018-07-15",
-    industry: "Food & beverages",
-    profileImage: "/images/clients/pringles.png",
-  },
-  {
-    type: "client",
-    slug: "proforce-nigeria",
-    name: "Proforce Nigeria",
-    date: "2026-03-15",
-    industry: "Defence & manufacturing",
-    profileImage: "/images/clients/proforce-nigeria.png",
-  },
-  {
-    type: "client",
-    slug: "unilever",
-    name: "Unilever",
-    date: "2026-02-15",
-    industry: "Consumer goods",
-    profileImage: "/images/clients/unilever.png",
-  },
-  {
-    type: "client",
-    slug: "visa",
-    name: "Visa",
-    date: "2016-08-05",
-    industry: "Finance",
-    profileImage: "/images/clients/visa.png",
-  },
-];
-
-export const CLIENTS: Client[] = [...CLIENT_RECORDS].sort((a, b) => a.name.localeCompare(b.name));
-
-export function getClient(slug: string, clients: Client[] = CLIENTS): Client | undefined {
+export function getClient(slug: string, clients: Client[]): Client | undefined {
   return clients.find((client) => client.slug === slug);
 }
 
 /** The campaigns that belong to this client. */
-export function getClientCampaigns(slug: string, campaigns: Campaign[] = CAMPAIGNS): Campaign[] {
+export function getClientCampaigns(slug: string, campaigns: Campaign[]): Campaign[] {
   return campaigns.filter((project) => project.clientId === slug);
 }
 
@@ -163,16 +43,19 @@ export function getClientCampaigns(slug: string, campaigns: Campaign[] = CAMPAIG
  */
 export function getClientWorkspace(
   clientSlug: string,
-  clientName?: string,
-  campaignsSource: Campaign[] = CAMPAIGNS,
+  clientName: string,
+  campaignsSource: Campaign[],
 ): ClientWorkspace {
   const campaigns = getClientCampaigns(clientSlug, campaignsSource);
   const project = campaigns.find((item) => item.hasContent) ?? campaigns[0];
-  const name = clientName ?? getClient(clientSlug)?.name ?? clientSlug;
   const website = project?.externalLinks?.find((link) => link.label === "Website")?.href ?? "";
-  const empty = makeEmptyWorkspace({ clientName: name, category: project?.category ?? "", website });
+  const empty = makeEmptyWorkspace({ clientName, category: project?.category ?? "", website });
+  // Media is added per client from the workspace UI, independent of the
+  // curated "hasContent" preset — it must survive even when a client has no
+  // curated content, or every add gets thrown away on the next load.
+  const moodboardImages = project?.moodboardImages ?? empty.moodboardImages;
 
-  if (!project?.hasContent) return empty;
+  if (!project?.hasContent) return { ...empty, moodboardImages };
 
   return {
     preset: project.preset ?? empty.preset,
@@ -182,8 +65,7 @@ export function getClientWorkspace(
     palette: project.palette ?? empty.palette,
     primaryColor: project.primaryColor ?? empty.primaryColor,
     brandArchetype: project.brandArchetype ?? empty.brandArchetype,
-    creatorSlugs: project.creatorSlugs ?? empty.creatorSlugs,
-    moodboardImages: project.moodboardImages ?? empty.moodboardImages,
+    moodboardImages,
     campaignMediaPlans: project.campaignMediaPlans ?? empty.campaignMediaPlans,
     creativePreviews: project.creativePreviews ?? empty.creativePreviews,
     fontPreview: project.fontPreview ?? empty.fontPreview,

@@ -51,9 +51,7 @@ function decodeValue(value: FirestoreValue): unknown {
 
 function decodeDocument<T>(document: FirestoreDocument): T {
   return Object.fromEntries(
-    Object.entries(document.fields ?? {})
-      .filter(([key]) => key !== "updatedAt")
-      .map(([key, value]) => [key, decodeValue(value)]),
+    Object.entries(document.fields ?? {}).map(([key, value]) => [key, decodeValue(value)]),
   ) as T;
 }
 

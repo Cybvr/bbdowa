@@ -14,16 +14,16 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { firebaseDb } from "@/lib/firebase/client";
-import { isCreatorUser, type User } from "@/lib/users";
+import type { User } from "@/lib/users";
 
 export function ClientCreatorAddAction({
-  campaignId,
+  clientSlug,
   clientName,
   creators,
   selectedSlugs,
   onSaved,
 }: {
-  campaignId: string | null;
+  clientSlug: string;
   clientName: string;
   creators: User[];
   selectedSlugs: string[];
@@ -36,18 +36,19 @@ export function ClientCreatorAddAction({
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
+  // Every user in the directory is eligible — a client's team can be a mix
+  // of creators, managers and admins, not just people tagged "Creator".
+  // Records without a slug (e.g. pending signups) can't be selected: there's
+  // nothing stable to key the list or save into creatorSlugs.
   const availableCreators = React.useMemo(
-    () =>
-      creators
-        .filter(isCreatorUser)
-        .sort((a, b) => a.name.localeCompare(b.name)),
+    () => creators.filter((creator) => creator.slug).sort((a, b) => a.name.localeCompare(b.name)),
     [creators],
   );
   const visibleCreators = React.useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     if (!normalizedQuery) return availableCreators;
     return availableCreators.filter((creator) =>
-      [creator.name, creator.category]
+      [creator.name, creator.category, creator.title]
         .filter(Boolean)
         .some((value) => value.toLowerCase().includes(normalizedQuery)),
     );
@@ -73,16 +74,21 @@ export function ClientCreatorAddAction({
   };
 
   const save = async () => {
-    if (!campaignId || busy) return;
+    if (busy) return;
     setBusy(true);
     setError(null);
 
+    // Drop any bad entries already sitting in the saved list (e.g. from
+    // before slugless users were excluded here) so a save never re-writes
+    // an undefined value Firestore will reject.
+    const cleanSlugs = draftSlugs.filter((slug): slug is string => Boolean(slug));
+
     try {
-      await updateDoc(doc(firebaseDb, "campaigns", campaignId), {
-        creatorSlugs: draftSlugs,
+      await updateDoc(doc(firebaseDb, "clients", clientSlug), {
+        creatorSlugs: cleanSlugs,
         updatedAt: serverTimestamp(),
       });
-      onSaved(draftSlugs);
+      onSaved(cleanSlugs);
       setOpen(false);
     } catch (cause) {
       console.error("Unable to update client creators", cause);
@@ -97,8 +103,6 @@ export function ClientCreatorAddAction({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        disabled={!campaignId}
-        title={campaignId ? undefined : "Create a campaign before adding creators"}
         className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-3 text-[13px] font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-45"
       >
         <Plus aria-hidden="true" className="h-3.5 w-3.5" />
@@ -108,16 +112,16 @@ export function ClientCreatorAddAction({
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Add creators</DialogTitle>
-            <DialogDescription>Select the creators assigned to {clientName}.</DialogDescription>
+            <DialogTitle>Add team</DialogTitle>
+            <DialogDescription>Select the people assigned to {clientName}.</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3">
             <Input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search creators"
-              aria-label="Search creators"
+              placeholder="Search people"
+              aria-label="Search people"
             />
             <div className="max-h-[min(50vh,420px)] overflow-y-auto rounded-lg border border-border">
               {visibleCreators.length ? (
@@ -136,15 +140,15 @@ export function ClientCreatorAddAction({
                       />
                       <span className="min-w-0">
                         <span className="block truncate text-sm font-medium text-foreground">{creator.name}</span>
-                        {creator.category ? (
-                          <span className="block truncate text-xs text-muted-foreground">{creator.category}</span>
+                        {creator.category || creator.title ? (
+                          <span className="block truncate text-xs text-muted-foreground">{creator.category || creator.title}</span>
                         ) : null}
                       </span>
                     </label>
                   );
                 })
               ) : (
-                <p className="m-0 px-4 py-8 text-center text-sm text-muted-foreground">No creators found.</p>
+                <p className="m-0 px-4 py-8 text-center text-sm text-muted-foreground">No one found.</p>
               )}
             </div>
             {error ? <p className="m-0 text-[13px] font-medium text-destructive">{error}</p> : null}
@@ -162,10 +166,10 @@ export function ClientCreatorAddAction({
             <button
               type="button"
               onClick={() => void save()}
-              disabled={busy || !campaignId}
+              disabled={busy}
               className="h-9 rounded-md bg-primary px-4 text-[13px] font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {busy ? "Saving…" : `Save ${draftSlugs.length} creator${draftSlugs.length === 1 ? "" : "s"}`}
+              {busy ? "Saving…" : `Save ${draftSlugs.length} ${draftSlugs.length === 1 ? "person" : "people"}`}
             </button>
           </DialogFooter>
         </DialogContent>

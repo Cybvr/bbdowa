@@ -7,6 +7,7 @@ import { collection, getDocs } from "firebase/firestore";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
+import { CreatorAvatarStack } from "@/components/creator-avatar-stack";
 import { CreatorThumbnail } from "@/components/creator-thumbnail";
 import { DashboardCard, DashboardCardActions } from "@/components/dashboard-card";
 import { DashboardThumbnail } from "@/components/dashboard-thumbnail";
@@ -14,7 +15,8 @@ import { useFirestoreUsers } from "@/lib/firebase/client-content";
 import { firebaseDb } from "@/lib/firebase/client";
 import type { BlogPost } from "@/lib/blog";
 import type { Campaign } from "@/lib/campaigns";
-import type { User } from "@/lib/users";
+import type { Client } from "@/lib/clients";
+import type { Creator, User } from "@/lib/users";
 import { baseCity, creatorAddedTimestamp, creatorHref, isCreatorNew, isCreatorUser } from "@/lib/users";
 import { campaignHref, campaignLiveDateLabel } from "@/lib/campaigns";
 import { CreatorRailSkeleton, DashboardHomeSkeleton } from "@/components/dashboard/loading-skeleton";
@@ -24,13 +26,14 @@ async function readDashboardCollection<T>(name: string): Promise<T[]> {
   return snapshot.docs.map((document) => document.data() as T);
 }
 
-async function readDashboardContent(): Promise<{ campaigns: Campaign[]; posts: BlogPost[] }> {
-  const [campaigns, posts] = await Promise.all([
+async function readDashboardContent(): Promise<{ campaigns: Campaign[]; clients: Client[]; posts: BlogPost[] }> {
+  const [campaigns, clients, posts] = await Promise.all([
     readDashboardCollection<Campaign>("campaigns"),
+    readDashboardCollection<Client>("clients"),
     readDashboardCollection<BlogPost>("blogs"),
   ]);
 
-  return { campaigns, posts };
+  return { campaigns, clients, posts };
 }
 
 function dateValue(value: string | null | undefined): number {
@@ -51,6 +54,13 @@ function formatDate(value: string): string {
   }).format(new Date(Date.UTC(year, month - 1, day || 1)));
 }
 
+function campaignCreators(campaign: Campaign, clients: Client[], users: User[]): Creator[] {
+  const client = clients.find((item) => item.slug === campaign.clientId);
+  return (client?.creatorSlugs ?? [])
+    .map((slug) => users.find((user) => user.slug === slug))
+    .filter((creator): creator is Creator => Boolean(creator));
+}
+
 function moveRail(rail: HTMLDivElement | null, direction: number) {
   rail?.scrollBy({ left: direction * 280, behavior: "smooth" });
 }
@@ -58,8 +68,9 @@ function moveRail(rail: HTMLDivElement | null, direction: number) {
 export default function HomePage() {
   const { user } = useAuth();
   const { users, loading: creatorsLoading, error: creatorsError } = useFirestoreUsers();
-  const [content, setContent] = useState<{ campaigns: Campaign[]; posts: BlogPost[]; loading: boolean; error: string | null }>({
+  const [content, setContent] = useState<{ campaigns: Campaign[]; clients: Client[]; posts: BlogPost[]; loading: boolean; error: string | null }>({
     campaigns: [],
+    clients: [],
     posts: [],
     loading: true,
     error: null,
@@ -69,16 +80,16 @@ export default function HomePage() {
   const newsRail = useRef<HTMLDivElement>(null);
 
   const reloadContent = async () => {
-    const { campaigns, posts } = await readDashboardContent();
-    setContent({ campaigns, posts, loading: false, error: null });
+    const { campaigns, clients, posts } = await readDashboardContent();
+    setContent({ campaigns, clients, posts, loading: false, error: null });
   };
 
   useEffect(() => {
     let active = true;
 
     readDashboardContent()
-      .then(({ campaigns, posts }) => {
-        if (active) setContent({ campaigns, posts, loading: false, error: null });
+      .then(({ campaigns, clients, posts }) => {
+        if (active) setContent({ campaigns, clients, posts, loading: false, error: null });
       })
       .catch((error) => {
         console.error("Unable to load dashboard content from Firestore", error);
@@ -145,7 +156,7 @@ export default function HomePage() {
               <div className="flex items-center gap-3"><Link href="/dashboard/campaigns" className="text-[12px] font-semibold text-muted-foreground underline decoration-border underline-offset-4 hover:text-foreground focus-visible:text-foreground">View all</Link><div className="flex items-center gap-1.5"><button type="button" aria-label="Previous campaigns" onClick={() => moveRail(campaignsRail.current, -1)} className="grid h-9 w-9 cursor-pointer place-items-center rounded-lg border border-border bg-background text-foreground transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"><ArrowLeft aria-hidden="true" className="h-4 w-4" /></button><button type="button" aria-label="Next campaigns" onClick={() => moveRail(campaignsRail.current, 1)} className="grid h-9 w-9 cursor-pointer place-items-center rounded-lg border border-border bg-background text-foreground transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"><ArrowRight aria-hidden="true" className="h-4 w-4" /></button></div></div>
             </div>
             <div ref={campaignsRail} className="no-scrollbar mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1">
-              {latestCampaigns.map((campaign) => <DashboardCard key={campaign.slug} className="h-full min-w-[240px]" actions={<DashboardCardActions collection="campaigns" slug={campaign.slug} titleField="campaign" title={campaign.campaign ?? campaign.name} onMutated={reloadContent} />}><Link href={campaignHref(campaign.slug)} className="group flex h-full snap-start flex-col overflow-hidden text-foreground no-underline transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"><DashboardThumbnail src={campaign.image} alt={campaign.imageAlt} className="h-28 w-full shrink-0" imageClassName="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" /><div className="flex min-h-[164px] flex-col p-4"><span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-primary">{campaign.clientName}</span><strong className="mt-2 block line-clamp-3 text-[15px] font-semibold leading-[1.25]">{campaign.campaign ?? campaign.name}</strong><span className="mt-auto block pt-4 text-[12px] text-muted-foreground">{campaignLiveDateLabel(campaign)}</span></div></Link></DashboardCard>)}
+              {latestCampaigns.map((campaign) => <DashboardCard key={campaign.slug} className="h-full min-w-[240px]" actions={<DashboardCardActions collection="campaigns" slug={campaign.slug} titleField="campaign" title={campaign.campaign ?? campaign.name} onMutated={reloadContent} />}><Link href={campaignHref(campaign.slug)} className="group flex h-full snap-start flex-col overflow-hidden text-foreground no-underline transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"><DashboardThumbnail src={campaign.image} alt={campaign.imageAlt} className="h-28 w-full shrink-0" imageClassName="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" /><div className="flex min-h-[164px] flex-col gap-2 p-4"><span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-primary">{campaign.clientName}</span><strong className="block line-clamp-3 text-[15px] font-semibold leading-[1.25]">{campaign.campaign ?? campaign.name}</strong><CreatorAvatarStack creators={campaignCreators(campaign, content.clients, users)} /><span className="mt-auto block pt-2 text-[12px] text-muted-foreground">{campaignLiveDateLabel(campaign)}</span></div></Link></DashboardCard>)}
             </div>
           </section>
 

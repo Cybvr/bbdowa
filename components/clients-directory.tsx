@@ -2,32 +2,37 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import type { Campaign } from "@/lib/campaigns";
 import type { Client } from "@/lib/clients";
-import { getClientCampaigns } from "@/lib/clients";
 import { longDate, plural } from "@/lib/format";
-import { getCreator, type Creator } from "@/lib/users";
+import type { Creator, User } from "@/lib/users";
+import { useFirestoreUsers } from "@/lib/firebase/client-content";
 import { Badge, EmptyState, ImageWithFallback } from "@/components/dashboard/ui";
 import { DashboardCard, DashboardCardActions } from "@/components/dashboard-card";
 import { CreatorAvatarStack } from "@/components/creator-avatar-stack";
 import { FilterBar, type SortOption, type ViewMode } from "@/components/dashboard/filter-bar";
 
-const SORTS: SortOption<"name" | "date" | "industry">[] = [
+const SORTS: SortOption<"name" | "date" | "modified" | "industry">[] = [
   { key: "name", label: "Name (A–Z)" },
   { key: "date", label: "Most recent" },
+  { key: "modified", label: "Recently updated" },
   { key: "industry", label: "Industry (A–Z)" },
 ];
 
+/** Formats an ISO datetime (e.g. Firestore's updatedAt) using the date-only formatter. */
+function updatedDate(iso: string | null | undefined): string {
+  return longDate(iso?.slice(0, 10));
+}
+
 type SortKey = (typeof SORTS)[number]["key"];
 
-function clientCreators(client: Client, campaigns: Campaign[]): Creator[] {
-  const slugs = new Set(getClientCampaigns(client.slug, campaigns).flatMap((campaign) => campaign.creatorSlugs ?? []));
-  return [...slugs]
-    .map((slug) => getCreator(slug))
+function clientCreators(client: Client, users: User[]): Creator[] {
+  return (client.creatorSlugs ?? [])
+    .map((slug) => users.find((user) => user.slug === slug))
     .filter((creator): creator is Creator => Boolean(creator));
 }
 
-export function ClientsDirectory({ clients, campaigns }: { clients: Client[]; campaigns: Campaign[] }) {
+export function ClientsDirectory({ clients }: { clients: Client[] }) {
+  const { users } = useFirestoreUsers();
   const [industry, setIndustry] = useState("all");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortKey>("name");
@@ -54,6 +59,7 @@ export function ClientsDirectory({ clients, campaigns }: { clients: Client[]; ca
 
     return [...matches].sort((a, b) => {
       if (sort === "date") return (b.date ?? "").localeCompare(a.date ?? "");
+      if (sort === "modified") return (b.updatedAt ?? "").localeCompare(a.updatedAt ?? "");
       if (sort === "industry") return a.industry.localeCompare(b.industry) || a.name.localeCompare(b.name);
       return a.name.localeCompare(b.name);
     });
@@ -99,9 +105,15 @@ export function ClientsDirectory({ clients, campaigns }: { clients: Client[]; ca
                     <div className="flex min-h-[170px] flex-col gap-3 p-4">
                       <h3 className="m-0 text-[16px] font-semibold leading-tight group-hover:text-primary">{client.name}</h3>
                       <Badge>{client.industry}</Badge>
-                      <CreatorAvatarStack creators={clientCreators(client, campaigns)} />
+                      <CreatorAvatarStack creators={clientCreators(client, users)} />
                       <div className="mt-auto text-[12px] text-muted-foreground">
-                        {client.date ? <time dateTime={client.date}>{longDate(client.date)}</time> : "—"}
+                        {client.date ? (
+                          <time dateTime={client.date}>{longDate(client.date)}</time>
+                        ) : client.updatedAt ? (
+                          <span>Updated {updatedDate(client.updatedAt)}</span>
+                        ) : (
+                          "—"
+                        )}
                       </div>
                     </div>
                     </Link>
@@ -117,6 +129,7 @@ export function ClientsDirectory({ clients, campaigns }: { clients: Client[]; ca
                     <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Client</th>
                     <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Industry</th>
                     <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Added</th>
+                    <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Updated</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -135,6 +148,7 @@ export function ClientsDirectory({ clients, campaigns }: { clients: Client[]; ca
                       </td>
                       <td className="px-4 py-3.5 text-[13px]"><Badge>{client.industry}</Badge></td>
                       <td className="whitespace-nowrap px-4 py-3.5 text-[13px] text-muted-foreground">{client.date ? <time dateTime={client.date}>{longDate(client.date)}</time> : "—"}</td>
+                      <td className="whitespace-nowrap px-4 py-3.5 text-[13px] text-muted-foreground">{client.updatedAt ? updatedDate(client.updatedAt) : "—"}</td>
                     </tr>
                   ))}
                 </tbody>

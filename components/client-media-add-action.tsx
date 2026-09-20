@@ -19,6 +19,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ImageUploadField } from "@/components/detail-editor";
 import { firebaseDb } from "@/lib/firebase/client";
 import type { CreativePreview } from "@/lib/client-workspaces";
 
@@ -100,10 +101,7 @@ export function ClientMediaAddAction({
           </DialogHeader>
 
           <form onSubmit={save} className="space-y-4">
-            <div className="space-y-1.5">
-              <label htmlFor="client-media-url" className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Image URL</label>
-              <Input id="client-media-url" autoFocus value={src} onChange={(event) => setSrc(event.target.value)} disabled={busy} placeholder="https://" required />
-            </div>
+            <ImageUploadField label="Image" value={src} onChange={setSrc} disabled={busy} />
             <div className="space-y-1.5">
               <label htmlFor="client-media-alt" className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Description</label>
               <Input id="client-media-alt" value={alt} onChange={(event) => setAlt(event.target.value)} disabled={busy} placeholder="Describe the image" required />
