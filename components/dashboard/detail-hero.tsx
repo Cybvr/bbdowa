@@ -148,10 +148,23 @@ export function ProfileBanner<T extends string>({
   );
 }
 
-export function ProfileLayout({ sidebar, children }: { sidebar: ReactNode; children: ReactNode }) {
+export function ProfileLayout({
+  sidebar,
+  children,
+  showSidebarOnMobile = true,
+}: {
+  sidebar: ReactNode;
+  children: ReactNode;
+  /** On mobile the sidebar stacks above the tab content, so it's only worth
+   * showing there for the tab it actually belongs to (Overview); other tabs
+   * hide it on mobile and get it back once there's room beside them (lg+). */
+  showSidebarOnMobile?: boolean;
+}) {
   return (
     <div className="mt-4 flex flex-col gap-4 sm:mt-6 sm:gap-6 lg:flex-row lg:items-start">
-      <aside className="space-y-3 sm:space-y-4 lg:w-[240px] lg:flex-none">{sidebar}</aside>
+      <aside className={`space-y-3 sm:space-y-4 lg:w-[240px] lg:flex-none lg:block ${showSidebarOnMobile ? "" : "hidden"}`}>
+        {sidebar}
+      </aside>
       <div className="min-w-0 flex-1 space-y-4 sm:space-y-5">{children}</div>
     </div>
   );

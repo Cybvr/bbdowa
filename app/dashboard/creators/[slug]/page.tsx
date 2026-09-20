@@ -106,6 +106,7 @@ export default function CreatorDetailPage() {
       />
 
       <ProfileLayout
+        showSidebarOnMobile={tab === "overview"}
         sidebar={
           <>
             {(creator.email || creator.phone || platforms.length > 0) && (
@@ -160,39 +161,24 @@ export default function CreatorDetailPage() {
             ) : null}
 
             <ProfileSection icon={<Briefcase aria-hidden="true" className="h-3.5 w-3.5" />} title="Engagement">
-              <ProfileTable
-                columns={[
-                  { key: "availability", label: "Availability" },
-                  { key: "dayRate", label: "Day rate estimate" },
-                  { key: "terms", label: "Terms" },
-                  { key: "engagements", label: "Engagements" },
-                ]}
-                rows={[{
-                  availability: <span className="capitalize">{creator.availability}</span>,
-                  dayRate: creator.dayRate || "—",
-                  terms: creator.terms || "—",
-                  engagements: creator.workedOn.length ? creator.workedOn.join(", ") : "—",
-                }]}
-              />
+              <div>
+                <ProfileFact label="Availability" value={<span className="capitalize">{creator.availability}</span>} />
+                <ProfileFact label="Day rate estimate" value={creator.dayRate || "—"} />
+                <ProfileFact label="Terms" value={creator.terms || "—"} />
+                <ProfileFact label="Engagements" value={creator.workedOn.length ? creator.workedOn.join(", ") : "—"} />
+              </div>
             </ProfileSection>
 
             <ProfileSection icon={<Users aria-hidden="true" className="h-3.5 w-3.5" />} title="Audience profile">
-              <ProfileTable
-                columns={[
-                  { key: "followers", label: "Follower count" },
-                  { key: "gender", label: "Gender" },
-                  { key: "age", label: "Age" },
-                  { key: "niche", label: "Niche" },
-                ]}
-                rows={[{
-                  followers: creator.followerCount
-                    ? `${creator.followerCount}${creator.followerPlatform ? ` · ${creator.followerPlatform}` : ""}`
-                    : "Not provided",
-                  gender: creator.gender ?? "Not provided",
-                  age: creator.age ?? "Not provided",
-                  niche: creator.niche ?? "Not provided",
-                }]}
-              />
+              <div>
+                <ProfileFact
+                  label="Follower count"
+                  value={creator.followerCount ? `${creator.followerCount}${creator.followerPlatform ? ` · ${creator.followerPlatform}` : ""}` : "Not provided"}
+                />
+                <ProfileFact label="Gender" value={creator.gender ?? "Not provided"} />
+                <ProfileFact label="Age" value={creator.age ?? "Not provided"} />
+                <ProfileFact label="Niche" value={creator.niche ?? "Not provided"} />
+              </div>
             </ProfileSection>
           </>
         )}
