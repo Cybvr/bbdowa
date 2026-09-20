@@ -71,6 +71,17 @@ export function formatDuration(ms: number): string {
   return `${hours}h ${minutes}m`;
 }
 
+export function startOfToday(): number {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+}
+
+export function startOfWeek(): number {
+  const now = new Date();
+  const mondayOffset = (now.getDay() + 6) % 7;
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate() - mondayOffset).getTime();
+}
+
 /** "1:05:23" / "05:23" live clock from a millisecond span. */
 export function formatClock(ms: number): string {
   const totalSeconds = Math.floor(ms / 1000);

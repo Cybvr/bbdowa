@@ -4,7 +4,7 @@ import { useParams } from "next/navigation";
 import { useState } from "react";
 import type { IconType } from "react-icons";
 import { FaBehance, FaGlobe } from "react-icons/fa";
-import { Briefcase, CheckSquare, Clock, FileSignature, FileText, Mail, Users } from "lucide-react";
+import { Briefcase, CheckSquare, Clock, FileSignature, FileText, Mail, Timer, Users } from "lucide-react";
 import { creatorCategoryOptions, isCreatorNew, isCreatorUser, type Creator } from "@/lib/users";
 import { useAuth } from "@/components/auth-provider";
 import { useFirestoreUsers, useOwnUser } from "@/lib/firebase/client-content";
@@ -25,6 +25,7 @@ import { UserActions } from "@/components/user-actions";
 import { ProfilePageSkeleton } from "@/components/dashboard/loading-skeleton";
 import { CreatorTasksPanel } from "@/components/tasks-view";
 import { CreatorContractsPanel } from "@/components/contracts-view";
+import { CreatorHoursPanel } from "@/components/creator-hours-panel";
 
 type CreatorPlatform = { label: string; href: string; Icon?: IconType; brand?: SocialIconName };
 
@@ -41,7 +42,7 @@ function platformsFor(creator: Creator): CreatorPlatform[] {
   return platforms;
 }
 
-type CreatorTab = "overview" | "work-history" | "tasks" | "contracts";
+type CreatorTab = "overview" | "work-history" | "hours" | "tasks" | "contracts";
 
 export default function CreatorDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -68,6 +69,7 @@ export default function CreatorDetailPage() {
   const tabs: { id: CreatorTab; label: string }[] = [
     { id: "overview", label: "Overview" },
     { id: "work-history", label: "Work history" },
+    { id: "hours", label: "Hours" },
     { id: "tasks", label: "Tasks" },
     { id: "contracts", label: "Contracts" },
   ];
@@ -211,6 +213,12 @@ export default function CreatorDetailPage() {
                 location: entry.location ?? "—",
               }))}
             />
+          </ProfileSection>
+        )}
+
+        {tab === "hours" && authUser && (
+          <ProfileSection icon={<Timer aria-hidden="true" className="h-3.5 w-3.5" />} title="Hours logged">
+            <CreatorHoursPanel creatorUid={creator.uid} creatorName={creator.name} isSelf={authUser.uid === creator.uid} />
           </ProfileSection>
         )}
 

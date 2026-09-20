@@ -25,6 +25,8 @@ import {
   parseDurationToMinutes,
   runningEntry,
   sortByStartedAt,
+  startOfToday,
+  startOfWeek,
   type ActivityEntry,
 } from "@/lib/time-tracking";
 
@@ -74,17 +76,6 @@ function localTimeValue(date: Date = new Date()): string {
 function localDateTimeToDate(date: string, time: string): Date | null {
   const value = new Date(`${date}T${time}`);
   return Number.isNaN(value.getTime()) ? null : value;
-}
-
-function startOfToday(): number {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-}
-
-function startOfWeek(): number {
-  const now = new Date();
-  const mondayOffset = (now.getDay() + 6) % 7;
-  return new Date(now.getFullYear(), now.getMonth(), now.getDate() - mondayOffset).getTime();
 }
 
 export function TimeTracker({ compact = false }: { compact?: boolean }) {
