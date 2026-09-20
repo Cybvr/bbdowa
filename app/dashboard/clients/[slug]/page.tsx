@@ -1512,10 +1512,6 @@ function OneUtilityClientWorkspace({
                         <dd className="m-0 text-[13px] font-medium text-foreground">{clientName}</dd>
                       </div>
                       <div className="space-y-1">
-                        <dt className="text-[10px] uppercase text-muted-foreground">Selected campaign</dt>
-                        <dd className="m-0 text-[13px] font-medium text-foreground">{activeCampaign?.title ?? "No campaign selected"}</dd>
-                      </div>
-                      <div className="space-y-1">
                         <dt className="text-[10px] uppercase text-muted-foreground">Campaign lead</dt>
                         <dd className="m-0 text-[13px] font-medium text-foreground">{campaignLead || "To be confirmed"}</dd>
                       </div>
