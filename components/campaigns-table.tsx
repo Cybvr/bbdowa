@@ -5,9 +5,17 @@ import { useMemo, useState } from "react";
 import type { Campaign } from "@/lib/campaigns";
 import { campaignHref, campaignLiveDateLabel } from "@/lib/campaigns";
 import { plural } from "@/lib/format";
+import { getCreator, type Creator } from "@/lib/users";
 import { Badge, EmptyState, ImageWithFallback } from "@/components/dashboard/ui";
 import { DashboardCard, DashboardCardActions } from "@/components/dashboard-card";
+import { CreatorAvatarStack } from "@/components/creator-avatar-stack";
 import { FilterBar, type FilterTab, type SortOption, type ViewMode } from "@/components/dashboard/filter-bar";
+
+function campaignCreators(campaign: Campaign): Creator[] {
+  return (campaign.creatorSlugs ?? [])
+    .map((slug) => getCreator(slug))
+    .filter((creator): creator is Creator => Boolean(creator));
+}
 
 const STATUS_TABS: FilterTab<"all" | "live" | "completed">[] = [
   { key: "all", label: "All" },
@@ -111,6 +119,7 @@ export function CampaignsTable({ campaigns }: { campaigns: Campaign[] }) {
                     <div className="flex min-h-[170px] flex-col gap-3 p-4">
                       <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-primary">{campaign.clientName}</span>
                       <h3 className="m-0 line-clamp-2 text-[16px] font-semibold leading-tight group-hover:text-primary">{campaign.campaign ?? campaign.name}</h3>
+                      <CreatorAvatarStack creators={campaignCreators(campaign)} />
                       <div className="mt-auto flex items-center justify-between gap-3 text-[12px] text-muted-foreground">
                         <Badge tone={campaign.status === "live" ? "active" : "neutral"}>{campaign.status}</Badge>
                         <span>{campaignLiveDateLabel(campaign)}</span>

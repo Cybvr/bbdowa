@@ -2,10 +2,14 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import type { Campaign } from "@/lib/campaigns";
 import type { Client } from "@/lib/clients";
+import { getClientCampaigns } from "@/lib/clients";
 import { longDate, plural } from "@/lib/format";
+import { getCreator, type Creator } from "@/lib/users";
 import { Badge, EmptyState, ImageWithFallback } from "@/components/dashboard/ui";
 import { DashboardCard, DashboardCardActions } from "@/components/dashboard-card";
+import { CreatorAvatarStack } from "@/components/creator-avatar-stack";
 import { FilterBar, type SortOption, type ViewMode } from "@/components/dashboard/filter-bar";
 
 const SORTS: SortOption<"name" | "date" | "industry">[] = [
@@ -16,7 +20,14 @@ const SORTS: SortOption<"name" | "date" | "industry">[] = [
 
 type SortKey = (typeof SORTS)[number]["key"];
 
-export function ClientsDirectory({ clients }: { clients: Client[] }) {
+function clientCreators(client: Client, campaigns: Campaign[]): Creator[] {
+  const slugs = new Set(getClientCampaigns(client.slug, campaigns).flatMap((campaign) => campaign.creatorSlugs ?? []));
+  return [...slugs]
+    .map((slug) => getCreator(slug))
+    .filter((creator): creator is Creator => Boolean(creator));
+}
+
+export function ClientsDirectory({ clients, campaigns }: { clients: Client[]; campaigns: Campaign[] }) {
   const [industry, setIndustry] = useState("all");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortKey>("name");
@@ -88,6 +99,7 @@ export function ClientsDirectory({ clients }: { clients: Client[] }) {
                     <div className="flex min-h-[170px] flex-col gap-3 p-4">
                       <h3 className="m-0 text-[16px] font-semibold leading-tight group-hover:text-primary">{client.name}</h3>
                       <Badge>{client.industry}</Badge>
+                      <CreatorAvatarStack creators={clientCreators(client, campaigns)} />
                       <div className="mt-auto text-[12px] text-muted-foreground">
                         {client.date ? <time dateTime={client.date}>{longDate(client.date)}</time> : "—"}
                       </div>
