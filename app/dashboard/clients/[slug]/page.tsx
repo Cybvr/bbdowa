@@ -518,6 +518,7 @@ function OneUtilityClientWorkspace({
   const [activeMainTab, setActiveMainTab] = useState<
     OneUtilityWorkspaceView
   >(initialView);
+  const [profileSection, setProfileSection] = useState<"company" | "design">("company");
   const [campaignView, setCampaignView] = useState<"home" | "editor">("home");
   const [campaignSubTab, setCampaignSubTab] = useState<"overview" | "case-study" | "strategy" | "creative" | "marketing">("overview");
   const [selectedCreative, setSelectedCreative] = useState<{ src: string; alt: string } | null>(null);
@@ -1530,8 +1531,37 @@ function OneUtilityClientWorkspace({
           {activeMainTab === "brand" && (
             <ClientWorkspaceContent>
                 <ClientWorkspaceHeading title="Profile" actions={contentEditAction} />
-                <div className="grid w-full max-w-2xl grid-cols-1 items-start gap-6">
-                  <section className="space-y-5">
+                <div className="w-full max-w-2xl">
+                  <nav aria-label="Profile sections" className="border-b border-border/70">
+                    <div role="tablist" className="no-scrollbar flex touch-pan-x items-center gap-1 overflow-x-auto overscroll-x-contain">
+                      {[
+                        { id: "company" as const, label: "Company Profile" },
+                        { id: "design" as const, label: "Design" },
+                      ].map((section) => {
+                        const isActive = profileSection === section.id;
+                        return (
+                          <button
+                            key={section.id}
+                            type="button"
+                            role="tab"
+                            aria-selected={isActive}
+                            aria-controls={`profile-panel-${section.id}`}
+                            onClick={() => setProfileSection(section.id)}
+                            className={`relative flex h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-md px-3 text-[13px] font-semibold tracking-tight transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${isActive
+                              ? "text-primary after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:bg-primary"
+                              : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                              }`}
+                          >
+                            {section.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </nav>
+
+                  <div className="pt-6">
+                  {profileSection === "company" && (
+                  <section id="profile-panel-company" role="tabpanel" aria-label="Company Profile" className="space-y-5">
                     <div className="space-y-1.5">
                       <label htmlFor="brandUrl" className="text-sm font-medium text-foreground">
                         Website
@@ -1578,7 +1608,10 @@ function OneUtilityClientWorkspace({
                     </div>
                   </section>
 
-                  <section className="space-y-5">
+                  )}
+
+                  {profileSection === "design" && (
+                  <section id="profile-panel-design" role="tabpanel" aria-label="Design" className="space-y-5">
                     {/* BRAND & DESIGN */}
                     <div className="border-b border-border pb-3">
                       <span className="text-xs font-mono uppercase tracking-widest text-primary font-semibold">
@@ -1761,6 +1794,8 @@ function OneUtilityClientWorkspace({
                       </div>
                     </div>
                   </section>
+                  )}
+                  </div>
                 </div>
             </ClientWorkspaceContent>
           )}
