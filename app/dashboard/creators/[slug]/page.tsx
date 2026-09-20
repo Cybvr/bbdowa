@@ -34,7 +34,7 @@ function platformsFor(creator: Creator): CreatorPlatform[] {
 function ProfileMark({ creator, className }: { creator: Creator; className: string }) {
   return (
     <span aria-hidden="true" className={`grid flex-none place-items-center overflow-hidden bg-muted ${className}`}>
-      <ImageWithFallback src={creator.profileImage} alt="" className="h-full w-full object-cover" fallbackClassName="h-full w-full" />
+      <ImageWithFallback src={creator.profileImage} alt={`${creator.name} profile image`} className="h-full w-full object-cover" fallbackClassName="h-full w-full" fallbackSeed={creator.name} />
     </span>
   );
 }

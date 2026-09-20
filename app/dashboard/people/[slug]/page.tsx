@@ -63,9 +63,10 @@ export default function UserDetailPage() {
         >
           <ImageWithFallback
             src={user.profileImage}
-            alt=""
+            alt={`${user.name} profile image`}
             className="h-full w-full object-cover"
             fallbackClassName="h-full w-full"
+            fallbackSeed={user.name}
           />
         </div>
         <div>

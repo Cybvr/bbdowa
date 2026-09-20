@@ -28,7 +28,7 @@ export function CreatorAvatarStack({
     >
       {visible.map((creator) => (
         <span key={creator.slug} title={creator.name}>
-          <CreatorThumbnail imageSrc={creator.profileImage} className={`${size} border-2 border-background`} />
+          <CreatorThumbnail imageSrc={creator.profileImage} avatarSeed={creator.name} className={`${size} border-2 border-background`} />
         </span>
       ))}
       {overflow > 0 ? (

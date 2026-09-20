@@ -125,7 +125,7 @@ export default function HomePage() {
             {latestCreators.map((creator) => (
               <Link key={creator.slug} href={creatorHref(creator.slug)} className="group min-w-[240px] snap-start overflow-hidden rounded-xl border border-border bg-background text-foreground no-underline transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
                 <div className="relative aspect-[4/3] overflow-hidden bg-muted">
-                  <CreatorThumbnail imageSrc={creator.profileImage} rounded={false} className="h-full w-full" imageClassName="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02] motion-reduce:transition-none" />
+                  <CreatorThumbnail imageSrc={creator.profileImage} avatarSeed={creator.name} rounded={false} className="h-full w-full" imageClassName="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02] motion-reduce:transition-none" />
                   {isCreatorNew(creator) ? <span className="absolute right-3 top-3 rounded-full bg-primary px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-white">New</span> : null}
                 </div>
                 <div className="p-4"><h3 className="m-0 truncate text-[15px] font-semibold tracking-tight">{creator.name}</h3><p className="mb-0 mt-1 truncate text-[12px] text-muted-foreground">{creator.niche ?? creator.category} · {baseCity(creator.location)}</p></div>

@@ -124,9 +124,10 @@ function Person({ name, users, onDark = false }: { name: string; users: User[]; 
       <span className={`relative inline-block h-[22px] w-[22px] flex-none overflow-hidden rounded-full border ${onDark ? "border-background/40 bg-background" : "border-border bg-muted"}`}>
         <ImageWithFallback
           src={user?.profileImage}
-          alt=""
+          alt={`${name} profile image`}
           className="h-full w-full object-cover"
           fallbackClassName="h-full w-full"
+          fallbackSeed={user?.name ?? name}
         />
       </span>
       <span>{name}</span>

@@ -875,6 +875,7 @@ function CreatorCard({
             alt={`${creator.name} profile image`}
             className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
             fallbackClassName="h-full w-full"
+            fallbackSeed={creator.name}
           />
           <div className="absolute inset-x-2 top-2 flex flex-wrap items-center justify-end gap-1.5">
             {isCreatorNew(creator) ? <Badge tone="active">NEW</Badge> : null}
@@ -1402,7 +1403,7 @@ export function CreatorDirectory({
                 aria-label={creator.name}
                 className="flex-none focus-visible:outline-none"
               >
-                <CreatorThumbnail imageSrc={creator.profileImage} className="h-12 w-12" />
+                <CreatorThumbnail imageSrc={creator.profileImage} avatarSeed={creator.name} className="h-12 w-12" />
               </Link>
 
               <div className="min-w-0 flex-1">

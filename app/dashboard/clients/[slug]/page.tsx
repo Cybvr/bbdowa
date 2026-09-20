@@ -136,6 +136,7 @@ function ClientWorkspaceHero({
                 alt={creator.name}
                 className="h-full w-full object-cover"
                 fallbackClassName="h-full w-full rounded-full"
+                fallbackSeed={creator.name}
               />
             </span>
           ))}
@@ -1487,6 +1488,7 @@ function OneUtilityClientWorkspace({
                                 alt={`${creator.name} profile`}
                                 className="h-12 w-12 shrink-0 rounded-full bg-muted object-cover"
                                 fallbackClassName="h-12 w-12 rounded-full"
+                                fallbackSeed={creator.name}
                               />
                               <div className="min-w-0 space-y-1">
                                 <h4 className="m-0 truncate text-sm font-semibold group-hover:text-primary">{creator.name}</h4>
@@ -1989,6 +1991,7 @@ function OneUtilityClientWorkspace({
                                       src={creator.profileImage ?? creator.featuredImage ?? "/images/projects/project-placeholder.svg"}
                                       alt={`${creator.name} profile`}
                                       className="h-full w-full object-cover"
+                                      fallbackSeed={creator.name}
                                     />
                                   </div>
                                   <div className="flex min-h-[170px] flex-col gap-3 p-4">
@@ -2026,6 +2029,7 @@ function OneUtilityClientWorkspace({
                                         alt=""
                                         className="h-8 w-8 rounded-full bg-muted object-cover"
                                         fallbackClassName="h-8 w-8 rounded-full"
+                                        fallbackSeed={creator.name}
                                       />
                                       {creator.name}
                                     </Link>

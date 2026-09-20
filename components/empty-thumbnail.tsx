@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ImageIcon } from "lucide-react";
+import { createGlyphAvatarDataUri } from "@/lib/avatar";
 
 export const DASHBOARD_IMAGE_PLACEHOLDER = "/images/bbdowa-red-pattern-placeholder.png";
 
@@ -48,6 +49,7 @@ export interface ImageWithFallbackProps {
   fallbackClassName?: string;
   iconClassName?: string;
   fallbackLabel?: string;
+  fallbackSeed?: string;
 }
 
 /**
@@ -61,6 +63,7 @@ export function ImageWithFallback({
   fallbackClassName,
   iconClassName,
   fallbackLabel,
+  fallbackSeed,
 }: ImageWithFallbackProps) {
   const [hasError, setHasError] = useState(false);
 
@@ -70,6 +73,17 @@ export function ImageWithFallback({
     src.includes("project-placeholder");
 
   if (isMissingOrPlaceholder || hasError) {
+    if (fallbackSeed) {
+      return (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={createGlyphAvatarDataUri(fallbackSeed)}
+          alt={alt ?? ""}
+          className={className}
+        />
+      );
+    }
+
     return (
       <EmptyThumbnail
         className={fallbackClassName ?? "w-full h-full"}

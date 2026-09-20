@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Search, UserRound } from "lucide-react";
+import { Search } from "lucide-react";
 import { UserCreateAction } from "@/components/user-create-action";
 import { UserActions } from "@/components/user-actions";
 import { useAuth } from "@/components/auth-provider";
@@ -39,8 +39,7 @@ function UserRow({ user, categoryOptions }: { user: User; categoryOptions: strin
       <td className="px-4 py-3.5 sm:px-5">
         <div className="flex min-w-[220px] items-center gap-3">
           <span className="relative grid h-9 w-9 flex-none place-items-center overflow-hidden rounded-full border border-border bg-muted text-[11px] font-bold text-muted-foreground">
-            <ImageWithFallback src={user.profileImage} alt="" className="h-full w-full object-cover" fallbackClassName="h-full w-full" />
-            {!user.profileImage ? <UserRound aria-hidden="true" className="absolute h-4 w-4" /> : null}
+            <ImageWithFallback src={user.profileImage} alt={`${user.name} profile image`} className="h-full w-full object-cover" fallbackClassName="h-full w-full" fallbackSeed={user.name || user.email || user.slug} />
           </span>
           <div className="min-w-0">
             <strong className="block truncate text-[13px] font-semibold text-foreground">{user.name}</strong>
