@@ -1385,7 +1385,7 @@ function OneUtilityClientWorkspace({
           {/* OVERVIEW VIEW */}
           {activeMainTab === "overview" && (
             <ClientWorkspaceContent>
-                <ClientWorkspaceHeading title="Overview" actions={contentEditAction} />
+                <ClientWorkspaceHeading title="Overview" />
                 <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_230px]">
                   <div className="space-y-8">
                     <div className="grid items-stretch gap-4 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
