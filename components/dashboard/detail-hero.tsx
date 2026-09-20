@@ -83,6 +83,185 @@ export function DetailHeroBanner({
   );
 }
 
+/**
+ * BambooHR-style profile shell: a colored banner holding the avatar, name
+ * and tabs fused to its bottom edge (the active tab pokes up as a white
+ * card), a fixed-fact sidebar, and card sections with a single-row table
+ * of current values. Built for the creator profile; nothing else uses it
+ * yet, so feel free to reshape it alongside that page.
+ */
+
+export function ProfileBanner<T extends string>({
+  avatarSrc,
+  avatarAlt,
+  name,
+  subtitle,
+  tabs,
+  activeTab,
+  onTabChange,
+}: {
+  avatarSrc: string | null | undefined;
+  avatarAlt: string;
+  name: string;
+  subtitle?: ReactNode;
+  tabs: { id: T; label: string }[];
+  activeTab: T;
+  onTabChange: (id: T) => void;
+}) {
+  return (
+    <div className="overflow-hidden rounded-2xl bg-primary text-primary-foreground">
+      <div className="flex flex-wrap items-center gap-5 p-5 sm:p-7">
+        <span className="grid h-20 w-20 flex-none place-items-center overflow-hidden rounded-full border-4 border-primary-foreground/20 bg-background sm:h-24 sm:w-24">
+          <ImageWithFallback
+            src={avatarSrc}
+            alt={avatarAlt}
+            className="h-full w-full object-cover"
+            fallbackClassName="h-full w-full"
+            fallbackSeed={avatarAlt}
+          />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h1 className="m-0 truncate text-[22px] font-bold leading-tight sm:text-[26px]">{name}</h1>
+          {subtitle ? <div className="mt-1.5 text-[14px] font-medium text-primary-foreground/85">{subtitle}</div> : null}
+        </div>
+      </div>
+      <div role="tablist" className="no-scrollbar flex touch-pan-x gap-1 overflow-x-auto overscroll-x-contain px-3 sm:px-5">
+        {tabs.map((tab) => {
+          const isActive = tab.id === activeTab;
+          return (
+            <button
+              type="button"
+              role="tab"
+              key={tab.id}
+              aria-selected={isActive}
+              onClick={() => onTabChange(tab.id)}
+              className={`shrink-0 whitespace-nowrap rounded-t-lg px-4 py-2.5 text-[13px] font-semibold transition focus-visible:outline-none ${
+                isActive ? "bg-background text-foreground" : "text-primary-foreground/75 hover:text-primary-foreground"
+              }`}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+export function ProfileLayout({ sidebar, children }: { sidebar: ReactNode; children: ReactNode }) {
+  return (
+    <div className="mt-6 flex flex-col gap-6 lg:flex-row lg:items-start">
+      <aside className="space-y-4 lg:w-[260px] lg:flex-none">{sidebar}</aside>
+      <div className="min-w-0 flex-1 space-y-5">{children}</div>
+    </div>
+  );
+}
+
+export function ProfileIconLink({
+  href,
+  label,
+  children,
+}: {
+  href: string;
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      aria-label={label}
+      title={label}
+      className="grid h-9 w-9 place-items-center rounded-full border border-border text-muted-foreground transition hover:border-foreground hover:text-foreground"
+    >
+      {children}
+    </a>
+  );
+}
+
+export function ProfileFacts({ children }: { children: ReactNode }) {
+  return <div className="rounded-xl border border-border p-4 sm:p-5">{children}</div>;
+}
+
+export function ProfileFact({ icon, label, value }: { icon: ReactNode; label: string; value: ReactNode }) {
+  return (
+    <div className="flex items-start gap-3 border-t border-border py-3 first:border-t-0 first:pt-0">
+      <span className="mt-0.5 grid h-8 w-8 flex-none place-items-center rounded-lg bg-muted text-muted-foreground">
+        {icon}
+      </span>
+      <div className="min-w-0">
+        <span className="block text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">{label}</span>
+        <span className="mt-0.5 block truncate text-[14px] font-semibold text-foreground">{value}</span>
+      </div>
+    </div>
+  );
+}
+
+export function ProfileSection({
+  icon,
+  title,
+  action,
+  children,
+}: {
+  icon: ReactNode;
+  title: string;
+  action?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <section className="overflow-hidden rounded-xl border border-border">
+      <div className="flex items-center justify-between gap-3 border-b border-border bg-muted/30 px-4 py-3 sm:px-5">
+        <div className="flex items-center gap-2.5">
+          <span className="grid h-7 w-7 place-items-center rounded-md bg-foreground text-background">{icon}</span>
+          <h3 className="m-0 text-[12px] font-bold uppercase tracking-[0.06em]">{title}</h3>
+        </div>
+        {action}
+      </div>
+      <div className="p-4 sm:p-5">{children}</div>
+    </section>
+  );
+}
+
+export type ProfileColumn = { key: string; label: string };
+
+/** Bamboo's "current status" table: one column per field, one row of values. */
+export function ProfileTable({
+  columns,
+  rows,
+}: {
+  columns: ProfileColumn[];
+  rows: Record<string, ReactNode>[];
+}) {
+  if (!rows.length) {
+    return <p className="m-0 text-[13px] text-muted-foreground">Nothing on file yet.</p>;
+  }
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[480px] border-collapse text-left text-[13px]">
+        <thead>
+          <tr className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+            {columns.map((column) => (
+              <th key={column.key} className="border-b border-border px-3 py-2 first:pl-0">{column.label}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, index) => (
+            <tr key={index} className="border-b border-border last:border-b-0">
+              {columns.map((column) => (
+                <td key={column.key} className="px-3 py-3 align-top first:pl-0">
+                  {row[column.key] ?? <span className="text-muted-foreground">—</span>}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export function DetailTabs<T extends string>({
   tabs,
   active,
