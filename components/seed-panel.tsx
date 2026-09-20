@@ -44,7 +44,7 @@ export function SeedPanel() {
   }
 
   return (
-    <div className="max-w-lg rounded-2xl border border-border bg-background p-5">
+    <div className="mt-6 max-w-lg rounded-2xl border border-border bg-background p-5">
       <div className="flex items-center gap-2 text-foreground">
         <FiDatabase aria-hidden="true" className="h-5 w-5" />
         <h2 className="m-0 text-[16px] font-semibold">Push data to Firebase</h2>

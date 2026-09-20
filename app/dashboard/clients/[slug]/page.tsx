@@ -7,7 +7,7 @@ import { EmptyThumbnail, ImageWithFallback } from "@/components/empty-thumbnail"
 import { Badge as DashboardBadge } from "@/components/dashboard/ui";
 import type { Campaign, CampaignStatus } from "@/lib/campaigns";
 import { getClient, getClientWorkspace, type Client } from "@/lib/clients";
-import type { User } from "@/lib/users";
+import { isCreatorUser, type User } from "@/lib/users";
 import { readContentFromFirestore } from "@/lib/firebase/client-content";
 import { ClientActions } from "@/components/client-actions";
 import { ClientCreatorAddAction } from "@/components/client-creator-add-action";
@@ -615,7 +615,7 @@ function OneUtilityClientWorkspace({
   const [creatorListView, setCreatorListView] = useState<ViewMode>("cards");
   const selectedCreators = React.useMemo(
     () => availableUsers.filter(
-      (user) => user.role === "creator" && selectedCreatorSlugs.includes(user.slug),
+      (user) => isCreatorUser(user) && selectedCreatorSlugs.includes(user.slug),
     ),
     [availableUsers, selectedCreatorSlugs],
   );
@@ -1277,9 +1277,9 @@ function OneUtilityClientWorkspace({
                     {campaignSubTab === "creative" && (
                       <div className="py-4">
                         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-                          {Object.values(workspace.creativePreviews).map((item) => (
+                          {Object.values(workspace.creativePreviews).map((item, index) => (
                             <button
-                              key={item.src}
+                              key={`${item.src}-${item.alt}-${index}`}
                               type="button"
                               onClick={() => setSelectedCreative(item)}
                               aria-label={`Open ${item.alt}`}

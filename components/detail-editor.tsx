@@ -134,7 +134,7 @@ export function EditSheet({
   deleteLabel?: string;
   deleteConfirm?: string;
   onSave: () => Promise<void>;
-  onDelete: () => Promise<void>;
+  onDelete?: () => Promise<void>;
   trigger?: (open: () => void, remove: () => void) => React.ReactNode;
   children: React.ReactNode;
 }) {
@@ -160,6 +160,7 @@ export function EditSheet({
   };
 
   const remove = async () => {
+    if (!onDelete) return;
     if (!window.confirm(deleteConfirm)) return;
     setBusy("delete");
     setError(null);
@@ -207,14 +208,16 @@ export function EditSheet({
 
           <SheetFooter className="border-t border-border">
             <div className="flex items-center justify-between gap-3">
-              <button
-                type="button"
-                onClick={() => void remove()}
-                disabled={busy !== null}
-                className="text-[13px] font-semibold text-primary transition hover:underline disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {busy === "delete" ? "Deleting…" : deleteLabel}
-              </button>
+              {onDelete ? (
+                <button
+                  type="button"
+                  onClick={() => void remove()}
+                  disabled={busy !== null}
+                  className="text-[13px] font-semibold text-primary transition hover:underline disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {busy === "delete" ? "Deleting…" : deleteLabel}
+                </button>
+              ) : <span />}
               <div className="flex items-center gap-2">
                 <SheetClose asChild>
                   <button

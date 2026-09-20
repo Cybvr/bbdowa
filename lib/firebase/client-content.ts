@@ -8,7 +8,7 @@ import type { BlogPost } from "@/lib/blog";
 import type { Campaign } from "@/lib/campaigns";
 import type { Client } from "@/lib/clients";
 import type { Job } from "@/lib/jobs";
-import type { User } from "@/lib/users";
+import { normalizeUser, type User } from "@/lib/users";
 
 async function readCollection<T>(name: string): Promise<T[]> {
   const snapshot = await getDocs(collection(firebaseDb, name));
@@ -16,7 +16,7 @@ async function readCollection<T>(name: string): Promise<T[]> {
 }
 
 export function readUsersFromFirestore() {
-  return readCollection<User>("users");
+  return readCollection<User>("users").then((users) => users.map(normalizeUser));
 }
 
 export function readCampaignsFromFirestore() {
@@ -69,7 +69,7 @@ export async function readContentFromFirestore() {
   const [clients, campaigns, users, blogs, jobs] = await Promise.all([
     readCollection<Client>("clients"),
     readCollection<Campaign>("campaigns"),
-    readCollection<User>("users"),
+    readUsersFromFirestore(),
     readCollection<BlogPost>("blogs"),
     readCollection<Job>("jobs"),
   ]);

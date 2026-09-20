@@ -133,7 +133,7 @@ function Person({ name, users, onDark = false }: { name: string; users: User[]; 
   );
 
   return user ? (
-    <Link href={userHref(user)} className={className}>
+    <Link href={userHref(user, "team")} className={className}>
       {content}
     </Link>
   ) : (

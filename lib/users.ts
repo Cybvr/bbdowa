@@ -1,5 +1,6 @@
-// Every user is exactly one of these.
+// A user can hold more than one directory role.
 export type UserRole = "admin" | "manager" | "creator";
+export type UserAccountRole = UserRole | "pending";
 
 export type CreatorAvailability = "open" | "busy" | "unconfirmed";
 
@@ -14,15 +15,16 @@ export type CreatorWorkHistory = {
   location?: string;
 };
 
-// One flat user shape. Every user has the same fields, and `role` says who they
-// are: admin, manager or creator. Fields that don't apply to a given person are
-// just empty/null. Records below author only what they need; the rest is filled
-// from USER_DEFAULTS.
+// One flat user shape. Every user has the same fields, and `roles` says which
+// directory surfaces they belong to. `role` remains as the primary-role
+// compatibility field for existing Firestore records.
 export type User = {
   slug: string;
   name: string;
-  /** admin | manager | creator. */
-  role: UserRole;
+  /** Primary role retained for older records and auth compatibility. */
+  role: UserAccountRole;
+  /** Every directory role this person holds. */
+  roles: UserRole[];
   /** Job title (agency staff). */
   title: string;
   /** Department (agency staff). */
@@ -81,13 +83,32 @@ export type User = {
 export type TeamUser = User;
 export type Creator = User;
 
-/** Agency staff = admin or manager (i.e. not a creator). */
+/** Normalize records written before the multi-role model was introduced. */
+export function normalizeUser(user: User): User {
+  const roles = userRoles(user);
+  return {
+    ...user,
+    role: user.role ?? roles[0] ?? "pending",
+    roles,
+  };
+}
+
+export function isUserRole(value: unknown): value is UserRole {
+  return value === "admin" || value === "manager" || value === "creator";
+}
+
+export function userRoles(user: Pick<User, "roles" | "role">): UserRole[] {
+  const roles = (user.roles ?? []).filter(isUserRole);
+  return roles.length ? roles : isUserRole(user.role) ? [user.role] : [];
+}
+
+/** Agency staff = admin or manager. A staff member may also be a creator. */
 export function isTeamUser(user: User): boolean {
-  return user.role !== "creator";
+  return userRoles(user).some((role) => role === "admin" || role === "manager");
 }
 
 export function isCreatorUser(user: User): boolean {
-  return user.role === "creator";
+  return userRoles(user).includes("creator");
 }
 
 /** A user record as authored below: the essentials plus any subset of fields. */
@@ -96,6 +117,7 @@ type UserRecord = Partial<User> & { slug: string; name: string };
 /** Fills in every field a record omits, so all users share one shape. */
 const USER_DEFAULTS: Omit<User, "slug" | "name"> = {
   role: "creator",
+  roles: ["creator"],
   title: "",
   department: "",
   category: "Content",
@@ -207,6 +229,7 @@ const TEAM_RECORDS: UserRecord[] = [
 export const TEAM: User[] = TEAM_RECORDS.map((member) => ({
   ...USER_DEFAULTS,
   role: "manager",
+  roles: ["manager"],
   ...member,
 }));
 
@@ -1246,6 +1269,7 @@ const CREATOR_RECORDS: UserRecord[] = [
 export const CREATORS: User[] = CREATOR_RECORDS.map((creator) => ({
   ...USER_DEFAULTS,
   role: "creator",
+  roles: ["creator"],
   ...creator,
 }));
 
@@ -1297,8 +1321,8 @@ export function getUserByName(name: string): User | undefined {
   return USERS.find((user) => user.name === name);
 }
 
-export function userHref(user: User): string {
-  return user.role === "creator"
+export function userHref(user: User, surface: "team" | "creator" = "creator"): string {
+  return surface === "creator"
     ? `/dashboard/creators/${user.slug}`
     : `/dashboard/people/${user.slug}`;
 }

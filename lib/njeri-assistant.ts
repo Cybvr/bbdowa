@@ -1,0 +1,167 @@
+export interface QuickPrompt {
+  id: string;
+  label: string;
+  question: string;
+}
+
+export const QUICK_PROMPTS: QuickPrompt[] = [
+  {
+    id: "company",
+    label: "About the company",
+    question: "Tell me about BBDO West Africa",
+  },
+  {
+    id: "projects",
+    label: "Our projects",
+    question: "What projects have you worked on?",
+  },
+  {
+    id: "campaigns",
+    label: "Current campaigns",
+    question: "What are your current campaigns?",
+  },
+];
+
+export function getAnswer(query: string): string {
+  const q = query.toLowerCase().trim();
+
+  // 1. Current campaigns
+  if (
+    q.includes("current campaign") ||
+    q.includes("active campaign") ||
+    q.includes("live campaign") ||
+    q.includes("running campaign") ||
+    q.includes("what campaigns are live") ||
+    q.includes("current work") ||
+    q === "current campaigns"
+  ) {
+    return [
+      "Here are our current and live campaigns:",
+      "",
+      "• **Jack Daniel’s — ‘That’s Naija, That’s Jack’ (Brown-Forman)**: A high-impact cultural rollout celebrating Nigerian individuality across outdoor, radio, retail pop-ups, The Rooftop Reserve, and sponsorships including Felabration and Art X Lagos.",
+      "",
+      "• **Betano — ‘Make We Bet’ (Keizen Games)**: Connecting sports wagering with authentic West African banter and the iconic pinky-lock challenge across Nigeria and Ghana.",
+      "",
+      "• **1 Utility Bank — ‘Leap of Faith’**: A strategic positioning around 'One Bill. No Leap of Faith', turning everyday utility payments into long-term financial trust.",
+      "",
+      "You can also browse our live campaigns directly in the Work section on this page!"
+    ].join("\n");
+  }
+
+  // 2. Our projects / Work
+  if (
+    q.includes("project") ||
+    q.includes("work") ||
+    q.includes("portfolio") ||
+    q.includes("case stud") ||
+    q.includes("what have you done") ||
+    q.includes("clients") ||
+    q === "our projects"
+  ) {
+    return [
+      "BBDO West Africa has delivered transformative work across key industries:",
+      "",
+      "• **Food & Beverages**: Brown-Forman (Jack Daniel's), Guinness / Diageo ('Made of Black', responsible drinking), Orijin ('Live Original'), and Pringles ('Cool Days').",
+      "• **Technology**: Google ('Know Google' and 'Football Google' films).",
+      "• **Finance & Payments**: Visa ('Rio 2016' & 'Not a Tourist'), Interswitch ('Verve Card'), and 1 Utility Bank ('Leap of Faith').",
+      "• **Consumer Goods & Retail**: Unilever (Closeup 'Closer Is Better') and Chicken Republic.",
+      "• **Defence & Manufacturing**: Proforce Nigeria.",
+      "",
+      "You can explore full case studies, insights, and platform executions in our Work section."
+    ].join("\n");
+  }
+
+  // 3. About the company
+  if (
+    q.includes("company") ||
+    q.includes("agency") ||
+    q.includes("about you") ||
+    q.includes("who are you") ||
+    q.includes("bbdo") ||
+    q.includes("what is bbdo") ||
+    q.includes("studio") ||
+    q.includes("services") ||
+    q.includes("what do you do") ||
+    q === "about the company"
+  ) {
+    return [
+      "**BBDO West Africa** is the Lagos studio of the global BBDO network.",
+      "",
+      "We make work that moves business, culture, and people:",
+      "• **10+ Years** in market",
+      "• **100+ Brands** served across West Africa",
+      "• **30+ Specialists** in our Lagos studio",
+      "",
+      "Our core disciplines span **Strategy**, **Creative**, **Production**, and **Social**."
+    ].join("\n");
+  }
+
+  // 4. Specific brand/campaign inquiries
+  if (q.includes("jack daniel") || q.includes("naija") || q.includes("brown-forman")) {
+    return [
+      "**Jack Daniel’s — ‘That’s Naija, That’s Jack’**",
+      "",
+      "• **Client**: Brown-Forman (Food & Beverages)",
+      "• **Insight**: Nigerians moving culture forward refuse outdated scripts and trust their own way—a conviction true to Jack Daniel’s celebration of individuality.",
+      "• **Execution**: Two connected phases: a loud launch across outdoor and radio in Lagos & Abuja, followed by retail pop-ups, The Rooftop Reserve, and cultural events (Art X Lagos, Felabration)."
+    ].join("\n");
+  }
+
+  if (q.includes("betano") || q.includes("make we bet") || q.includes("keizen")) {
+    return [
+      "**Betano — ‘Make We Bet’**",
+      "",
+      "• **Client**: Keizen Games (Entertainment)",
+      "• **Insight**: Friendly sports debates often end with ‘make we bet’—a familiar challenge to put certainty on the line.",
+      "• **Strategy**: Grounding wagering in recognizable West African banter and the classic pinky-lock gesture across Nigeria and Ghana."
+    ].join("\n");
+  }
+
+  if (q.includes("guinness") || q.includes("made of black") || q.includes("diageo")) {
+    return [
+      "**Guinness — ‘Made of Black’ & Responsible Drinking**",
+      "",
+      "• **Client**: Diageo (Food & Beverages)",
+      "• **Work**: Supporting Guinness with regional strategy, digital activations, and the memorable print campaign ‘Don’t take on more than you can beer’ alongside network partners including AMV BBDO."
+    ].join("\n");
+  }
+
+  if (q.includes("google")) {
+    return [
+      "**Google — ‘Know Google’ & ‘Football Google’**",
+      "",
+      "• **Client**: Google (Technology)",
+      "• **Work**: High-energy campaign films showcasing Google’s search and product utility woven into everyday African culture and football passion."
+    ].join("\n");
+  }
+
+  if (q.includes("visa")) {
+    return [
+      "**Visa — ‘Rio 2016’ & ‘Not a Tourist’**",
+      "",
+      "• **Client**: Visa (Finance)",
+      "• **Work**: Campaigns celebrating major sporting moments and seamless cashless payment experiences across the continent."
+    ].join("\n");
+  }
+
+  if (q.includes("contact") || q.includes("email") || q.includes("reach") || q.includes("hire") || q.includes("address") || q.includes("location")) {
+    return [
+      "We'd love to connect with you!",
+      "",
+      "• **Email**: hello@bbdowestafrica.com",
+      "• **Studio**: Lagos, Nigeria",
+      "• **Website**: You can also reach out through the contact form at the bottom of the page."
+    ].join("\n");
+  }
+
+  // Fallback
+  return [
+    "I'm Njeri, your guide to BBDO West Africa. You can ask me simple questions about:",
+    "",
+    "1. **Our company** (our history, services, and team)",
+    "2. **Our projects** (our portfolio and client case studies)",
+    "3. **Current campaigns** (live work like Jack Daniel's and Betano)",
+    "",
+    "You can also click any of the suggestion buttons above!"
+  ].join("\n");
+}

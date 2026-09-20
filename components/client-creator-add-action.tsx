@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { firebaseDb } from "@/lib/firebase/client";
-import type { User } from "@/lib/users";
+import { isCreatorUser, type User } from "@/lib/users";
 
 export function ClientCreatorAddAction({
   campaignId,
@@ -39,7 +39,7 @@ export function ClientCreatorAddAction({
   const availableCreators = React.useMemo(
     () =>
       creators
-        .filter((creator) => creator.role === "creator")
+        .filter(isCreatorUser)
         .sort((a, b) => a.name.localeCompare(b.name)),
     [creators],
   );

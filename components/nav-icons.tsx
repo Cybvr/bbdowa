@@ -208,6 +208,14 @@ export const BlogIcon: NavIconComponent = ({ className }) => (
   </Glyph>
 );
 
+// Admin — shield with a check
+export const AdminIcon: NavIconComponent = ({ className }) => (
+  <Glyph className={className}>
+    <path d="M12 3.5 5 6v6c0 4.2 2.9 7.4 7 8.5 4.1-1.1 7-4.3 7-8.5V6Z" />
+    <path d="M9 12l2.2 2.2L15.5 10" />
+  </Glyph>
+);
+
 export const NAV_ICON_SET: Record<string, NavIconComponent> = {
   Home: HomeIcon,
   Dashboard: DashboardIcon,
@@ -231,4 +239,7 @@ export const NAV_ICON_SET: Record<string, NavIconComponent> = {
   Company: CompanyIcon,
   About: AboutIcon,
   Careers: CareersIcon,
+  Admin: AdminIcon,
+  Overview: DashboardIcon,
+  Users: TeamIcon,
 };

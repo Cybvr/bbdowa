@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { MoreHorizontal, Trash2 } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import {
   collection,
   deleteDoc,
@@ -21,29 +21,34 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { User } from "@/lib/users";
+import { userRoles, type User, type UserRole } from "@/lib/users";
 
 /**
  * Edit / delete for a user record. People and creators are both `users`, so
- * this one component serves both pages — `variant` decides which fields show.
- * Users are keyed by uid, but the pages resolve them by `slug`, so we look the
- * document up by its slug before writing.
+ * this one component serves both pages. Users are keyed by uid, but the pages
+ * resolve them by `slug`, so we look the document up by its slug before writing.
  */
 export function UserActions({
   user,
   variant,
   listHref,
   compactMenu = false,
+  includeEditAction = false,
+  onMutated,
 }: {
   user: User;
   variant: "team" | "creator";
   listHref: string;
   compactMenu?: boolean;
+  includeEditAction?: boolean;
+  onMutated?: () => void;
 }) {
   const router = useRouter();
 
   const [name, setName] = React.useState(user.name ?? "");
-  const [role, setRole] = React.useState<User["role"]>(user.role ?? "creator");
+  const [roles, setRoles] = React.useState<UserRole[]>(
+    userRoles(user).length ? userRoles(user) : ["manager"],
+  );
   const [title, setTitle] = React.useState(user.title ?? "");
   const [department, setDepartment] = React.useState(user.department ?? "");
   const [location, setLocation] = React.useState(user.location ?? "");
@@ -71,9 +76,11 @@ export function UserActions({
   const save = async () => {
     const ref = await docRef();
     if (!ref) throw new Error("User document not found");
+    const primaryRole = user.role !== "pending" && roles.includes(user.role) ? user.role : roles[0] ?? "manager";
     const common = {
       name: name.trim(),
-      role,
+      role: primaryRole,
+      roles,
       title: title.trim(),
       department: department.trim(),
       location: location.trim(),
@@ -83,7 +90,7 @@ export function UserActions({
       updatedAt: serverTimestamp(),
     };
     const creatorFields =
-      variant === "creator"
+      roles.includes("creator")
         ? {
             category: category.trim(),
             dayRate: dayRate.trim(),
@@ -97,6 +104,10 @@ export function UserActions({
           }
         : {};
     await updateDoc(ref, { ...common, ...creatorFields });
+    if (onMutated) {
+      onMutated();
+      return;
+    }
     // These pages read from Firestore on the client at mount, so reload to
     // pull the saved values back in.
     window.location.reload();
@@ -106,6 +117,10 @@ export function UserActions({
     const ref = await docRef();
     if (!ref) throw new Error("User document not found");
     await deleteDoc(ref);
+    if (onMutated) {
+      onMutated();
+      return;
+    }
     router.push(listHref);
   };
 
@@ -128,28 +143,50 @@ export function UserActions({
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-36">
+            {includeEditAction ? <DropdownMenuItem onSelect={_open}><Pencil className="h-4 w-4" />Edit</DropdownMenuItem> : null}
             <DropdownMenuItem variant="destructive" onSelect={removeFromMenu}><Trash2 className="h-4 w-4" />Delete</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       ) : undefined}
     >
       <TextField label="Name" value={name} onChange={setName} />
-      <SelectField
-        label="Role"
-        value={role}
-        onChange={(value) => setRole(value as User["role"])}
-        options={[
-          { value: "admin", label: "Admin" },
-          { value: "manager", label: "Manager" },
-          { value: "creator", label: "Creator" },
-        ]}
-      />
+      <div className="space-y-1.5">
+        <span className="text-[13px] font-medium text-foreground">Roles</span>
+        <div className="flex flex-wrap gap-2">
+          {([
+            ["admin", "Admin"],
+            ["manager", "Manager"],
+            ["creator", "Creator"],
+          ] as const).map(([value, label]) => {
+            const selected = roles.includes(value);
+            const cannotRemove = selected && roles.length === 1;
+            return (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={selected}
+                disabled={cannotRemove}
+                onClick={() =>
+                  setRoles((current) =>
+                    selected ? current.filter((role) => role !== value) : [...current, value],
+                  )
+                }
+                className={`rounded-lg border px-3 py-2 text-[13px] font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-50 ${selected ? "border-foreground bg-foreground text-background" : "border-border bg-background text-muted-foreground hover:border-foreground/50 hover:text-foreground"}`}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+        <p className="m-0 text-xs text-muted-foreground">A person can appear in both the team and creator directories.</p>
+      </div>
       {variant === "team" ? (
         <>
           <TextField label="Title" value={title} onChange={setTitle} />
           <TextField label="Department" value={department} onChange={setDepartment} />
         </>
-      ) : (
+      ) : null}
+      {roles.includes("creator") ? (
         <>
           <SelectField
             label="Category"
@@ -176,12 +213,12 @@ export function UserActions({
             ]}
           />
         </>
-      )}
+      ) : null}
       <TextField label="Location" value={location} onChange={setLocation} />
       <TextField label="Email" value={email} onChange={setEmail} type="email" />
       <TextField label="Phone" value={phone} onChange={setPhone} />
       <TextField label="Profile image URL" value={profileImage} onChange={setProfileImage} />
-      {variant === "creator" ? (
+      {roles.includes("creator") ? (
         <>
           <TextField label="Portfolio URL" value={portfolio} onChange={setPortfolio} />
           <TextField label="Behance URL" value={behance} onChange={setBehance} />

@@ -19,8 +19,9 @@ function buildGraph(users: import("@/lib/users").User[]): { nodes: GraphNode[]; 
     links.push({ source: "root", target: `dept:${department}` });
   }
   for (const member of team) {
-    nodes.push({ id: member.slug, label: member.name, kind: "team", href: userHref(member) });
-    links.push({ source: member.slug, target: `dept:${member.department}` });
+    const id = `team:${member.slug}`;
+    nodes.push({ id, label: member.name, kind: "team", href: userHref(member, "team") });
+    links.push({ source: id, target: `dept:${member.department}` });
   }
 
   const categories = [...new Set(creators.map((creator) => creator.category))];
@@ -31,8 +32,9 @@ function buildGraph(users: import("@/lib/users").User[]): { nodes: GraphNode[]; 
 
   const companies = new Map<string, string>();
   for (const creator of creators) {
-    nodes.push({ id: creator.slug, label: creator.name, kind: "creator", href: creatorHref(creator.slug) });
-    links.push({ source: creator.slug, target: `cat:${creator.category}` });
+    const id = `creator:${creator.slug}`;
+    nodes.push({ id, label: creator.name, kind: "creator", href: creatorHref(creator.slug) });
+    links.push({ source: id, target: `cat:${creator.category}` });
     const seen = new Set<string>();
     for (const job of creator.workHistory ?? []) {
       const company = job.company.trim();
@@ -43,7 +45,7 @@ function buildGraph(users: import("@/lib/users").User[]): { nodes: GraphNode[]; 
         companies.set(company, id);
         nodes.push({ id, label: company, kind: "company" });
       }
-      links.push({ source: creator.slug, target: companies.get(company)! });
+      links.push({ source: id, target: companies.get(company)! });
     }
   }
 

@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { collection, doc, onSnapshot, query, updateDoc, where } from "firebase/firestore";
 import { LuChevronDown, LuChevronLeft, LuChevronRight, LuMenu, LuPause, LuPlay, LuSquare } from "react-icons/lu";
-import { NAV_ITEMS } from "@/lib/nav";
+import { ADMIN_NAV_ITEMS, NAV_ITEMS } from "@/lib/nav";
 import { NAV_ICON_SET } from "@/components/nav-icons";
 import { ProfileNav } from "@/components/profile-nav";
 import { useOptionalAuth } from "@/components/auth-provider";
@@ -55,7 +55,11 @@ export function DashboardNavList({ onNavigate, collapsed = false }: { onNavigate
   const [running, setRunning] = useState<ActivityEntry | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [trackerBusy, setTrackerBusy] = useState(false);
-  const visibleItems = NAV_ITEMS.filter((item) => !item.requiresAuth || Boolean(auth?.user));
+  const isAdminSection = pathname.startsWith("/admin");
+  const navItems = isAdminSection ? ADMIN_NAV_ITEMS : NAV_ITEMS;
+  const visibleItems = navItems.filter(
+    (item) => (!item.requiresAuth || Boolean(auth?.user)) && (item.kind !== "link" || !item.requiresAdmin || Boolean(auth?.isAdmin)),
+  );
 
   useEffect(() => {
     const uid = auth?.user?.uid;
@@ -121,7 +125,7 @@ export function DashboardNavList({ onNavigate, collapsed = false }: { onNavigate
   };
 
   useEffect(() => {
-    const activeMenu = NAV_ITEMS.find(
+    const activeMenu = navItems.find(
       (item) =>
         item.kind === "menu" &&
         (Array.isArray(item.match)

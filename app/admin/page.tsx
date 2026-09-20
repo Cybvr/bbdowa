@@ -1,14 +1,22 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { SeedPanel } from "@/components/seed-panel";
 import { MigratePanel } from "@/components/migrate-panel";
+import { PageHeader } from "@/components/dashboard/ui";
 
 export const metadata: Metadata = { title: "Admin" };
 
 export default function AdminPage() {
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-5 pb-16 pt-8 sm:px-8">
-      <h1 className="m-0 text-[22px] font-bold tracking-tight">Admin</h1>
-      <p className="mb-6 mt-1.5 text-[14px] text-muted-foreground">Data tools for the dashboard.</p>
+      <PageHeader title="Admin" description="Data tools for the dashboard." />
+      <Link href="/admin/users" className="mt-6 flex items-center justify-between rounded-xl border border-border bg-background p-4 text-foreground no-underline transition hover:border-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
+        <span>
+          <strong className="block text-[14px] font-semibold">Users</strong>
+          <span className="mt-1 block text-[13px] text-muted-foreground">Add users and manage team, creator, and admin roles.</span>
+        </span>
+        <span aria-hidden="true" className="text-lg text-muted-foreground">→</span>
+      </Link>
       <SeedPanel />
       <MigratePanel />
     </main>
