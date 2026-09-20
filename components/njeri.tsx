@@ -113,37 +113,48 @@ export default function WorkspaceAssistant() {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [open]);
 
-  const sendQuestion = (queryText: string) => {
+  const sendQuestion = async (queryText: string) => {
     const text = queryText.trim();
     if (!text || isTyping) return;
 
     const userMessage: ChatMessage = { id: Date.now(), role: "user", text };
+    const history = [...messages, userMessage].map((message) => ({ role: message.role, content: message.text }));
     setMessages((current) => [...current, userMessage]);
     setIsTyping(true);
 
-    setTimeout(() => {
-      const responseText = getAnswer(text);
-      setMessages((current) => [
-        ...current,
-        {
-          id: Date.now() + 1,
-          role: "assistant",
-          text: responseText,
-        },
-      ]);
-      setIsTyping(false);
-    }, 450);
+    let responseText: string;
+    try {
+      const response = await fetch("/api/njeri", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: history }),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok || typeof data?.answer !== "string") {
+        throw new Error(data?.error || `Njeri API responded ${response.status}`);
+      }
+      responseText = data.answer;
+    } catch (cause) {
+      console.error("Njeri model unavailable, using canned answers", cause);
+      responseText = getAnswer(text);
+    }
+
+    setMessages((current) => [
+      ...current,
+      { id: Date.now() + 1, role: "assistant", text: responseText },
+    ]);
+    setIsTyping(false);
   };
 
   const handleSend = (event: React.FormEvent) => {
     event.preventDefault();
     if (!input.trim()) return;
-    sendQuestion(input);
+    void sendQuestion(input);
     setInput("");
   };
 
   const handleChipClick = (question: string) => {
-    sendQuestion(question);
+    void sendQuestion(question);
   };
 
   if (!open) {
