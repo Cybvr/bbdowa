@@ -145,6 +145,7 @@ function SendAgreementDialog({
       await addDoc(collection(firebaseDb, CONTRACT_COLLECTION), {
         title: selectedTemplate.title,
         body: selectedTemplate.body,
+        documentId: selectedTemplate.id,
         assignedTo: assignKey,
         assignedToName: creatorName,
         createdBy: viewer.uid,
@@ -342,7 +343,7 @@ export function CreatorContractsPanel({ creatorUid, creatorSlug, creatorName, vi
                       {viewer.isAdmin ? (
                         <>
                           <Link
-                            href={`/dashboard/contracts/${contract.id}/edit`}
+                            href={`/admin/contracts/${contract.id}/edit`}
                             aria-label={`Edit ${contract.title}`}
                             className="grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground transition hover:border-foreground hover:text-foreground"
                           >

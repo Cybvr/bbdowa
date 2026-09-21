@@ -13,6 +13,8 @@ export type Contract = {
   title: string;
   /** Full agreement text, shown to the creator as-is. */
   body: string;
+  /** Reusable document this contract was created from, when applicable. */
+  documentId?: string | null;
   /** Firebase uid of the creator this agreement is assigned to. */
   assignedTo: string;
   assignedToName: string | null;

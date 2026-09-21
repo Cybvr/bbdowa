@@ -6,6 +6,8 @@ import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import {
   collection,
   deleteDoc,
+  doc,
+  getDoc,
   getDocs,
   limit,
   query,
@@ -70,6 +72,12 @@ export function UserActions({
   const [craftNote, setCraftNote] = React.useState(user.craftNote ?? "");
 
   const docRef = async () => {
+    if (user.uid) {
+      const uidRef = doc(firebaseDb, "users", user.uid);
+      if ((await getDoc(uidRef)).exists()) return uidRef;
+    }
+
+    if (!user.slug) return null;
     const snapshot = await getDocs(
       query(collection(firebaseDb, "users"), where("slug", "==", user.slug), limit(1)),
     );
@@ -152,7 +160,7 @@ export function UserActions({
         </DropdownMenu>
       ) : undefined}
     >
-      <ImageUploadField label="Avatar" value={profileImage} onChange={setProfileImage} variant="avatar" uploadPath={`users/${user.slug}/avatar`} />
+      <ImageUploadField label="Avatar" value={profileImage} onChange={setProfileImage} variant="avatar" uploadPath={`users/${user.uid ?? user.slug}/avatar`} />
       <TextField label="Name" value={name} onChange={setName} />
       <SelectField
         label="Account status"

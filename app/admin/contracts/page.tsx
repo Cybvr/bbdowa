@@ -38,6 +38,7 @@ export default function AdminContractsPage() {
       await addDoc(collection(firebaseDb, CONTRACT_COLLECTION), {
         title: `${contract.title} (Copy)`,
         body: contract.body,
+        documentId: contract.documentId ?? null,
         assignedTo: contract.assignedTo,
         assignedToName: contract.assignedToName,
         createdBy: user.uid,
@@ -74,7 +75,7 @@ export default function AdminContractsPage() {
         meta={`${contracts.length} ${contracts.length === 1 ? "contract" : "contracts"}`}
         actions={
           <Link
-            href="/dashboard/contracts/new"
+            href="/admin/contracts/new"
             className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-3 text-[13px] font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           >
             <Plus aria-hidden="true" className="h-3.5 w-3.5" />
@@ -138,7 +139,7 @@ export default function AdminContractsPage() {
                           <Eye className="h-4 w-4" aria-hidden="true" />
                         </Link>
                         <Link
-                          href={`/dashboard/contracts/${contract.id}/edit`}
+                          href={`/admin/contracts/${contract.id}/edit`}
                           aria-label={`Edit ${contract.title}`}
                           className="grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground transition hover:border-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                         >
