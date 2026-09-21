@@ -36,22 +36,11 @@ type FirestoreUsersState = {
 };
 
 export function useFirestoreUsers(): FirestoreUsersState {
-  const { loading: authLoading, user, isAdmin, role } = useAuth();
-  const isStaff = isAdmin || role === "manager";
+  const { loading: authLoading } = useAuth();
   const [state, setState] = useState<FirestoreUsersState>({ users: [], loading: true, error: null });
 
   useEffect(() => {
     if (authLoading) return;
-
-    if (!user) {
-      setState({ users: [], loading: false, error: "You must be signed in to view users." });
-      return;
-    }
-
-    if (!isStaff) {
-      setState({ users: [], loading: false, error: "An admin or manager account is required to view users." });
-      return;
-    }
 
     let active = true;
     setState((current) => ({ ...current, loading: true, error: null }));
@@ -67,7 +56,7 @@ export function useFirestoreUsers(): FirestoreUsersState {
     return () => {
       active = false;
     };
-  }, [authLoading, isStaff, user]);
+  }, [authLoading]);
 
   return state;
 }
