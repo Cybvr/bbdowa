@@ -1,6 +1,7 @@
 "use client";
 
-import { ContractTemplateActions, ContractTemplateCreateAction } from "@/components/contract-template-actions";
+import Link from "next/link";
+import { Plus } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { PageHeader } from "@/components/dashboard/ui";
 import { useFirestoreContractTemplates } from "@/lib/firebase/client-content";
@@ -29,7 +30,15 @@ export default function AdminContractTemplatesPage() {
         title="Agreement templates"
         description="Reusable NDA and agreement text. Staff pick one when sending a contract to a creator."
         meta={`${templates.length} ${templates.length === 1 ? "template" : "templates"}`}
-        actions={<ContractTemplateCreateAction onCreated={() => window.location.reload()} />}
+        actions={
+          <Link
+            href="/admin/contract-templates/new"
+            className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-3 text-[13px] font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          >
+            <Plus aria-hidden="true" className="h-3.5 w-3.5" />
+            New template
+          </Link>
+        }
       />
 
       <section className="mt-6 overflow-hidden rounded-xl border border-border bg-background">
@@ -38,12 +47,17 @@ export default function AdminContractTemplatesPage() {
         ) : templates.length ? (
           <ul className="divide-y divide-border">
             {templates.map((template) => (
-              <li key={template.id} className="flex items-center justify-between gap-4 px-4 py-3.5 sm:px-5">
-                <div className="min-w-0">
-                  <p className="m-0 truncate text-[14px] font-semibold text-foreground">{template.title}</p>
-                  <p className="m-0 mt-0.5 line-clamp-1 text-xs text-muted-foreground">{template.body}</p>
-                </div>
-                <ContractTemplateActions template={template} onMutated={() => window.location.reload()} />
+              <li key={template.id}>
+                <Link
+                  href={`/admin/contract-templates/${template.id}/edit`}
+                  className="flex items-center justify-between gap-4 px-4 py-3.5 no-underline transition hover:bg-muted/40 sm:px-5"
+                >
+                  <div className="min-w-0">
+                    <p className="m-0 truncate text-[14px] font-semibold text-foreground">{template.title}</p>
+                    <p className="m-0 mt-0.5 line-clamp-1 text-xs text-muted-foreground">{template.body}</p>
+                  </div>
+                  <span aria-hidden="true" className="text-lg text-muted-foreground">→</span>
+                </Link>
               </li>
             ))}
           </ul>
