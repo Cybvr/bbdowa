@@ -115,9 +115,14 @@ export function ImageUploadField({
 
         setUploading(true);
         const uploadId = typeof crypto.randomUUID === "function" ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        const imageBlob = await new Promise<Blob | null>((resolve) => {
+          canvas.toBlob(resolve, "image/webp", 0.82);
+        });
+        if (!imageBlob) throw new Error("Unable to create image file");
+
         const uploaded = await uploadBytes(
           ref(firebaseStorage, `${uploadPath}/${uploadId}.webp`),
-          await new Promise<Blob>((resolve, reject) => canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("Unable to create image file"))), "image/webp", 0.82),
+          imageBlob,
           { contentType: "image/webp", cacheControl: "public,max-age=31536000" },
         );
         onChange(await getDownloadURL(uploaded.ref));
