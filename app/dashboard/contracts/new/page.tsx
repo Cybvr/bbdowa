@@ -12,9 +12,7 @@ import { PageLoadingSkeleton } from "@/components/dashboard/loading-skeleton";
 import { TextField, TextareaField } from "@/components/detail-editor";
 import { Input } from "@/components/ui/input";
 import { CONTRACT_COLLECTION } from "@/lib/contracts";
-import { isCreatorUser, type User } from "@/lib/users";
-
-type CreatorWithUid = User & { uid: string };
+import { isCreatorUser } from "@/lib/users";
 
 /** Full-page agreement composer. Staff draft one agreement and send it to any number of creators at once. */
 export default function NewContractPage() {
@@ -46,14 +44,17 @@ function NewContractForm() {
   const creators = React.useMemo(
     () =>
       users
-        .filter((user): user is CreatorWithUid => Boolean(user.uid) && isCreatorUser(user))
+        .filter(isCreatorUser)
+        // A creator who's never signed in has no uid yet — fall back to their
+        // slug so staff can still send them an agreement right away.
+        .map((user) => ({ ...user, assignKey: user.uid || user.slug }))
         .sort((a, b) => a.name.localeCompare(b.name)),
     [users],
   );
 
   React.useEffect(() => {
     if (presetApplied || !presetUid || !creators.length) return;
-    if (creators.some((creator) => creator.uid === presetUid)) {
+    if (creators.some((creator) => creator.assignKey === presetUid)) {
       setSelectedUids((current) => (current.includes(presetUid) ? current : [...current, presetUid]));
     }
     setPresetApplied(true);
@@ -79,14 +80,14 @@ function NewContractForm() {
     setBusy(true);
     setError(null);
     try {
-      const recipients = creators.filter((creator) => selectedUids.includes(creator.uid));
+      const recipients = creators.filter((creator) => selectedUids.includes(creator.assignKey));
       const createdAt = new Date().toISOString();
       await Promise.all(
         recipients.map((creator) =>
           addDoc(collection(firebaseDb, CONTRACT_COLLECTION), {
             title: title.trim(),
             body: body.trim(),
-            assignedTo: creator.uid,
+            assignedTo: creator.assignKey,
             assignedToName: creator.name,
             createdBy: authUser.uid,
             createdByName: authUser.name ?? authUser.email,
@@ -98,7 +99,7 @@ function NewContractForm() {
           }),
         ),
       );
-      setSentTo(recipients.map((creator) => ({ uid: creator.uid, name: creator.name, slug: creator.slug })));
+      setSentTo(recipients.map((creator) => ({ uid: creator.assignKey, name: creator.name, slug: creator.slug })));
       setTitle("");
       setBody("");
       setSelectedUids([]);
@@ -182,16 +183,16 @@ function NewContractForm() {
                 <p className="m-0 px-4 py-8 text-center text-sm text-destructive">{usersError}</p>
               ) : visibleCreators.length ? (
                 visibleCreators.map((creator) => {
-                  const checked = selectedUids.includes(creator.uid);
+                  const checked = selectedUids.includes(creator.assignKey);
                   return (
                     <label
-                      key={creator.uid}
+                      key={creator.assignKey}
                       className="flex cursor-pointer items-center gap-3 border-b border-border px-3 py-2.5 last:border-b-0 hover:bg-muted/60"
                     >
                       <input
                         type="checkbox"
                         checked={checked}
-                        onChange={() => toggleCreator(creator.uid)}
+                        onChange={() => toggleCreator(creator.assignKey)}
                         className="h-4 w-4 accent-primary"
                       />
                       <span className="min-w-0">

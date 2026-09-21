@@ -115,7 +115,11 @@ function SignDialog({ contract, defaultName, onSigned }: { contract: Contract; d
 }
 
 /** Agreements for one creator, shown on their profile page. Staff draft and manage them; the creator only signs. */
-export function CreatorContractsPanel({ creatorUid, creatorName, viewer }: { creatorUid: string | null | undefined; creatorName: string; viewer: ContractViewer }) {
+export function CreatorContractsPanel({ creatorUid, creatorSlug, creatorName, viewer }: { creatorUid: string | null | undefined; creatorSlug: string; creatorName: string; viewer: ContractViewer }) {
+  // Agreements are still keyed by a real uid once the creator has signed in;
+  // until then, fall back to their slug so staff can send one right away.
+  const assignKey = creatorUid || creatorSlug;
+
   const [contracts, setContracts] = React.useState<Contract[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -128,13 +132,9 @@ export function CreatorContractsPanel({ creatorUid, creatorName, viewer }: { cre
   }, []);
 
   React.useEffect(() => {
-    if (!creatorUid) {
-      setLoading(false);
-      return;
-    }
     let active = true;
     setLoading(true);
-    load(creatorUid)
+    load(assignKey)
       .catch((cause) => {
         console.error("Unable to load agreements from Firestore", cause);
         if (active) setError("Unable to load agreements.");
@@ -145,11 +145,9 @@ export function CreatorContractsPanel({ creatorUid, creatorName, viewer }: { cre
     return () => {
       active = false;
     };
-  }, [creatorUid, load]);
+  }, [assignKey, load]);
 
-  const reload = () => {
-    if (creatorUid) void load(creatorUid);
-  };
+  const reload = () => void load(assignKey);
 
   const removeContract = async (contract: Contract) => {
     if (!window.confirm("Delete this agreement? This can’t be undone.")) return;
@@ -165,12 +163,6 @@ export function CreatorContractsPanel({ creatorUid, creatorName, viewer }: { cre
       setBusyId(null);
     }
   };
-
-  if (!creatorUid) {
-    return viewer.isStaff ? (
-      <EmptyState title="No account yet" description={`${creatorName} hasn’t signed in yet, so agreements can’t be sent until they do.`} />
-    ) : null;
-  }
 
   if (loading) {
     return (
@@ -188,7 +180,7 @@ export function CreatorContractsPanel({ creatorUid, creatorName, viewer }: { cre
       {viewer.isStaff ? (
         <div className="flex justify-end">
           <Link
-            href={`/dashboard/contracts/new?creator=${creatorUid}`}
+            href={`/dashboard/contracts/new?creator=${assignKey}`}
             className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-3 text-[13px] font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           >
             <Plus aria-hidden="true" className="h-3.5 w-3.5" />

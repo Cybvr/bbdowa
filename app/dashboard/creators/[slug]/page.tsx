@@ -255,6 +255,7 @@ export default function CreatorDetailPage() {
           <ProfileSection title="Contracts" variant="plain">
             <CreatorContractsPanel
               creatorUid={creator.uid}
+              creatorSlug={creator.slug}
               creatorName={creator.name}
               viewer={{ uid: authUser.uid, name: authUser.name ?? authUser.email, isStaff, isAdmin }}
             />

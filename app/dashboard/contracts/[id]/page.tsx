@@ -49,7 +49,9 @@ export default function ContractDetailPage() {
     };
   }, [authLoading, authUser, id]);
 
-  const assignedSlug = contract ? users.find((user) => user.uid === contract.assignedTo)?.slug : undefined;
+  const assignedSlug = contract
+    ? users.find((user) => user.uid === contract.assignedTo)?.slug ?? users.find((user) => user.slug === contract.assignedTo)?.slug
+    : undefined;
 
   const removeContract = async () => {
     if (!contract) return;
