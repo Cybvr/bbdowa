@@ -151,7 +151,7 @@ export function UserActions({
         </DropdownMenu>
       ) : undefined}
     >
-      <ImageUploadField label="Avatar" value={profileImage} onChange={setProfileImage} variant="avatar" />
+      <ImageUploadField label="Avatar" value={profileImage} onChange={setProfileImage} variant="avatar" uploadPath={`users/${user.slug}/avatar`} />
       <TextField label="Name" value={name} onChange={setName} />
       <div className="space-y-1.5">
         <span className="text-[13px] font-medium text-foreground">Roles</span>

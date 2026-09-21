@@ -3,7 +3,6 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { DashboardHeader } from "@/components/dashboard-header";
-import { AuthProvider } from "@/components/auth-provider";
 
 export function DashboardChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -20,15 +19,13 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
   if (isApplication) return <>{children}</>;
 
   return (
-    <AuthProvider>
-      <div className="flex min-h-screen flex-1 flex-col nav:flex-row">
-        <DashboardHeader
-          hideMobile={isClientDetail || isCreators || isCreatorDetail}
-          sidebarCollapsed={sidebarCollapsed}
-          onToggleSidebar={() => setSidebarCollapsed((value) => !value)}
-        />
-        <div className={`min-w-0 flex-1 pt-0 nav:pt-[60px] transition-[margin-left] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${sidebarCollapsed ? "nav:ml-[80px]" : "nav:ml-[208px]"}`}>{children}</div>
-      </div>
-    </AuthProvider>
+    <div className="flex min-h-screen flex-1 flex-col nav:flex-row">
+      <DashboardHeader
+        hideMobile={isClientDetail || isCreators || isCreatorDetail}
+        sidebarCollapsed={sidebarCollapsed}
+        onToggleSidebar={() => setSidebarCollapsed((value) => !value)}
+      />
+      <div className={`min-w-0 flex-1 pt-0 nav:pt-[60px] transition-[margin-left] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${sidebarCollapsed ? "nav:ml-[80px]" : "nav:ml-[208px]"}`}>{children}</div>
+    </div>
   );
 }

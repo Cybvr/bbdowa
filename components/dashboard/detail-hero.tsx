@@ -211,7 +211,7 @@ export function ProfileFacts({ children }: { children: ReactNode }) {
  * it on mobile, where the sidebar stacks above the content. */
 export function ProfileFact({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <div className="flex items-baseline justify-between gap-3 border-t border-border py-2 text-[13px] first:border-t-0">
+    <div className="flex items-baseline justify-between gap-3 py-2 text-[13px]">
       <span className="shrink-0 text-muted-foreground">{label}</span>
       <span className="min-w-0 truncate text-right font-semibold text-foreground">{value}</span>
     </div>
@@ -223,12 +223,27 @@ export function ProfileSection({
   title,
   action,
   children,
+  variant = "boxed",
 }: {
-  icon: ReactNode;
+  icon?: ReactNode;
   title: string;
   action?: ReactNode;
   children: ReactNode;
+  /** "plain" drops the icon badge and the bordered card, for pages that want a quieter section heading. */
+  variant?: "boxed" | "plain";
 }) {
+  if (variant === "plain") {
+    return (
+      <section>
+        <div className="mb-2.5 flex items-center justify-between gap-3">
+          <h3 className="m-0 text-[12px] font-bold uppercase tracking-[0.06em] text-muted-foreground">{title}</h3>
+          {action}
+        </div>
+        {children}
+      </section>
+    );
+  }
+
   return (
     <section className="overflow-hidden rounded-xl border border-border">
       <div className="flex items-center justify-between gap-3 border-b border-border bg-muted/30 px-3.5 py-2.5 sm:px-5 sm:py-3">

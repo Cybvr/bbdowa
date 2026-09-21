@@ -2,12 +2,17 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Send, Sparkles, X } from "lucide-react";
+import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import { firebaseDb } from "@/lib/firebase/client";
+import { useOptionalAuth } from "@/components/auth-provider";
 import { QUICK_PROMPTS, getAnswer } from "@/lib/njeri-assistant";
+import type { NjeriActionProposal, NjeriResponse } from "@/lib/njeri-actions";
 
 type ChatMessage = {
   id: number;
   role: "assistant" | "user";
   text: string;
+  action?: NjeriActionProposal | null;
 };
 
 function NjeriMark({ className }: { className?: string }) {
@@ -80,7 +85,55 @@ function FormattedContent({ text, isUser }: { text: string; isUser: boolean }) {
   );
 }
 
+function slugify(value: string): string {
+  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60) || "record";
+}
+
+async function availableSlug(collectionName: "users" | "clients", value: string): Promise<string> {
+  const base = slugify(value);
+  let slug = base;
+  let suffix = 2;
+  while ((await getDoc(doc(firebaseDb, collectionName, slug))).exists()) slug = `${base}-${suffix++}`;
+  return slug;
+}
+
+function ActionCard({ action, onConfirm }: { action: NjeriActionProposal; onConfirm: () => void }) {
+  const isCreator = action.type === "create_creator";
+  const title = isCreator ? "Creator draft" : "Client draft";
+  const record = action.record;
+  const status = action.status ?? "pending";
+
+  return (
+    <div className="mt-3 rounded-xl border border-primary/25 bg-background p-3 text-xs shadow-sm">
+      <div className="flex items-center justify-between gap-3">
+        <strong className="text-sm text-foreground">{title}</strong>
+        {status === "saved" ? <span className="font-semibold text-green-700">Saved</span> : null}
+      </div>
+      <p className="mt-2 text-sm font-semibold text-foreground">{record.name}</p>
+      <p className="mt-1 text-muted-foreground">
+        {action.type === "create_creator"
+          ? [action.record.category, action.record.location, action.record.title].filter(Boolean).join(" · ") || "Research details included"
+          : [action.record.industry, action.record.date].filter(Boolean).join(" · ") || "Research details included"}
+      </p>
+      {action.sources.length ? (
+        <p className="mt-2 truncate text-[11px] text-muted-foreground">Sources: {action.sources.join(", ")}</p>
+      ) : null}
+      {action.error ? <p className="mt-2 text-destructive">{action.error}</p> : null}
+      {status === "pending" ? (
+        <button
+          type="button"
+          onClick={onConfirm}
+          className="mt-3 rounded-lg bg-primary px-3 py-2 font-semibold text-primary-foreground transition hover:opacity-90"
+        >
+          Confirm and add {isCreator ? "to creators" : "client"}
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
 export default function WorkspaceAssistant() {
+  const auth = useOptionalAuth();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -113,6 +166,90 @@ export default function WorkspaceAssistant() {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [open]);
 
+  const updateAction = (messageId: number, action: NjeriActionProposal) => {
+    setMessages((current) => current.map((message) => message.id === messageId ? { ...message, action } : message));
+  };
+
+  const confirmAction = async (messageId: number, action: NjeriActionProposal) => {
+    if (!auth?.user) {
+      updateAction(messageId, { ...action, status: "failed", error: "Please sign in before saving a record." });
+      return;
+    }
+
+    updateAction(messageId, { ...action, status: "saving", error: undefined });
+    try {
+      if (action.type === "create_creator") {
+        const slug = await availableSlug("users", action.record.name);
+        await setDoc(doc(firebaseDb, "users", slug), {
+          slug,
+          name: action.record.name.trim(),
+          role: "creator",
+          roles: ["creator"],
+          title: action.record.title || "",
+          department: action.record.department || "",
+          category: action.record.category || "Content",
+          tags: [],
+          location: action.record.location || "",
+          entity: "Freelancer",
+          dayRate: "",
+          rateMin: null,
+          rateCurrency: "NGN",
+          hideRate: true,
+          terms: "",
+          availability: "unconfirmed",
+          clearance: "pending",
+          vetted: false,
+          vouchedBy: "Njeri research draft",
+          workedOn: [],
+          yearsActive: action.record.yearsActive,
+          portfolio: action.record.portfolio,
+          behance: null,
+          email: action.record.email,
+          phone: action.record.phone,
+          profileImage: action.record.profileImage,
+          addedAt: new Date().toISOString(),
+          featuredImage: null,
+          workHistory: action.record.workHistory ?? [],
+          linkedin: action.record.linkedin,
+          instagram: action.record.instagram,
+          contactNote: null,
+          followerCount: action.record.followerCount,
+          followerPlatform: action.record.followerPlatform,
+          gender: null,
+          age: null,
+          niche: action.record.niche,
+          lastEngaged: null,
+          craftNote: action.record.craftNote || "",
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+      } else {
+        const slug = await availableSlug("clients", action.record.name);
+        await setDoc(doc(firebaseDb, "clients", slug), {
+          type: "client",
+          slug,
+          name: action.record.name.trim(),
+          date: action.record.date || null,
+          industry: action.record.industry || "Other",
+          profileImage: action.record.profileImage,
+          description: action.record.description,
+          targetAudience: action.record.targetAudience,
+          creatorSlugs: [],
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+      }
+      updateAction(messageId, { ...action, status: "saved", error: undefined });
+    } catch (cause) {
+      console.error("Unable to save Njeri draft", cause);
+      updateAction(messageId, {
+        ...action,
+        status: "failed",
+        error: "I prepared the draft, but your account is not allowed to save this record. Please ask an admin or use the dashboard action.",
+      });
+    }
+  };
+
   const sendQuestion = async (queryText: string) => {
     const text = queryText.trim();
     if (!text || isTyping) return;
@@ -123,6 +260,7 @@ export default function WorkspaceAssistant() {
     setIsTyping(true);
 
     let responseText: string;
+    let responseAction: NjeriActionProposal | null | undefined;
     try {
       const response = await fetch("/api/njeri", {
         method: "POST",
@@ -134,6 +272,7 @@ export default function WorkspaceAssistant() {
         throw new Error(data?.error || `Njeri API responded ${response.status}`);
       }
       responseText = data.answer;
+      responseAction = (data as NjeriResponse).action;
     } catch (cause) {
       console.error("Njeri model unavailable, using canned answers", cause);
       responseText = getAnswer(text);
@@ -141,7 +280,7 @@ export default function WorkspaceAssistant() {
 
     setMessages((current) => [
       ...current,
-      { id: Date.now() + 1, role: "assistant", text: responseText },
+      { id: Date.now() + 1, role: "assistant", text: responseText, action: responseAction },
     ]);
     setIsTyping(false);
   };
@@ -163,7 +302,7 @@ export default function WorkspaceAssistant() {
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Open Njeri"
-        className="fixed bottom-4 right-4 z-50 grid h-14 w-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
+        className="fixed bottom-4 right-4 z-50 grid h-14 w-14 place-items-center rounded-lg bg-background text-foreground shadow-lg transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
       >
         <NjeriMark className="h-6 w-6" />
       </button>
@@ -204,6 +343,9 @@ export default function WorkspaceAssistant() {
               }`}
             >
               <FormattedContent text={message.text} isUser={message.role === "user"} />
+              {message.role === "assistant" && message.action ? (
+                <ActionCard action={message.action} onConfirm={() => void confirmAction(message.id, message.action!)} />
+              ) : null}
             </div>
           </div>
         ))}

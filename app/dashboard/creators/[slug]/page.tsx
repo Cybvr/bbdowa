@@ -5,13 +5,13 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { IconType } from "react-icons";
 import { FaBehance, FaGlobe } from "react-icons/fa";
-import { Briefcase, Clock, FileSignature, FileText, Mail, Megaphone, Timer, Users } from "lucide-react";
+import { Mail } from "lucide-react";
 import { creatorCategoryOptions, isCreatorNew, isCreatorUser, type Creator } from "@/lib/users";
 import { useAuth } from "@/components/auth-provider";
 import { readCampaignsFromFirestore, readClientsFromFirestore, useFirestoreUsers, useOwnUser } from "@/lib/firebase/client-content";
 import { longDate } from "@/lib/format";
 import { campaignHref, type Campaign } from "@/lib/campaigns";
-import { getCreatorCampaigns, type Client } from "@/lib/clients";
+import { clientHref, getCreatorCampaigns, type Client } from "@/lib/clients";
 import {
   DetailBreadcrumb,
   ProfileBanner,
@@ -48,7 +48,7 @@ type CreatorTab = "overview" | "work-history" | "campaigns" | "hours" | "contrac
 
 export default function CreatorDetailPage() {
   const { slug } = useParams<{ slug: string }>();
-  const { user: authUser, role, loading: authLoading } = useAuth();
+  const { user: authUser, role, isAdmin, loading: authLoading } = useAuth();
   const isStaff = role === "admin" || role === "manager";
   const staff = useFirestoreUsers();
   const own = useOwnUser();
@@ -149,8 +149,6 @@ export default function CreatorDetailPage() {
               <ProfileFact label="Category" value={creator.category || "—"} />
               <ProfileFact label="Engages as" value={creator.entity} />
               <ProfileFact label="Location" value={creator.location || "—"} />
-              <ProfileFact label="Clearance" value={creator.clearance === "cleared" ? "Cleared" : "Sign-off pending"} />
-              <ProfileFact label="Vouched by" value={creator.vouchedBy || "—"} />
               {creator.email ? (
                 <ProfileFact label="Email" value={<a href={`mailto:${creator.email}`} className="hover:text-primary">{creator.email}</a>} />
               ) : null}
@@ -175,12 +173,12 @@ export default function CreatorDetailPage() {
         {tab === "overview" && (
           <>
             {creator.craftNote ? (
-              <ProfileSection icon={<FileText aria-hidden="true" className="h-3.5 w-3.5" />} title="Craft note">
+              <ProfileSection title="Craft note" variant="plain">
                 <p className="m-0 max-w-[850px] text-[15px] leading-[1.5]">{creator.craftNote}</p>
               </ProfileSection>
             ) : null}
 
-            <ProfileSection icon={<Briefcase aria-hidden="true" className="h-3.5 w-3.5" />} title="Engagement">
+            <ProfileSection title="Engagement" variant="plain">
               <div>
                 <ProfileFact label="Availability" value={<span className="capitalize">{creator.availability}</span>} />
                 <ProfileFact label="Day rate estimate" value={creator.dayRate || "—"} />
@@ -189,7 +187,7 @@ export default function CreatorDetailPage() {
               </div>
             </ProfileSection>
 
-            <ProfileSection icon={<Users aria-hidden="true" className="h-3.5 w-3.5" />} title="Audience profile">
+            <ProfileSection title="Audience profile" variant="plain">
               <div>
                 <ProfileFact
                   label="Follower count"
@@ -204,7 +202,7 @@ export default function CreatorDetailPage() {
         )}
 
         {tab === "work-history" && (
-          <ProfileSection icon={<Clock aria-hidden="true" className="h-3.5 w-3.5" />} title="Work history">
+          <ProfileSection title="Work history" variant="plain">
             <ProfileTable
               columns={[
                 { key: "period", label: "Period" },
@@ -223,7 +221,7 @@ export default function CreatorDetailPage() {
         )}
 
         {tab === "campaigns" && (
-          <ProfileSection icon={<Megaphone aria-hidden="true" className="h-3.5 w-3.5" />} title="Campaigns">
+          <ProfileSection title="Campaigns" variant="plain">
             <ProfileTable
               columns={[
                 { key: "campaign", label: "Campaign" },
@@ -236,7 +234,11 @@ export default function CreatorDetailPage() {
                     {campaign.campaign ?? campaign.name}
                   </Link>
                 ),
-                client: campaign.clientName,
+                client: (
+                  <Link href={clientHref(campaign.clientId)} className="text-foreground hover:text-primary">
+                    {campaign.clientName}
+                  </Link>
+                ),
                 status: <span className="capitalize">{campaign.status}</span>,
               }))}
             />
@@ -244,17 +246,17 @@ export default function CreatorDetailPage() {
         )}
 
         {tab === "hours" && authUser && (
-          <ProfileSection icon={<Timer aria-hidden="true" className="h-3.5 w-3.5" />} title="Hours logged">
+          <ProfileSection title="Hours logged" variant="plain">
             <CreatorHoursPanel creatorUid={creator.uid} creatorName={creator.name} isSelf={authUser.uid === creator.uid} />
           </ProfileSection>
         )}
 
         {tab === "contracts" && authUser && (
-          <ProfileSection icon={<FileSignature aria-hidden="true" className="h-3.5 w-3.5" />} title="Contracts">
+          <ProfileSection title="Contracts" variant="plain">
             <CreatorContractsPanel
               creatorUid={creator.uid}
               creatorName={creator.name}
-              viewer={{ uid: authUser.uid, name: authUser.name ?? authUser.email, isStaff }}
+              viewer={{ uid: authUser.uid, name: authUser.name ?? authUser.email, isStaff, isAdmin }}
             />
           </ProfileSection>
         )}

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Pencil, Upload } from "lucide-react";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import {
   Sheet,
   SheetClose,
@@ -21,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuth } from "@/components/auth-provider";
+import { firebaseStorage } from "@/lib/firebase/client";
 
 /**
  * Shared editing kit for the dashboard detail pages. Each entity page renders
@@ -50,6 +52,7 @@ export function ImageUploadField({
   variant = "cover",
   disabled = false,
   accept = "image/*",
+  uploadPath = "dashboard/images",
 }: {
   label: string;
   value: string;
@@ -57,83 +60,140 @@ export function ImageUploadField({
   variant?: "avatar" | "cover";
   disabled?: boolean;
   accept?: string;
+  /** Storage prefix for the uploaded file. Pass null to keep a local data URI. */
+  uploadPath?: string | null;
 }) {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [uploading, setUploading] = React.useState(false);
+  const [preview, setPreview] = React.useState<string | null>(null);
 
-  const readImage = (file: File | undefined) => {
+  const readImage = async (file: File | undefined) => {
     if (!file) return;
     if (!file.type.startsWith("image/")) {
       setError("Choose an image file.");
       return;
     }
-    if (file.size > 750 * 1024) {
-      setError("Choose an image smaller than 750 KB.");
+    if (file.size > 8 * 1024 * 1024) {
+      setError("Choose an image smaller than 8 MB.");
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      setError(null);
-      onChange(typeof reader.result === "string" ? reader.result : "");
-    };
-    reader.readAsDataURL(file);
+    setError(null);
+
+    try {
+      const sourceUrl = URL.createObjectURL(file);
+      try {
+        const image = new Image();
+        image.decoding = "async";
+        image.src = sourceUrl;
+        await image.decode();
+
+        const maxDimension = variant === "avatar" ? 512 : 1200;
+        const scale = Math.min(1, maxDimension / Math.max(image.naturalWidth, image.naturalHeight));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+        const context = canvas.getContext("2d");
+        if (!context) throw new Error("Canvas is unavailable");
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+        // Keep avatars comfortably below Firestore's document-size limit while
+        // preserving enough detail for the directory and profile pages.
+        let optimized = canvas.toDataURL("image/webp", 0.82);
+        if (optimized.length > 240_000) optimized = canvas.toDataURL("image/jpeg", 0.72);
+        if (optimized.length > 300_000) throw new Error("Image could not be compressed enough");
+
+        setPreview(optimized);
+        if (!uploadPath) {
+          onChange(optimized);
+          setPreview(null);
+          setError(null);
+          return;
+        }
+
+        setUploading(true);
+        const uploadId = typeof crypto.randomUUID === "function" ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        const uploaded = await uploadBytes(
+          ref(firebaseStorage, `${uploadPath}/${uploadId}.webp`),
+          await new Promise<Blob>((resolve, reject) => canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("Unable to create image file"))), "image/webp", 0.82),
+          { contentType: "image/webp", cacheControl: "public,max-age=31536000" },
+        );
+        onChange(await getDownloadURL(uploaded.ref));
+        setPreview(null);
+        setError(null);
+      } finally {
+        URL.revokeObjectURL(sourceUrl);
+      }
+    } catch (cause) {
+      console.error("Unable to process image", cause);
+      setError("Couldn’t process that image. Try another file.");
+    } finally {
+      setUploading(false);
+    }
   };
+
+  const isDisabled = disabled || uploading;
+  const displayedImage = preview || value;
 
   return (
     <Field label={label}>
       <div
         role="button"
-        tabIndex={disabled ? -1 : 0}
-        aria-disabled={disabled}
+        tabIndex={isDisabled ? -1 : 0}
+        aria-disabled={isDisabled}
+        aria-busy={uploading}
         onClick={() => {
-          if (!disabled) inputRef.current?.click();
+          if (!isDisabled) inputRef.current?.click();
         }}
         onKeyDown={(event) => {
-          if (!disabled && (event.key === "Enter" || event.key === " ")) {
+          if (!isDisabled && (event.key === "Enter" || event.key === " ")) {
             event.preventDefault();
             inputRef.current?.click();
           }
         }}
         onDragOver={(event) => {
           event.preventDefault();
-          if (!disabled) setDragging(true);
+          if (!isDisabled) setDragging(true);
         }}
         onDragLeave={() => setDragging(false)}
         onDrop={(event) => {
           event.preventDefault();
           setDragging(false);
-          if (!disabled) readImage(event.dataTransfer.files[0]);
+          if (!isDisabled) void readImage(event.dataTransfer.files[0]);
         }}
-        className={`relative cursor-pointer overflow-hidden border border-dashed p-3 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${variant === "avatar" ? "rounded-xl" : "rounded-lg"} ${dragging ? "border-primary bg-primary/5" : "border-border hover:border-foreground/50"} ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
+        className={`relative cursor-pointer overflow-hidden border border-dashed p-3 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${variant === "avatar" ? "rounded-xl" : "rounded-lg"} ${dragging ? "border-primary bg-primary/5" : "border-border hover:border-foreground/50"} ${isDisabled ? "cursor-not-allowed opacity-50" : ""}`}
       >
         <input
           ref={inputRef}
           type="file"
           accept={accept}
-          disabled={disabled}
-          onChange={(event) => readImage(event.target.files?.[0])}
+          disabled={isDisabled}
+          onChange={(event) => {
+            void readImage(event.target.files?.[0]);
+            event.currentTarget.value = "";
+          }}
           className="sr-only"
         />
-        {value ? (
+        {displayedImage ? (
           <div className={`flex items-center gap-3 ${variant === "avatar" ? "" : "min-h-28"}`}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={value}
+              src={displayedImage}
               alt=""
               className={variant === "avatar" ? "h-20 w-20 rounded-full object-cover" : "h-28 w-40 rounded-md object-cover"}
             />
             <div className="min-w-0">
-              <p className="m-0 text-[13px] font-semibold text-foreground">Replace image</p>
-              <p className="m-0 mt-1 text-xs text-muted-foreground">Select a new image or drop one here.</p>
+              <p className="m-0 text-[13px] font-semibold text-foreground">{uploading ? "Uploading image…" : "Replace image"}</p>
+              <p className="m-0 mt-1 text-xs text-muted-foreground">{uploading ? "Saving to Firebase Storage." : "Select a new image or drop one here."}</p>
             </div>
           </div>
         ) : (
           <div className="flex min-h-24 flex-col items-center justify-center gap-2 text-center">
             <Upload aria-hidden="true" className="h-5 w-5 text-primary" />
             <p className="m-0 text-[13px] font-semibold text-foreground">Select or drop an image</p>
-            <p className="m-0 text-xs text-muted-foreground">PNG, JPG, GIF or WebP · max 750 KB</p>
+            <p className="m-0 text-xs text-muted-foreground">PNG, JPG, GIF or WebP · optimized automatically</p>
           </div>
         )}
       </div>
@@ -236,7 +296,7 @@ export function CreatableSelectField({
   placeholder?: string;
 }) {
   const [customMode, setCustomMode] = React.useState(false);
-  const knownOptions = value && !options.includes(value) ? [value, ...options] : options;
+  const knownOptions = Array.from(new Set(value && !options.includes(value) ? [value, ...options] : options));
 
   if (customMode) {
     return (

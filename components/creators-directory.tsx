@@ -485,7 +485,7 @@ function CreatorDiscoveryBar({
           <button
             type="submit"
             aria-label="Search creators"
-            className="absolute right-1.5 top-1.5 grid h-8 w-8 cursor-pointer place-items-center rounded-full bg-primary text-primary-foreground transition hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:right-2 sm:top-2 sm:h-14 sm:w-14"
+            className="absolute right-1.5 top-1.5 grid h-8 w-8 cursor-pointer place-items-center rounded-full bg-background text-foreground transition hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:right-2 sm:top-2 sm:h-14 sm:w-14"
           >
             <FiSearch aria-hidden="true" className="h-4 w-4 sm:h-6 sm:w-6" />
           </button>

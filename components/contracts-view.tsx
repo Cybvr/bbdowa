@@ -1,8 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { addDoc, collection, deleteDoc, doc, getDocs, query, updateDoc, where } from "firebase/firestore";
-import { MoreHorizontal, Plus, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { collection, deleteDoc, doc, getDocs, query, updateDoc, where } from "firebase/firestore";
+import { Eye, Pencil, Plus, Trash2 } from "lucide-react";
 import { firebaseDb } from "@/lib/firebase/client";
 import { EmptyState } from "@/components/dashboard/ui";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,17 +16,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { CONTRACT_COLLECTION, formatDate, sortContracts, type Contract } from "@/lib/contracts";
+import { CONTRACT_COLLECTION, formatDate, getContractUpdatedAt, sortContracts, type Contract } from "@/lib/contracts";
 
-/** Who's looking at this creator's agreements: staff draft and manage them, the creator only signs. */
-export type ContractViewer = { uid: string; name: string | null; isStaff: boolean };
+/**
+ * Who's looking at this creator's agreements: staff draft and manage them,
+ * the creator only signs. Editing and deleting an agreement is admin-only;
+ * a manager can send and view agreements but not change or remove them.
+ */
+export type ContractViewer = { uid: string; name: string | null; isStaff: boolean; isAdmin: boolean };
 
 function StatusBadge({ signed }: { signed: boolean }) {
   return (
@@ -34,100 +32,6 @@ function StatusBadge({ signed }: { signed: boolean }) {
     >
       {signed ? "Signed" : "Awaiting signature"}
     </span>
-  );
-}
-
-function NewContractDialog({ creatorUid, creatorName, createdBy, createdByName, onCreated }: {
-  creatorUid: string;
-  creatorName: string;
-  createdBy: string;
-  createdByName: string | null;
-  onCreated: () => void;
-}) {
-  const [open, setOpen] = React.useState(false);
-  const [title, setTitle] = React.useState("");
-  const [body, setBody] = React.useState("");
-  const [busy, setBusy] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-
-  const reset = () => {
-    setTitle("");
-    setBody("");
-    setError(null);
-  };
-
-  const handleOpenChange = (next: boolean) => {
-    setOpen(next);
-    if (!next) reset();
-  };
-
-  const canSave = title.trim().length > 0 && body.trim().length > 0 && !busy;
-
-  const save = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!canSave) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await addDoc(collection(firebaseDb, CONTRACT_COLLECTION), {
-        title: title.trim(),
-        body: body.trim(),
-        assignedTo: creatorUid,
-        assignedToName: creatorName,
-        createdBy,
-        createdByName,
-        status: "pending",
-        createdAt: new Date().toISOString(),
-        signedAt: null,
-        signedName: null,
-      });
-      onCreated();
-      setOpen(false);
-      reset();
-    } catch (cause) {
-      console.error("Unable to create agreement", cause);
-      setError("Couldn’t create that agreement. Try again.");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-3 text-[13px] font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-      >
-        <Plus aria-hidden="true" className="h-3.5 w-3.5" />
-        New agreement
-      </button>
-
-      <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>New agreement</DialogTitle>
-            <DialogDescription>Send an NDA or other agreement to {creatorName} to sign.</DialogDescription>
-          </DialogHeader>
-
-          <form onSubmit={save} className="space-y-4">
-            <div className="space-y-1.5">
-              <label htmlFor="contract-title" className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Title</label>
-              <Input id="contract-title" value={title} onChange={(event) => setTitle(event.target.value)} disabled={busy} placeholder="Mutual NDA" required />
-            </div>
-            <div className="space-y-1.5">
-              <label htmlFor="contract-body" className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Agreement text</label>
-              <Textarea id="contract-body" value={body} onChange={(event) => setBody(event.target.value)} disabled={busy} placeholder="Paste the full agreement text…" rows={10} required />
-            </div>
-            {error ? <p className="m-0 text-[13px] font-medium text-destructive">{error}</p> : null}
-            <DialogFooter>
-              <button type="button" onClick={() => setOpen(false)} disabled={busy} className="h-9 rounded-md border border-border px-4 text-[13px] font-semibold text-foreground transition hover:border-foreground disabled:opacity-50">Cancel</button>
-              <button type="submit" disabled={!canSave} className="h-9 rounded-md bg-primary px-4 text-[13px] font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50">{busy ? "Sending…" : "Send agreement"}</button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </>
   );
 }
 
@@ -149,6 +53,7 @@ function SignDialog({ contract, defaultName, onSigned }: { contract: Contract; d
       await updateDoc(doc(firebaseDb, CONTRACT_COLLECTION, contract.id), {
         status: "signed",
         signedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
         signedName: name.trim(),
       });
       onSigned();
@@ -282,7 +187,13 @@ export function CreatorContractsPanel({ creatorUid, creatorName, viewer }: { cre
 
       {viewer.isStaff ? (
         <div className="flex justify-end">
-          <NewContractDialog creatorUid={creatorUid} creatorName={creatorName} createdBy={viewer.uid} createdByName={viewer.name} onCreated={reload} />
+          <Link
+            href={`/dashboard/contracts/new?creator=${creatorUid}`}
+            className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-3 text-[13px] font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          >
+            <Plus aria-hidden="true" className="h-3.5 w-3.5" />
+            New agreement
+          </Link>
         </div>
       ) : null}
 
@@ -299,13 +210,18 @@ export function CreatorContractsPanel({ creatorUid, creatorName, viewer }: { cre
                 <th className="px-4 py-3">Agreement</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Signed</th>
+                <th className="px-4 py-3">Modified</th>
                 <th className="px-4 py-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
               {contracts.map((contract) => (
                 <tr key={contract.id} className="border-b border-border last:border-b-0 align-top">
-                  <td className="px-4 py-3 font-semibold">{contract.title}</td>
+                  <td className="px-4 py-3 font-semibold">
+                    <Link href={`/dashboard/contracts/${contract.id}`} className="hover:text-primary">
+                      {contract.title}
+                    </Link>
+                  </td>
                   <td className="px-4 py-3"><StatusBadge signed={contract.status === "signed"} /></td>
                   <td className="px-4 py-3">
                     {contract.status === "signed" && contract.signedAt ? (
@@ -314,24 +230,37 @@ export function CreatorContractsPanel({ creatorUid, creatorName, viewer }: { cre
                       <span className="text-muted-foreground">—</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button
-                          type="button"
-                          aria-label={`Actions for ${contract.title}`}
-                          disabled={busyId === contract.id}
-                          className="grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground transition hover:border-foreground hover:text-foreground disabled:opacity-50"
-                        >
-                          <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-36">
-                        <DropdownMenuItem variant="destructive" onSelect={() => void removeContract(contract)}>
-                          <Trash2 className="h-4 w-4" />Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                  <td className="px-4 py-3 text-muted-foreground">{formatDate(getContractUpdatedAt(contract))}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex justify-end gap-1.5">
+                      <Link
+                        href={`/dashboard/contracts/${contract.id}`}
+                        aria-label={`View ${contract.title}`}
+                        className="grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground transition hover:border-foreground hover:text-foreground"
+                      >
+                        <Eye className="h-4 w-4" aria-hidden="true" />
+                      </Link>
+                      {viewer.isAdmin ? (
+                        <>
+                          <Link
+                            href={`/dashboard/contracts/${contract.id}/edit`}
+                            aria-label={`Edit ${contract.title}`}
+                            className="grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground transition hover:border-foreground hover:text-foreground"
+                          >
+                            <Pencil className="h-4 w-4" aria-hidden="true" />
+                          </Link>
+                          <button
+                            type="button"
+                            aria-label={`Delete ${contract.title}`}
+                            disabled={busyId === contract.id}
+                            onClick={() => void removeContract(contract)}
+                            className="grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground transition hover:border-destructive hover:text-destructive disabled:opacity-50"
+                          >
+                            <Trash2 className="h-4 w-4" aria-hidden="true" />
+                          </button>
+                        </>
+                      ) : null}
+                    </div>
                   </td>
                 </tr>
               ))}

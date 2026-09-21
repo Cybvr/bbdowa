@@ -114,11 +114,13 @@ service cloud.firestore {
 
     // NDAs and other agreements admins/managers draft for a creator to sign.
     // The creator can only add a signature, never touch the agreement text.
+    // A manager can send and view agreements; editing or deleting one is
+    // admin-only.
     match /contracts/{id} {
       allow read: if isStaff()
         || (signedIn() && resource.data.assignedTo == request.auth.uid);
       allow create: if isStaff() && request.resource.data.createdBy == request.auth.uid;
-      allow update: if isStaff()
+      allow update: if isAdmin()
         || (signedIn()
           && resource.data.assignedTo == request.auth.uid
           && request.resource.data.assignedTo == resource.data.assignedTo
@@ -126,7 +128,7 @@ service cloud.firestore {
           && request.resource.data.body == resource.data.body
           && resource.data.status == "pending"
           && request.resource.data.status == "signed");
-      allow delete: if isStaff();
+      allow delete: if isAdmin();
     }
   }
 }

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Outfit, Roboto_Mono } from "next/font/google";
 import { PwaRegister } from "@/components/pwa-register";
 import Njeri from "@/components/njeri";
+import { AuthProvider } from "@/components/auth-provider";
 import "./globals.css";
 
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit", display: "swap" });
@@ -43,8 +44,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         className={`${outfit.variable} ${robotoMono.variable} flex min-h-screen flex-col bg-white font-sans text-foreground antialiased`}
       >
         <PwaRegister />
-        {children}
-        <Njeri />
+        <AuthProvider>
+          {children}
+          <Njeri />
+        </AuthProvider>
       </body>
     </html>
   );
