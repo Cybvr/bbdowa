@@ -19,7 +19,10 @@ export function BackfillUidsAction({ users }: { users: User[] }) {
       for (const user of missing) {
         const snapshot = await getDocs(query(collection(firebaseDb, "users"), where("slug", "==", user.slug)));
         const ref = snapshot.docs[0]?.ref;
-        if (ref) batch.update(ref, { uid: `manual-${user.slug}-${Date.now()}` });
+        if (!ref) continue;
+        const updates: Record<string, string> = { uid: `manual-${user.slug}-${Date.now()}` };
+        if (!user.email) updates.email = `${user.slug}@test.com`;
+        batch.update(ref, updates);
       }
       await batch.commit();
       window.location.reload();
