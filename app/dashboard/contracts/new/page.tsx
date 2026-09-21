@@ -5,12 +5,12 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { addDoc, collection } from "firebase/firestore";
 import { useAuth } from "@/components/auth-provider";
-import { useFirestoreUsers } from "@/lib/firebase/client-content";
+import { useFirestoreContractTemplates, useFirestoreUsers } from "@/lib/firebase/client-content";
 import { firebaseDb } from "@/lib/firebase/client";
 import { PageHeader } from "@/components/dashboard/ui";
 import { PageLoadingSkeleton } from "@/components/dashboard/loading-skeleton";
-import { TextField, TextareaField } from "@/components/detail-editor";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CONTRACT_COLLECTION } from "@/lib/contracts";
 import { isCreatorUser } from "@/lib/users";
 
@@ -28,12 +28,12 @@ function NewContractForm() {
   const searchParams = useSearchParams();
   const presetUid = searchParams.get("creator");
 
-  const { user: authUser, role, loading: authLoading } = useAuth();
+  const { user: authUser, role, isAdmin, loading: authLoading } = useAuth();
   const isStaff = role === "admin" || role === "manager";
   const { users, loading: usersLoading, error: usersError } = useFirestoreUsers();
+  const { templates, loading: templatesLoading, error: templatesError } = useFirestoreContractTemplates();
 
-  const [title, setTitle] = React.useState("");
-  const [body, setBody] = React.useState("");
+  const [templateId, setTemplateId] = React.useState("");
   const [query, setQuery] = React.useState("");
   const [selectedUids, setSelectedUids] = React.useState<string[]>([]);
   const [presetApplied, setPresetApplied] = React.useState(false);
@@ -72,11 +72,12 @@ function NewContractForm() {
     setSelectedUids((current) => (current.includes(uid) ? current.filter((id) => id !== uid) : [...current, uid]));
   };
 
-  const canSend = title.trim().length > 0 && body.trim().length > 0 && selectedUids.length > 0 && !busy;
+  const selectedTemplate = templates.find((template) => template.id === templateId);
+  const canSend = Boolean(selectedTemplate) && selectedUids.length > 0 && !busy;
 
   const send = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!canSend || !authUser) return;
+    if (!canSend || !authUser || !selectedTemplate) return;
     setBusy(true);
     setError(null);
     try {
@@ -85,8 +86,8 @@ function NewContractForm() {
       await Promise.all(
         recipients.map((creator) =>
           addDoc(collection(firebaseDb, CONTRACT_COLLECTION), {
-            title: title.trim(),
-            body: body.trim(),
+            title: selectedTemplate.title,
+            body: selectedTemplate.body,
             assignedTo: creator.assignKey,
             assignedToName: creator.name,
             createdBy: authUser.uid,
@@ -100,8 +101,7 @@ function NewContractForm() {
         ),
       );
       setSentTo(recipients.map((creator) => ({ uid: creator.assignKey, name: creator.name, slug: creator.slug })));
-      setTitle("");
-      setBody("");
+      setTemplateId("");
       setSelectedUids([]);
     } catch (cause) {
       console.error("Unable to send agreement", cause);
@@ -111,7 +111,7 @@ function NewContractForm() {
     }
   };
 
-  if (authLoading || usersLoading) return <PageLoadingSkeleton titleWidth="w-40" />;
+  if (authLoading || usersLoading || templatesLoading) return <PageLoadingSkeleton titleWidth="w-40" />;
 
   if (!isStaff) {
     return (
@@ -124,7 +124,15 @@ function NewContractForm() {
 
   return (
       <main className="mx-auto w-full max-w-2xl flex-1 px-3 pb-10 pt-3 sm:px-8 sm:pb-16 sm:pt-4">
-      <PageHeader title="New agreement" description="Draft an NDA or other agreement, then share it with one or more creators to sign." />
+      <PageHeader
+        title="New agreement"
+        description="Pick a template, then share it with one or more creators to sign."
+        actions={isAdmin ? (
+          <Link href="/admin/contract-templates" className="text-[13px] font-semibold text-foreground underline underline-offset-2 hover:no-underline">
+            Manage templates
+          </Link>
+        ) : undefined}
+      />
 
       {sentTo ? (
         <div className="mt-6 space-y-4 rounded-xl border border-border p-5">
@@ -162,8 +170,40 @@ function NewContractForm() {
               <h2 id="new-contract-document-heading" className="m-0 mt-1 text-[17px] font-semibold">Contract content</h2>
               <p className="mb-0 mt-1 text-[13px] leading-relaxed text-muted-foreground">This is the agreement the recipient will read and sign.</p>
             </div>
-            <TextField label="Title" value={title} onChange={setTitle} placeholder="Mutual NDA" />
-            <TextareaField label="Agreement text" value={body} onChange={setBody} rows={14} placeholder="Paste or write the full agreement text…" />
+
+            {templatesError ? (
+              <p className="m-0 text-[13px] font-medium text-destructive">{templatesError}</p>
+            ) : templates.length ? (
+              <>
+                <div className="space-y-1.5">
+                  <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Template</span>
+                  <Select value={templateId} onValueChange={setTemplateId}>
+                    <SelectTrigger className="h-10 w-full"><SelectValue placeholder="Choose a template" /></SelectTrigger>
+                    <SelectContent>
+                      {templates.map((template) => (
+                        <SelectItem key={template.id} value={template.id}>{template.title}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {selectedTemplate ? (
+                  <div className="max-h-64 overflow-y-auto rounded-lg border border-border bg-muted/30 p-3 text-[13px] leading-relaxed text-foreground whitespace-pre-wrap">
+                    {selectedTemplate.body}
+                  </div>
+                ) : null}
+              </>
+            ) : (
+              <p className="m-0 text-[13px] text-muted-foreground">
+                No agreement templates yet.{" "}
+                {isAdmin ? (
+                  <Link href="/admin/contract-templates" className="font-semibold text-foreground underline underline-offset-2 hover:no-underline">
+                    Create one
+                  </Link>
+                ) : (
+                  "Ask an admin to create one."
+                )}
+              </p>
+            )}
           </section>
 
           <section className="space-y-4 rounded-xl border border-border p-5 sm:p-6" aria-labelledby="new-contract-record-heading">

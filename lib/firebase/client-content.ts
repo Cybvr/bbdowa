@@ -7,6 +7,7 @@ import { useAuth } from "@/components/auth-provider";
 import type { BlogPost } from "@/lib/blog";
 import type { Campaign } from "@/lib/campaigns";
 import type { Client } from "@/lib/clients";
+import { CONTRACT_TEMPLATE_COLLECTION, sortContractTemplates, type ContractTemplate } from "@/lib/contract-templates";
 import type { Job } from "@/lib/jobs";
 import { normalizeUser, type User } from "@/lib/users";
 
@@ -108,6 +109,45 @@ export function useOwnUser(): OwnUserState {
       active = false;
     };
   }, [authLoading, user]);
+
+  return state;
+}
+
+type FirestoreContractTemplatesState = {
+  templates: ContractTemplate[];
+  loading: boolean;
+  error: string | null;
+};
+
+export function useFirestoreContractTemplates(): FirestoreContractTemplatesState {
+  const { loading: authLoading, user, isAdmin, role } = useAuth();
+  const isStaff = isAdmin || role === "manager";
+  const [state, setState] = useState<FirestoreContractTemplatesState>({ templates: [], loading: true, error: null });
+
+  useEffect(() => {
+    if (authLoading) return;
+
+    if (!user || !isStaff) {
+      setState({ templates: [], loading: false, error: null });
+      return;
+    }
+
+    let active = true;
+    setState((current) => ({ ...current, loading: true, error: null }));
+    getDocs(collection(firebaseDb, CONTRACT_TEMPLATE_COLLECTION))
+      .then((snapshot) => snapshot.docs.map((document) => ({ id: document.id, ...(document.data() as Omit<ContractTemplate, "id">) })))
+      .then((templates) => {
+        if (active) setState({ templates: sortContractTemplates(templates), loading: false, error: null });
+      })
+      .catch((error) => {
+        console.error("Unable to load agreement templates from Firestore", error);
+        if (active) setState({ templates: [], loading: false, error: "Unable to load agreement templates." });
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [authLoading, isStaff, user]);
 
   return state;
 }

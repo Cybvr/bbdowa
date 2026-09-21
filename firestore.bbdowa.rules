@@ -130,5 +130,13 @@ service cloud.firestore {
           && request.resource.data.status == "signed");
       allow delete: if isAdmin();
     }
+
+    // Reusable agreement text admins maintain. Managers can read the list to
+    // pick one when sending an agreement, but only admins write templates.
+    match /contractTemplates/{id} {
+      allow read: if isStaff();
+      allow create: if isAdmin() && request.resource.data.createdBy == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
   }
 }
