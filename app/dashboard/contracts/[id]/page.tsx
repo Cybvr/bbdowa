@@ -125,16 +125,26 @@ export default function ContractDetailPage() {
         >
           <div className="flex-1 overflow-y-auto p-4 sm:p-6">
             <div className="mx-auto max-w-[680px] rounded-sm border border-border/60 bg-background shadow-md">
-              <div className="border-b border-border/60 px-8 py-6 sm:px-10">
-                <p className="m-0 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">BBDO West Africa</p>
+              <header className="border-b border-border/60 px-8 py-6 sm:px-10">
+                <img
+                  src="/bbdo-west-africa.png"
+                  alt="BBDO West Africa"
+                  className="h-8 w-auto object-contain object-left"
+                />
                 <h2 className="m-0 mt-1 text-[19px] font-bold tracking-tight text-foreground">{contract.title}</h2>
-              </div>
+              </header>
               <div className="whitespace-pre-wrap px-8 py-8 text-[14px] leading-[1.75] text-foreground sm:px-10">
                 {contract.body}
               </div>
-              <div className="border-t border-border/60 px-8 py-4 sm:px-10">
-                <p className="m-0 text-[11px] text-muted-foreground">Confidential · not for distribution</p>
-              </div>
+              <footer className="border-t border-border/60 px-8 py-4 sm:px-10">
+                <p className="m-0 text-[11px] leading-relaxed text-muted-foreground">
+                  13 Ologun Agbaje St, Victoria Island, Lagos 106104, Lagos ·{" "}
+                  <a href="https://www.bbdowestafrica.com" className="transition hover:text-foreground">
+                    www.bbdowestafrica.com
+                  </a>
+                </p>
+                <p className="m-0 mt-1 text-[11px] text-muted-foreground">Confidential · not for distribution</p>
+              </footer>
             </div>
           </div>
         </section>
