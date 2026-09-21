@@ -8,7 +8,7 @@ import { FaBehance, FaGlobe } from "react-icons/fa";
 import { Mail } from "lucide-react";
 import { creatorCategoryOptions, isCreatorNew, isCreatorUser, type Creator } from "@/lib/users";
 import { useAuth } from "@/components/auth-provider";
-import { readCampaignsFromFirestore, readClientsFromFirestore, useFirestoreUsers, useOwnUser } from "@/lib/firebase/client-content";
+import { readCampaignsFromFirestore, readClientsFromFirestore, useFirestoreUsers } from "@/lib/firebase/client-content";
 import { longDate } from "@/lib/format";
 import { campaignHref, type Campaign } from "@/lib/campaigns";
 import { clientHref, getCreatorCampaigns, type Client } from "@/lib/clients";
@@ -48,10 +48,9 @@ type CreatorTab = "overview" | "work-history" | "campaigns" | "hours" | "contrac
 
 export default function CreatorDetailPage() {
   const { slug } = useParams<{ slug: string }>();
-  const { user: authUser, role, isAdmin, loading: authLoading } = useAuth();
+  const { user: authUser, role, isAdmin } = useAuth();
   const isStaff = role === "admin" || role === "manager";
-  const staff = useFirestoreUsers();
-  const own = useOwnUser();
+  const directory = useFirestoreUsers();
   const [tab, setTab] = useState<CreatorTab>("overview");
 
   // Public collections — no auth needed, so every viewer can see this.
@@ -71,12 +70,12 @@ export default function CreatorDetailPage() {
     };
   }, []);
 
-  // Staff can browse every creator; everyone else can only ever land on their
-  // own profile (Firestore only lets a person read their own `users` doc).
-  const loading = isStaff ? staff.loading : authLoading || own.loading;
-  const error = isStaff ? staff.error : null;
-  const creator = isStaff ? staff.users.find((user) => user.slug === slug) : own.user?.slug === slug ? own.user : undefined;
-  const categorySource = isStaff ? staff.users : own.user ? [own.user] : [];
+  // The users directory is public so a published creator profile resolves for
+  // every viewer. Staff status still controls the actions and staff-only tabs.
+  const loading = directory.loading;
+  const error = directory.error;
+  const creator = directory.users.find((user) => user.slug === slug);
+  const categorySource = directory.users;
 
   if (loading) return <ProfilePageSkeleton />;
   if (error) return <main className="flex-1 px-3 pb-10 pt-3 text-sm text-muted-foreground sm:px-8 sm:pb-16 sm:pt-4">{error}</main>;

@@ -208,15 +208,16 @@ import {
 export default function ClientPage() {
   const { slug } = useParams<{ slug: string }>();
   const pathname = usePathname();
-  const { loading: authLoading, user, isAdmin } = useAuth();
+  const { loading: authLoading, user, isAdmin, role } = useAuth();
+  const isStaff = isAdmin || role === "manager";
   const [content, setContent] = useState<Awaited<ReturnType<typeof readContentFromFirestore>> | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
 
-    if (!user || !isAdmin) {
-      setLoadError("An admin account is required to load this client workspace.");
+    if (!user || !isStaff) {
+      setLoadError("A staff account is required to load this client workspace.");
       return;
     }
 
@@ -232,7 +233,7 @@ export default function ClientPage() {
     return () => {
       active = false;
     };
-  }, [authLoading, isAdmin, user]);
+  }, [authLoading, isStaff, user]);
 
   const initialView: OneUtilityWorkspaceView = pathname.endsWith("/campaigns")
     ? "campaign"

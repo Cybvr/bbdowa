@@ -13,6 +13,18 @@ const DEFAULT_RESEARCH_MODEL = "gpt-5-mini";
 const MAX_TURNS = 12;
 const MAX_TURN_LENGTH = 2000;
 
+function liveContext(): string {
+  const today = new Intl.DateTimeFormat("en-NG", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "Africa/Lagos",
+  }).format(new Date());
+
+  return `Live context: today is ${today}. The user's timezone is Africa/Lagos.`;
+}
+
 type ChatTurn = { role: "user" | "assistant"; content: string };
 
 function isChatTurn(value: unknown): value is ChatTurn {
@@ -218,7 +230,7 @@ export async function POST(request: Request) {
         model: process.env.OPENAI_MODEL || DEFAULT_MODEL,
         temperature: 0.4,
         max_tokens: 400,
-        messages: [{ role: "system", content: NJERI_SYSTEM_PROMPT }, ...messages],
+        messages: [{ role: "system", content: `${NJERI_SYSTEM_PROMPT}\n\n${liveContext()}` }, ...messages],
       }),
     });
 

@@ -37,13 +37,11 @@ service cloud.firestore {
       // render without a sign-in gate. Writes remain protected below.
       allow read: if true;
       allow create: if (isAdmin()
-        && request.resource.data.uid == userId
         && validRole())
         || (isSelf(userId)
           && request.resource.data.uid == userId
           && request.resource.data.role == "pending");
       allow update: if (isAdmin()
-        && request.resource.data.uid == userId
         && validRole())
         || (isSelf(userId)
           && resource.data.uid == userId
