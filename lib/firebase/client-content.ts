@@ -7,6 +7,7 @@ import { useAuth } from "@/components/auth-provider";
 import type { BlogPost } from "@/lib/blog";
 import type { Campaign } from "@/lib/campaigns";
 import type { Client } from "@/lib/clients";
+import { CONTRACT_COLLECTION, sortContracts, type Contract } from "@/lib/contracts";
 import { CONTRACT_TEMPLATE_COLLECTION, sortContractTemplates, type ContractTemplate } from "@/lib/contract-templates";
 import type { Job } from "@/lib/jobs";
 import { normalizeUser, type User } from "@/lib/users";
@@ -142,6 +143,47 @@ export function useFirestoreContractTemplates(): FirestoreContractTemplatesState
       .catch((error) => {
         console.error("Unable to load agreement templates from Firestore", error);
         if (active) setState({ templates: [], loading: false, error: "Unable to load agreement templates." });
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [authLoading, isStaff, user]);
+
+  return state;
+}
+
+type FirestoreContractsState = {
+  contracts: Contract[];
+  loading: boolean;
+  error: string | null;
+};
+
+export function useFirestoreContracts(): FirestoreContractsState {
+  const { loading: authLoading, user, role } = useAuth();
+  const isStaff = role === "admin" || role === "manager";
+  const [state, setState] = useState<FirestoreContractsState>({ contracts: [], loading: true, error: null });
+
+  useEffect(() => {
+    if (authLoading) return;
+
+    if (!user || !isStaff) {
+      setState({ contracts: [], loading: false, error: null });
+      return;
+    }
+
+    let active = true;
+    setState((current) => ({ ...current, loading: true, error: null }));
+    getDocs(collection(firebaseDb, CONTRACT_COLLECTION))
+      .then((snapshot) =>
+        snapshot.docs.map((document) => ({ id: document.id, ...(document.data() as Omit<Contract, "id">) })),
+      )
+      .then((contracts) => {
+        if (active) setState({ contracts: sortContracts(contracts), loading: false, error: null });
+      })
+      .catch((error) => {
+        console.error("Unable to load agreements from Firestore", error);
+        if (active) setState({ contracts: [], loading: false, error: "Unable to load agreements." });
       });
 
     return () => {
