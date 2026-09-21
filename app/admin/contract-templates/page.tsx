@@ -65,8 +65,8 @@ export default function AdminContractTemplatesPage() {
   if (!isAdmin) {
     return (
       <main className="mx-auto w-full max-w-4xl flex-1 px-5 pb-16 pt-8 sm:px-8">
-        <PageHeader title="Agreement templates" />
-        <p className="mt-8 text-sm text-muted-foreground">An admin account is required to manage agreement templates.</p>
+        <PageHeader title="Documents" />
+        <p className="mt-8 text-sm text-muted-foreground">An admin account is required to manage documents.</p>
       </main>
     );
   }
@@ -74,16 +74,16 @@ export default function AdminContractTemplatesPage() {
   return (
     <main className="mx-auto w-full max-w-4xl flex-1 px-5 pb-16 pt-8 sm:px-8">
       <PageHeader
-        title="Agreement templates"
-        description="Reusable NDA and agreement text. Staff pick one when sending a contract to a creator."
-        meta={`${templates.length} ${templates.length === 1 ? "template" : "templates"}`}
+        title="Documents"
+        description="Reusable agreement documents staff can assign to one or more creators."
+        meta={`${templates.length} ${templates.length === 1 ? "document" : "documents"}`}
         actions={
           <Link
             href="/admin/contract-templates/new"
             className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-3 text-[13px] font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           >
             <Plus aria-hidden="true" className="h-3.5 w-3.5" />
-            New template
+            New document
           </Link>
         }
       />
@@ -95,7 +95,7 @@ export default function AdminContractTemplatesPage() {
           <table className="min-w-[760px] w-full border-collapse text-[14px]">
             <thead>
               <tr className="border-b border-border bg-muted/40 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                <th className="px-4 py-3">Template</th>
+                <th className="px-4 py-3">Document</th>
                 <th className="px-4 py-3">Created by</th>
                 <th className="px-4 py-3">Created</th>
                 <th className="px-4 py-3">Modified</th>
@@ -119,7 +119,7 @@ export default function AdminContractTemplatesPage() {
                       <Link
                         href={`/admin/contract-templates/${template.id}/edit`}
                         aria-label={`Edit ${template.title}`}
-                        title="Edit template"
+                        title="Edit contract document"
                         className="grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground transition hover:border-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                       >
                         <Pencil className="h-4 w-4" aria-hidden="true" />
@@ -137,7 +137,7 @@ export default function AdminContractTemplatesPage() {
                       <button
                         type="button"
                         aria-label={`Delete ${template.title}`}
-                        title="Delete template"
+                        title="Delete contract document"
                         disabled={busyId === template.id}
                         onClick={() => void removeTemplate(template.id, template.title)}
                         className="grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground transition hover:border-destructive hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/40 disabled:opacity-50"
@@ -152,8 +152,8 @@ export default function AdminContractTemplatesPage() {
           </table>
         ) : (
           <div className="px-5 py-12 text-center">
-            <p className="m-0 text-[15px] font-semibold">No templates yet</p>
-            <p className="mb-0 mt-1 text-sm text-muted-foreground">Create one so staff can send it to a creator.</p>
+            <p className="m-0 text-[15px] font-semibold">No documents yet</p>
+            <p className="mb-0 mt-1 text-sm text-muted-foreground">Create one so staff can assign it to a creator.</p>
           </div>
         )}
       </section>

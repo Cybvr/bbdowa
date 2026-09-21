@@ -24,8 +24,8 @@ export default function AdminPage() {
       </Link>
       <Link href="/admin/contract-templates" className="mt-3 flex items-center justify-between rounded-xl border border-border bg-background p-4 text-foreground no-underline transition hover:border-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
         <span>
-          <strong className="block text-[14px] font-semibold">Agreement templates</strong>
-          <span className="mt-1 block text-[13px] text-muted-foreground">Reusable NDA and agreement text staff can pick from when sending a contract.</span>
+          <strong className="block text-[14px] font-semibold">Documents</strong>
+          <span className="mt-1 block text-[13px] text-muted-foreground">Reusable agreement documents staff can assign to creators.</span>
         </span>
         <span aria-hidden="true" className="text-lg text-muted-foreground">→</span>
       </Link>

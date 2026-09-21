@@ -21,7 +21,7 @@ export function DashboardFooter({ hidden = false }: { hidden?: boolean }) {
         { label: "Overview", href: "/admin" },
         { label: "Users", href: "/admin/users" },
         { label: "Contracts", href: "/admin/contracts" },
-        { label: "Templates", href: "/admin/contract-templates" },
+        { label: "Documents", href: "/admin/contract-templates" },
         { label: "Home", href: "/dashboard" },
       ]
     : NAV_ITEMS.filter(

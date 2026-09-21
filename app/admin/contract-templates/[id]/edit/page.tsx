@@ -29,7 +29,7 @@ export default function EditContractTemplatePage() {
       .then((snapshot) => {
         if (!active) return;
         if (!snapshot.exists()) {
-          setError("That template no longer exists.");
+          setError("That contract document no longer exists.");
           setLoading(false);
           return;
         }
@@ -40,9 +40,9 @@ export default function EditContractTemplatePage() {
         setLoading(false);
       })
       .catch((cause) => {
-        console.error("Unable to load template", cause);
+        console.error("Unable to load contract document", cause);
         if (active) {
-          setError("Unable to load that template.");
+          setError("Unable to load that contract document.");
           setLoading(false);
         }
       });
@@ -66,23 +66,23 @@ export default function EditContractTemplatePage() {
       });
       router.push("/admin/contract-templates");
     } catch (cause) {
-      console.error("Unable to save template", cause);
-      setError("Couldn’t save that template. Try again.");
+      console.error("Unable to save contract document", cause);
+      setError("Couldn’t save that contract document. Try again.");
       setBusy(null);
     }
   };
 
   const remove = async () => {
     if (!template) return;
-    if (!window.confirm("Delete this template? This can’t be undone.")) return;
+    if (!window.confirm("Delete this contract document? This can’t be undone.")) return;
     setBusy("delete");
     setError(null);
     try {
       await deleteDoc(doc(firebaseDb, CONTRACT_TEMPLATE_COLLECTION, template.id));
       router.push("/admin/contract-templates");
     } catch (cause) {
-      console.error("Unable to delete template", cause);
-      setError("Couldn’t delete that template. Try again.");
+      console.error("Unable to delete contract document", cause);
+      setError("Couldn’t delete that contract document. Try again.");
       setBusy(null);
     }
   };
@@ -92,8 +92,8 @@ export default function EditContractTemplatePage() {
   if (!isAdmin) {
     return (
       <main className="mx-auto w-full max-w-2xl flex-1 px-3 pb-10 pt-3 sm:px-8 sm:pb-16 sm:pt-4">
-        <PageHeader title="Edit template" />
-        <p className="mt-6 text-sm text-muted-foreground">An admin account is required to manage agreement templates.</p>
+        <PageHeader title="Edit document" />
+        <p className="mt-6 text-sm text-muted-foreground">An admin account is required to manage documents.</p>
       </main>
     );
   }
@@ -101,15 +101,15 @@ export default function EditContractTemplatePage() {
   if (!template) {
     return (
       <main className="mx-auto w-full max-w-2xl flex-1 px-3 pb-10 pt-3 sm:px-8 sm:pb-16 sm:pt-4">
-        <PageHeader title="Edit template" />
-        <p className="mt-6 text-sm text-destructive">{error ?? "That template no longer exists."}</p>
+        <PageHeader title="Edit document" />
+        <p className="mt-6 text-sm text-destructive">{error ?? "That contract document no longer exists."}</p>
       </main>
     );
   }
 
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-3 pb-10 pt-3 sm:px-8 sm:pb-16 sm:pt-4">
-      <PageHeader title="Edit template" description="Reusable agreement text staff can pick from when sending a contract." />
+      <PageHeader title="Edit document" description="Update the agreement document staff assign to creators." />
 
       <form onSubmit={save} className="mt-6 space-y-6">
         <section className="space-y-4 rounded-xl border border-border p-5 sm:p-6">
@@ -143,7 +143,7 @@ export default function EditContractTemplatePage() {
             disabled={busy !== null}
             className="h-10 rounded-md border border-destructive/30 px-4 text-[13px] font-semibold text-destructive transition hover:border-destructive disabled:opacity-50"
           >
-            {busy === "delete" ? "Deleting…" : "Delete template"}
+            {busy === "delete" ? "Deleting…" : "Delete document"}
           </button>
         </div>
       </form>

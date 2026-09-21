@@ -224,7 +224,7 @@ export const ContractsIcon: NavIconComponent = ({ className }) => (
   </Glyph>
 );
 
-// Templates — stacked document pages
+// Documents — stacked document pages
 export const TemplatesIcon: NavIconComponent = ({ className }) => (
   <Glyph className={className}>
     <path d="M8 4.5h10v13H8Z" />
@@ -271,5 +271,5 @@ export const NAV_ICON_SET: Record<string, NavIconComponent> = {
   Overview: DashboardIcon,
   Users: TeamIcon,
   Contracts: ContractsIcon,
-  Templates: TemplatesIcon,
+  Documents: TemplatesIcon,
 };

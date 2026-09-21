@@ -48,15 +48,15 @@ export default function NewContractTemplatePage() {
   if (!isAdmin) {
     return (
       <main className="mx-auto w-full max-w-2xl flex-1 px-3 pb-10 pt-3 sm:px-8 sm:pb-16 sm:pt-4">
-        <PageHeader title="New template" />
-        <p className="mt-6 text-sm text-muted-foreground">An admin account is required to manage agreement templates.</p>
+        <PageHeader title="New document" />
+        <p className="mt-6 text-sm text-muted-foreground">An admin account is required to manage documents.</p>
       </main>
     );
   }
 
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-3 pb-10 pt-3 sm:px-8 sm:pb-16 sm:pt-4">
-      <PageHeader title="New template" description="Reusable agreement text staff can pick from when sending a contract." />
+      <PageHeader title="New document" description="Create an agreement document staff can assign to creators." />
 
       <form onSubmit={save} className="mt-6 space-y-6">
         <section className="space-y-4 rounded-xl border border-border p-5 sm:p-6">
@@ -72,7 +72,7 @@ export default function NewContractTemplatePage() {
             disabled={!canSave}
             className="inline-flex h-10 items-center rounded-md bg-primary px-5 text-[13px] font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {busy ? "Creating…" : "Create template"}
+            {busy ? "Creating…" : "Create document"}
           </button>
           <button
             type="button"
