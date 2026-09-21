@@ -2,19 +2,20 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { deleteDoc, doc } from "firebase/firestore";
-import { Eye, Pencil, Plus, Trash2 } from "lucide-react";
+import { addDoc, collection, deleteDoc, doc } from "firebase/firestore";
+import { Copy, Eye, Pencil, Plus, Trash2 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { ContractStatusBadge } from "@/components/contract-metadata";
 import { EmptyState, PageHeader } from "@/components/dashboard/ui";
 import { UsersTableSkeleton } from "@/components/dashboard/loading-skeleton";
 import { firebaseDb } from "@/lib/firebase/client";
-import { useFirestoreContracts } from "@/lib/firebase/client-content";
+import { useFirestoreContracts, useFirestoreUsers } from "@/lib/firebase/client-content";
 import { CONTRACT_COLLECTION, formatDate, getContractUpdatedAt } from "@/lib/contracts";
 
 export default function AdminContractsPage() {
-  const { isAdmin, loading: authLoading } = useAuth();
+  const { isAdmin, user, loading: authLoading } = useAuth();
   const { contracts, loading, error } = useFirestoreContracts();
+  const { users, loading: usersLoading } = useFirestoreUsers();
   const [busyId, setBusyId] = React.useState<string | null>(null);
 
   const removeContract = async (contractId: string, title: string) => {
@@ -29,7 +30,32 @@ export default function AdminContractsPage() {
     }
   };
 
-  if (authLoading || loading) return <UsersTableSkeleton />;
+  const duplicateContract = async (contract: (typeof contracts)[number]) => {
+    if (!user) return;
+    setBusyId(contract.id);
+    try {
+      const now = new Date().toISOString();
+      await addDoc(collection(firebaseDb, CONTRACT_COLLECTION), {
+        title: `${contract.title} (Copy)`,
+        body: contract.body,
+        assignedTo: contract.assignedTo,
+        assignedToName: contract.assignedToName,
+        createdBy: user.uid,
+        createdByName: user.name ?? user.email,
+        status: "pending",
+        createdAt: now,
+        updatedAt: now,
+        signedAt: null,
+        signedName: null,
+      });
+      window.location.reload();
+    } catch (cause) {
+      console.error("Unable to duplicate agreement", cause);
+      setBusyId(null);
+    }
+  };
+
+  if (authLoading || loading || usersLoading) return <UsersTableSkeleton />;
 
   if (!isAdmin) {
     return (
@@ -82,7 +108,23 @@ export default function AdminContractsPage() {
                       </Link>
                       {contract.createdByName ? <p className="m-0 mt-1 text-xs text-muted-foreground">By {contract.createdByName}</p> : null}
                     </td>
-                    <td className="px-4 py-3 text-foreground">{contract.assignedToName ?? "Unassigned"}</td>
+                    <td className="px-4 py-3 text-foreground">
+                      {(() => {
+                        const creator = users.find(
+                          (candidate) => candidate.uid === contract.assignedTo || candidate.slug === contract.assignedTo,
+                        );
+                        return creator ? (
+                          <Link
+                            href={`/dashboard/creators/${creator.slug}`}
+                            className="font-semibold text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary"
+                          >
+                            {contract.assignedToName ?? creator.name}
+                          </Link>
+                        ) : (
+                          contract.assignedToName ?? "Unassigned"
+                        );
+                      })()}
+                    </td>
                     <td className="px-4 py-3"><ContractStatusBadge status={contract.status} /></td>
                     <td className="px-4 py-3 text-muted-foreground">{formatDate(contract.createdAt)}</td>
                     <td className="px-4 py-3 text-muted-foreground">{formatDate(getContractUpdatedAt(contract))}</td>
@@ -102,6 +144,16 @@ export default function AdminContractsPage() {
                         >
                           <Pencil className="h-4 w-4" aria-hidden="true" />
                         </Link>
+                        <button
+                          type="button"
+                          aria-label={`Duplicate ${contract.title}`}
+                          title="Duplicate contract"
+                          disabled={busyId === contract.id}
+                          onClick={() => void duplicateContract(contract)}
+                          className="grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground transition hover:border-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50"
+                        >
+                          <Copy className="h-4 w-4" aria-hidden="true" />
+                        </button>
                         <button
                           type="button"
                           aria-label={`Delete ${contract.title}`}
