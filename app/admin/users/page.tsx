@@ -4,6 +4,7 @@ import * as React from "react";
 import { Search } from "lucide-react";
 import { UserCreateAction } from "@/components/user-create-action";
 import { UserActions } from "@/components/user-actions";
+import { BackfillUidsAction } from "@/components/backfill-uids-action";
 import { useAuth } from "@/components/auth-provider";
 import { ImageWithFallback, PageHeader } from "@/components/dashboard/ui";
 import { Input } from "@/components/ui/input";
@@ -109,7 +110,12 @@ export default function AdminUsersPage() {
         title="Users"
         description="Manage every user profile, including admins, team members, creators, and people with multiple roles."
         meta={`${users.length} ${users.length === 1 ? "person" : "people"}`}
-        actions={<UserCreateAction existingSlugs={users.map((user) => user.slug)} categoryOptions={categoryOptions} />}
+        actions={
+          <div className="flex items-center gap-2">
+            <BackfillUidsAction users={users} />
+            <UserCreateAction existingSlugs={users.map((user) => user.slug)} categoryOptions={categoryOptions} />
+          </div>
+        }
       />
 
       <section className="mt-6 overflow-hidden rounded-xl border border-border bg-background">
