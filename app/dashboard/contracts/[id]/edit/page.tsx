@@ -79,7 +79,7 @@ export default function EditContractPage() {
 
   if (!isAdmin) {
     return (
-      <main className="mx-auto w-full max-w-2xl flex-1 px-3 pb-10 pt-3 sm:px-8 sm:pb-16 sm:pt-8">
+      <main className="mx-auto w-full max-w-2xl flex-1 px-3 pb-10 pt-3 sm:px-8 sm:pb-16 sm:pt-4">
         <PageHeader title="Edit agreement" />
         <p className="mt-6 text-sm text-muted-foreground">Only admins can edit agreements.</p>
       </main>
@@ -88,7 +88,7 @@ export default function EditContractPage() {
 
   if (error || !contract) {
     return (
-      <main className="mx-auto w-full max-w-2xl flex-1 px-3 pb-10 pt-3 sm:px-8 sm:pb-16 sm:pt-8">
+      <main className="mx-auto w-full max-w-2xl flex-1 px-3 pb-10 pt-3 sm:px-8 sm:pb-16 sm:pt-4">
         <PageHeader title="Edit agreement" />
         <p className="mt-6 text-sm text-destructive">{error ?? "Agreement not found."}</p>
       </main>
@@ -96,7 +96,7 @@ export default function EditContractPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-2xl flex-1 px-3 pb-10 pt-3 sm:px-8 sm:pb-16 sm:pt-8">
+    <main className="mx-auto w-full max-w-2xl flex-1 px-3 pb-10 pt-3 sm:px-8 sm:pb-16 sm:pt-4">
       <PageHeader title="Edit agreement" description="Update the document content while keeping its record history visible below." />
 
       <form onSubmit={save} className="mt-6 space-y-6">

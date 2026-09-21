@@ -18,12 +18,12 @@ export default async function CareersPage() {
   const sortedJobs = [...jobs].sort((a, b) => Number(b.status === "open") - Number(a.status === "open"));
 
   return (
-    <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
+    <main className="flex-1 px-5 pb-16 pt-4 sm:px-8">
       <PageHeader title="Careers" meta={plural(openJobs.length, "open role")} />
 
       <div
         aria-hidden="true"
-        className={`${GRID} mt-6 border-b border-border py-2.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground max-[720px]:hidden`}
+        className={`${GRID} mt-4 border-b border-border py-2.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground max-[720px]:hidden`}
       >
         <span>Role</span>
         <span>Department</span>

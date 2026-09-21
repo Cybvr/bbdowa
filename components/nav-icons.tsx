@@ -216,6 +216,17 @@ export const AdminIcon: NavIconComponent = ({ className }) => (
   </Glyph>
 );
 
+// Njeri — BBDO AI assistant mark
+export const NjeriIcon: NavIconComponent = ({ className }) => (
+  <Glyph className={className}>
+    <path d="M12 6V3.9" />
+    <circle cx="12" cy="2.6" r="1.1" fill="currentColor" stroke="none" />
+    <rect x="3.25" y="6" width="17.5" height="13" rx="4.5" />
+    <circle cx="9" cy="13" r="1.35" fill="currentColor" stroke="none" />
+    <circle cx="15" cy="13" r="1.35" fill="currentColor" stroke="none" />
+  </Glyph>
+);
+
 export const NAV_ICON_SET: Record<string, NavIconComponent> = {
   Home: HomeIcon,
   Dashboard: DashboardIcon,
@@ -234,6 +245,7 @@ export const NAV_ICON_SET: Record<string, NavIconComponent> = {
   Creators: CreatorsIcon,
   People: PeopleIcon,
   Tracker: TrackerIcon,
+  Njeri: NjeriIcon,
   Updates: UpdatesIcon,
   Blog: BlogIcon,
   Company: CompanyIcon,

@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "Tracker" };
 
 export default function TrackerPage() {
   return (
-    <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
+    <main className="flex-1 px-5 pb-16 pt-4 sm:px-8">
       <PageHeader title="Tracker" />
       <TimeTracker />
     </main>

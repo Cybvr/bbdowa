@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useOptionalAuth } from "@/components/auth-provider";
+import { createGlyphAvatarDataUri } from "@/lib/avatar";
 
 export type ProfileNavItem = {
   label: string;
@@ -27,6 +28,7 @@ export type ProfileNavProps = {
   logoutLabel?: string;
   onLogout?: () => void;
   variant?: "avatar" | "row";
+  tone?: "primary" | "background";
 };
 
 function UserIcon() {
@@ -78,6 +80,7 @@ export function ProfileNav({
   logoutLabel = "Log out",
   onLogout,
   variant = "avatar",
+  tone = "primary",
 }: ProfileNavProps) {
   const auth = useOptionalAuth();
   const user = auth?.user ?? null;
@@ -91,13 +94,7 @@ export function ProfileNav({
     : items;
   const displayName = name ?? user?.name ?? user?.email?.split("@")[0] ?? "BBDO User";
   const displayEmail = email ?? user?.email ?? (loading ? "Loading profile..." : "Signed in");
-  const generatedInitials = displayName
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("");
-  const displayInitials = initials ?? (generatedInitials || "BU");
+  const avatarSrc = createGlyphAvatarDataUri(displayName || displayEmail || initials || "BBDO User");
   const handleLogout = onLogout ?? (logout ? () => void logout() : undefined);
 
   if (!auth || !user) {
@@ -120,8 +117,9 @@ export function ProfileNav({
             aria-label="Open profile menu"
             className="flex w-full items-center gap-2 rounded-lg p-1.5 text-left transition-colors hover:bg-foreground/10 focus-visible:bg-foreground/10 focus-visible:outline-none"
           >
-            <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-foreground text-[11px] font-extrabold tracking-[0.04em] text-background">
-              {displayInitials}
+            <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-foreground">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
             </span>
             <span className="min-w-0 flex-1">
               <span className="block truncate text-xs font-semibold leading-tight text-foreground">{displayName}</span>
@@ -136,9 +134,10 @@ export function ProfileNav({
           <button
             type="button"
             aria-label="Open profile menu"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary-foreground text-[11px] font-extrabold tracking-[0.04em] text-primary transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-foreground"
+            className={`inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 ${tone === "background" ? "bg-primary focus-visible:outline-primary" : "bg-primary-foreground focus-visible:outline-primary-foreground"}`}
           >
-            {displayInitials}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={avatarSrc} alt={`${displayName} avatar`} className="h-full w-full object-cover" />
           </button>
         )}
       </DropdownMenuTrigger>
@@ -146,8 +145,9 @@ export function ProfileNav({
       <DropdownMenuContent align="end" className="w-64">
         <DropdownMenuLabel>
           <div className="flex items-center gap-2">
-            <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-[13px] font-extrabold text-primary-foreground">
-              {displayInitials}
+            <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
             </span>
             <div className="min-w-0">
               <p className="truncate text-[13px] font-extrabold">{displayName}</p>

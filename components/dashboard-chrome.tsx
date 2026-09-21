@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { DashboardHeader } from "@/components/dashboard-header";
+import { DashboardFooter } from "@/components/dashboard-footer";
 
 export function DashboardChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -11,6 +12,8 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
   const isClientDetail = /^\/dashboard\/clients\/[^/]+(?:\/|$)/.test(pathname);
   const isCreators = pathname === "/dashboard/creators";
   const isCreatorDetail = /^\/dashboard\/creators\/[^/]+$/.test(pathname);
+
+  const isNjeri = pathname === "/dashboard/njeri";
 
   useEffect(() => {
     setSidebarCollapsed(pathname === "/dashboard/creators");
@@ -21,11 +24,16 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen flex-1 flex-col nav:flex-row">
       <DashboardHeader
-        hideMobile={isClientDetail || isCreators || isCreatorDetail}
+        hideMobile={isClientDetail || isCreators || isCreatorDetail || isNjeri}
         sidebarCollapsed={sidebarCollapsed}
         onToggleSidebar={() => setSidebarCollapsed((value) => !value)}
       />
-      <div className={`min-w-0 flex-1 pt-0 nav:pt-[60px] transition-[margin-left] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${sidebarCollapsed ? "nav:ml-[80px]" : "nav:ml-[208px]"}`}>{children}</div>
+      <div
+        className={`min-w-0 flex-1 pb-16 pt-0 nav:pb-0 nav:pt-[60px] transition-[margin-left] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${sidebarCollapsed ? "nav:ml-[80px]" : "nav:ml-[208px]"}`}
+      >
+        {children}
+      </div>
+      <DashboardFooter />
     </div>
   );
 }

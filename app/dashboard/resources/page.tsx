@@ -9,7 +9,7 @@ export default async function ResourcesPage() {
   const resources = await getResources();
 
   return (
-    <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
+    <main className="flex-1 px-5 pb-16 pt-4 sm:px-8">
       <PageHeader title="Resources" createType="resource" />
       <ResourcesDirectory resources={resources} />
     </main>

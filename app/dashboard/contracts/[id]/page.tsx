@@ -69,7 +69,7 @@ export default function ContractDetailPage() {
 
   if (!authUser) {
     return (
-      <main className="flex-1 px-3 pb-10 pt-3 sm:px-8 sm:pb-16 sm:pt-8">
+      <main className="flex-1 px-3 pb-10 pt-3 sm:px-8 sm:pb-16 sm:pt-4">
         <p className="text-sm text-muted-foreground">Sign in to view this agreement.</p>
       </main>
     );
@@ -77,7 +77,7 @@ export default function ContractDetailPage() {
 
   if (error || !contract) {
     return (
-      <main className="flex-1 px-3 pb-10 pt-3 sm:px-8 sm:pb-16 sm:pt-8">
+      <main className="flex-1 px-3 pb-10 pt-3 sm:px-8 sm:pb-16 sm:pt-4">
         <p className="text-sm text-destructive">{error ?? "Agreement not found."}</p>
       </main>
     );

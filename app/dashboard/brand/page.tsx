@@ -87,7 +87,7 @@ function sectionTitle(id: string) {
 
 export default function BrandPage() {
   return (
-    <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
+    <main className="flex-1 px-5 pb-16 pt-4 sm:px-8">
       <PageHeader title="Brand" meta="Together, we make work that moves" />
 
       <div className="mt-8 grid grid-cols-1 gap-x-10 lg:grid-cols-[180px_minmax(0,1fr)]">

@@ -12,7 +12,7 @@ export default async function CampaignsPage() {
   const [campaigns, clients] = await Promise.all([getCampaigns(), getClients()]);
 
   return (
-    <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
+    <main className="flex-1 px-5 pb-16 pt-4 sm:px-8">
       <PageHeader title="Campaigns" createType="campaign" />
       <CampaignsTable campaigns={campaigns} clients={clients} />
     </main>

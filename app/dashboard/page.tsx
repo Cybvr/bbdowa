@@ -112,7 +112,7 @@ export default function HomePage() {
     .slice(0, 5);
   const latestNews = [...content.posts].sort((a, b) => dateValue(b.publishedAt) - dateValue(a.publishedAt)).slice(0, 5);
   return (
-    <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
+    <main className="flex-1 px-5 pb-16 pt-4 sm:px-8">
       <header className="border-b border-border pb-5">
         <h1 className="m-0 text-[28px] font-bold leading-tight tracking-tight sm:text-[34px]">Welcome back, {name}.</h1>
         <p className="mb-0 mt-2 text-[14px] text-muted-foreground">Here’s what’s happening across the agency.</p>

@@ -146,10 +146,10 @@ function Person({ name, users, onDark = false }: { name: string; users: User[]; 
 export default function PeoplePage() {
   const { users, loading, error } = useFirestoreUsers();
   if (loading) return <PageLoadingSkeleton titleWidth="w-36" />;
-  if (error) return <main className="flex-1 px-5 pb-16 pt-8 sm:px-8 text-sm text-muted-foreground">{error}</main>;
+  if (error) return <main className="flex-1 px-5 pb-16 pt-4 sm:px-8 text-sm text-muted-foreground">{error}</main>;
 
   return (
-    <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
+    <main className="flex-1 px-5 pb-16 pt-4 sm:px-8">
       <PageHeader title="Directory" meta="Operating model" />
 
       <section className="mt-10" aria-label="Agency organogram">

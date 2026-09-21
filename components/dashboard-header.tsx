@@ -141,7 +141,7 @@ export function DashboardHeader({
 
       {/* Mobile top bar */}
       <div
-        className={`${hideMobile ? "hidden" : "sticky top-0 z-40 flex"} items-center justify-between bg-primary px-[max(18px,env(safe-area-inset-left))] py-3 nav:hidden`}
+        className={`${hideMobile ? "hidden" : "sticky top-0 z-40 flex"} items-center justify-between bg-background px-[max(18px,env(safe-area-inset-left))] py-3 text-foreground nav:hidden`}
       >
         <div className="flex min-w-0 items-center gap-2">
           <DashboardSidebarSheet
@@ -149,13 +149,13 @@ export function DashboardHeader({
               <button
                 type="button"
                 aria-label="Open dashboard menu"
-                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-primary-foreground transition hover:bg-primary-foreground/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-foreground/60"
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-primary transition hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               >
                 <LuMenu aria-hidden="true" className="h-5 w-5" />
               </button>
             }
           />
-          <DashboardLogo light />
+          <DashboardLogo />
         </div>
         <div className="flex items-center gap-1">
           <Dialog open={trackerOpen} onOpenChange={setTrackerOpen}>
@@ -163,7 +163,7 @@ export function DashboardHeader({
               <button
                 type="button"
                 aria-label="Open tracker"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-primary-foreground transition hover:bg-primary-foreground/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-foreground/60"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               >
                 <TrackerIcon className="h-5 w-5" />
               </button>
@@ -176,7 +176,7 @@ export function DashboardHeader({
               <TimeTracker compact />
             </DialogContent>
           </Dialog>
-          <ProfileNav variant="avatar" />
+          <ProfileNav variant="avatar" tone="background" />
         </div>
       </div>
     </>

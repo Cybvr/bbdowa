@@ -56,13 +56,13 @@ function buildGraph(users: import("@/lib/users").User[]): { nodes: GraphNode[]; 
 export default function UsersGraphPage() {
   const { users, loading, error } = useFirestoreUsers();
   if (loading) return <GraphPageSkeleton />;
-  if (error) return <main className="flex-1 px-5 pb-10 pt-8 sm:px-8 text-sm text-muted-foreground">{error}</main>;
+  if (error) return <main className="flex-1 px-5 pb-10 pt-4 sm:px-8 text-sm text-muted-foreground">{error}</main>;
 
   const { nodes, links } = buildGraph(users);
   const userCount = users.length;
 
   return (
-    <main className="flex min-h-[calc(100vh-0px)] flex-1 flex-col px-5 pb-10 pt-8 sm:px-8">
+    <main className="flex min-h-[calc(100vh-0px)] flex-1 flex-col px-5 pb-10 pt-4 sm:px-8">
       <PageHeader title="Graph" meta={`${userCount} users · click a node to open a profile`} />
       <div className="mt-6 min-h-[520px] flex-1 overflow-hidden rounded-xl border border-border bg-background">
         <UserGraph nodes={nodes} links={links} />

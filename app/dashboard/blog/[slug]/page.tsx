@@ -36,7 +36,7 @@ export default async function BlogEntryPage({ params }: Params) {
   const relatedPosts = (await getBlogPosts()).filter((entry) => entry.slug !== post.slug).slice(0, 3);
 
   return (
-    <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
+    <main className="flex-1 px-5 pb-16 pt-4 sm:px-8">
       <div className="mb-5 flex items-center justify-between gap-4">
         <BackLink href="/dashboard/blog">All updates</BackLink>
         <BlogActions post={post} />

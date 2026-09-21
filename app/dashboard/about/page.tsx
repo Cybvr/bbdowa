@@ -11,7 +11,7 @@ const FACTS = [
 
 export default function AboutPage() {
   return (
-    <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
+    <main className="flex-1 px-5 pb-16 pt-4 sm:px-8">
       <PageHeader title="About" meta="BBDO West Africa" />
 
       <p className="mt-8 max-w-[42ch] text-[22px] font-semibold leading-tight tracking-tight sm:text-[28px]">

@@ -22,7 +22,7 @@ export default async function CareerDetailPage({ params }: Params) {
   const isOpen = job.status === "open";
 
   return (
-    <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
+    <main className="flex-1 px-5 pb-16 pt-4 sm:px-8">
       <div className="mb-5 flex items-center justify-between gap-4">
         <BackLink href="/dashboard/careers">Back to careers</BackLink>
         <JobActions job={job} />

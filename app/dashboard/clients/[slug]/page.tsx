@@ -246,7 +246,7 @@ export default function ClientPage() {
 
   if (loadError) {
     return (
-      <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
+      <main className="flex-1 px-5 pb-16 pt-4 sm:px-8">
         <p className="text-sm text-muted-foreground">{loadError}</p>
       </main>
     );

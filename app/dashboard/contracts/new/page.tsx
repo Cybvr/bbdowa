@@ -114,7 +114,7 @@ function NewContractForm() {
 
   if (!isStaff) {
     return (
-      <main className="mx-auto w-full max-w-2xl flex-1 px-3 pb-10 pt-3 sm:px-8 sm:pb-16 sm:pt-8">
+      <main className="mx-auto w-full max-w-2xl flex-1 px-3 pb-10 pt-3 sm:px-8 sm:pb-16 sm:pt-4">
         <PageHeader title="New agreement" />
         <p className="mt-6 text-sm text-muted-foreground">Only staff can send agreements.</p>
       </main>
@@ -122,7 +122,7 @@ function NewContractForm() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-2xl flex-1 px-3 pb-10 pt-3 sm:px-8 sm:pb-16 sm:pt-8">
+      <main className="mx-auto w-full max-w-2xl flex-1 px-3 pb-10 pt-3 sm:px-8 sm:pb-16 sm:pt-4">
       <PageHeader title="New agreement" description="Draft an NDA or other agreement, then share it with one or more creators to sign." />
 
       {sentTo ? (

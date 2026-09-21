@@ -1,4 +1,4 @@
-﻿export type NavLink = { label: string; href: string };
+export type NavLink = { label: string; href: string };
 
 export type DashboardNavLink = NavLink & { requiresAuth?: boolean };
 
@@ -27,6 +27,7 @@ export const NAV_ITEMS: NavItem[] = [
   { kind: "link", label: "Clients", href: "/dashboard/clients", requiresAuth: true },
   { kind: "link", label: "Creators", href: "/dashboard/creators" },
   { kind: "link", label: "Tracker", href: "/dashboard/tracker", requiresAuth: true },
+  { kind: "link", label: "Njeri", href: "/dashboard/njeri" },
   {
     kind: "menu",
     label: "Resources",

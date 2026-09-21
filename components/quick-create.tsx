@@ -30,13 +30,13 @@ type ClientOption = { slug: string; name: string };
 
 const CREATE_COPY: Record<CreateType, { button: string; title: string; description: string }> = {
   update: {
-    button: "New update",
-    title: "New update",
+    button: "New",
+    title: "New",
     description: "Publish a new agency update.",
   },
   resource: {
-    button: "New resource",
-    title: "New resource",
+    button: "New",
+    title: "New",
     description: "Add a resource to the agency library.",
   },
   client: {
@@ -45,8 +45,8 @@ const CREATE_COPY: Record<CreateType, { button: string; title: string; descripti
     description: "Create a client record. You can add more detail from the client workspace.",
   },
   campaign: {
-    button: "New campaign",
-    title: "New campaign",
+    button: "New",
+    title: "New",
     description: "Create a campaign record, then complete its case-study details.",
   },
 };
@@ -286,7 +286,7 @@ export function QuickCreate({ type }: { type: CreateType }) {
         type="button"
         onClick={() => setOpen(true)}
         aria-label={copy.button}
-        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-primary px-2.5 text-[13px] font-semibold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:px-4"
+        className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-border bg-background px-3 text-xs font-semibold text-foreground transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
       >
         <Plus className="h-4 w-4" aria-hidden="true" />
         <span>{copy.button}</span>

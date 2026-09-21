@@ -44,13 +44,13 @@ export default function UserDetailPage() {
   }, []);
 
   if (usersLoading || contentLoading) return <ProfilePageSkeleton />;
-  if (usersError || contentError) return <main className="flex-1 px-5 pb-16 pt-8 sm:px-8 text-sm text-muted-foreground">{usersError ?? contentError}</main>;
-  if (!user) return <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">User not found.</main>;
+  if (usersError || contentError) return <main className="flex-1 px-5 pb-16 pt-4 sm:px-8 text-sm text-muted-foreground">{usersError ?? contentError}</main>;
+  if (!user) return <main className="flex-1 px-5 pb-16 pt-4 sm:px-8">User not found.</main>;
 
   const linkedCampaigns = campaigns.filter((campaign) => campaign.leadUserId === user.slug);
 
   return (
-    <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
+    <main className="flex-1 px-5 pb-16 pt-4 sm:px-8">
       <div className="mb-5 flex items-center justify-between gap-4">
         <BackLink href="/dashboard/people">Back to directory</BackLink>
         <UserActions user={user} variant="team" listHref="/dashboard/people" categoryOptions={creatorCategoryOptions(users)} />
