@@ -10,7 +10,7 @@ import type { User } from "@/lib/users";
 export function BackfillUidsAction({ users }: { users: User[] }) {
   const [isRunning, setIsRunning] = React.useState(false);
 
-  const missing = users.filter((user) => !user.uid && user.email);
+  const missing = users.filter((user) => !user.uid);
 
   const run = async () => {
     setIsRunning(true);
