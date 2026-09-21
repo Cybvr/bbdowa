@@ -116,7 +116,7 @@ export default function CreatorDetailPage() {
             <span aria-hidden="true">·</span>
             <span className="capitalize">{creator.availability}</span>
             {isCreatorNew(creator) ? (
-              <span className="rounded-full bg-primary-foreground/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em]">New</span>
+              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-primary">New</span>
             ) : null}
           </span>
         }

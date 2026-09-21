@@ -118,9 +118,9 @@ export function ProfileBanner<T extends string>({
   onTabChange: (id: T) => void;
 }) {
   return (
-    <div className="overflow-hidden rounded-2xl bg-primary text-primary-foreground">
+    <div className="overflow-hidden rounded-2xl bg-card text-foreground">
       <div className="flex flex-wrap items-center gap-3 p-3.5 sm:gap-5 sm:p-7">
-        <span className="grid h-14 w-14 flex-none place-items-center overflow-hidden rounded-full border-4 border-primary-foreground/20 bg-background sm:h-24 sm:w-24">
+        <span className="grid h-14 w-14 flex-none place-items-center overflow-hidden rounded-full bg-background sm:h-24 sm:w-24">
           <ImageWithFallback
             src={avatarSrc}
             alt={avatarAlt}
@@ -131,7 +131,7 @@ export function ProfileBanner<T extends string>({
         </span>
         <div className="min-w-0 flex-1">
           <h1 className="m-0 truncate text-[17px] font-bold leading-tight sm:text-[26px]">{name}</h1>
-          {subtitle ? <div className="mt-1 text-[12px] font-medium text-primary-foreground/85 sm:mt-1.5 sm:text-[14px]">{subtitle}</div> : null}
+          {subtitle ? <div className="mt-1 text-[12px] font-medium text-muted-foreground sm:mt-1.5 sm:text-[14px]">{subtitle}</div> : null}
         </div>
       </div>
       <div role="tablist" className="no-scrollbar flex touch-pan-x gap-1 overflow-x-auto overscroll-x-contain px-2 sm:px-5">
@@ -145,7 +145,7 @@ export function ProfileBanner<T extends string>({
               aria-selected={isActive}
               onClick={() => onTabChange(tab.id)}
               className={`shrink-0 whitespace-nowrap rounded-t-lg px-3 py-2 text-[12.5px] font-semibold transition focus-visible:outline-none sm:px-4 sm:py-2.5 sm:text-[13px] ${
-                isActive ? "bg-background text-foreground" : "text-primary-foreground/75 hover:text-primary-foreground"
+                isActive ? "bg-background text-foreground" : "text-muted-foreground hover:text-foreground"
               }`}
             >
               {tab.label}
