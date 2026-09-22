@@ -4,6 +4,25 @@ Layout and density rules for the dashboard, not color. Written because the
 mobile dashboard reads as cramped next to Behance and Toptal — this is why,
 and what to do about it going forward.
 
+## Status
+
+Applied so far:
+
+- **Shared `components/ui/*` primitives** — `Button`, `Input`, `Select`
+  (`SelectTrigger`), `Textarea`. These are the base building blocks
+  everywhere, so fixing their defaults (mobile: 44px tap target, 14–15px
+  text) cascades to every page that uses them, not just the ones listed
+  below. Desktop sizes were left close to what they were (`sm:h-9`,
+  `sm:text-sm`) per the "desktop can stay tighter" rule below.
+- **Creator profile page and its shared components** —
+  `components/dashboard/{ui,detail-hero}.tsx`, `contracts-view.tsx`,
+  `creator-hours-panel.tsx`, `app/dashboard/creators/[slug]/page.tsx`.
+
+Not yet touched: Home, Campaigns, Clients, Admin pages, and any
+hand-rolled `<button>`/`<input>` elements that don't go through the
+shared primitives above (there are a fair number of these — grep for
+raw `<button` before assuming a page is covered).
+
 ## The actual numbers
 
 Grepped the codebase before writing this, so the diagnosis isn't a vibe:

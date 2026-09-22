@@ -3,7 +3,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
@@ -13,11 +13,13 @@ const buttonVariants = cva(
         ghost: "text-foreground hover:bg-muted",
         destructive: "bg-destructive text-white hover:bg-destructive/90",
       },
+      // Mobile gets a real 44px+ tap target; desktop can stay tighter where
+      // screen space is scarce. See DESIGN.md.
       size: {
-        default: "h-8 px-3",
-        sm: "h-7 rounded-md px-2.5 text-[11px]",
-        lg: "h-9 px-4 text-sm",
-        icon: "size-8",
+        default: "h-11 px-4 text-[14px] sm:h-9 sm:px-3 sm:text-[13px]",
+        sm: "h-9 rounded-md px-3 text-[12px] sm:h-8 sm:px-2.5 sm:text-[11px]",
+        lg: "h-12 px-5 text-[15px] sm:h-10 sm:px-4 sm:text-sm",
+        icon: "size-10",
       },
     },
     defaultVariants: {
