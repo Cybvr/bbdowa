@@ -46,6 +46,20 @@ export const NAV_ITEMS: NavItem[] = [
   { kind: "link", label: "Updates", href: "/dashboard/blog" },
 ];
 
+/**
+ * A pure creator (not also staff) doesn't need the "Creators" directory —
+ * they only ever look at their own profile, so swap the nav item for that
+ * instead of sending them to browse everyone else.
+ */
+export function resolveNavItemsForRole(items: NavItem[], role: string | null | undefined): NavItem[] {
+  if (role !== "creator") return items;
+  return items.map((item) =>
+    item.kind === "link" && item.label === "Creators"
+      ? { ...item, label: "My profile", href: "/dashboard/settings" }
+      : item,
+  );
+}
+
 export const ADMIN_NAV_ITEMS: NavItem[] = [
   { kind: "link", label: "Overview", href: "/admin" },
   { kind: "link", label: "Users", href: "/admin/users" },

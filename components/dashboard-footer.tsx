@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NAV_ICON_SET } from "@/components/nav-icons";
 import { useOptionalAuth } from "@/components/auth-provider";
-import { NAV_ITEMS } from "@/lib/nav";
+import { NAV_ITEMS, resolveNavItemsForRole } from "@/lib/nav";
 
 const FOOTER_LABELS = ["Home", "Campaigns", "Njeri", "Creators", "Tracker"];
 
@@ -22,9 +22,11 @@ export function DashboardFooter({ hidden = false }: { hidden?: boolean }) {
         { label: "Users", href: "/admin/users" },
         { label: "Home", href: "/dashboard" },
       ]
-    : NAV_ITEMS.filter(
+    : resolveNavItemsForRole(NAV_ITEMS, auth?.role).filter(
         (item): item is Extract<typeof item, { kind: "link" }> =>
-          item.kind === "link" && FOOTER_LABELS.includes(item.label) && (!item.requiresAuth || Boolean(auth?.user)),
+          item.kind === "link" &&
+          (FOOTER_LABELS.includes(item.label) || item.label === "My profile") &&
+          (!item.requiresAuth || Boolean(auth?.user)),
       );
 
   return (
