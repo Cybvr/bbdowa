@@ -76,7 +76,7 @@ export default function AdminContractsPage() {
         actions={
           <Link
             href="/admin/contracts/new"
-            className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-3 text-[13px] font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            className="inline-flex h-11 items-center gap-1.5 rounded-md bg-primary px-4 text-[14px] font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:h-9 sm:px-3 sm:text-[13px]"
           >
             <Plus aria-hidden="true" className="h-3.5 w-3.5" />
             New contract
@@ -89,7 +89,7 @@ export default function AdminContractsPage() {
           <p className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-[13px] text-primary">{error}</p>
         ) : contracts.length ? (
           <div className="overflow-x-auto rounded-xl border border-border bg-background">
-            <table className="min-w-[760px] w-full border-collapse text-[14px]">
+            <table className="min-w-[760px] w-full border-collapse text-[15px]">
               <thead>
                 <tr className="border-b border-border bg-muted/40 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                   <th className="px-4 py-3">Contract</th>
@@ -134,14 +134,14 @@ export default function AdminContractsPage() {
                         <Link
                           href={`/dashboard/contracts/${contract.id}`}
                           aria-label={`View ${contract.title}`}
-                          className="grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground transition hover:border-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                          className="grid h-10 w-10 place-items-center rounded-lg border border-border text-muted-foreground transition hover:border-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                         >
                           <Eye className="h-4 w-4" aria-hidden="true" />
                         </Link>
                         <Link
                           href={`/admin/contracts/${contract.id}/edit`}
                           aria-label={`Edit ${contract.title}`}
-                          className="grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground transition hover:border-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                          className="grid h-10 w-10 place-items-center rounded-lg border border-border text-muted-foreground transition hover:border-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                         >
                           <Pencil className="h-4 w-4" aria-hidden="true" />
                         </Link>
@@ -151,7 +151,7 @@ export default function AdminContractsPage() {
                           title="Duplicate contract"
                           disabled={busyId === contract.id}
                           onClick={() => void duplicateContract(contract)}
-                          className="grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground transition hover:border-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50"
+                          className="grid h-10 w-10 place-items-center rounded-lg border border-border text-muted-foreground transition hover:border-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50"
                         >
                           <Copy className="h-4 w-4" aria-hidden="true" />
                         </button>
@@ -160,7 +160,7 @@ export default function AdminContractsPage() {
                           aria-label={`Delete ${contract.title}`}
                           disabled={busyId === contract.id}
                           onClick={() => void removeContract(contract.id, contract.title)}
-                          className="grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground transition hover:border-destructive hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/40 disabled:opacity-50"
+                          className="grid h-10 w-10 place-items-center rounded-lg border border-border text-muted-foreground transition hover:border-destructive hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/40 disabled:opacity-50"
                         >
                           <Trash2 className="h-4 w-4" aria-hidden="true" />
                         </button>

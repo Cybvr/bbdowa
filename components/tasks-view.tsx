@@ -121,7 +121,7 @@ function NewTaskDialog({ creatorUid, creatorName, createdBy, createdByName, onCr
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-3 text-[13px] font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+        className="inline-flex h-11 items-center gap-1.5 rounded-md bg-primary px-4 text-[14px] font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:h-9 sm:px-3 sm:text-[13px]"
       >
         <Plus aria-hidden="true" className="h-3.5 w-3.5" />
         New task
@@ -257,7 +257,7 @@ export function CreatorTasksPanel({ creatorUid, creatorName, viewer }: { creator
         />
       ) : viewer.isStaff ? (
         <div className="overflow-x-auto rounded-xl border border-border">
-          <table className="min-w-[640px] w-full border-collapse text-[14px]">
+          <table className="min-w-[640px] w-full border-collapse text-[15px]">
             <thead>
               <tr className="border-b border-border bg-muted/40 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                 <th className="px-4 py-3">Task</th>
@@ -289,7 +289,7 @@ export function CreatorTasksPanel({ creatorUid, creatorName, viewer }: { creator
                           type="button"
                           aria-label={`Actions for ${task.title}`}
                           disabled={busyId === task.id}
-                          className="grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground transition hover:border-foreground hover:text-foreground disabled:opacity-50"
+                          className="grid h-10 w-10 place-items-center rounded-lg border border-border text-muted-foreground transition hover:border-foreground hover:text-foreground disabled:opacity-50"
                         >
                           <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
                         </button>

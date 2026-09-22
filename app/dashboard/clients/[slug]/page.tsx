@@ -451,7 +451,7 @@ function StrategyEditor({ markdown }: { markdown: string }) {
       aria-label={label}
       onMouseDown={(e) => e.preventDefault()}
       onClick={onRun}
-      className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition"
+      className="grid h-10 w-10 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition"
     >
       {children}
     </button>

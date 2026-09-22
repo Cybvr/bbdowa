@@ -120,7 +120,7 @@ export function NjeriChatView({
               onClick={onNewChat}
               aria-label="New chat"
               title="Start new chat"
-              className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              className="grid h-10 w-10 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
             >
               <Plus className="h-3.5 w-3.5" />
             </button>
@@ -131,7 +131,7 @@ export function NjeriChatView({
               onClick={onToggleHistory}
               aria-label="Toggle history popout"
               title="Conversation history"
-              className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              className="grid h-10 w-10 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
             >
               <Clock className="h-3.5 w-3.5" />
             </button>

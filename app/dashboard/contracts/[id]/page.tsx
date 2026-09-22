@@ -71,7 +71,7 @@ export default function ContractDetailPage() {
 
   if (!authUser) {
     return (
-      <main className="flex-1 px-3 pb-10 pt-3 sm:px-8 sm:pb-16 sm:pt-4">
+      <main className="flex-1 px-4 pb-10 pt-4 sm:px-8 sm:pb-16 sm:pt-4">
         <p className="text-sm text-muted-foreground">Sign in to view this agreement.</p>
       </main>
     );
@@ -79,14 +79,14 @@ export default function ContractDetailPage() {
 
   if (error || !contract) {
     return (
-      <main className="flex-1 px-3 pb-10 pt-3 sm:px-8 sm:pb-16 sm:pt-4">
+      <main className="flex-1 px-4 pb-10 pt-4 sm:px-8 sm:pb-16 sm:pt-4">
         <p className="text-sm text-destructive">{error ?? "Agreement not found."}</p>
       </main>
     );
   }
 
   return (
-    <main className="flex flex-1 flex-col px-3 pb-6 pt-3 sm:px-8 sm:pb-8 sm:pt-5 nav:h-[calc(100vh-60px)] nav:overflow-hidden nav:pb-4">
+    <main className="flex flex-1 flex-col px-4 pb-6 pt-4 sm:px-8 sm:pb-8 sm:pt-5 nav:h-[calc(100vh-60px)] nav:overflow-hidden nav:pb-4">
       <DetailBreadcrumb
         crumbs={[
           ...(assignedSlug ? [{ label: contract.assignedToName ?? "Creator", href: `/dashboard/creators/${assignedSlug}` }] : []),

@@ -15,7 +15,7 @@ export default function CreatorPage() {
   const locations = [...new Set(creators.map((creator) => baseCity(creator.location)))].sort();
 
   return (
-    <main className="mx-auto w-full max-w-6xl flex-1 px-3 pb-10 pt-3 sm:px-8 sm:pb-16 sm:pt-4">
+    <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-10 pt-4 sm:px-8 sm:pb-16 sm:pt-4">
       <div>
         <CreatorDirectory creators={creators} categories={categories} locations={locations} />
       </div>

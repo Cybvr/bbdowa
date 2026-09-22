@@ -116,12 +116,12 @@ export function UpdatesDirectory({ posts }: { posts: BlogPost[] }) {
                 <tbody>
                   {visible.map((post) => (
                     <tr key={post.slug} className="border-b border-border last:border-0 hover:bg-muted/50">
-                      <td className="px-4 py-4 text-[13px] font-semibold">
+                      <td className="px-4 py-4 text-[15px] font-semibold">
                         <Link href={`/dashboard/blog/${post.slug}`} className="text-foreground no-underline hover:text-primary focus-visible:text-primary">{post.title}</Link>
                       </td>
-                      <td className="px-4 py-4 text-[13px] text-primary">{post.category}</td>
-                      <td className="px-4 py-4 text-[13px] text-muted-foreground">{post.sourceName}</td>
-                      <td className="whitespace-nowrap px-4 py-4 text-[13px] text-muted-foreground">{formatDate(post.publishedAt)}</td>
+                      <td className="px-4 py-4 text-[15px] text-primary">{post.category}</td>
+                      <td className="px-4 py-4 text-[15px] text-muted-foreground">{post.sourceName}</td>
+                      <td className="whitespace-nowrap px-4 py-4 text-[15px] text-muted-foreground">{formatDate(post.publishedAt)}</td>
                     </tr>
                   ))}
                 </tbody>

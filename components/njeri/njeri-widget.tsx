@@ -67,7 +67,7 @@ export function NjeriWidget() {
               onClick={() => newChat()}
               aria-label="New chat"
               title="Start new chat"
-              className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground"
+              className="grid h-10 w-10 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground"
             >
               <Plus className="h-4 w-4" />
             </button>
@@ -77,7 +77,7 @@ export function NjeriWidget() {
               onClick={() => setOpen(false)}
               aria-label="Open full page"
               title="Open full page with history"
-              className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground"
+              className="grid h-10 w-10 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground"
             >
               <Maximize2 className="h-3.5 w-3.5" />
             </Link>
@@ -86,7 +86,7 @@ export function NjeriWidget() {
               type="button"
               onClick={() => setOpen(false)}
               aria-label="Close Njeri"
-              className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground"
+              className="grid h-10 w-10 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground"
             >
               <X className="h-4 w-4" />
             </button>

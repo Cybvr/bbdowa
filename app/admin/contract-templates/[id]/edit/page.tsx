@@ -91,7 +91,7 @@ export default function EditContractTemplatePage() {
 
   if (!isAdmin) {
     return (
-      <main className="mx-auto w-full max-w-2xl flex-1 px-3 pb-10 pt-3 sm:px-8 sm:pb-16 sm:pt-4">
+      <main className="mx-auto w-full max-w-2xl flex-1 px-4 pb-10 pt-4 sm:px-8 sm:pb-16 sm:pt-4">
         <PageHeader title="Edit document" />
         <p className="mt-6 text-sm text-muted-foreground">An admin account is required to manage documents.</p>
       </main>
@@ -100,7 +100,7 @@ export default function EditContractTemplatePage() {
 
   if (!template) {
     return (
-      <main className="mx-auto w-full max-w-2xl flex-1 px-3 pb-10 pt-3 sm:px-8 sm:pb-16 sm:pt-4">
+      <main className="mx-auto w-full max-w-2xl flex-1 px-4 pb-10 pt-4 sm:px-8 sm:pb-16 sm:pt-4">
         <PageHeader title="Edit document" />
         <p className="mt-6 text-sm text-destructive">{error ?? "That contract document no longer exists."}</p>
       </main>
@@ -108,7 +108,7 @@ export default function EditContractTemplatePage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-2xl flex-1 px-3 pb-10 pt-3 sm:px-8 sm:pb-16 sm:pt-4">
+    <main className="mx-auto w-full max-w-2xl flex-1 px-4 pb-10 pt-4 sm:px-8 sm:pb-16 sm:pt-4">
       <PageHeader title="Edit document" description="Update the agreement document staff assign to creators." />
 
       <form onSubmit={save} className="mt-6 space-y-6">

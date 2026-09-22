@@ -162,16 +162,16 @@ export function CampaignsTable({ campaigns, clients }: { campaigns: Campaign[]; 
                 <tbody>
                   {visible.map((campaign) => (
                     <tr key={campaign.slug} className="border-b border-border last:border-0 hover:bg-muted/50">
-                      <td className="px-4 py-4 text-[13px] font-semibold">
+                      <td className="px-4 py-4 text-[15px] font-semibold">
                         <Link href={campaignHref(campaign.slug)} className="text-foreground no-underline hover:text-primary focus-visible:text-primary">
                           {campaign.campaign ?? campaign.name}
                         </Link>
                       </td>
-                      <td className="px-4 py-4 text-[13px] text-muted-foreground">{campaign.clientName}</td>
-                      <td className="px-4 py-4 text-[13px]"><Badge tone={campaign.status === "live" ? "active" : "neutral"}>{campaign.status}</Badge></td>
-                      <td className="px-4 py-4 text-[13px] text-muted-foreground">{campaign.category}</td>
-                      <td className="whitespace-nowrap px-4 py-4 text-[13px] text-muted-foreground">{campaignLiveDateLabel(campaign)}</td>
-                      <td className="whitespace-nowrap px-4 py-4 text-[13px] text-muted-foreground">{campaign.updatedAt ? updatedDate(campaign.updatedAt) : "—"}</td>
+                      <td className="px-4 py-4 text-[15px] text-muted-foreground">{campaign.clientName}</td>
+                      <td className="px-4 py-4 text-[15px]"><Badge tone={campaign.status === "live" ? "active" : "neutral"}>{campaign.status}</Badge></td>
+                      <td className="px-4 py-4 text-[15px] text-muted-foreground">{campaign.category}</td>
+                      <td className="whitespace-nowrap px-4 py-4 text-[15px] text-muted-foreground">{campaignLiveDateLabel(campaign)}</td>
+                      <td className="whitespace-nowrap px-4 py-4 text-[15px] text-muted-foreground">{campaign.updatedAt ? updatedDate(campaign.updatedAt) : "—"}</td>
                     </tr>
                   ))}
                 </tbody>

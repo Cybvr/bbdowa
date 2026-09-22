@@ -17,11 +17,27 @@ Applied so far:
 - **Creator profile page and its shared components** —
   `components/dashboard/{ui,detail-hero}.tsx`, `contracts-view.tsx`,
   `creator-hours-panel.tsx`, `app/dashboard/creators/[slug]/page.tsx`.
+- **Sitewide mechanical sweep** — every exact-match instance across
+  `app/` and `components/` of: the narrow-page mobile gutter
+  (`px-3`→`px-4` on the "New X"/"Edit X"-style form pages), the shared
+  primary small-button pattern (`h-9`/13px→`h-11`/14px mobile,
+  `sm:h-9`/13px desktop), icon-only action buttons (`h-8 w-8`→`h-10
+  w-10`, including the shared `Dialog` close button), and table body
+  text (`text-[13px]`/`text-[14px]`→`text-[15px]`) on every table that
+  had an explicit size, plus the four directory-listing components
+  (`campaigns-table.tsx`, `clients-directory.tsx`,
+  `resources-directory.tsx`, `updates-directory.tsx`). ~30 files total.
+  Done via grep + exact-string sed, not hand-edited file by file — fast
+  and low-risk, but only catches patterns that repeat verbatim.
 
-Not yet touched: Home, Campaigns, Clients, Admin pages, and any
-hand-rolled `<button>`/`<input>` elements that don't go through the
-shared primitives above (there are a fair number of these — grep for
-raw `<button` before assuming a page is covered).
+Not yet touched: the Home page's dense card grid
+(`app/dashboard/page.tsx` — very long single-line JSX, higher risk to
+sed blindly), the client detail page's own body text
+(`app/dashboard/clients/[slug]/page.tsx` has 18 more `text-[13px]`
+instances in mixed contexts, not blanket-fixed), Admin's People/
+Careers/Blog pages, and any one-off hand-rolled `<button>`/`<input>`
+whose class string doesn't exactly match one of the patterns above —
+there will be more of these. Grep before assuming a page is covered.
 
 ## The actual numbers
 

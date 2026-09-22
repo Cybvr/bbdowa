@@ -53,7 +53,7 @@ export default function EditAdminContractPage() {
 
   if (!isAdmin || !user) {
     return (
-      <main className="mx-auto w-full max-w-3xl flex-1 px-3 pb-10 pt-3 sm:px-8 sm:pb-16 sm:pt-4">
+      <main className="mx-auto w-full max-w-3xl flex-1 px-4 pb-10 pt-4 sm:px-8 sm:pb-16 sm:pt-4">
         <PageHeader title="Edit contract" />
         <p className="mt-6 text-sm text-muted-foreground">An admin account is required to edit contracts.</p>
       </main>
@@ -62,7 +62,7 @@ export default function EditAdminContractPage() {
 
   if (error || !contract) {
     return (
-      <main className="mx-auto w-full max-w-3xl flex-1 px-3 pb-10 pt-3 sm:px-8 sm:pb-16 sm:pt-4">
+      <main className="mx-auto w-full max-w-3xl flex-1 px-4 pb-10 pt-4 sm:px-8 sm:pb-16 sm:pt-4">
         <PageHeader title="Edit contract" />
         <p className="mt-6 text-sm text-destructive">{error ?? "Contract not found."}</p>
       </main>
@@ -70,7 +70,7 @@ export default function EditAdminContractPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 px-3 pb-10 pt-3 sm:px-8 sm:pb-16 sm:pt-4">
+    <main className="mx-auto w-full max-w-3xl flex-1 px-4 pb-10 pt-4 sm:px-8 sm:pb-16 sm:pt-4">
       <PageHeader title="Edit contract" description="Update the document assignment and contract record from the admin workspace." />
       <AdminContractForm
         user={{ uid: user.uid, name: user.name ?? user.email }}

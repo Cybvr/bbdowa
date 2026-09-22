@@ -165,7 +165,7 @@ export function ClientMediaDeleteAction({
           type="button"
           aria-label={`Actions for ${mediaItems[mediaIndex]?.alt ?? "media"}`}
           disabled={busy}
-          className="grid h-8 w-8 place-items-center rounded-lg border border-border bg-background/95 text-muted-foreground shadow-sm backdrop-blur transition hover:border-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-wait disabled:opacity-50"
+          className="grid h-10 w-10 place-items-center rounded-lg border border-border bg-background/95 text-muted-foreground shadow-sm backdrop-blur transition hover:border-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-wait disabled:opacity-50"
         >
           <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
         </button>

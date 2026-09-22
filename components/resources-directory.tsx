@@ -79,10 +79,10 @@ export function ResourcesDirectory({ resources }: { resources: Resource[] }) {
                     <td className="px-4 py-4">
                       {resource.image ? <img src={resource.image} alt="" className="h-10 w-14 rounded-md object-cover" /> : <span className="text-[12px] text-muted-foreground">—</span>}
                     </td>
-                    <td className="px-4 py-4 text-[13px] font-semibold">{resource.label}</td>
-                    <td className="px-4 py-4 text-[13px] text-primary">{resource.group}</td>
-                    <td className="max-w-[42ch] px-4 py-4 text-[13px] text-muted-foreground">{resource.meta}</td>
-                    <td className="px-4 py-4 text-[13px]">
+                    <td className="px-4 py-4 text-[15px] font-semibold">{resource.label}</td>
+                    <td className="px-4 py-4 text-[15px] text-primary">{resource.group}</td>
+                    <td className="max-w-[42ch] px-4 py-4 text-[15px] text-muted-foreground">{resource.meta}</td>
+                    <td className="px-4 py-4 text-[15px]">
                       {resource.href ? <a href={resource.href} target="_blank" rel="noopener" className="inline-flex items-center gap-1 font-semibold text-foreground hover:text-primary focus-visible:text-primary">Open <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" /></a> : <span className="text-muted-foreground">—</span>}
                     </td>
                     <td className="px-4 py-4 text-right">

@@ -62,7 +62,7 @@ export default function SettingsPage() {
 
   if (!authUser) {
     return (
-      <main className="mx-auto w-full max-w-2xl flex-1 px-3 pb-10 pt-3 sm:px-8 sm:pb-16 sm:pt-4">
+      <main className="mx-auto w-full max-w-2xl flex-1 px-4 pb-10 pt-4 sm:px-8 sm:pb-16 sm:pt-4">
         <PageHeader title="Settings" />
         <p className="mt-6 text-sm text-muted-foreground">Sign in to manage your settings.</p>
       </main>
@@ -71,7 +71,7 @@ export default function SettingsPage() {
 
   if (error || !own) {
     return (
-      <main className="mx-auto w-full max-w-2xl flex-1 px-3 pb-10 pt-3 sm:px-8 sm:pb-16 sm:pt-4">
+      <main className="mx-auto w-full max-w-2xl flex-1 px-4 pb-10 pt-4 sm:px-8 sm:pb-16 sm:pt-4">
         <PageHeader title="Settings" />
         <p className="mt-6 text-sm text-destructive">{error ?? "Unable to load your profile."}</p>
       </main>
@@ -121,7 +121,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <main className="mx-auto w-full max-w-2xl flex-1 px-3 pb-10 pt-3 sm:px-8 sm:pb-16 sm:pt-4">
+    <main className="mx-auto w-full max-w-2xl flex-1 px-4 pb-10 pt-4 sm:px-8 sm:pb-16 sm:pt-4">
       <PageHeader title="Settings" description="Update your own profile details." />
 
       <form

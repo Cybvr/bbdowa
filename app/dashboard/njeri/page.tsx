@@ -104,7 +104,7 @@ export default function NjeriPage() {
               <button
                 type="button"
                 onClick={() => setDesktopSidebarOpen((prev) => !prev)}
-                className="hidden md:grid h-8 w-8 place-items-center rounded-lg border border-border bg-background text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                className="hidden md:grid h-10 w-10 place-items-center rounded-lg border border-border bg-background text-muted-foreground transition hover:bg-muted hover:text-foreground"
                 title={desktopSidebarOpen ? "Collapse docked sidebar" : "Expand docked sidebar"}
                 aria-label="Toggle docked sidebar"
               >

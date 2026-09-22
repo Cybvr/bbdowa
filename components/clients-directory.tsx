@@ -135,7 +135,7 @@ export function ClientsDirectory({ clients }: { clients: Client[] }) {
                 <tbody>
                   {visibleClients.map((client) => (
                     <tr key={client.slug} className="border-b border-border last:border-0 hover:bg-muted/50">
-                      <td className="px-4 py-3.5 text-[13px] font-semibold">
+                      <td className="px-4 py-3.5 text-[15px] font-semibold">
                         <Link href={`/dashboard/clients/${client.slug}/overview`} className="inline-flex items-center gap-3 text-foreground no-underline hover:text-primary focus-visible:text-primary">
                           <ImageWithFallback
                             src={client.profileImage}
@@ -146,9 +146,9 @@ export function ClientsDirectory({ clients }: { clients: Client[] }) {
                           {client.name}
                         </Link>
                       </td>
-                      <td className="px-4 py-3.5 text-[13px]"><Badge>{client.industry}</Badge></td>
-                      <td className="whitespace-nowrap px-4 py-3.5 text-[13px] text-muted-foreground">{client.date ? <time dateTime={client.date}>{longDate(client.date)}</time> : "—"}</td>
-                      <td className="whitespace-nowrap px-4 py-3.5 text-[13px] text-muted-foreground">{client.updatedAt ? updatedDate(client.updatedAt) : "—"}</td>
+                      <td className="px-4 py-3.5 text-[15px]"><Badge>{client.industry}</Badge></td>
+                      <td className="whitespace-nowrap px-4 py-3.5 text-[15px] text-muted-foreground">{client.date ? <time dateTime={client.date}>{longDate(client.date)}</time> : "—"}</td>
+                      <td className="whitespace-nowrap px-4 py-3.5 text-[15px] text-muted-foreground">{client.updatedAt ? updatedDate(client.updatedAt) : "—"}</td>
                     </tr>
                   ))}
                 </tbody>

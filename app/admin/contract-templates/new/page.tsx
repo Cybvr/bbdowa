@@ -47,7 +47,7 @@ export default function NewContractTemplatePage() {
 
   if (!isAdmin) {
     return (
-      <main className="mx-auto w-full max-w-2xl flex-1 px-3 pb-10 pt-3 sm:px-8 sm:pb-16 sm:pt-4">
+      <main className="mx-auto w-full max-w-2xl flex-1 px-4 pb-10 pt-4 sm:px-8 sm:pb-16 sm:pt-4">
         <PageHeader title="New document" />
         <p className="mt-6 text-sm text-muted-foreground">An admin account is required to manage documents.</p>
       </main>
@@ -55,7 +55,7 @@ export default function NewContractTemplatePage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-2xl flex-1 px-3 pb-10 pt-3 sm:px-8 sm:pb-16 sm:pt-4">
+    <main className="mx-auto w-full max-w-2xl flex-1 px-4 pb-10 pt-4 sm:px-8 sm:pb-16 sm:pt-4">
       <PageHeader title="New document" description="Create an agreement document staff can assign to creators." />
 
       <form onSubmit={save} className="mt-6 space-y-6">

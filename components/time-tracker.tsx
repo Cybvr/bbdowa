@@ -584,7 +584,7 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
               <EmptyState title="Nothing logged yet" description="Start your first activity above." />
             ) : (
               <div className="overflow-x-auto rounded-xl border border-border">
-                <table className="min-w-[680px] w-full border-collapse text-[14px]">
+                <table className="min-w-[680px] w-full border-collapse text-[15px]">
                   <thead>
                     <tr className="border-b border-border bg-muted/40 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                       <th className="px-4 py-3 font-semibold">Activity</th>
