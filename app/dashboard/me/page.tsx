@@ -190,14 +190,7 @@ export default function MyProfilePage() {
                   <ProfileFact label="Engagements" value={own.workedOn?.length ? own.workedOn.join(", ") : "—"} />
                 </div>
               </ProfileSection>
-            ) : (
-              <ProfileSection title="Role" variant="plain">
-                <div>
-                  <ProfileFact label="Title" value={own.title || "—"} />
-                  <ProfileFact label="Department" value={own.department || "—"} />
-                </div>
-              </ProfileSection>
-            )}
+            ) : null}
           </>
         )}
 
