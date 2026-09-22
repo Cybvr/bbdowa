@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { Search } from "lucide-react";
 import { LuMenu } from "react-icons/lu";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth-provider";
 import { DashboardNotifications } from "@/components/dashboard-notifications";
 import { DashboardLogo, DashboardSidebarContent, DashboardSidebarSheet } from "@/components/dashboard-sidebar";
@@ -12,6 +13,13 @@ import { TrackerIcon } from "@/components/nav-icons";
 import { TimeTracker } from "@/components/time-tracker";
 import { firebaseDb } from "@/lib/firebase/client";
 import { ACTIVITY_COLLECTION, elapsedMs, formatClockFull, type ActivityEntry } from "@/lib/time-tracking";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { ADMIN_NAV_ITEMS, NAV_ITEMS, type NavItem } from "@/lib/nav";
+import { campaignHref, type Campaign } from "@/lib/campaigns";
+import { clientHref, type Client } from "@/lib/clients";
+import { jobHref, type Job } from "@/lib/jobs";
+import type { BlogPost } from "@/lib/blog";
+import { isCreatorUser, normalizeUser, type User } from "@/lib/users";
 import {
   Dialog,
   DialogContent,
@@ -20,6 +28,78 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+
+type SearchResult = {
+  id: string;
+  label: string;
+  detail: string;
+  href: string;
+  keywords: string;
+};
+
+function navigationSearchResults(items: NavItem[], canViewAuthLinks: boolean): SearchResult[] {
+  return items.flatMap((item) => {
+    if (item.kind === "link") {
+      return !item.requiresAuth || canViewAuthLinks
+        ? [{ id: `nav-${item.href}`, label: item.label, detail: "Dashboard", href: item.href, keywords: item.label }]
+        : [];
+    }
+
+    const results: SearchResult[] = [
+      ...((!item.requiresAuth || canViewAuthLinks)
+        ? [{ id: `nav-${item.label}`, label: item.label, detail: "Dashboard", href: Array.isArray(item.match) ? item.match[0] : item.match, keywords: item.label }]
+        : []),
+      ...item.items
+        .filter((entry) => !entry.requiresAuth || canViewAuthLinks)
+        .map((entry) => ({ id: `nav-${entry.href}`, label: entry.label, detail: item.label, href: entry.href, keywords: `${entry.label} ${item.label}` })),
+    ];
+    return results;
+  });
+}
+
+function contentSearchResults(users: User[], clients: Client[], campaigns: Campaign[], posts: BlogPost[], jobs: Job[]): SearchResult[] {
+  return [
+    ...users.flatMap((user) => {
+      if (!user.slug) return [];
+      const creator = isCreatorUser(user);
+      return [{
+        id: `user-${user.uid ?? user.slug}`,
+        label: user.name,
+        detail: creator ? `Creator${user.category ? ` · ${user.category}` : ""}` : user.title || "Team",
+        href: creator ? `/dashboard/creators/${user.slug}` : `/dashboard/people/${user.slug}`,
+        keywords: [user.name, user.title, user.department, user.category, ...user.tags].filter(Boolean).join(" "),
+      }];
+    }),
+    ...clients.map((client) => ({
+      id: `client-${client.slug}`,
+      label: client.name,
+      detail: `Client${client.industry ? ` · ${client.industry}` : ""}`,
+      href: clientHref(client.slug),
+      keywords: [client.name, client.industry, client.description, client.targetAudience].filter(Boolean).join(" "),
+    })),
+    ...campaigns.map((campaign) => ({
+      id: `campaign-${campaign.slug}`,
+      label: campaign.campaign ?? campaign.name,
+      detail: `Campaign${campaign.clientName ? ` · ${campaign.clientName}` : ""}`,
+      href: campaignHref(campaign.slug),
+      keywords: [campaign.name, campaign.campaign, campaign.clientName, campaign.category, campaign.summary].filter(Boolean).join(" "),
+    })),
+    ...posts.map((post) => ({
+      id: `post-${post.slug}`,
+      label: post.title,
+      detail: `Update · ${post.category}`,
+      href: `/dashboard/blog/${post.slug}`,
+      keywords: [post.title, post.excerpt, post.category].filter(Boolean).join(" "),
+    })),
+    ...jobs.map((job) => ({
+      id: `job-${job.slug}`,
+      label: job.title,
+      detail: `Career · ${job.department}`,
+      href: jobHref(job.slug),
+      keywords: [job.title, job.department, job.location, job.summary].filter(Boolean).join(" "),
+    })),
+  ];
+}
 
 function startOfWeek(): number {
   const now = new Date();
@@ -77,9 +157,72 @@ export function DashboardHeader({
   sidebarCollapsed?: boolean;
   onToggleSidebar?: () => void;
 }) {
+  const { user, isViewingAs, viewAsUser, stopViewingAs } = useAuth();
+  const pathname = usePathname();
+  const router = useRouter();
   const [trackerOpen, setTrackerOpen] = useState(false);
   const [desktopTrackerOpen, setDesktopTrackerOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [contentResults, setContentResults] = useState<SearchResult[]>([]);
+  const [searchIndexLoaded, setSearchIndexLoaded] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  const staticResults = useMemo(
+    () => navigationSearchResults(pathname.startsWith("/admin") ? ADMIN_NAV_ITEMS : NAV_ITEMS, Boolean(user)),
+    [pathname, user],
+  );
+
+  useEffect(() => {
+    if (search.trim().length < 2 || searchIndexLoaded) return;
+    let active = true;
+    Promise.all([
+      getDocs(collection(firebaseDb, "users")),
+      getDocs(collection(firebaseDb, "clients")),
+      getDocs(collection(firebaseDb, "campaigns")),
+      getDocs(collection(firebaseDb, "blogs")),
+      getDocs(collection(firebaseDb, "jobs")),
+    ])
+      .then(([usersSnapshot, clientsSnapshot, campaignsSnapshot, postsSnapshot, jobsSnapshot]) => {
+        if (!active) return;
+        const users = usersSnapshot.docs.map((document) => normalizeUser(document.data() as User));
+        const clients = clientsSnapshot.docs.map((document) => document.data() as Client);
+        const campaigns = campaignsSnapshot.docs.map((document) => document.data() as Campaign);
+        const posts = postsSnapshot.docs.map((document) => document.data() as BlogPost);
+        const jobs = jobsSnapshot.docs.map((document) => document.data() as Job);
+        setContentResults(contentSearchResults(users, clients, campaigns, posts, jobs));
+      })
+      .catch((error) => console.error("Unable to load dashboard search index", error))
+      .finally(() => {
+        if (active) setSearchIndexLoaded(true);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [search, searchIndexLoaded]);
+
+  useEffect(() => {
+    if (!search) return;
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (!searchRef.current?.contains(event.target as Node)) setSearch("");
+    };
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    return () => document.removeEventListener("mousedown", closeOnOutsideClick);
+  }, [search]);
+
+  const searchResults = useMemo(() => {
+    const queryText = search.trim().toLowerCase();
+    if (!queryText) return [];
+    return [...staticResults, ...contentResults]
+      .filter((result) => `${result.label} ${result.detail} ${result.keywords}`.toLowerCase().includes(queryText))
+      .filter((result, index, results) => results.findIndex((candidate) => candidate.id === result.id) === index)
+      .slice(0, 12);
+  }, [contentResults, search, staticResults]);
+
+  const goToSearchResult = (href: string) => {
+    setSearch("");
+    router.push(href);
+  };
 
   return (
     <>
@@ -101,20 +244,41 @@ export function DashboardHeader({
           sidebarCollapsed ? "nav:left-[80px]" : "nav:left-[208px]"
         }`}
       >
-        <form role="search" className="flex min-w-0 items-center" onSubmit={(event) => event.preventDefault()}>
-          <label className="relative block w-[min(220px,24vw)]">
-            <Search aria-hidden="true" className="pointer-events-none absolute left-0 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="search"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search"
-              aria-label="Search"
-              className="h-9 w-full border-0 border-b border-border bg-transparent pl-7 pr-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-0"
-            />
-          </label>
+        <form role="search" className="flex min-w-0 items-center" onSubmit={(event) => { event.preventDefault(); if (searchResults[0]) goToSearchResult(searchResults[0].href); }}>
+          <div ref={searchRef} className="relative w-[min(280px,30vw)]">
+            <Command shouldFilter={false} className="overflow-visible bg-transparent" onKeyDown={(event) => { if (event.key === "Escape") setSearch(""); }}>
+              <CommandInput value={search} onValueChange={setSearch} placeholder="Search" aria-label="Search dashboard" />
+              {search.trim() ? (
+                <CommandList className="absolute left-0 top-11 z-50 w-full rounded-xl border border-border bg-background p-1 shadow-xl">
+                  {searchResults.length ? (
+                    <CommandGroup heading="Results">
+                      {searchResults.map((result) => (
+                        <CommandItem key={result.id} value={result.id} onSelect={() => goToSearchResult(result.href)}>
+                          <Search aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                          <span className="min-w-0 flex-1 truncate">{result.label}</span>
+                          <span className="max-w-[42%] truncate text-xs text-muted-foreground">{result.detail}</span>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  ) : (
+                    <CommandEmpty>{searchIndexLoaded ? "No dashboard results." : "Searching…"}</CommandEmpty>
+                  )}
+                </CommandList>
+              ) : null}
+            </Command>
+          </div>
         </form>
         <div className="ml-auto flex min-w-0 items-center gap-3">
+          {isViewingAs ? (
+            <button
+              type="button"
+              onClick={stopViewingAs}
+              className="hidden max-w-[220px] truncate rounded-lg border border-primary/30 bg-primary/5 px-2.5 py-1.5 text-xs font-semibold text-primary transition hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 nav:inline-flex"
+              title="Exit view as mode"
+            >
+              Viewing as {viewAsUser?.name ?? viewAsUser?.email ?? "user"} · Exit
+            </button>
+          ) : null}
           <DashboardNotifications posts={[]} />
           <Dialog open={desktopTrackerOpen} onOpenChange={setDesktopTrackerOpen}>
             <DialogTrigger asChild>
@@ -158,6 +322,16 @@ export function DashboardHeader({
           <DashboardLogo />
         </div>
         <div className="flex items-center gap-1">
+          {isViewingAs ? (
+            <button
+              type="button"
+              onClick={stopViewingAs}
+              className="inline-flex h-9 max-w-[150px] items-center truncate rounded-lg border border-primary/30 bg-primary/5 px-2 text-[11px] font-semibold text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              title="Exit view as mode"
+            >
+              Exit view
+            </button>
+          ) : null}
           <Dialog open={trackerOpen} onOpenChange={setTrackerOpen}>
             <DialogTrigger asChild>
               <button

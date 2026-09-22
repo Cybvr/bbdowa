@@ -89,9 +89,11 @@ export function ProfileNav({
   const role = auth?.role ?? null;
   const roleLabel = role ? role.charAt(0).toUpperCase() + role.slice(1) : null;
   const isAdmin = auth?.isAdmin ?? false;
-  const menuItems: readonly ProfileNavItem[] = isAdmin
-    ? [{ label: "Admin", href: "/admin", icon: <AdminIcon /> }, ...items]
-    : items;
+  const menuItems: readonly ProfileNavItem[] = [
+    ...(auth?.isViewingAs ? [{ label: "Exit view as", onSelect: auth.stopViewingAs }] : []),
+    ...(isAdmin ? [{ label: "Admin", href: "/admin", icon: <AdminIcon /> }] : []),
+    ...items,
+  ];
   const displayName = name ?? user?.name ?? user?.email?.split("@")[0] ?? "BBDO User";
   const displayEmail = email ?? user?.email ?? (loading ? "Loading profile..." : "Signed in");
   const avatarSrc = createGlyphAvatarDataUri(displayName || displayEmail || initials || "BBDO User");

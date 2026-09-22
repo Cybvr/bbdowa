@@ -339,8 +339,8 @@ export function CreatableSelectField({
           <SelectValue placeholder="Select…" />
         </SelectTrigger>
         <SelectContent>
-          {knownOptions.map((option) => (
-            <SelectItem key={option} value={option}>
+          {knownOptions.map((option, index) => (
+            <SelectItem key={`known-option-${index}`} value={option}>
               {option}
             </SelectItem>
           ))}

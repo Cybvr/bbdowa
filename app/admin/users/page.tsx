@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Search } from "lucide-react";
+import { Eye, Search } from "lucide-react";
 import { UserCreateAction } from "@/components/user-create-action";
 import { UserActions } from "@/components/user-actions";
 import { BackfillUidsAction } from "@/components/backfill-uids-action";
@@ -34,7 +34,9 @@ function PendingBadge() {
 }
 
 function UserRow({ user, categoryOptions }: { user: User; categoryOptions: string[] }) {
+  const { actualUser, startViewingAs } = useAuth();
   const variant = isCreatorUser(user) && !isTeamUser(user) ? "creator" : "team";
+  const targetUid = user.uid;
   return (
     <tr className="border-t border-border align-middle first:border-t-0">
       <td className="px-4 py-3.5 sm:px-5">
@@ -58,15 +60,27 @@ function UserRow({ user, categoryOptions }: { user: User; categoryOptions: strin
         <span className="mt-0.5 block max-w-[190px] truncate text-xs text-muted-foreground">{user.department || "No department"}</span>
       </td>
       <td className="px-4 py-3.5 text-right">
-        <UserActions
-          user={user}
-          variant={variant}
-          listHref="/admin/users"
-          compactMenu
-          includeEditAction
-          categoryOptions={categoryOptions}
-          onMutated={() => window.location.reload()}
-        />
+        <div className="flex items-center justify-end gap-2">
+          {targetUid && targetUid !== actualUser?.uid ? (
+            <button
+              type="button"
+              onClick={() => startViewingAs({ uid: targetUid, name: user.name, email: user.email, picture: user.profileImage, role: user.role })}
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border px-2.5 text-xs font-semibold text-foreground transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            >
+              <Eye aria-hidden="true" className="h-3.5 w-3.5" />
+              View as
+            </button>
+          ) : null}
+          <UserActions
+            user={user}
+            variant={variant}
+            listHref="/admin/users"
+            compactMenu
+            includeEditAction
+            categoryOptions={categoryOptions}
+            onMutated={() => window.location.reload()}
+          />
+        </div>
       </td>
     </tr>
   );

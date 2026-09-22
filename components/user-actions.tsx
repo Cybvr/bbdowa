@@ -6,6 +6,8 @@ import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import {
   collection,
   deleteDoc,
+  doc,
+  getDoc,
   getDocs,
   limit,
   query,
@@ -22,6 +24,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { userRoles, type User, type UserRole } from "@/lib/users";
+
+type AccountStatus = "active" | "pending";
 
 /**
  * Edit / delete for a user record. People and creators are both `users`, so
@@ -48,9 +52,8 @@ export function UserActions({
   const router = useRouter();
 
   const [name, setName] = React.useState(user.name ?? "");
-  const [roles, setRoles] = React.useState<UserRole[]>(
-    userRoles(user).length ? userRoles(user) : ["manager"],
-  );
+  const [status, setStatus] = React.useState<AccountStatus>(user.role === "pending" ? "pending" : "active");
+  const [roles, setRoles] = React.useState<UserRole[]>(userRoles(user).length ? userRoles(user) : ["manager"]);
   const [title, setTitle] = React.useState(user.title ?? "");
   const [department, setDepartment] = React.useState(user.department ?? "");
   const [location, setLocation] = React.useState(user.location ?? "");
@@ -69,6 +72,12 @@ export function UserActions({
   const [craftNote, setCraftNote] = React.useState(user.craftNote ?? "");
 
   const docRef = async () => {
+    if (user.uid) {
+      const uidRef = doc(firebaseDb, "users", user.uid);
+      if ((await getDoc(uidRef)).exists()) return uidRef;
+    }
+
+    if (!user.slug) return null;
     const snapshot = await getDocs(
       query(collection(firebaseDb, "users"), where("slug", "==", user.slug), limit(1)),
     );
@@ -78,11 +87,11 @@ export function UserActions({
   const save = async () => {
     const ref = await docRef();
     if (!ref) throw new Error("User document not found");
-    const primaryRole = user.role !== "pending" && roles.includes(user.role) ? user.role : roles[0] ?? "manager";
+    const primaryRole = status === "pending" ? "pending" : roles[0] ?? "manager";
     const common = {
       name: name.trim(),
       role: primaryRole,
-      roles,
+      roles: status === "pending" ? [] : roles,
       title: title.trim(),
       department: department.trim(),
       location: location.trim(),
@@ -151,8 +160,17 @@ export function UserActions({
         </DropdownMenu>
       ) : undefined}
     >
-      <ImageUploadField label="Avatar" value={profileImage} onChange={setProfileImage} variant="avatar" uploadPath={`users/${user.slug}/avatar`} />
+      <ImageUploadField label="Avatar" value={profileImage} onChange={setProfileImage} variant="avatar" uploadPath={`users/${user.uid ?? user.slug}/avatar`} />
       <TextField label="Name" value={name} onChange={setName} />
+      <SelectField
+        label="Account status"
+        value={status}
+        onChange={(value) => setStatus(value as AccountStatus)}
+        options={[
+          { value: "active", label: "Active" },
+          { value: "pending", label: "Pending" },
+        ]}
+      />
       <div className="space-y-1.5">
         <span className="text-[13px] font-medium text-foreground">Roles</span>
         <div className="flex flex-wrap gap-2">

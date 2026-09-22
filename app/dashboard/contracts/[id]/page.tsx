@@ -96,7 +96,7 @@ export default function ContractDetailPage() {
           isAdmin ? (
             <div className="flex items-center gap-2">
               <Link
-                href={`/dashboard/contracts/${contract.id}/edit`}
+                href={`/admin/contracts/${contract.id}/edit`}
                 className="inline-flex h-9 items-center gap-1.5 rounded-md border border-border px-3 text-[13px] font-semibold text-foreground transition hover:border-foreground"
               >
                 <Pencil aria-hidden="true" className="h-3.5 w-3.5" />

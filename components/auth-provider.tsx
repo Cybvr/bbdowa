@@ -9,53 +9,134 @@ import { sessionUserFromFirebaseUser, type SessionUser } from "@/lib/auth/sessio
 
 type AuthContextValue = {
   user: SessionUser | null;
+  actualUser: SessionUser | null;
   loading: boolean;
   /** The signed-in user's role from their Firestore profile, or null. */
   role: string | null;
   isAdmin: boolean;
+  isViewingAs: boolean;
+  viewAsUser: SessionUser | null;
+  startViewingAs: (target: { uid: string; name: string | null; email: string | null; picture?: string | null; role: string | null }) => void;
+  stopViewingAs: () => void;
   logout: () => Promise<void>;
 };
 
 const AuthContext = React.createContext<AuthContextValue | null>(null);
+const VIEW_AS_STORAGE_KEY = "bbdowa.view-as";
+
+type ViewAsState = {
+  ownerUid: string;
+  user: SessionUser;
+  role: string | null;
+};
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const [user, setUser] = React.useState<SessionUser | null>(null);
-  const [role, setRole] = React.useState<string | null>(null);
+  const [actualUser, setActualUser] = React.useState<SessionUser | null>(null);
+  const [actualRole, setActualRole] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
+  const [viewAs, setViewAs] = React.useState<ViewAsState | null>(null);
+  const [viewAsLoaded, setViewAsLoaded] = React.useState(false);
+
+  React.useEffect(() => {
+    try {
+      const stored = window.sessionStorage.getItem(VIEW_AS_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored) as ViewAsState;
+        if (parsed?.ownerUid && parsed?.user?.uid && typeof parsed.role === "string") {
+          setViewAs(parsed);
+        }
+      }
+    } catch {
+      window.sessionStorage.removeItem(VIEW_AS_STORAGE_KEY);
+    } finally {
+      setViewAsLoaded(true);
+    }
+  }, []);
 
   React.useEffect(() => {
     return onAuthStateChanged(firebaseAuth, async (firebaseUser) => {
-      setUser(firebaseUser ? sessionUserFromFirebaseUser(firebaseUser) : null);
+      setActualUser(firebaseUser ? sessionUserFromFirebaseUser(firebaseUser) : null);
 
       if (firebaseUser) {
         try {
           const snapshot = await getDoc(doc(firebaseDb, "users", firebaseUser.uid));
           const value = snapshot.data()?.role;
-          setRole(typeof value === "string" ? value : null);
+          setActualRole(typeof value === "string" ? value : null);
         } catch {
-          setRole(null);
+          setActualRole(null);
         }
       } else {
-        setRole(null);
+        setActualRole(null);
       }
 
       setLoading(false);
     });
   }, []);
 
+  React.useEffect(() => {
+    if (loading || !viewAs) return;
+    if (!actualUser || actualRole !== "admin" || viewAs.ownerUid !== actualUser.uid) {
+      setViewAs(null);
+      window.sessionStorage.removeItem(VIEW_AS_STORAGE_KEY);
+    }
+  }, [actualRole, actualUser, loading, viewAs]);
+
+  const startViewingAs = React.useCallback(
+    (target: { uid: string; name: string | null; email: string | null; picture?: string | null; role: string | null }) => {
+      if (!actualUser || actualRole !== "admin" || !target.uid || target.uid === actualUser.uid) return;
+      const next: ViewAsState = {
+        ownerUid: actualUser.uid,
+        user: {
+          uid: target.uid,
+          name: target.name,
+          email: target.email,
+          picture: target.picture ?? null,
+        },
+        role: target.role,
+      };
+      setViewAs(next);
+      window.sessionStorage.setItem(VIEW_AS_STORAGE_KEY, JSON.stringify(next));
+      router.push("/dashboard");
+    },
+    [actualRole, actualUser, router],
+  );
+
+  const stopViewingAs = React.useCallback(() => {
+    setViewAs(null);
+    window.sessionStorage.removeItem(VIEW_AS_STORAGE_KEY);
+  }, []);
+
   const logout = React.useCallback(async () => {
     await Promise.allSettled([
       signOut(firebaseAuth),
     ]);
-    setUser(null);
-    setRole(null);
+    stopViewingAs();
+    setActualUser(null);
+    setActualRole(null);
     router.replace("/auth/login");
     router.refresh();
-  }, [router]);
+  }, [router, stopViewingAs]);
+
+  const activeViewAs = viewAsLoaded && actualRole === "admin" ? viewAs : null;
+  const user = activeViewAs?.user ?? actualUser;
+  const role = activeViewAs?.role ?? actualRole;
 
   return (
-    <AuthContext.Provider value={{ user, loading, role, isAdmin: role === "admin", logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        actualUser,
+        loading,
+        role,
+        isAdmin: role === "admin",
+        isViewingAs: Boolean(activeViewAs),
+        viewAsUser: activeViewAs?.user ?? null,
+        startViewingAs,
+        stopViewingAs,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

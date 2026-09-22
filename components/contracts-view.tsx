@@ -145,6 +145,7 @@ function SendAgreementDialog({
       await addDoc(collection(firebaseDb, CONTRACT_COLLECTION), {
         title: selectedTemplate.title,
         body: selectedTemplate.body,
+        documentId: selectedTemplate.id,
         assignedTo: assignKey,
         assignedToName: creatorName,
         createdBy: viewer.uid,
@@ -181,7 +182,7 @@ function SendAgreementDialog({
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Send an agreement</DialogTitle>
-            <DialogDescription>Pick a template to send to {creatorName}.</DialogDescription>
+          <DialogDescription>Choose a document to assign to {creatorName}.</DialogDescription>
           </DialogHeader>
 
           {templatesError ? (
@@ -189,7 +190,7 @@ function SendAgreementDialog({
           ) : templates.length ? (
             <div className="space-y-3">
               <Select value={templateId} onValueChange={setTemplateId}>
-                <SelectTrigger className="h-10 w-full"><SelectValue placeholder="Choose a template" /></SelectTrigger>
+                <SelectTrigger className="h-10 w-full"><SelectValue placeholder="Choose a document" /></SelectTrigger>
                 <SelectContent>
                   {templates.map((template) => (
                     <SelectItem key={template.id} value={template.id}>{template.title}</SelectItem>
@@ -204,10 +205,10 @@ function SendAgreementDialog({
             </div>
           ) : (
             <p className="m-0 text-[13px] text-muted-foreground">
-              No agreement templates yet.{" "}
+              No documents yet.{" "}
               {viewer.isAdmin ? (
                 <Link href="/admin/contract-templates/new" className="font-semibold text-foreground underline underline-offset-2 hover:no-underline">
-                  Create one
+                  Create a document
                 </Link>
               ) : (
                 "Ask an admin to create one."
@@ -342,7 +343,7 @@ export function CreatorContractsPanel({ creatorUid, creatorSlug, creatorName, vi
                       {viewer.isAdmin ? (
                         <>
                           <Link
-                            href={`/dashboard/contracts/${contract.id}/edit`}
+                            href={`/admin/contracts/${contract.id}/edit`}
                             aria-label={`Edit ${contract.title}`}
                             className="grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground transition hover:border-foreground hover:text-foreground"
                           >

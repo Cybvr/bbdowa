@@ -63,4 +63,6 @@ export function resolveNavItemsForRole(items: NavItem[], role: string | null | u
 export const ADMIN_NAV_ITEMS: NavItem[] = [
   { kind: "link", label: "Overview", href: "/admin" },
   { kind: "link", label: "Users", href: "/admin/users" },
+  { kind: "link", label: "Contracts", href: "/admin/contracts" },
+  { kind: "link", label: "Documents", href: "/admin/contract-templates" },
 ];
