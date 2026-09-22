@@ -97,6 +97,46 @@ to 15px on mobile; that alone does most of the work.
   "does the user need this fact here at all" before it's "make the font
   smaller."
 
+## 2026 signal: Uber, Revolut, Linear
+
+Pulled from current reporting on where these three have actually landed,
+filtered to layout/density — not color, not AI features, not dark mode.
+
+- **"Every element earns its place."** The 2026 framing of minimalism isn't
+  empty whitespace for its own sake — it's cutting anything that doesn't
+  move the user toward what they came to do. Linear hides filters and power
+  features until asked for; its default view is one thing, cleanly. Before
+  adding a field to a card, ask what it's for — this is the same rule as
+  "cut fields before shrinking them" above, just with sharper teeth.
+- **Linear's actual spacing scale is 8px-based**: 8 / 16 / 32 / 64. That
+  maps directly onto Tailwind's default scale (`gap-2` / `gap-4` / `gap-8`
+  / `gap-16`) — use those stops instead of the odd-numbered ones
+  (`gap-1.5`, `p-3.5`, `px-7`) scattered through the current codebase. One
+  scale, not a dozen slightly-different ones.
+- **Hierarchy from surface + hairline borders, not shadow.** Linear
+  separates sections with a barely-there 0.5px border and a change in
+  background tone, not drop shadows. Translation for us: prefer
+  `bg-muted/40` + no border (already in this guide) over
+  `border border-border` + `shadow-sm` stacked together — pick one signal,
+  not both.
+- **"Exaggerated minimalism"** — the actual 2026 term for what Behance and
+  Toptal are doing: oversized type and buttons laid over a plain,
+  uncluttered background. It's not more decoration, it's the same content
+  rendered bigger with more air around it. Directly backs the type-scale
+  bump above — the aesthetic *is* the bigger numbers, not an extra layer
+  on top of them.
+- **Fewer buttons, stronger hierarchy.** Revolut's screens read calmly
+  because one action is obviously primary and everything else recedes.
+  Reinforces "one primary action per row" above — extend it to whole
+  screens: one obvious next step, not four equally-weighted buttons.
+- **Uber's UI gives "just enough context to act."** Less relevant to an
+  internal agency dashboard than to a consumer app, but the underlying
+  rule still applies: don't make someone read a paragraph to find the one
+  number or button they need. If a card's info could be scanned in under
+  a second, it's shaped right.
+
+Sources: [Mobile UX Design Examples (2026)](https://www.eleken.co/blog-posts/mobile-ux-design-examples) · [7 SaaS UI Design Trends for 2026](https://www.saasui.design/blog/7-saas-ui-design-trends-2026) · [Mobile App Design Trends 2026 — Muzli](https://muz.li/blog/whats-changing-in-mobile-app-design-ui-patterns-that-matter-in-2026/) · [Behind the latest Linear design refresh](https://linear.app/now/behind-the-latest-design-refresh) · [How we redesigned the Linear UI (part II)](https://linear.app/now/how-we-redesigned-the-linear-ui) · [Which UI libraries support the Linear aesthetic — LogRocket](https://blog.logrocket.com/ux-design/linear-design-ui-libraries-design-kits-layout-grid/)
+
 ## Checklist for a new or edited mobile page
 
 1. Page gutter `px-4`+, not `px-3`.
@@ -107,3 +147,6 @@ to 15px on mobile; that alone does most of the work.
 5. Every tap target is `h-11`/`h-10 w-10`+ on mobile.
 6. One primary action visible per row; everything else behind a menu.
 7. At most one accent-colored element competing for attention per screen.
+8. Spacing values come from 4/8/16/32/64 (Tailwind's default scale) — no
+   odd-numbered one-offs like `gap-1.5`/`p-3.5` unless it's a genuinely
+   single visual unit (icon + its own label).
