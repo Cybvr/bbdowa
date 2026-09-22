@@ -5,13 +5,8 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth-provider";
 import { useOwnUser } from "@/lib/firebase/client-content";
 import { PageLoadingSkeleton } from "@/components/dashboard/loading-skeleton";
-import { isCreatorUser } from "@/lib/users";
 
-/**
- * "My profile" in the nav points here so it can resolve to wherever your
- * own profile actually lives — the creator page for a creator, or the
- * self-service settings form for staff who don't have one.
- */
+/** "My profile" in the nav points here so it can resolve your own slug, then send you to your creator page. */
 export default function MyProfileRedirectPage() {
   const router = useRouter();
   const { user: authUser, loading: authLoading } = useAuth();
@@ -23,7 +18,7 @@ export default function MyProfileRedirectPage() {
       router.replace("/auth/login");
       return;
     }
-    router.replace(own?.slug && isCreatorUser(own) ? `/dashboard/creators/${own.slug}` : "/dashboard/settings");
+    router.replace(own?.slug ? `/dashboard/creators/${own.slug}` : "/dashboard/creators");
   }, [authLoading, authUser, own, ownLoading, router]);
 
   return <PageLoadingSkeleton titleWidth="w-40" />;
