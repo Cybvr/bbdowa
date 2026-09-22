@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { ChevronRight } from "lucide-react";
-import { ImageWithFallback } from "@/components/dashboard/ui";
+import { EmptyState, ImageWithFallback } from "@/components/dashboard/ui";
 import { DashboardSidebarSheet } from "@/components/dashboard-sidebar";
 
 /**
@@ -264,12 +264,16 @@ export type ProfileColumn = { key: string; label: string };
 export function ProfileTable({
   columns,
   rows,
+  emptyTitle = "Nothing here yet",
+  emptyDescription = "Nothing on file yet.",
 }: {
   columns: ProfileColumn[];
   rows: Record<string, ReactNode>[];
+  emptyTitle?: string;
+  emptyDescription?: string;
 }) {
   if (!rows.length) {
-    return <p className="m-0 text-[13px] text-muted-foreground">Nothing on file yet.</p>;
+    return <EmptyState title={emptyTitle} description={emptyDescription} />;
   }
   return (
     <div className="overflow-x-auto">

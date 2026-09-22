@@ -5,7 +5,6 @@ import { collection, getDocs, query, where } from "firebase/firestore";
 import { firebaseDb } from "@/lib/firebase/client";
 import { EmptyState, StatItem, StatRow } from "@/components/dashboard/ui";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TimeTracker } from "@/components/time-tracker";
 import {
   ACTIVITY_COLLECTION,
   elapsedMs,
@@ -18,25 +17,11 @@ import {
 } from "@/lib/time-tracking";
 
 /**
- * Hours logged, shown on a creator's profile page. On their own profile
- * they get the full interactive tracker (start/stop, log time); staff
- * looking at someone else's profile get a read-only summary — Firestore
- * rules don't let anyone start or stop another person's timer.
+ * Hours logged, shown on a creator's profile page. Read-only summary and
+ * table — starting/stopping a timer happens on the dedicated Tracker page,
+ * not here.
  */
-export function CreatorHoursPanel({
-  creatorUid,
-  creatorName,
-  isSelf,
-}: {
-  creatorUid: string | null | undefined;
-  creatorName: string;
-  isSelf: boolean;
-}) {
-  if (isSelf) return <TimeTracker />;
-  return <ReadOnlyHours creatorUid={creatorUid} creatorName={creatorName} />;
-}
-
-function ReadOnlyHours({ creatorUid, creatorName }: { creatorUid: string | null | undefined; creatorName: string }) {
+export function CreatorHoursPanel({ creatorUid, creatorName }: { creatorUid: string | null | undefined; creatorName: string }) {
   const [entries, setEntries] = React.useState<ActivityEntry[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);

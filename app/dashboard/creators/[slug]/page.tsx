@@ -215,6 +215,8 @@ export default function CreatorDetailPage() {
                 company: entry.company,
                 location: entry.location ?? "—",
               }))}
+              emptyTitle="No work history yet"
+              emptyDescription={`${creator.name} hasn’t added any past roles yet.`}
             />
           </ProfileSection>
         )}
@@ -240,13 +242,15 @@ export default function CreatorDetailPage() {
                 ),
                 status: <span className="capitalize">{campaign.status}</span>,
               }))}
+              emptyTitle="No campaigns yet"
+              emptyDescription={`${creator.name} hasn’t been added to a campaign yet.`}
             />
           </ProfileSection>
         )}
 
         {tab === "hours" && authUser && (
           <ProfileSection title="Hours logged" variant="plain">
-            <CreatorHoursPanel creatorUid={creator.uid} creatorName={creator.name} isSelf={authUser.uid === creator.uid} />
+            <CreatorHoursPanel creatorUid={creator.uid} creatorName={creator.name} />
           </ProfileSection>
         )}
 
