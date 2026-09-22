@@ -288,7 +288,7 @@ export function CreatorContractsPanel({ creatorUid, creatorSlug, creatorName, vi
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {error ? <p className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-[13px] text-primary">{error}</p> : null}
 
       {viewer.isStaff ? (
@@ -304,7 +304,7 @@ export function CreatorContractsPanel({ creatorUid, creatorSlug, creatorName, vi
         />
       ) : viewer.isStaff ? (
         <div className="overflow-x-auto rounded-xl border border-border">
-          <table className="min-w-[560px] w-full border-collapse text-[14px]">
+          <table className="min-w-[560px] w-full border-collapse text-[15px]">
             <thead>
               <tr className="border-b border-border bg-muted/40 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                 <th className="px-4 py-3">Agreement</th>
@@ -336,7 +336,7 @@ export function CreatorContractsPanel({ creatorUid, creatorSlug, creatorName, vi
                       <Link
                         href={`/dashboard/contracts/${contract.id}`}
                         aria-label={`View ${contract.title}`}
-                        className="grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground transition hover:border-foreground hover:text-foreground"
+                        className="grid h-10 w-10 place-items-center rounded-lg border border-border text-muted-foreground transition hover:border-foreground hover:text-foreground"
                       >
                         <Eye className="h-4 w-4" aria-hidden="true" />
                       </Link>
@@ -345,7 +345,7 @@ export function CreatorContractsPanel({ creatorUid, creatorSlug, creatorName, vi
                           <Link
                             href={`/admin/contracts/${contract.id}/edit`}
                             aria-label={`Edit ${contract.title}`}
-                            className="grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground transition hover:border-foreground hover:text-foreground"
+                            className="grid h-10 w-10 place-items-center rounded-lg border border-border text-muted-foreground transition hover:border-foreground hover:text-foreground"
                           >
                             <Pencil className="h-4 w-4" aria-hidden="true" />
                           </Link>
@@ -354,7 +354,7 @@ export function CreatorContractsPanel({ creatorUid, creatorSlug, creatorName, vi
                             aria-label={`Delete ${contract.title}`}
                             disabled={busyId === contract.id}
                             onClick={() => void removeContract(contract)}
-                            className="grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground transition hover:border-destructive hover:text-destructive disabled:opacity-50"
+                            className="grid h-10 w-10 place-items-center rounded-lg border border-border text-muted-foreground transition hover:border-destructive hover:text-destructive disabled:opacity-50"
                           >
                             <Trash2 className="h-4 w-4" aria-hidden="true" />
                           </button>

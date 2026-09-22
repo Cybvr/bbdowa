@@ -78,9 +78,9 @@ export default function CreatorDetailPage() {
   const categorySource = directory.users;
 
   if (loading) return <ProfilePageSkeleton />;
-  if (error) return <main className="flex-1 px-3 pb-10 pt-3 text-sm text-muted-foreground sm:px-8 sm:pb-16 sm:pt-4">{error}</main>;
+  if (error) return <main className="flex-1 px-4 pb-10 pt-4 text-sm text-muted-foreground sm:px-8 sm:pb-16 sm:pt-4">{error}</main>;
   if (!creator || !isCreatorUser(creator)) {
-    return <main className="flex-1 px-3 pb-10 pt-3 sm:px-8 sm:pb-16 sm:pt-4">Creator not found.</main>;
+    return <main className="flex-1 px-4 pb-10 pt-4 sm:px-8 sm:pb-16 sm:pt-4">Creator not found.</main>;
   }
   const platforms = platformsFor(creator);
   const creatorCampaigns = getCreatorCampaigns(creator.slug, clients, campaigns);
@@ -94,7 +94,7 @@ export default function CreatorDetailPage() {
   ];
 
   return (
-    <main className="flex-1 px-3 pb-10 pt-3 sm:px-8 sm:pb-16 sm:pt-4">
+    <main className="flex-1 px-4 pb-10 pt-4 sm:px-8 sm:pb-16 sm:pt-4">
       <DetailBreadcrumb
         crumbs={[{ label: "All creators", href: "/dashboard/creators" }, { label: creator.name }]}
         actions={

@@ -28,9 +28,9 @@ export function PageHeader({
   return (
     <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-3">
       <div>
-        <h1 className="m-0 text-xl font-bold leading-tight tracking-tight sm:text-2xl">{title}</h1>
+        <h1 className="m-0 text-[24px] font-bold leading-tight tracking-tight sm:text-[28px]">{title}</h1>
         {description ? (
-          <p className="mb-0 mt-1 max-w-[60ch] text-[14px] leading-[1.35] text-muted-foreground">
+          <p className="mb-0 mt-1.5 max-w-[60ch] text-[15px] leading-[1.4] text-muted-foreground">
             {description}
           </p>
         ) : null}
@@ -139,8 +139,8 @@ export function StatItem({
       <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
         {label}
       </span>
-      <strong className="text-[28px] font-bold leading-none tracking-tight">{value}</strong>
-      {detail ? <div className="text-[13px] leading-snug text-muted-foreground">{detail}</div> : null}
+      <strong className="text-[32px] font-bold leading-none tracking-tight">{value}</strong>
+      {detail ? <div className="text-[14px] leading-snug text-muted-foreground">{detail}</div> : null}
     </div>
   );
 }
@@ -149,7 +149,7 @@ export function EmptyState({ title, description }: { title: string; description:
   return (
     <div className="rounded-xl border border-dashed border-border p-10 text-center">
       <h3 className="m-0 text-[17px] font-semibold">{title}</h3>
-      <p className="mx-auto mb-0 mt-2 max-w-[46ch] text-[14px] leading-[1.5] text-muted-foreground">
+      <p className="mx-auto mb-0 mt-2 max-w-[46ch] text-[15px] leading-[1.5] text-muted-foreground">
         {description}
       </p>
     </div>
