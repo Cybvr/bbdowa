@@ -161,7 +161,7 @@ export default function MyProfilePage() {
               {own.phone ? <ProfileFact label="Phone" value={own.phone} /> : null}
             </ProfileFacts>
 
-            {own.tags.length ? (
+            {own.tags?.length ? (
               <div className="flex flex-wrap gap-1.5">
                 {own.tags.map((tag) => (
                   <span key={tag} className="rounded-full bg-muted px-2.5 py-1 text-[11px] text-foreground">
@@ -187,7 +187,7 @@ export default function MyProfilePage() {
                   <ProfileFact label="Availability" value={<span className="capitalize">{own.availability}</span>} />
                   <ProfileFact label="Day rate estimate" value={own.dayRate || "—"} />
                   <ProfileFact label="Terms" value={own.terms || "—"} />
-                  <ProfileFact label="Engagements" value={own.workedOn.length ? own.workedOn.join(", ") : "—"} />
+                  <ProfileFact label="Engagements" value={own.workedOn?.length ? own.workedOn.join(", ") : "—"} />
                 </div>
               </ProfileSection>
             ) : (

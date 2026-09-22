@@ -157,7 +157,7 @@ export default function CreatorDetailPage() {
               ) : null}
             </ProfileFacts>
 
-            {creator.tags.length ? (
+            {creator.tags?.length ? (
               <div className="flex flex-wrap gap-1.5">
                 {creator.tags.map((tag) => (
                   <span key={tag} className="rounded-full bg-muted px-2.5 py-1 text-[11px] text-foreground">
@@ -182,7 +182,7 @@ export default function CreatorDetailPage() {
                 <ProfileFact label="Availability" value={<span className="capitalize">{creator.availability}</span>} />
                 <ProfileFact label="Day rate estimate" value={creator.dayRate || "—"} />
                 <ProfileFact label="Terms" value={creator.terms || "—"} />
-                <ProfileFact label="Engagements" value={creator.workedOn.length ? creator.workedOn.join(", ") : "—"} />
+                <ProfileFact label="Engagements" value={creator.workedOn?.length ? creator.workedOn.join(", ") : "—"} />
               </div>
             </ProfileSection>
 
