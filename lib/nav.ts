@@ -26,6 +26,7 @@ export const NAV_ITEMS: NavItem[] = [
   { kind: "link", label: "Campaigns", href: "/dashboard/campaigns", requiresAuth: true },
   { kind: "link", label: "Clients", href: "/dashboard/clients", requiresAuth: true },
   { kind: "link", label: "Creators", href: "/dashboard/creators" },
+  { kind: "link", label: "My profile", href: "/dashboard/me", requiresAuth: true },
   { kind: "link", label: "Tracker", href: "/dashboard/tracker", requiresAuth: true },
   { kind: "link", label: "Njeri", href: "/dashboard/njeri" },
   {
@@ -45,22 +46,6 @@ export const NAV_ITEMS: NavItem[] = [
   },
   { kind: "link", label: "Updates", href: "/dashboard/blog" },
 ];
-
-/**
- * Once signed in, the "Creators" nav slot becomes a shortcut to your own
- * profile rather than the directory — the directory itself is still one tap
- * away from Home ("New creators" → View all). /dashboard/me resolves which
- * profile that actually is (creator page vs. settings) once it knows who
- * you are.
- */
-export function resolveNavItemsForRole(items: NavItem[], isSignedIn: boolean): NavItem[] {
-  if (!isSignedIn) return items;
-  return items.map((item) =>
-    item.kind === "link" && item.label === "Creators"
-      ? { ...item, label: "My profile", href: "/dashboard/me" }
-      : item,
-  );
-}
 
 export const ADMIN_NAV_ITEMS: NavItem[] = [
   { kind: "link", label: "Overview", href: "/admin" },
