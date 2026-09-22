@@ -24,7 +24,7 @@ export function DashboardFooter({ hidden = false }: { hidden?: boolean }) {
         { label: "Documents", href: "/admin/contract-templates" },
         { label: "Home", href: "/dashboard" },
       ]
-    : resolveNavItemsForRole(NAV_ITEMS, auth?.role).filter(
+    : resolveNavItemsForRole(NAV_ITEMS, Boolean(auth?.user)).filter(
         (item): item is Extract<typeof item, { kind: "link" }> =>
           item.kind === "link" &&
           (FOOTER_LABELS.includes(item.label) || item.label === "My profile") &&

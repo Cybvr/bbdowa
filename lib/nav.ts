@@ -47,12 +47,12 @@ export const NAV_ITEMS: NavItem[] = [
 ];
 
 /**
- * A pure creator (not also staff) doesn't need the "Creators" directory —
- * they only ever look at their own profile, so swap the nav item for that
- * instead of sending them to browse everyone else.
+ * Once signed in, the "Creators" nav slot becomes a shortcut to your own
+ * profile rather than the directory — the directory itself is still one tap
+ * away from Home ("New creators" → View all).
  */
-export function resolveNavItemsForRole(items: NavItem[], role: string | null | undefined): NavItem[] {
-  if (role !== "creator") return items;
+export function resolveNavItemsForRole(items: NavItem[], isSignedIn: boolean): NavItem[] {
+  if (!isSignedIn) return items;
   return items.map((item) =>
     item.kind === "link" && item.label === "Creators"
       ? { ...item, label: "My profile", href: "/dashboard/settings" }

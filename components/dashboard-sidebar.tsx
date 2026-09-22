@@ -56,7 +56,7 @@ export function DashboardNavList({ onNavigate, collapsed = false }: { onNavigate
   const [now, setNow] = useState(() => Date.now());
   const [trackerBusy, setTrackerBusy] = useState(false);
   const isAdminSection = pathname.startsWith("/admin");
-  const navItems = isAdminSection ? ADMIN_NAV_ITEMS : resolveNavItemsForRole(NAV_ITEMS, auth?.role);
+  const navItems = isAdminSection ? ADMIN_NAV_ITEMS : resolveNavItemsForRole(NAV_ITEMS, Boolean(auth?.user));
   const visibleItems = navItems.filter(
     (item) => (!item.requiresAuth || Boolean(auth?.user)) && (item.kind !== "link" || !item.requiresAdmin || Boolean(auth?.isAdmin)),
   );
