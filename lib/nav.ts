@@ -49,13 +49,15 @@ export const NAV_ITEMS: NavItem[] = [
 /**
  * Once signed in, the "Creators" nav slot becomes a shortcut to your own
  * profile rather than the directory — the directory itself is still one tap
- * away from Home ("New creators" → View all).
+ * away from Home ("New creators" → View all). /dashboard/me resolves which
+ * profile that actually is (creator page vs. settings) once it knows who
+ * you are.
  */
 export function resolveNavItemsForRole(items: NavItem[], isSignedIn: boolean): NavItem[] {
   if (!isSignedIn) return items;
   return items.map((item) =>
     item.kind === "link" && item.label === "Creators"
-      ? { ...item, label: "My profile", href: "/dashboard/settings" }
+      ? { ...item, label: "My profile", href: "/dashboard/me" }
       : item,
   );
 }
