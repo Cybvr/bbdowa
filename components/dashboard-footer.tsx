@@ -27,7 +27,7 @@ export function DashboardFooter({ hidden = false }: { hidden?: boolean }) {
     : NAV_ITEMS.filter(
         (item): item is Extract<typeof item, { kind: "link" }> =>
           item.kind === "link" && FOOTER_LABELS.includes(item.label) && (!item.requiresAuth || Boolean(auth?.user)),
-      );
+      ).map((item) => (item.label === "Creators" && auth?.user ? { ...item, label: "My profile", href: "/dashboard/me" } : item));
 
   return (
     <nav
