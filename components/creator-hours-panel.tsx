@@ -3,7 +3,7 @@
 import * as React from "react";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { firebaseDb } from "@/lib/firebase/client";
-import { EmptyState, StatItem, StatRow } from "@/components/dashboard/ui";
+import { EmptyState } from "@/components/dashboard/ui";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   ACTIVITY_COLLECTION,
@@ -11,8 +11,6 @@ import {
   formatClockFull,
   formatTimestamp,
   sortByStartedAt,
-  startOfToday,
-  startOfWeek,
   type ActivityEntry,
 } from "@/lib/time-tracking";
 
@@ -76,22 +74,10 @@ export function CreatorHoursPanel({ creatorUid, creatorName }: { creatorUid: str
     return <p className="m-0 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-[13px] text-primary">{error}</p>;
   }
 
-  const todayStart = startOfToday();
-  const weekStart = startOfWeek();
-  const done = entries.filter((entry) => entry.endedAt);
-  const todayMs = done.filter((entry) => Date.parse(entry.startedAt) >= todayStart).reduce((total, entry) => total + elapsedMs(entry, now), 0);
-  const weekMs = entries.filter((entry) => Date.parse(entry.startedAt) >= weekStart).reduce((total, entry) => total + elapsedMs(entry, now), 0);
-  const totalMs = entries.reduce((total, entry) => total + elapsedMs(entry, now), 0);
   const recent = entries.slice(0, 20);
 
   return (
     <div className="space-y-4">
-      <StatRow>
-        <StatItem label="Today" value={formatClockFull(todayMs)} />
-        <StatItem label="This week" value={formatClockFull(weekMs)} />
-        <StatItem label="Total logged" value={formatClockFull(totalMs)} />
-      </StatRow>
-
       {recent.length === 0 ? (
         <EmptyState title="Nothing logged yet" description={`${creatorName} hasn’t tracked any time yet.`} />
       ) : (
