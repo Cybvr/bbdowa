@@ -28,9 +28,9 @@ export function PageHeader({
   return (
     <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-3">
       <div>
-        <h1 className="m-0 text-[24px] font-bold leading-tight tracking-tight sm:text-[28px]">{title}</h1>
+        <h1 className="m-0 text-page-title font-bold leading-tight tracking-tight sm:text-page-title-lg">{title}</h1>
         {description ? (
-          <p className="mb-0 mt-1.5 max-w-[60ch] text-[15px] leading-[1.4] text-muted-foreground">
+          <p className="mb-0 mt-1.5 max-w-[60ch] text-body leading-[1.4] text-muted-foreground">
             {description}
           </p>
         ) : null}
@@ -59,7 +59,7 @@ export function SectionHeading({
     <div className="mb-4 flex items-baseline justify-between gap-4">
       <h2
         id={id}
-        className="m-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground"
+        className="m-0 text-eyebrow font-semibold uppercase tracking-[0.08em] text-muted-foreground"
       >
         {children}
       </h2>
@@ -109,10 +109,10 @@ export function MetaGrid({ children, columns = 3 }: { children: ReactNode; colum
 export function MetaItem({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex min-h-[92px] flex-col justify-center gap-1.5 bg-background p-5">
-      <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+      <span className="text-eyebrow font-semibold uppercase tracking-[0.08em] text-muted-foreground">
         {label}
       </span>
-      <div className="text-[17px] font-semibold leading-snug">{children}</div>
+      <div className="text-item-title font-semibold leading-snug">{children}</div>
     </div>
   );
 }
@@ -136,10 +136,10 @@ export function StatItem({
 }) {
   return (
     <div className="flex flex-col gap-1.5 bg-background p-5">
-      <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+      <span className="text-eyebrow font-semibold uppercase tracking-[0.08em] text-muted-foreground">
         {label}
       </span>
-      <strong className="text-[32px] font-bold leading-none tracking-tight">{value}</strong>
+      <strong className="text-hero-stat font-bold leading-none tracking-tight tabular-nums">{value}</strong>
       {detail ? <div className="text-[14px] leading-snug text-muted-foreground">{detail}</div> : null}
     </div>
   );

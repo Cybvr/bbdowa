@@ -2,15 +2,14 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import Link from "next/link";
 import { collection, getDocs } from "firebase/firestore";
-import { ArrowLeft, ArrowRight } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { CreatorAvatarStack } from "@/components/creator-avatar-stack";
 import { CreatorThumbnail } from "@/components/creator-thumbnail";
-import { DashboardCard, DashboardCardActions } from "@/components/dashboard-card";
+import { DashboardCardActions } from "@/components/dashboard-card";
 import { DashboardThumbnail } from "@/components/dashboard-thumbnail";
+import { DashboardListRow, DashboardSection } from "@/components/dashboard/section-list";
 import { useFirestoreUsers } from "@/lib/firebase/client-content";
 import { firebaseDb } from "@/lib/firebase/client";
 import type { BlogPost } from "@/lib/blog";
@@ -61,8 +60,12 @@ function campaignCreators(campaign: Campaign, clients: Client[], users: User[]):
     .filter((creator): creator is Creator => Boolean(creator));
 }
 
-function moveRail(rail: HTMLDivElement | null, direction: number) {
-  rail?.scrollBy({ left: direction * 280, behavior: "smooth" });
+function NewBadge() {
+  return (
+    <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-white">
+      New
+    </span>
+  );
 }
 
 export default function HomePage() {
@@ -75,9 +78,6 @@ export default function HomePage() {
     loading: true,
     error: null,
   });
-  const creatorsRail = useRef<HTMLDivElement>(null);
-  const campaignsRail = useRef<HTMLDivElement>(null);
-  const newsRail = useRef<HTMLDivElement>(null);
 
   const reloadContent = async () => {
     const { campaigns, clients, posts } = await readDashboardContent();
@@ -106,69 +106,98 @@ export default function HomePage() {
     .filter(isCreatorUser)
     .filter((creator) => creator.addedAt)
     .sort((a, b) => creatorAddedTimestamp(b) - creatorAddedTimestamp(a))
-    .slice(0, 8);
+    .slice(0, 6);
   const latestCampaigns = [...content.campaigns]
     .sort((a, b) => dateValue(b.liveAt?.date) - dateValue(a.liveAt?.date))
     .slice(0, 5);
   const latestNews = [...content.posts].sort((a, b) => dateValue(b.publishedAt) - dateValue(a.publishedAt)).slice(0, 5);
+
   return (
     <main className="flex-1 px-5 pb-16 pt-4 sm:px-8">
       <header className="border-b border-border pb-5">
-        <h1 className="m-0 text-[28px] font-bold leading-tight tracking-tight sm:text-[34px]">Welcome back, {name}.</h1>
-        <p className="mb-0 mt-2 text-[14px] text-muted-foreground">Here’s what’s happening across the agency.</p>
+        <h1 className="m-0 text-page-title font-bold leading-tight tracking-tight sm:text-page-title-lg">Welcome back, {name}.</h1>
+        <p className="mb-0 mt-2 text-body text-muted-foreground">Here’s what’s happening across the agency.</p>
       </header>
 
       {creatorsError ? <p className="mt-10 text-sm text-muted-foreground">{creatorsError}</p> : null}
       {creatorsLoading ? <CreatorRailSkeleton /> : null}
       {!creatorsLoading && latestCreators.length > 0 ? (
-        <section className="mt-6" aria-labelledby="new-creators-heading">
-          <div className="flex items-center justify-between gap-4">
-            <h2 id="new-creators-heading" className="m-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">New creators</h2>
-            <div className="flex items-center gap-3">
-              <Link href="/dashboard/creators" className="text-[12px] font-semibold text-muted-foreground underline decoration-border underline-offset-4 hover:text-foreground focus-visible:text-foreground">View all</Link>
-              <div className="flex items-center gap-1.5">
-                <button type="button" aria-label="Previous creators" onClick={() => moveRail(creatorsRail.current, -1)} className="grid h-9 w-9 cursor-pointer place-items-center rounded-lg border border-border bg-background text-foreground transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"><ArrowLeft aria-hidden="true" className="h-4 w-4" /></button>
-                <button type="button" aria-label="Next creators" onClick={() => moveRail(creatorsRail.current, 1)} className="grid h-9 w-9 cursor-pointer place-items-center rounded-lg border border-border bg-background text-foreground transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"><ArrowRight aria-hidden="true" className="h-4 w-4" /></button>
-              </div>
-            </div>
-          </div>
-          <div ref={creatorsRail} className="no-scrollbar mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1">
+        <div className="mt-6">
+          <DashboardSection id="new-creators-heading" title="New creators" href="/dashboard/creators">
             {latestCreators.map((creator) => (
-              <Link key={creator.slug} href={creatorHref(creator.slug)} className="group min-w-[240px] snap-start overflow-hidden rounded-xl border border-border bg-background text-foreground no-underline transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
-                <div className="relative aspect-[4/3] overflow-hidden bg-muted">
-                  <CreatorThumbnail imageSrc={creator.profileImage} avatarSeed={creator.name} rounded={false} className="h-full w-full" imageClassName="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02] motion-reduce:transition-none" />
-                  {isCreatorNew(creator) ? <span className="absolute right-3 top-3 rounded-full bg-primary px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-white">New</span> : null}
-                </div>
-                <div className="p-4"><h3 className="m-0 truncate text-[15px] font-semibold tracking-tight">{creator.name}</h3><p className="mb-0 mt-1 truncate text-[12px] text-muted-foreground">{creator.niche ?? creator.category} · {baseCity(creator.location)}</p></div>
-              </Link>
+              <DashboardListRow
+                key={creator.slug}
+                href={creatorHref(creator.slug)}
+                lead
+                thumbnail={
+                  <CreatorThumbnail
+                    imageSrc={creator.profileImage}
+                    avatarSeed={creator.name}
+                    rounded={false}
+                    className="h-full w-full"
+                  />
+                }
+                badge={isCreatorNew(creator) ? <NewBadge /> : null}
+                title={creator.name}
+                meta={`${creator.niche ?? creator.category} · ${baseCity(creator.location)}`}
+              />
             ))}
-          </div>
-        </section>
+          </DashboardSection>
+        </div>
       ) : null}
 
       {content.error ? <p className="mt-8 text-sm text-muted-foreground">{content.error}</p> : null}
       {content.loading ? <DashboardHomeSkeleton /> : null}
       {!content.loading && !content.error ? (
         <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-5">
-          <section className="min-w-0" aria-labelledby="latest-campaigns-heading">
-            <div className="flex items-center justify-between gap-4">
-              <h2 id="latest-campaigns-heading" className="m-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Latest campaigns</h2>
-              <div className="flex items-center gap-3"><Link href="/dashboard/campaigns" className="text-[12px] font-semibold text-muted-foreground underline decoration-border underline-offset-4 hover:text-foreground focus-visible:text-foreground">View all</Link><div className="flex items-center gap-1.5"><button type="button" aria-label="Previous campaigns" onClick={() => moveRail(campaignsRail.current, -1)} className="grid h-9 w-9 cursor-pointer place-items-center rounded-lg border border-border bg-background text-foreground transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"><ArrowLeft aria-hidden="true" className="h-4 w-4" /></button><button type="button" aria-label="Next campaigns" onClick={() => moveRail(campaignsRail.current, 1)} className="grid h-9 w-9 cursor-pointer place-items-center rounded-lg border border-border bg-background text-foreground transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"><ArrowRight aria-hidden="true" className="h-4 w-4" /></button></div></div>
-            </div>
-            <div ref={campaignsRail} className="no-scrollbar mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1">
-              {latestCampaigns.map((campaign) => <DashboardCard key={campaign.slug} className="h-full min-w-[240px]" actions={<DashboardCardActions collection="campaigns" slug={campaign.slug} titleField="campaign" title={campaign.campaign ?? campaign.name} onMutated={reloadContent} />}><Link href={campaignHref(campaign.slug)} className="group flex h-full snap-start flex-col overflow-hidden text-foreground no-underline transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"><DashboardThumbnail src={campaign.image} alt={campaign.imageAlt} className="h-28 w-full shrink-0" imageClassName="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" /><div className="flex min-h-[164px] flex-col gap-2 p-4"><span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-primary">{campaign.clientName}</span><strong className="block line-clamp-3 text-[15px] font-semibold leading-[1.25]">{campaign.campaign ?? campaign.name}</strong><CreatorAvatarStack creators={campaignCreators(campaign, content.clients, users)} /><span className="mt-auto block pt-2 text-[12px] text-muted-foreground">{campaignLiveDateLabel(campaign)}</span></div></Link></DashboardCard>)}
-            </div>
-          </section>
+          <DashboardSection id="latest-campaigns-heading" title="Latest campaigns" href="/dashboard/campaigns">
+            {latestCampaigns.map((campaign) => (
+              <DashboardListRow
+                key={campaign.slug}
+                href={campaignHref(campaign.slug)}
+                thumbnail={<DashboardThumbnail src={campaign.image} alt={campaign.imageAlt} className="h-full w-full" />}
+                eyebrow={campaign.clientName}
+                title={campaign.campaign ?? campaign.name}
+                meta={
+                  <div className="flex items-center gap-2">
+                    <CreatorAvatarStack creators={campaignCreators(campaign, content.clients, users)} max={3} size="h-5 w-5" />
+                    <span>{campaignLiveDateLabel(campaign)}</span>
+                  </div>
+                }
+                actions={
+                  <DashboardCardActions
+                    collection="campaigns"
+                    slug={campaign.slug}
+                    titleField="campaign"
+                    title={campaign.campaign ?? campaign.name}
+                    onMutated={reloadContent}
+                  />
+                }
+              />
+            ))}
+          </DashboardSection>
 
-          <section className="min-w-0" aria-labelledby="latest-news-heading">
-            <div className="flex items-center justify-between gap-4">
-              <h2 id="latest-news-heading" className="m-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Latest news</h2>
-              <div className="flex items-center gap-3"><Link href="/dashboard/blog" className="text-[12px] font-semibold text-muted-foreground underline decoration-border underline-offset-4 hover:text-foreground focus-visible:text-foreground">View all</Link><div className="flex items-center gap-1.5"><button type="button" aria-label="Previous news" onClick={() => moveRail(newsRail.current, -1)} className="grid h-9 w-9 cursor-pointer place-items-center rounded-lg border border-border bg-background text-foreground transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"><ArrowLeft aria-hidden="true" className="h-4 w-4" /></button><button type="button" aria-label="Next news" onClick={() => moveRail(newsRail.current, 1)} className="grid h-9 w-9 cursor-pointer place-items-center rounded-lg border border-border bg-background text-foreground transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"><ArrowRight aria-hidden="true" className="h-4 w-4" /></button></div></div>
-            </div>
-            <div ref={newsRail} className="no-scrollbar mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1">
-              {latestNews.map((post) => <DashboardCard key={post.slug} className="h-full min-w-[240px]" actions={<DashboardCardActions collection="blogs" slug={post.slug} titleField="title" title={post.title} onMutated={reloadContent} />}><Link href={`/dashboard/blog/${post.slug}`} className="group flex h-full snap-start flex-col overflow-hidden text-foreground no-underline transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"><DashboardThumbnail src={post.image} label={post.category} className="h-28 w-full shrink-0" imageClassName="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" /><div className="flex min-h-[164px] flex-col p-4"><span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-primary">{post.category}</span><strong className="mt-2 block line-clamp-3 text-[15px] font-semibold leading-[1.25]">{post.title}</strong><span className="mt-auto block pt-4 text-[12px] text-muted-foreground">{formatDate(post.publishedAt)}</span></div></Link></DashboardCard>)}
-            </div>
-          </section>
+          <DashboardSection id="latest-news-heading" title="Latest news" href="/dashboard/blog">
+            {latestNews.map((post) => (
+              <DashboardListRow
+                key={post.slug}
+                href={`/dashboard/blog/${post.slug}`}
+                thumbnail={<DashboardThumbnail src={post.image} label={post.category} className="h-full w-full" />}
+                eyebrow={post.category}
+                title={post.title}
+                meta={formatDate(post.publishedAt)}
+                actions={
+                  <DashboardCardActions
+                    collection="blogs"
+                    slug={post.slug}
+                    titleField="title"
+                    title={post.title}
+                    onMutated={reloadContent}
+                  />
+                }
+              />
+            ))}
+          </DashboardSection>
         </div>
       ) : null}
     </main>

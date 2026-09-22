@@ -19,6 +19,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/auth-provider";
 import { copyContent, deleteContent, renameContent, type ContentCollection } from "@/lib/firebase/content-mutations";
 
@@ -110,14 +111,16 @@ export function DashboardCardActions({
     <>
       <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button
+        <Button
           type="button"
+          variant="outline"
+          size="icon"
           aria-label="Card actions"
           disabled={busy}
-          className="grid h-8 w-8 cursor-pointer place-items-center rounded-lg border border-border bg-background/95 text-muted-foreground shadow-sm backdrop-blur transition hover:border-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-wait disabled:opacity-50"
+          className="rounded-lg border-border bg-background/95 text-muted-foreground shadow-sm backdrop-blur hover:border-foreground hover:text-foreground disabled:cursor-wait"
         >
           <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
-        </button>
+        </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-36">
         <DropdownMenuItem disabled={busy} onSelect={handleRenameOpen}><Pencil className="h-4 w-4" />Rename</DropdownMenuItem>
