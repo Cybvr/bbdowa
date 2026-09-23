@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { ChevronRight } from "lucide-react";
 import { EmptyState, ImageWithFallback } from "@/components/dashboard/ui";
 import { DashboardSidebarSheet } from "@/components/dashboard-sidebar";
+import { useMobileHeader } from "@/components/dashboard/mobile-header";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 /**
@@ -16,15 +17,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 export type DetailCrumb = { label: string; href?: string };
 
 export function DetailBreadcrumb({ crumbs, actions }: { crumbs: DetailCrumb[]; actions?: ReactNode }) {
+  const mobileHeader = useMobileHeader();
   return (
     <div className="mb-2 flex items-center justify-between gap-4 px-1">
       <div className="flex min-w-0 items-center gap-1.5">
-        {/* The dashboard's own mobile header is hidden on these detail pages
-         * (see DashboardChrome), so this is the only way back into the nav
-         * drawer below the "nav" breakpoint. */}
-        <div className="shrink-0 nav:hidden">
-          <DashboardSidebarSheet />
-        </div>
+        {/* Where the dashboard's mobile header is hidden (see DashboardChrome),
+         * this is the only way back into the nav drawer below the "nav"
+         * breakpoint. */}
+        {mobileHeader ? null : (
+          <div className="shrink-0 nav:hidden">
+            <DashboardSidebarSheet />
+          </div>
+        )}
         <nav aria-label="Breadcrumb" className="min-w-0">
           <ol className="m-0 flex list-none flex-wrap items-center gap-x-2 gap-y-1 p-0 text-xs text-muted-foreground sm:text-sm">
             {crumbs.map((crumb, index) => (
@@ -290,12 +294,12 @@ export function ProfileTable({
     return <EmptyState title={emptyTitle} description={emptyDescription} />;
   }
   return (
-    <div className="overflow-x-auto">
-      <Table className="w-full min-w-[480px] border-collapse text-left">
+    <div className="overflow-hidden rounded-xl border border-border bg-background">
+      <Table className="min-w-[480px]">
         <TableHeader>
-          <TableRow className="font-semibold uppercase text-muted-foreground">
+          <TableRow className="bg-muted/30 hover:bg-muted/30">
             {columns.map((column) => (
-              <TableHead key={column.key} className="px-4 py-2 first:pl-0">{column.label}</TableHead>
+              <TableHead key={column.key} className="px-4">{column.label}</TableHead>
             ))}
           </TableRow>
         </TableHeader>
@@ -303,7 +307,7 @@ export function ProfileTable({
           {rows.map((row, index) => (
             <TableRow key={index}>
               {columns.map((column) => (
-                <TableCell key={column.key} className="px-4 py-3 align-top first:pl-0">
+                <TableCell key={column.key} className="px-4 py-3 align-top">
                   {row[column.key] ?? <span className="text-muted-foreground">—</span>}
                 </TableCell>
               ))}

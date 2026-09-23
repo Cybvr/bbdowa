@@ -12,7 +12,6 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
   const isApplication = pathname === "/dashboard/careers/apply";
   const isClientDetail = /^\/dashboard\/clients\/[^/]+(?:\/|$)/.test(pathname);
-  const isCreatorDetail = /^\/dashboard\/discover\/[^/]+$/.test(pathname);
 
   useEffect(() => {
     setSidebarCollapsed(pathname === "/dashboard/discover");
@@ -24,7 +23,7 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
 
   if (isApplication) return <>{children}</>;
 
-  const hideMobileHeader = isClientDetail || isCreatorDetail;
+  const hideMobileHeader = isClientDetail;
 
   return (
     <MobileHeaderProvider enabled={!hideMobileHeader}>

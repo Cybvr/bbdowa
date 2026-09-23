@@ -45,6 +45,23 @@ export function MobileHeaderSearch({ children }: { children: ReactNode }) {
   return header?.searchSlot ? createPortal(children, header.searchSlot) : null;
 }
 
+/** Portals `children` into the mobile header's action (CTA) slot, or renders nothing. */
+export function MobileHeaderActions({ children }: { children: ReactNode }) {
+  const header = useMobileHeader();
+  return header?.actionSlot ? createPortal(children, header.actionSlot) : null;
+}
+
+/** Sets the mobile header title while mounted. Renders nothing itself. */
+export function MobileHeaderTitle({ title }: { title: string }) {
+  const setTitle = useMobileHeader()?.setTitle;
+  useEffect(() => {
+    if (!setTitle) return;
+    setTitle(title);
+    return () => setTitle(null);
+  }, [setTitle, title]);
+  return null;
+}
+
 /**
  * Wraps a page heading. On phones the title and action move into the top bar
  * and the in-page copy of them is hidden.

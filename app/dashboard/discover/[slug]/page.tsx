@@ -25,6 +25,7 @@ import { SocialIcon, type SocialIconName } from "@/components/social-icon";
 import { ShareCreatorDialog } from "@/components/share-creator-dialog";
 import { UserActions } from "@/components/user-actions";
 import { ProfilePageSkeleton } from "@/components/dashboard/loading-skeleton";
+import { MobileHeaderActions, MobileHeaderTitle } from "@/components/dashboard/mobile-header";
 import { CreatorDocumentAddAction, CreatorDocumentsPanel } from "@/components/creator-documents-panel";
 import { CreatorHoursPanel } from "@/components/creator-hours-panel";
 
@@ -125,13 +126,20 @@ export default function CreatorDetailPage() {
         name={creator.name}
         breadcrumb={<DetailBreadcrumb crumbs={[{ label: "Discover", href: "/dashboard/discover" }, { label: creator.name }]} />}
         actions={
-          <div className="flex items-center gap-2">
-            <UserActions user={creator} variant="creator" listHref="/dashboard/discover" categoryOptions={creatorCategoryOptions(categorySource)} iconOnly />
-            <ShareCreatorDialog
-              creatorName={creator.name}
-              path={`/dashboard/discover/${creator.slug}`}
-            />
-          </div>
+          <>
+            {/* Desktop: actions sit in the banner. On phones there's no banner
+             * hamburger anymore — the dashboard top bar is back, so edit and
+             * share become its CTAs and the creator's name its title. */}
+            <div className="hidden items-center gap-2 nav:flex">
+              <UserActions user={creator} variant="creator" listHref="/dashboard/discover" categoryOptions={creatorCategoryOptions(categorySource)} iconOnly />
+              <ShareCreatorDialog creatorName={creator.name} path={`/dashboard/discover/${creator.slug}`} />
+            </div>
+            <MobileHeaderTitle title={creator.name} />
+            <MobileHeaderActions>
+              <UserActions user={creator} variant="creator" listHref="/dashboard/discover" categoryOptions={creatorCategoryOptions(categorySource)} iconOnly />
+              <ShareCreatorDialog creatorName={creator.name} path={`/dashboard/discover/${creator.slug}`} />
+            </MobileHeaderActions>
+          </>
         }
         subtitle={
           <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
