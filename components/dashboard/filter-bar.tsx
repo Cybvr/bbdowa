@@ -193,7 +193,7 @@ export function FilterBar<TabKey extends string, SortKey extends string>({
   };
 
   return (
-    <div data-filter-panel={panelId} className={`${className} flex flex-wrap items-center gap-2 sm:gap-3`}>
+    <div data-filter-panel={panelId} className={`${className} ${inHeader ? "max-nav:mt-0" : ""} flex flex-wrap items-center gap-2 sm:gap-3`}>
       {inHeader && hasSheet ? (
         <MobileHeaderSearch>
           <button
@@ -332,13 +332,13 @@ export function FilterBar<TabKey extends string, SortKey extends string>({
         ) : null}
 
       </div>
-      <div className="flex w-full items-center justify-end gap-2 sm:hidden">
-        {view && onViewChange ? <ViewToggle view={view} onChange={onViewChange} /> : null}
+      <div className="flex w-full items-center justify-between gap-2 sm:hidden">
         {resultCount ? (
           <p aria-live="polite" className="m-0 whitespace-nowrap text-[13px] font-medium text-muted-foreground">
             {resultCount}
           </p>
-        ) : null}
+        ) : <span />}
+        {view && onViewChange ? <ViewToggle view={view} onChange={onViewChange} /> : null}
       </div>
     </div>
   );
