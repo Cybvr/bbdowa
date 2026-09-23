@@ -241,6 +241,13 @@ export const DocumentsIcon: NavIconComponent = ({ className }) => (
   </Glyph>
 );
 
+// Tasks — checklist
+export const TasksIcon: NavIconComponent = ({ className }) => (
+  <Glyph className={className}>
+    <path d="M4 6.5l2 2 3-3.5M4 13l2 2 3-3.5M4 19.5l2 2 3-3.5M12 6h8M12 13h8M12 19.5h8" />
+  </Glyph>
+);
+
 // Njeri — BBDO AI assistant mark
 export const NjeriIcon: NavIconComponent = ({ className }) => (
   <Glyph className={className}>
@@ -284,4 +291,5 @@ export const NAV_ICON_SET: Record<string, NavIconComponent> = {
   Overview: DashboardIcon,
   Users: TeamIcon,
   Documents: DocumentsIcon,
+  Tasks: TasksIcon,
 };

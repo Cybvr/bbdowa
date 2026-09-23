@@ -16,18 +16,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useFirestoreTasks, useFirestoreUsers } from "@/lib/firebase/client-content";
-import { TASK_COLLECTION, TASK_STATUSES, TASK_STATUS_LABELS, formatDate, isOverdue, type TaskStatus } from "@/lib/creator-tasks";
+import { TASK_COLLECTION, TASK_STATUSES, TASK_STATUS_LABELS, formatDate, type TaskStatus } from "@/lib/creator-tasks";
 import { firebaseDb } from "@/lib/firebase/client";
 import { plural } from "@/lib/format";
 import { isCreatorUser } from "@/lib/users";
-
-function StatusBadge({ status, overdue }: { status: TaskStatus; overdue: boolean }) {
-  if (overdue) {
-    return <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-primary">Overdue</span>;
-  }
-  const tone = status === "done" ? "bg-foreground text-background" : status === "in_progress" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground";
-  return <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.06em] ${tone}`}>{TASK_STATUS_LABELS[status]}</span>;
-}
 
 type CreatorOption = { uid: string | null; name: string; slug: string };
 
@@ -191,7 +183,7 @@ export default function TasksPage() {
           <TableCell className="max-w-[420px] px-4 py-3"><p className="m-0 font-semibold">{task.title}</p>{task.description ? <p className="mb-0 mt-0.5 max-w-[40ch] text-muted-foreground">{task.description}</p> : null}</TableCell>
           <TableCell className="px-4 py-3">{creator ? <Link href={`/dashboard/discover/${creator.slug}`} className="font-semibold text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary">{name}</Link> : name}</TableCell>
           <TableCell className="whitespace-nowrap px-4 py-3 text-muted-foreground">{task.dueDate ? formatDate(task.dueDate) : "—"}</TableCell>
-          <TableCell className="px-4 py-3"><div className="flex items-center gap-2"><StatusBadge status={task.status} overdue={isOverdue(task)} /><Select value={task.status} onValueChange={(value) => void setTaskStatus(task.id, value as TaskStatus)}><SelectTrigger disabled={busyId === task.id} className="h-9 w-[150px]"><SelectValue /></SelectTrigger><SelectContent>{TASK_STATUSES.map((value) => <SelectItem key={value} value={value}>{TASK_STATUS_LABELS[value]}</SelectItem>)}</SelectContent></Select></div></TableCell>
+          <TableCell className="px-4 py-3"><Select value={task.status} onValueChange={(value) => void setTaskStatus(task.id, value as TaskStatus)}><SelectTrigger disabled={busyId === task.id} className="h-9 w-[150px]"><SelectValue /></SelectTrigger><SelectContent>{TASK_STATUSES.map((value) => <SelectItem key={value} value={value}>{TASK_STATUS_LABELS[value]}</SelectItem>)}</SelectContent></Select></TableCell>
           <TableCell className="px-4 py-3"><div className="flex justify-end gap-1.5">{role === "admin" && <button type="button" onClick={() => void remove(task.id, task.title)} disabled={busyId === task.id} aria-label={`Delete ${task.title}`} className="grid h-10 w-10 place-items-center rounded-lg text-muted-foreground hover:text-destructive disabled:opacity-50"><Trash2 className="h-4 w-4" /></button>}</div></TableCell>
         </TableRow>;
       })}</TableBody></Table> : <div className="px-5 py-12 text-center"><p className="m-0 text-[15px] font-semibold">{tasks.length ? "No tasks match" : "No tasks yet"}</p><p className="mb-0 mt-1 text-sm text-muted-foreground">{tasks.length ? "Try another search or status." : "Create a task and assign it to a creator."}</p></div>}
