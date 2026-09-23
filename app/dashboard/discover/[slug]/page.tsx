@@ -28,6 +28,7 @@ import { ProfilePageSkeleton } from "@/components/dashboard/loading-skeleton";
 import { MobileHeaderActions } from "@/components/dashboard/mobile-header";
 import { CreatorDocumentAddAction, CreatorDocumentsPanel } from "@/components/creator-documents-panel";
 import { CreatorHoursPanel } from "@/components/creator-hours-panel";
+import { CreatorTasksPanel } from "@/components/tasks-view";
 
 type CreatorPlatform = { label: string; href: string; Icon?: IconType; brand?: SocialIconName };
 
@@ -44,7 +45,7 @@ function platformsFor(creator: Creator): CreatorPlatform[] {
   return platforms;
 }
 
-type CreatorTab = "overview" | "work-history" | "campaigns" | "hours" | "documents";
+type CreatorTab = "overview" | "work-history" | "campaigns" | "hours" | "tasks" | "documents";
 
 export default function CreatorDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -109,12 +110,15 @@ export default function CreatorDetailPage() {
   }
   const platforms = platformsFor(creator);
   const creatorCampaigns = getCreatorCampaigns(creator.slug, clients, campaigns);
+  const isOwnProfile = Boolean(authUser?.uid && creator.uid && authUser.uid === creator.uid);
+  const canSeeTasks = isStaff || isOwnProfile;
 
   const tabs: { id: CreatorTab; label: string }[] = [
     { id: "overview", label: "Overview" },
     ...(creator.workHistory?.length ? ([{ id: "work-history", label: "Work history" }] as const) : []),
     ...(creatorCampaigns.length ? ([{ id: "campaigns", label: "Campaigns" }] as const) : []),
     ...(hasHours ? ([{ id: "hours", label: "Hours" }] as const) : []),
+    ...(canSeeTasks ? ([{ id: "tasks", label: "Tasks" }] as const) : []),
     ...(documentCount > 0 || isStaff ? ([{ id: "documents", label: "Documents" }] as const) : []),
   ];
 
@@ -282,6 +286,16 @@ export default function CreatorDetailPage() {
         {tab === "hours" && authUser && (
           <ProfileSection title="Hours logged" variant="plain">
             <CreatorHoursPanel creatorUid={creator.uid} creatorName={creator.name} />
+          </ProfileSection>
+        )}
+
+        {tab === "tasks" && canSeeTasks && (
+          <ProfileSection title="Tasks" variant="plain">
+            <CreatorTasksPanel
+              creatorUid={creator.uid}
+              creatorName={creator.name}
+              viewer={{ uid: authUser?.uid ?? "", name: authUser?.name ?? authUser?.email ?? null, isStaff }}
+            />
           </ProfileSection>
         )}
 
