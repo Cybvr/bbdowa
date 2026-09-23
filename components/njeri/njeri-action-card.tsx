@@ -165,15 +165,24 @@ export function ActionCard({
   const isUpdate = draft.type === "update_record";
   const isDelete = draft.type === "delete_record";
   const title = isCreator ? "Creator draft" : isCampaign ? "Campaign draft" : isUpdate ? "Update draft" : isDelete ? "Delete draft" : "Client draft";
-  const record = !isUpdate && !isDelete ? draft.record : null;
+  const record = "record" in draft ? draft.record : null;
+  const creatorRecord = draft.type === "create_creator" ? draft.record : null;
+  const campaignRecord = draft.type === "create_campaign" ? draft.record : null;
+  const clientRecord = draft.type === "create_client" ? draft.record : null;
   const status = draft.status ?? "pending";
   const updateRecord = (field: string, value: string) => {
-    setDraft((current) => ({
-      ...current,
-      record: { ...current.record, [field]: field === "platform" ? value.split(",").map((item) => item.trim()).filter(Boolean) : value },
-      status: "pending",
-      error: undefined,
-    } as NjeriActionProposal));
+    setDraft((current) => {
+      if (!("record" in current)) return current;
+      return {
+        ...current,
+        record: {
+          ...current.record,
+          [field]: field === "platform" ? value.split(",").map((item) => item.trim()).filter(Boolean) : value,
+        },
+        status: "pending",
+        error: undefined,
+      } as NjeriActionProposal;
+    });
   };
 
   return (
@@ -209,25 +218,25 @@ export function ActionCard({
       <div className="mt-3 grid gap-2">
         <label className="grid gap-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
           Name
-          <input value={record!.name} onChange={(event) => updateRecord("name", event.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium normal-case tracking-normal text-foreground outline-none focus:border-primary" />
+          <input value={record?.name ?? ""} onChange={(event) => updateRecord("name", event.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium normal-case tracking-normal text-foreground outline-none focus:border-primary" />
         </label>
         {isCreator ? (
           <>
-            <label className="grid gap-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Category<input value={record!.category} onChange={(event) => updateRecord("category", event.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium normal-case tracking-normal text-foreground outline-none focus:border-primary" /></label>
-            <label className="grid gap-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Email<input type="email" value={record!.email ?? ""} onChange={(event) => updateRecord("email", event.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium normal-case tracking-normal text-foreground outline-none focus:border-primary" /></label>
-            <label className="grid gap-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">About<textarea value={record!.craftNote} onChange={(event) => updateRecord("craftNote", event.target.value)} rows={3} className="rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium normal-case tracking-normal text-foreground outline-none focus:border-primary" /></label>
+            <label className="grid gap-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Category<input value={creatorRecord?.category ?? ""} onChange={(event) => updateRecord("category", event.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium normal-case tracking-normal text-foreground outline-none focus:border-primary" /></label>
+            <label className="grid gap-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Email<input type="email" value={creatorRecord?.email ?? ""} onChange={(event) => updateRecord("email", event.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium normal-case tracking-normal text-foreground outline-none focus:border-primary" /></label>
+            <label className="grid gap-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">About<textarea value={creatorRecord?.craftNote ?? ""} onChange={(event) => updateRecord("craftNote", event.target.value)} rows={3} className="rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium normal-case tracking-normal text-foreground outline-none focus:border-primary" /></label>
           </>
         ) : isCampaign ? (
           <>
-            <label className="grid gap-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Client<input value={record!.clientName} onChange={(event) => updateRecord("clientName", event.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium normal-case tracking-normal text-foreground outline-none focus:border-primary" /></label>
-            <label className="grid gap-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">What we&apos;re trying to do<textarea value={record!.summary} onChange={(event) => updateRecord("summary", event.target.value)} rows={3} className="rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium normal-case tracking-normal text-foreground outline-none focus:border-primary" /></label>
-            <label className="grid gap-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Strategy<textarea value={record!.strategy} onChange={(event) => updateRecord("strategy", event.target.value)} rows={3} className="rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium normal-case tracking-normal text-foreground outline-none focus:border-primary" /></label>
-            <label className="grid gap-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Channels<input value={record!.platform.join(", ")} onChange={(event) => updateRecord("platform", event.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium normal-case tracking-normal text-foreground outline-none focus:border-primary" /></label>
+            <label className="grid gap-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Client<input value={campaignRecord?.clientName ?? ""} onChange={(event) => updateRecord("clientName", event.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium normal-case tracking-normal text-foreground outline-none focus:border-primary" /></label>
+            <label className="grid gap-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">What we&apos;re trying to do<textarea value={campaignRecord?.summary ?? ""} onChange={(event) => updateRecord("summary", event.target.value)} rows={3} className="rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium normal-case tracking-normal text-foreground outline-none focus:border-primary" /></label>
+            <label className="grid gap-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Strategy<textarea value={campaignRecord?.strategy ?? ""} onChange={(event) => updateRecord("strategy", event.target.value)} rows={3} className="rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium normal-case tracking-normal text-foreground outline-none focus:border-primary" /></label>
+            <label className="grid gap-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Channels<input value={campaignRecord?.platform.join(", ") ?? ""} onChange={(event) => updateRecord("platform", event.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium normal-case tracking-normal text-foreground outline-none focus:border-primary" /></label>
           </>
         ) : (
           <>
-            <label className="grid gap-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Industry<input value={record!.industry} onChange={(event) => updateRecord("industry", event.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium normal-case tracking-normal text-foreground outline-none focus:border-primary" /></label>
-            <label className="grid gap-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Description<textarea value={record!.description ?? ""} onChange={(event) => updateRecord("description", event.target.value)} rows={3} className="rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium normal-case tracking-normal text-foreground outline-none focus:border-primary" /></label>
+            <label className="grid gap-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Industry<input value={clientRecord?.industry ?? ""} onChange={(event) => updateRecord("industry", event.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium normal-case tracking-normal text-foreground outline-none focus:border-primary" /></label>
+            <label className="grid gap-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Description<textarea value={clientRecord?.description ?? ""} onChange={(event) => updateRecord("description", event.target.value)} rows={3} className="rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium normal-case tracking-normal text-foreground outline-none focus:border-primary" /></label>
           </>
         )}
       </div>

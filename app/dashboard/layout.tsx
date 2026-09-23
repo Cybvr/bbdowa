@@ -3,7 +3,7 @@ import { DashboardChrome } from "@/components/dashboard-chrome";
 
 export const metadata: Metadata = {
   title: {
-    default: "BBDO West Africa",
+    default: "Dashboard",
     template: "%s — BBDO West Africa",
   },
   description: "BBDO West Africa — a shared home for agency information and working knowledge.",
