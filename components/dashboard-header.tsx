@@ -7,8 +7,7 @@ import { LuMenu } from "react-icons/lu";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth-provider";
 import { DashboardNotifications } from "@/components/dashboard-notifications";
-import { DashboardLogo, DashboardSidebarContent, DashboardSidebarSheet } from "@/components/dashboard-sidebar";
-import { ProfileNav } from "@/components/profile-nav";
+import { DashboardSidebarContent, DashboardSidebarSheet } from "@/components/dashboard-sidebar";
 import { TrackerIcon } from "@/components/nav-icons";
 import { TimeTracker } from "@/components/time-tracker";
 import { useMobileHeader } from "@/components/dashboard/mobile-header";
@@ -323,9 +322,7 @@ export function DashboardHeader({
           />
           {mobileHeader?.title ? (
             <h1 className="m-0 truncate text-[20px] font-bold leading-tight tracking-tight">{mobileHeader.title}</h1>
-          ) : (
-            <DashboardLogo />
-          )}
+          ) : null}
         </div>
         <div className="flex shrink-0 items-center gap-1">
           <div ref={mobileHeader?.setSearchSlot} className="contents" />
@@ -358,7 +355,6 @@ export function DashboardHeader({
               <TimeTracker compact />
             </DialogContent>
           </Dialog>
-          <ProfileNav variant="avatar" tone="background" />
         </div>
       </div>
     </>
