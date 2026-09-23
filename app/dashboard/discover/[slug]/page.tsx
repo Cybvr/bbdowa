@@ -96,11 +96,11 @@ export default function CreatorDetailPage() {
   return (
     <main className="flex-1 px-4 pb-10 pt-4 sm:px-8 sm:pb-16 sm:pt-4">
       <DetailBreadcrumb
-        crumbs={[{ label: "All creators", href: "/dashboard/creators" }, { label: creator.name }]}
+        crumbs={[{ label: "Discover", href: "/dashboard/discover" }, { label: creator.name }]}
         actions={
           <div className="flex items-center gap-2">
-            <UserActions user={creator} variant="creator" listHref="/dashboard/creators" categoryOptions={creatorCategoryOptions(categorySource)} />
-            <ShareCreatorDialog creatorName={creator.name} path={`/dashboard/creators/${creator.slug}`} showLabel />
+            <UserActions user={creator} variant="creator" listHref="/dashboard/discover" categoryOptions={creatorCategoryOptions(categorySource)} />
+            <ShareCreatorDialog creatorName={creator.name} path={`/dashboard/discover/${creator.slug}`} showLabel />
           </div>
         }
       />

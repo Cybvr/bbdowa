@@ -147,12 +147,12 @@ export function isCreatorNew(creator: Creator, now = Date.now()): boolean {
 }
 
 export function creatorHref(slug: string): string {
-  return `/dashboard/creators/${slug}`;
+  return `/dashboard/discover/${slug}`;
 }
 
 export function userHref(user: User, surface: "team" | "creator" = "creator"): string {
   return surface === "creator"
-    ? `/dashboard/creators/${user.slug}`
+    ? `/dashboard/discover/${user.slug}`
     : `/dashboard/people/${user.slug}`;
 }
 

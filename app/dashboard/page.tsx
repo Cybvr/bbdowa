@@ -123,7 +123,7 @@ export default function HomePage() {
       {creatorsLoading ? <CreatorRailSkeleton /> : null}
       {!creatorsLoading && latestCreators.length > 0 ? (
         <div className="mt-6">
-          <DashboardSection id="new-creators-heading" title="New creators" href="/dashboard/creators">
+          <DashboardSection id="new-creators-heading" title="New creators" href="/dashboard/discover">
             {latestCreators.map((creator) => (
               <DashboardListRow
                 key={creator.slug}

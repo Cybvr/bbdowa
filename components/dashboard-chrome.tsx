@@ -8,19 +8,18 @@ import { MobileHeaderProvider } from "@/components/dashboard/mobile-header";
 
 export function DashboardChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => pathname === "/dashboard/creators");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => pathname === "/dashboard/discover");
   const isApplication = pathname === "/dashboard/careers/apply";
   const isClientDetail = /^\/dashboard\/clients\/[^/]+(?:\/|$)/.test(pathname);
-  const isCreators = pathname === "/dashboard/creators";
-  const isCreatorDetail = /^\/dashboard\/creators\/[^/]+$/.test(pathname);
+  const isCreatorDetail = /^\/dashboard\/discover\/[^/]+$/.test(pathname);
 
   useEffect(() => {
-    setSidebarCollapsed(pathname === "/dashboard/creators");
+    setSidebarCollapsed(pathname === "/dashboard/discover");
   }, [pathname]);
 
   if (isApplication) return <>{children}</>;
 
-  const hideMobileHeader = isClientDetail || isCreators || isCreatorDetail;
+  const hideMobileHeader = isClientDetail || isCreatorDetail;
 
   return (
     <MobileHeaderProvider enabled={!hideMobileHeader}>

@@ -45,7 +45,7 @@ type ProfileTab = "overview" | "work-history" | "campaigns" | "hours" | "contrac
 
 /**
  * "My profile" — the signed-in user's own profile, resolved by uid so it
- * works whether or not they have a slug (unlike /dashboard/creators/[slug],
+ * works whether or not they have a slug (unlike /dashboard/discover/[slug],
  * which needs one). A real page, not a redirect.
  */
 export default function MyProfilePage() {

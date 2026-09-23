@@ -59,7 +59,7 @@ export default function ContractDetailPage() {
     setBusy(true);
     try {
       await deleteDoc(doc(firebaseDb, CONTRACT_COLLECTION, contract.id));
-      router.push(assignedSlug ? `/dashboard/creators/${assignedSlug}` : "/dashboard/creators");
+      router.push(assignedSlug ? `/dashboard/discover/${assignedSlug}` : "/dashboard/discover");
     } catch (cause) {
       console.error("Unable to delete agreement", cause);
       setError("Couldn’t delete that agreement. Try again.");
@@ -89,7 +89,7 @@ export default function ContractDetailPage() {
     <main className="flex flex-1 flex-col px-4 pb-6 pt-4 sm:px-8 sm:pb-8 sm:pt-5 nav:h-[calc(100vh-60px)] nav:overflow-hidden nav:pb-4">
       <DetailBreadcrumb
         crumbs={[
-          ...(assignedSlug ? [{ label: contract.assignedToName ?? "Creator", href: `/dashboard/creators/${assignedSlug}` }] : []),
+          ...(assignedSlug ? [{ label: contract.assignedToName ?? "Creator", href: `/dashboard/discover/${assignedSlug}` }] : []),
           { label: contract.title },
         ]}
         actions={

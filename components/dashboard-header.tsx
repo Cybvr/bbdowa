@@ -66,7 +66,7 @@ function contentSearchResults(users: User[], clients: Client[], campaigns: Campa
         id: `user-${user.uid ?? user.slug}`,
         label: user.name,
         detail: creator ? `Creator${user.category ? ` · ${user.category}` : ""}` : user.title || "Team",
-        href: creator ? `/dashboard/creators/${user.slug}` : `/dashboard/people/${user.slug}`,
+        href: creator ? `/dashboard/discover/${user.slug}` : `/dashboard/people/${user.slug}`,
         keywords: [user.name, user.title, user.department, user.category, ...user.tags].filter(Boolean).join(" "),
       }];
     }),

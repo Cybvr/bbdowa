@@ -5,7 +5,7 @@ import { CreatorDirectory } from "@/components/creators-directory";
 import { baseCity, isCreatorUser } from "@/lib/users";
 import { PageLoadingSkeleton } from "@/components/dashboard/loading-skeleton";
 
-export default function CreatorPage() {
+export default function DiscoverPage() {
   const { users, loading, error } = useFirestoreUsers();
   if (loading) return <PageLoadingSkeleton titleWidth="w-40" />;
   if (error) return <main className="flex-1 px-5 pb-16 pt-4 sm:px-8 text-sm text-muted-foreground">{error}</main>;

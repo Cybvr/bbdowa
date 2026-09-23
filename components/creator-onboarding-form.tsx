@@ -77,7 +77,7 @@ export function CreatorOnboardingForm() {
       if (!firebaseUser) throw new Error("Your sign-in has expired. Please sign in again.");
       await completeCreatorOnboarding(firebaseUser, form);
       setSubmitted(true);
-      window.setTimeout(() => router.replace("/dashboard/creators"), 900);
+      window.setTimeout(() => router.replace("/dashboard/discover"), 900);
     } catch (submissionError) {
       setError(submissionError instanceof Error ? submissionError.message : "We could not save your creator profile.");
     } finally {

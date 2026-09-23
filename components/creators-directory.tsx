@@ -12,8 +12,6 @@ import { Badge } from "@/components/dashboard/ui";
 import { SocialIcon, type SocialIconName } from "@/components/social-icon";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { DashboardSidebarSheet } from "@/components/dashboard-sidebar";
-import { LuMenu } from "react-icons/lu";
 import { LoginDialog } from "@/components/login-dialog";
 import { useOptionalAuth } from "@/components/auth-provider";
 import { ShareCreatorDialog } from "@/components/share-creator-dialog";
@@ -462,17 +460,6 @@ function CreatorDiscoveryBar({
     <div className="mb-4 sm:mb-5">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
         <div className="flex min-w-0 flex-1 items-center gap-2">
-          <DashboardSidebarSheet
-            trigger={
-              <button
-                type="button"
-                aria-label="Open navigation menu"
-                className="grid h-11 w-11 shrink-0 cursor-pointer place-items-center rounded-full border border-border bg-background text-foreground transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 nav:hidden"
-              >
-                <LuMenu aria-hidden="true" className="h-5 w-5" />
-              </button>
-            }
-          />
           <form role="search" onSubmit={(event) => event.preventDefault()} className="relative min-w-0 flex-1">
           <input
             type="search"

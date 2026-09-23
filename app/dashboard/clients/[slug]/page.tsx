@@ -1523,7 +1523,7 @@ function OneUtilityClientWorkspace({
                         {latestCreators.map((creator) => (
                           <DashboardCard key={creator.slug}>
                             <Link
-                              href={`/dashboard/creators/${creator.slug}`}
+                              href={`/dashboard/discover/${creator.slug}`}
                               className="group flex items-center gap-3 p-3 text-foreground no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                             >
                               <ImageWithFallback
@@ -2042,7 +2042,7 @@ function OneUtilityClientWorkspace({
                                 actions={<UserActions user={creator} variant="creator" listHref={`/dashboard/clients/${slug}/creators`} compactMenu categoryOptions={knownCreatorCategories(availableUsers)} />}
                               >
                                 <Link
-                                  href={`/dashboard/creators/${creator.slug}`}
+                                  href={`/dashboard/discover/${creator.slug}`}
                                   className="group flex h-full flex-col text-foreground no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                                 >
                                   <div className="h-28 shrink-0 overflow-hidden bg-muted">
@@ -2082,7 +2082,7 @@ function OneUtilityClientWorkspace({
                               {visibleCreators.map((creator) => (
                                 <tr key={creator.slug} className="border-b border-border last:border-0 hover:bg-muted/50">
                                   <td className="px-4 py-3.5 text-[13px] font-semibold">
-                                    <Link href={`/dashboard/creators/${creator.slug}`} className="inline-flex items-center gap-3 text-foreground no-underline hover:text-primary focus-visible:text-primary">
+                                    <Link href={`/dashboard/discover/${creator.slug}`} className="inline-flex items-center gap-3 text-foreground no-underline hover:text-primary focus-visible:text-primary">
                                       <ImageWithFallback
                                         src={creator.profileImage ?? creator.featuredImage}
                                         alt=""

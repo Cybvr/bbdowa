@@ -116,7 +116,7 @@ export default function AdminContractsPage() {
                         );
                         return creator ? (
                           <Link
-                            href={`/dashboard/creators/${creator.slug}`}
+                            href={`/dashboard/discover/${creator.slug}`}
                             className="font-semibold text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary"
                           >
                             {contract.assignedToName ?? creator.name}
