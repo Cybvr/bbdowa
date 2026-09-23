@@ -25,7 +25,7 @@ import { SocialIcon, type SocialIconName } from "@/components/social-icon";
 import { ShareCreatorDialog } from "@/components/share-creator-dialog";
 import { UserActions } from "@/components/user-actions";
 import { ProfilePageSkeleton } from "@/components/dashboard/loading-skeleton";
-import { MobileHeaderActions, MobileHeaderTitle } from "@/components/dashboard/mobile-header";
+import { MobileHeaderActions } from "@/components/dashboard/mobile-header";
 import { CreatorDocumentAddAction, CreatorDocumentsPanel } from "@/components/creator-documents-panel";
 import { CreatorHoursPanel } from "@/components/creator-hours-panel";
 
@@ -134,7 +134,6 @@ export default function CreatorDetailPage() {
               <UserActions user={creator} variant="creator" listHref="/dashboard/discover" categoryOptions={creatorCategoryOptions(categorySource)} iconOnly />
               <ShareCreatorDialog creatorName={creator.name} path={`/dashboard/discover/${creator.slug}`} />
             </div>
-            <MobileHeaderTitle title={creator.name} />
             <MobileHeaderActions>
               <UserActions user={creator} variant="creator" listHref="/dashboard/discover" categoryOptions={creatorCategoryOptions(categorySource)} iconOnly />
               <ShareCreatorDialog creatorName={creator.name} path={`/dashboard/discover/${creator.slug}`} />
