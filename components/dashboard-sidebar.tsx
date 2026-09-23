@@ -251,10 +251,10 @@ export function DashboardNavList({ onNavigate, collapsed = false }: { onNavigate
   );
 }
 
-export function DashboardNavFooter({ collapsed = false }: { collapsed?: boolean }) {
+export function DashboardNavProfile({ collapsed = false }: { collapsed?: boolean }) {
   return (
-    <div className="mt-auto pt-2 nav:pt-3">
-      <ProfileNav variant={collapsed ? "avatar" : "row"} />
+    <div className={`border-b border-border pb-2 ${collapsed ? "flex justify-center" : ""}`}>
+      <ProfileNav variant={collapsed ? "avatar" : "row"} tone="background" />
     </div>
   );
 }
@@ -292,8 +292,8 @@ export function DashboardSidebarContent({
           </button>
         ) : null}
       </div>
+      <DashboardNavProfile collapsed={collapsed} />
       <DashboardNavList onNavigate={onNavigate} collapsed={collapsed} />
-      <DashboardNavFooter collapsed={collapsed} />
     </>
   );
 }

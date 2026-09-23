@@ -96,6 +96,7 @@ export function ProfileNav({
   ];
   const displayName = name ?? user?.name ?? user?.email?.split("@")[0] ?? "BBDO User";
   const displayEmail = email ?? user?.email ?? (loading ? "Loading profile..." : "Signed in");
+  const handle = (email ?? user?.email)?.split("@")[0]?.toLowerCase() ?? null;
   const avatarSrc = createGlyphAvatarDataUri(displayName || displayEmail || initials || "BBDO User");
   const handleLogout = onLogout ?? (logout ? () => void logout() : undefined);
 
@@ -119,16 +120,16 @@ export function ProfileNav({
             aria-label="Open profile menu"
             className="flex w-full items-center gap-2 rounded-lg p-1.5 text-left transition-colors hover:bg-foreground/10 focus-visible:bg-foreground/10 focus-visible:outline-none"
           >
-            <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-foreground">
+            <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-xs font-semibold leading-tight text-foreground">{displayName}</span>
-              {roleLabel ? (
-                <span className="mt-1 inline-block rounded-full bg-foreground/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none tracking-[0.06em] text-foreground">
-                  {roleLabel}
-                </span>
+              <span className="block truncate text-sm font-bold leading-tight text-foreground">{displayName}</span>
+              {handle ? (
+                <span className="mt-0.5 block truncate text-xs leading-tight text-muted-foreground">@{handle}</span>
+              ) : roleLabel ? (
+                <span className="mt-0.5 block truncate text-xs leading-tight text-muted-foreground">{roleLabel}</span>
               ) : null}
             </span>
           </button>

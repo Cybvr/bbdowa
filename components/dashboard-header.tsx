@@ -318,7 +318,7 @@ export function DashboardHeader({
               <button
                 type="button"
                 aria-label="Open dashboard menu"
-                className="inline-flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                className="inline-flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
