@@ -40,6 +40,7 @@ type SearchResult = {
 function navigationSearchResults(items: NavItem[], canViewAuthLinks: boolean): SearchResult[] {
   return items.flatMap((item) => {
     if (item.kind === "link") {
+      if (item.requiresAdmin) return [];
       return !item.requiresAuth || canViewAuthLinks
         ? [{ id: `nav-${item.href}`, label: item.label, detail: "Dashboard", href: item.href, keywords: item.label }]
         : [];

@@ -216,6 +216,23 @@ export const AdminIcon: NavIconComponent = ({ className }) => (
   </Glyph>
 );
 
+// Settings — sliders
+export const SettingsIcon: NavIconComponent = ({ className }) => (
+  <Glyph className={className}>
+    <path d="M4 7h9M17 7h3M4 17h3M11 17h9" />
+    <circle cx="15" cy="7" r="2" />
+    <circle cx="9" cy="17" r="2" />
+  </Glyph>
+);
+
+// Log out — door with an exit arrow
+export const LogOutIcon: NavIconComponent = ({ className }) => (
+  <Glyph className={className}>
+    <path d="M10 4H6v16h4" />
+    <path d="M14 8l4 4-4 4M18 12H9" />
+  </Glyph>
+);
+
 // Contracts — document with a signature line
 export const ContractsIcon: NavIconComponent = ({ className }) => (
   <Glyph className={className}>
@@ -270,6 +287,8 @@ export const NAV_ICON_SET: Record<string, NavIconComponent> = {
   About: AboutIcon,
   Careers: CareersIcon,
   Admin: AdminIcon,
+  Settings: SettingsIcon,
+  "Log out": LogOutIcon,
   Overview: DashboardIcon,
   Users: TeamIcon,
   Contracts: ContractsIcon,
