@@ -259,6 +259,7 @@ export const NAV_ICON_SET: Record<string, NavIconComponent> = {
   Directory: DirectoryIcon,
   Team: TeamIcon,
   Creators: CreatorsIcon,
+  Discover: CreatorsIcon,
   "My profile": PeopleIcon,
   People: PeopleIcon,
   Tracker: TrackerIcon,

@@ -58,7 +58,9 @@ export function DashboardNavList({ onNavigate, collapsed = false }: { onNavigate
   const isAdminSection = pathname.startsWith("/admin");
   const navItems = isAdminSection ? ADMIN_NAV_ITEMS : NAV_ITEMS;
   const visibleItems = navItems.filter(
-    (item) => (!item.requiresAuth || Boolean(auth?.user)) && (item.kind !== "link" || !item.requiresAdmin || Boolean(auth?.isAdmin)),
+    (item) =>
+      (!item.requiresAuth || Boolean(auth?.user)) &&
+      (item.kind !== "link" || ((!item.requiresAdmin || Boolean(auth?.isAdmin)) && !item.hideInSidebar)),
   );
 
   useEffect(() => {
