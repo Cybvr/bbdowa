@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { addDoc, collection, deleteDoc, doc, getDocs, query, updateDoc, where } from "firebase/firestore";
-import { MoreHorizontal, Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { firebaseDb } from "@/lib/firebase/client";
 import { EmptyState } from "@/components/dashboard/ui";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -18,12 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import {
   TASK_COLLECTION,
   TASK_STATUSES,
@@ -166,6 +161,8 @@ export function CreatorTasksPanel({ creatorUid, creatorName, viewer }: { creator
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [busyId, setBusyId] = React.useState<string | null>(null);
+  const [selectedId, setSelectedId] = React.useState<string | null>(null);
+  const selected = tasks.find((task) => task.id === selectedId) ?? null;
 
   const load = React.useCallback(async (uid: string) => {
     const snapshot = await getDocs(query(collection(firebaseDb, TASK_COLLECTION), where("assignedTo", "==", uid)));
@@ -217,6 +214,7 @@ export function CreatorTasksPanel({ creatorUid, creatorName, viewer }: { creator
     setError(null);
     try {
       await deleteDoc(doc(firebaseDb, TASK_COLLECTION, task.id));
+      setSelectedId(null);
       reload();
     } catch (cause) {
       console.error("Unable to delete task", cause);
@@ -256,84 +254,76 @@ export function CreatorTasksPanel({ creatorUid, creatorName, viewer }: { creator
           title={viewer.isStaff ? "No tasks yet" : "Nothing assigned to you yet"}
           description={viewer.isStaff ? `Create a task and assign it to ${creatorName}.` : "Tasks your team gives you will show up here."}
         />
-      ) : viewer.isStaff ? (
-        <div className="overflow-x-auto rounded-xl border border-border">
-          <Table className="min-w-[640px] w-full border-collapse">
+      ) : (
+        <div className="overflow-x-auto rounded-xl border border-border bg-background">
+          <Table className="min-w-[560px] w-full border-collapse">
             <TableHeader>
-              <TableRow className="bg-muted/40 text-left font-semibold uppercase text-muted-foreground">
+              <TableRow className="bg-muted/40">
                 <TableHead className="px-4 py-3">Task</TableHead>
                 <TableHead className="px-4 py-3">Due</TableHead>
                 <TableHead className="px-4 py-3">Status</TableHead>
-                <TableHead className="px-4 py-3 text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {tasks.map((task) => (
-                <TableRow key={task.id} className="align-top">
-                  <TableCell className="px-4 py-3">
-                    <p className="m-0 font-semibold">{task.title}</p>
-                    {task.description ? <p className="mb-0 mt-0.5 max-w-[40ch] text-muted-foreground">{task.description}</p> : null}
-                  </TableCell>
-                  <TableCell className="whitespace-nowrap px-4 py-3">{task.dueDate ? formatDate(task.dueDate) : "—"}</TableCell>
-                  <TableCell className="px-4 py-3">
-                    <Select value={task.status} onValueChange={(value) => void setStatus(task, value as TaskStatus)}>
-                      <SelectTrigger disabled={busyId === task.id} className="h-9 w-[150px]"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {TASK_STATUSES.map((status) => <SelectItem key={status} value={status}>{TASK_STATUS_LABELS[status]}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                  <TableCell className="px-4 py-3 text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button
-                          type="button"
-                          aria-label={`Actions for ${task.title}`}
-                          disabled={busyId === task.id}
-                          className="grid h-10 w-10 place-items-center rounded-lg border border-border text-muted-foreground transition hover:border-foreground hover:text-foreground disabled:opacity-50"
-                        >
-                          <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-36">
-                        <DropdownMenuItem variant="destructive" onSelect={() => void removeTask(task)}>
-                          <Trash2 className="h-4 w-4" />Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
+                <TableRow
+                  key={task.id}
+                  onClick={() => setSelectedId(task.id)}
+                  className="cursor-pointer"
+                >
+                  <TableCell className="max-w-[320px] truncate whitespace-nowrap px-4 py-3 font-semibold">{task.title}</TableCell>
+                  <TableCell className="whitespace-nowrap px-4 py-3 text-muted-foreground">{task.dueDate ? formatDate(task.dueDate) : "—"}</TableCell>
+                  <TableCell className="whitespace-nowrap px-4 py-3"><StatusBadge status={task.status} overdue={isOverdue(task)} /></TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </div>
-      ) : (
-        <div className="space-y-3">
-          {tasks.map((task) => (
-            <div key={task.id} className="rounded-xl border border-border p-4 sm:p-5">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="m-0 text-[15px] font-semibold">{task.title}</p>
-                  {task.description ? <p className="mb-0 mt-1 text-[13px] leading-[1.5] text-muted-foreground">{task.description}</p> : null}
-                  <p className="mb-0 mt-2 text-[12px] text-muted-foreground">
-                    {task.dueDate ? `Due ${formatDate(task.dueDate)}` : "No due date"}
-                    {task.createdByName ? ` · From ${task.createdByName}` : ""}
-                  </p>
-                </div>
-                <StatusBadge status={task.status} overdue={isOverdue(task)} />
-              </div>
-              <div className="mt-4 w-full max-w-[200px]">
-                <Select value={task.status} onValueChange={(value) => void setStatus(task, value as TaskStatus)}>
-                  <SelectTrigger disabled={busyId === task.id} className="h-9 w-full"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {TASK_STATUSES.map((status) => <SelectItem key={status} value={status}>{TASK_STATUS_LABELS[status]}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          ))}
-        </div>
       )}
+
+      <Sheet open={Boolean(selected)} onOpenChange={(open) => { if (!open) setSelectedId(null); }}>
+        <SheetContent side="right" aria-describedby={undefined} className="[&>button]:bg-muted [&>button]:text-foreground [&>button]:opacity-100">
+          {selected ? (
+            <>
+              <SheetHeader className="border-b border-border">
+                <SheetTitle className="pr-8">{selected.title}</SheetTitle>
+                <SheetDescription>
+                  {selected.dueDate ? `Due ${formatDate(selected.dueDate)}` : "No due date"}
+                  {selected.createdByName ? ` · From ${selected.createdByName}` : ""}
+                </SheetDescription>
+              </SheetHeader>
+              <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-4 py-4">
+                <div>
+                  <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Status</span>
+                  <div className="flex items-center gap-3">
+                    <StatusBadge status={selected.status} overdue={isOverdue(selected)} />
+                    <Select value={selected.status} onValueChange={(value) => void setStatus(selected, value as TaskStatus)}>
+                      <SelectTrigger disabled={busyId === selected.id} className="h-9 w-[160px]"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {TASK_STATUSES.map((status) => <SelectItem key={status} value={status}>{TASK_STATUS_LABELS[status]}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div>
+                  <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Details</span>
+                  <p className="m-0 whitespace-pre-wrap text-[14px] leading-[1.55] text-foreground">{selected.description || "No details added."}</p>
+                </div>
+                {viewer.isStaff ? (
+                  <button
+                    type="button"
+                    onClick={() => void removeTask(selected)}
+                    disabled={busyId === selected.id}
+                    className="inline-flex h-9 items-center gap-1.5 rounded-md border border-border px-3 text-[13px] font-semibold text-destructive transition hover:border-destructive disabled:opacity-50"
+                  >
+                    <Trash2 className="h-4 w-4" aria-hidden="true" />Delete task
+                  </button>
+                ) : null}
+              </div>
+            </>
+          ) : null}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

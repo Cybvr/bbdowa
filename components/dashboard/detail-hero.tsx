@@ -307,7 +307,7 @@ export function ProfileTable({
           {rows.map((row, index) => (
             <TableRow key={index}>
               {columns.map((column) => (
-                <TableCell key={column.key} className="px-4 py-3 align-top">
+                <TableCell key={column.key} className="max-w-[280px] truncate whitespace-nowrap px-4 py-3">
                   {row[column.key] ?? <span className="text-muted-foreground">—</span>}
                 </TableCell>
               ))}
