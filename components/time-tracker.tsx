@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   ACTIVITY_COLLECTION,
   elapsedMs,
@@ -584,32 +585,32 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
               <EmptyState title="Nothing logged yet" description="Start your first activity above." />
             ) : (
               <div className="overflow-x-auto rounded-xl border border-border">
-                <table className="min-w-[680px] w-full border-collapse text-[15px]">
-                  <thead>
-                    <tr className="border-b border-border bg-muted/40 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                      <th className="px-4 py-3 font-semibold">Activity</th>
-                      <th className="px-4 py-3 font-semibold">Campaign</th>
-                      <th className="px-4 py-3 font-semibold">When</th>
-                      <th className="px-4 py-3 font-semibold">Time</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+                <Table className="min-w-[680px] w-full border-collapse">
+                  <TableHeader>
+                    <TableRow className="bg-muted/40 text-left font-semibold uppercase text-muted-foreground">
+                      <TableHead className="px-4 py-3 font-semibold">Activity</TableHead>
+                      <TableHead className="px-4 py-3 font-semibold">Campaign</TableHead>
+                      <TableHead className="px-4 py-3 font-semibold">When</TableHead>
+                      <TableHead className="px-4 py-3 font-semibold">Time</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {recent.map((entry) => (
-                      <tr key={entry.id} className="border-b border-border last:border-b-0 align-top">
-                        <td className="px-4 py-3">{entry.activity || <span className="text-muted-foreground">—</span>}</td>
-                        <td className="px-4 py-3">{entry.campaignName ?? <span className="text-muted-foreground">—</span>}</td>
-                        <td className="whitespace-nowrap px-4 py-3">{formatTimestamp(entry.startedAt)}</td>
-                        <td className="px-4 py-3 whitespace-nowrap">
+                      <TableRow key={entry.id} className="align-top">
+                        <TableCell className="px-4 py-3">{entry.activity || <span className="text-muted-foreground">—</span>}</TableCell>
+                        <TableCell className="px-4 py-3">{entry.campaignName ?? <span className="text-muted-foreground">—</span>}</TableCell>
+                        <TableCell className="whitespace-nowrap px-4 py-3">{formatTimestamp(entry.startedAt)}</TableCell>
+                        <TableCell className="px-4 py-3 whitespace-nowrap">
                           {entry.endedAt ? (
                             formatClockFull(elapsedMs(entry, now))
                           ) : (
                             <span className="font-semibold text-primary">Running…</span>
                           )}
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             )}
           </section>

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type { IconType } from "react-icons";
 import { FaBehance, FaGlobe } from "react-icons/fa";
-import { FiBookmark, FiCheck, FiChevronDown, FiEdit2, FiFilter, FiFolderPlus, FiGrid, FiList, FiMail, FiPlus, FiSearch, FiShare2, FiTrash2 } from "react-icons/fi";
+import { FiBookmark, FiCheck, FiChevronDown, FiEdit2, FiFilter, FiFolderPlus, FiMail, FiPlus, FiShare2, FiTrash2 } from "react-icons/fi";
 import { ImageWithFallback } from "@/components/empty-thumbnail";
 import { CreatorThumbnail } from "@/components/creator-thumbnail";
 import { Badge } from "@/components/dashboard/ui";
@@ -14,11 +14,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { LoginDialog } from "@/components/login-dialog";
 import { useOptionalAuth } from "@/components/auth-provider";
-import { MobileHeaderSearch, useMobileHeader } from "@/components/dashboard/mobile-header";
+import { FilterBar, type SortOption } from "@/components/dashboard/filter-bar";
 import { ShareCreatorDialog } from "@/components/share-creator-dialog";
 import { deleteSharedCreatorList, readCreatorCollections, writeCreatorCollections, writeSharedCreatorList, type CreatorList } from "@/lib/firebase/creator-collections";
 import type { Creator } from "@/lib/users";
 import { baseCity, creatorAddedTimestamp, creatorHref, isCreatorNew, rateFloorNgn } from "@/lib/users";
+import { plural } from "@/lib/format";
 
 const AVAILABILITY_DOT: Record<Creator["availability"], string> = {
   open: "bg-[#1a9a4a]",
@@ -55,6 +56,11 @@ const RATE_CAP = 100_000;
 const PAGE_SIZE = 12;
 const SAVED_CREATORS_STORAGE_KEY = "bbdowa-my-creator-list";
 const CREATOR_LISTS_STORAGE_KEY = "bbdowa-creator-lists";
+const CREATOR_SORTS: SortOption<"popular" | "newest" | "oldest">[] = [
+  { key: "popular", label: "Popular" },
+  { key: "newest", label: "Newest first" },
+  { key: "oldest", label: "Oldest first" },
+];
 
 function newListId() {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
@@ -383,54 +389,6 @@ function FilterControls({
   );
 }
 
-function ViewToggle({ view, setView }: { view: DirectoryView; setView: (value: DirectoryView) => void }) {
-  return (
-    <div className="inline-flex items-center rounded-lg border border-border bg-background p-1" role="group" aria-label="Creator view">
-      <button
-        type="button"
-        aria-label="List view"
-        aria-pressed={view === "list"}
-        title="List view"
-        onClick={() => setView("list")}
-        className={`grid h-7 w-7 cursor-pointer place-items-center rounded-md transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
-          view === "list" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
-        }`}
-      >
-        <FiList aria-hidden="true" className="h-4 w-4" />
-      </button>
-      <button
-        type="button"
-        aria-label="Card view"
-        aria-pressed={view === "cards"}
-        title="Card view"
-        onClick={() => setView("cards")}
-        className={`grid h-7 w-7 cursor-pointer place-items-center rounded-md transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
-          view === "cards" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
-        }`}
-      >
-        <FiGrid aria-hidden="true" className="h-4 w-4" />
-      </button>
-    </div>
-  );
-}
-
-function SortSelect({ sort, setSort }: { sort: AddedSort; setSort: (value: AddedSort) => void }) {
-  return (
-    <label className="flex shrink-0 items-center">
-      <select
-        value={sort}
-        onChange={(event) => setSort(event.target.value as AddedSort)}
-        aria-label="Sort creators"
-        className="h-9 min-w-[132px] cursor-pointer appearance-none rounded-xl border border-border bg-background px-4 text-[13px] font-medium text-foreground focus-visible:border-primary focus-visible:outline-none"
-      >
-        <option value="popular">Popular</option>
-        <option value="newest">Newest first</option>
-        <option value="oldest">Oldest first</option>
-      </select>
-    </label>
-  );
-}
-
 function CreatorDiscoveryBar({
   search,
   setSearch,
@@ -439,10 +397,15 @@ function CreatorDiscoveryBar({
   setCategory,
   sort,
   setSort,
+  view,
+  setView,
+  visibleCount,
+  activeFilterCount,
+  onOpenFilters,
+  onSaveResultsAsList,
+  canSaveResultsAsList,
   onJoinClick,
-  searchInHeader = false,
 }: {
-  searchInHeader?: boolean;
   search: string;
   setSearch: (value: string) => void;
   categories: string[];
@@ -450,83 +413,77 @@ function CreatorDiscoveryBar({
   setCategory: (value: string) => void;
   sort: AddedSort;
   setSort: (value: AddedSort) => void;
+  view: DirectoryView;
+  setView: (value: DirectoryView) => void;
+  visibleCount: number;
+  activeFilterCount: number;
+  onOpenFilters: () => void;
+  onSaveResultsAsList: () => void;
+  canSaveResultsAsList: boolean;
   onJoinClick?: () => void;
 }) {
   const auth = useOptionalAuth();
   const showJoinAction = auth ? !auth.loading && !auth.user : true;
 
-  const toggleCategory = (category: string) => {
-    setCategory(selectedCategory === category ? "all" : category);
-  };
+  const filterActions = (
+    <>
+      <button
+        type="button"
+        onClick={onOpenFilters}
+        aria-label="More creator filters"
+        className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-[13px] font-semibold text-foreground transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+      >
+        <FiFilter aria-hidden="true" className="h-3.5 w-3.5" />
+        More filters
+        {activeFilterCount > 0 ? <span className="text-[11px] text-muted-foreground">{activeFilterCount}</span> : null}
+      </button>
+      {canSaveResultsAsList ? (
+        <button
+          type="button"
+          onClick={onSaveResultsAsList}
+          title="Save these results as a new list"
+          className="hidden h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-[13px] font-semibold text-foreground transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:inline-flex"
+        >
+          <FiFolderPlus aria-hidden="true" className="h-3.5 w-3.5" />
+          Save list
+        </button>
+      ) : null}
+      {showJoinAction ? (
+        <button
+          type="button"
+          onClick={onJoinClick}
+          className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-[13px] font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+        >
+          <FiPlus aria-hidden="true" className="h-3.5 w-3.5" />
+          Join Bantaba
+        </button>
+      ) : null}
+    </>
+  );
 
   return (
-    <div className="mb-4 sm:mb-5">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-        <div className={`flex min-w-0 flex-1 items-center gap-2 ${searchInHeader ? "max-nav:hidden" : ""}`}>
-          <form role="search" onSubmit={(event) => event.preventDefault()} className="relative min-w-0 flex-1">
-          <input
-            type="search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="What kind of creator are you looking for?"
-            aria-label="Search creators"
-            className="h-11 w-full rounded-full border border-border bg-muted/60 pl-4 pr-12 text-sm font-medium text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:outline-none sm:h-[72px] sm:pl-6 sm:pr-20 sm:text-base"
-          />
-          <button
-            type="submit"
-            aria-label="Search creators"
-            className="absolute right-1.5 top-1.5 grid h-8 w-8 cursor-pointer place-items-center rounded-full bg-background text-foreground transition hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:right-2 sm:top-2 sm:h-14 sm:w-14"
-          >
-            <FiSearch aria-hidden="true" className="h-4 w-4 sm:h-6 sm:w-6" />
-          </button>
-          </form>
-        </div>
-
-        {showJoinAction ? (
-          <button
-            type="button"
-            onClick={onJoinClick}
-            className="inline-flex h-11 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-bold text-primary-foreground no-underline transition hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:h-[72px] sm:px-8 sm:text-base"
-          >
-            <FiPlus aria-hidden="true" className="h-5 w-5" />
-            Join Bantaba
-          </button>
-        ) : null}
-      </div>
-
-      <div className="mt-3 flex items-center justify-between gap-2 sm:mt-4">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="shrink-0 text-[13px] font-bold text-foreground">Categories:</span>
-          <div
-            className="flex min-w-0 gap-2 overflow-x-auto pb-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-            aria-label="Creator categories"
-          >
-            {["all", ...categories].map((category) => {
-              const label = category === "all" ? "All" : category;
-              const selected = selectedCategory === category;
-              return (
-                <button
-                  key={category}
-                  type="button"
-                  aria-pressed={selected}
-                  onClick={() => toggleCategory(category)}
-                  className={`shrink-0 cursor-pointer rounded-full border px-4 py-2 text-[13px] font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
-                    selected
-                      ? "border-foreground bg-foreground text-background"
-                      : "border-border bg-background text-foreground hover:border-foreground"
-                  }`}
-                >
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-        <div className="hidden sm:flex">
-          <SortSelect sort={sort} setSort={setSort} />
-        </div>
-      </div>
-    </div>
+    <FilterBar
+      panelId="creator-panel"
+      search={search}
+      onSearchChange={setSearch}
+      searchPlaceholder="Search creators"
+      filters={[{
+        label: "Category",
+        value: selectedCategory,
+        onChange: setCategory,
+        options: [
+          { value: "all", label: "All categories" },
+          ...categories.map((category) => ({ value: category, label: category })),
+        ],
+      }]}
+      sortOptions={CREATOR_SORTS}
+      activeSort={sort}
+      onSortChange={setSort}
+      resultCount={plural(visibleCount, "creator")}
+      view={view === "list" ? "table" : "cards"}
+      onViewChange={(next) => setView(next === "table" ? "list" : "cards")}
+      actions={filterActions}
+    />
   );
 }
 
@@ -1044,7 +1001,6 @@ export function CreatorDirectory({
     return sort === "newest" ? difference : -difference;
   });
 
-  const searchInHeader = Boolean(useMobileHeader());
   const activeFilterCount = [
     location !== "all" ? location : "",
     availability !== "all" ? availability : "",
@@ -1345,25 +1301,9 @@ export function CreatorDirectory({
 
   return (
     <>
-      {searchInHeader ? (
-        <MobileHeaderSearch>
-          <button
-            type="button"
-            aria-label="Search and filter"
-            onClick={() => setFilterOpen(true)}
-            className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-          >
-            <FiSearch className="h-5 w-5" aria-hidden="true" />
-            {search || activeFilterCount > 0 ? (
-              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary" aria-hidden="true" />
-            ) : null}
-          </button>
-        </MobileHeaderSearch>
-      ) : null}
       <div className="mb-7">
         <section className="min-w-0">
           <CreatorDiscoveryBar
-            searchInHeader={searchInHeader}
             search={search}
             setSearch={updateSearch}
             categories={categories}
@@ -1371,6 +1311,13 @@ export function CreatorDirectory({
             setCategory={updateCategory}
             sort={sort}
             setSort={updateSort}
+            view={view}
+            setView={setView}
+            visibleCount={visible.length}
+            activeFilterCount={activeFilterCount}
+            onOpenFilters={() => setFilterOpen(true)}
+            onSaveResultsAsList={saveResultsAsList}
+            canSaveResultsAsList={tab !== "my-lists" && visible.length > 0}
             onJoinClick={() => setLoginModalOpen(true)}
           />
           <CreatorTabs
@@ -1395,40 +1342,6 @@ export function CreatorDirectory({
               onShare={(listId) => void shareList(listId)}
             />
           ) : null}
-
-          <div className="mb-5 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setFilterOpen(true)}
-                aria-expanded={filterOpen}
-                className="inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-border bg-transparent px-3.5 py-2 text-[13px] font-medium hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-              >
-                <FiFilter aria-hidden="true" className="h-4 w-4" />
-                Filters
-                {activeFilterCount > 0 ? (
-                  <span className="grid h-5 min-w-5 place-items-center rounded-full bg-foreground px-1 text-[11px] font-semibold text-background">
-                    {activeFilterCount}
-                  </span>
-                ) : null}
-              </button>
-              <p aria-live="polite" className="m-0 text-[13px] font-medium text-muted-foreground">
-                {visible.length} {visible.length === 1 ? "person" : "people"}
-              </p>
-              {tab !== "my-lists" && visible.length > 0 ? (
-                <button
-                  type="button"
-                  onClick={saveResultsAsList}
-                  title="Save these results as a new list"
-                  className="hidden min-h-[40px] cursor-pointer items-center gap-2 rounded-lg border border-border bg-transparent px-3.5 py-2 text-[13px] font-medium hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:inline-flex"
-                >
-                  <FiFolderPlus aria-hidden="true" className="h-4 w-4" />
-                  Save as list
-                </button>
-              ) : null}
-            </div>
-            <ViewToggle view={view} setView={setView} />
-          </div>
 
           <div className={view === "cards" ? "grid grid-cols-1 items-start gap-2 sm:grid-cols-2 lg:grid-cols-4" : "flex flex-col gap-3"}>
         {pageVisible.length > 0 ? pageVisible.map((creator) => (
@@ -1619,19 +1532,9 @@ export function CreatorDirectory({
           className="[&>button]:bg-muted [&>button]:text-foreground [&>button]:opacity-100"
         >
           <SheetHeader className="border-b border-border">
-            <SheetTitle>{searchInHeader ? <><span className="nav:hidden">Search and filter</span><span className="hidden nav:inline">Filters</span></> : "Filters"}</SheetTitle>
+            <SheetTitle>More filters</SheetTitle>
           </SheetHeader>
           <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
-            {searchInHeader ? (
-              <input
-                type="search"
-                value={search}
-                onChange={(event) => updateSearch(event.target.value)}
-                placeholder="What kind of creator are you looking for?"
-                aria-label="Search creators"
-                className="mb-4 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:outline-none nav:hidden"
-              />
-            ) : null}
             <FilterControls
               location={location}
               setLocation={updateLocation}

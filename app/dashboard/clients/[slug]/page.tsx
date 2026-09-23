@@ -23,6 +23,7 @@ import { longDate, plural } from "@/lib/format";
 import { campaignWorkspaceStatuses } from "@/lib/client-data";
 import { fontOptions, ctaOptions } from "@/lib/campaign-options";
 import { ClientWorkspaceSkeleton } from "@/components/dashboard/loading-skeleton";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type {
   PhaseContent,
   CampaignListItem,
@@ -1091,30 +1092,30 @@ function OneUtilityClientWorkspace({
                         </ul>
                       ) : (
                         <div className="overflow-x-auto rounded-xl border border-border">
-                          <table className="w-full border-collapse">
-                            <thead>
-                              <tr>
-                                <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Campaign</th>
-                                <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Status</th>
-                                <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Category</th>
-                                <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Year</th>
-                                <th className="whitespace-nowrap border-b border-border px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Actions</th>
-                              </tr>
-                            </thead>
-                            <tbody>
+                          <Table className="w-full border-collapse">
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Campaign</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Category</TableHead>
+                                <TableHead>Year</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
                               {visibleCampaigns.map((campaign) => {
                                 const record = availableCampaigns.find((item) => item.slug === campaign.id);
                                 return (
-                                  <tr key={campaign.id} className="border-b border-border last:border-0 hover:bg-muted/50">
-                                    <td className="px-4 py-3.5 text-[13px] font-semibold">
+                                  <TableRow key={campaign.id}>
+                                    <TableCell className="px-4 py-3.5 font-semibold">
                                       <button type="button" onClick={() => handleOpenCampaign(campaign)} className="text-left text-foreground hover:text-primary focus-visible:text-primary">
                                         {campaign.title}
                                       </button>
-                                    </td>
-                                    <td className="px-4 py-3.5 text-[13px]"><DashboardBadge tone={campaign.status === "Live" ? "active" : "neutral"}>{campaign.status}</DashboardBadge></td>
-                                    <td className="px-4 py-3.5 text-[13px] text-muted-foreground">{record?.category ?? "—"}</td>
-                                    <td className="whitespace-nowrap px-4 py-3.5 text-[13px] text-muted-foreground">{record?.year ?? "—"}</td>
-                                    <td className="px-4 py-3.5 text-right">
+                                    </TableCell>
+                                    <TableCell className="px-4 py-3.5"><DashboardBadge tone={campaign.status === "Live" ? "active" : "neutral"}>{campaign.status}</DashboardBadge></TableCell>
+                                    <TableCell className="px-4 py-3.5 text-muted-foreground">{record?.category ?? "—"}</TableCell>
+                                    <TableCell className="whitespace-nowrap px-4 py-3.5 text-muted-foreground">{record?.year ?? "—"}</TableCell>
+                                    <TableCell className="px-4 py-3.5 text-right">
                                       {record ? (
                                         <span className="inline-flex">
                                           <DashboardCardActions
@@ -1126,12 +1127,12 @@ function OneUtilityClientWorkspace({
                                           />
                                         </span>
                                       ) : null}
-                                    </td>
-                                  </tr>
+                                    </TableCell>
+                                  </TableRow>
                                 );
                               })}
-                            </tbody>
-                          </table>
+                            </TableBody>
+                          </Table>
                         </div>
                       )
                     ) : (
@@ -2068,20 +2069,20 @@ function OneUtilityClientWorkspace({
                         </ul>
                       ) : (
                         <div className="overflow-x-auto rounded-xl border border-border">
-                          <table className="w-full border-collapse">
-                            <thead>
-                              <tr>
-                                <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Creator</th>
-                                <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Category</th>
-                                <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Availability</th>
-                                <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Location</th>
-                                <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Rate</th>
-                              </tr>
-                            </thead>
-                            <tbody>
+                          <Table className="w-full border-collapse">
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Creator</TableHead>
+                                <TableHead>Category</TableHead>
+                                <TableHead>Availability</TableHead>
+                                <TableHead>Location</TableHead>
+                                <TableHead>Rate</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
                               {visibleCreators.map((creator) => (
-                                <tr key={creator.slug} className="border-b border-border last:border-0 hover:bg-muted/50">
-                                  <td className="px-4 py-3.5 text-[13px] font-semibold">
+                                <TableRow key={creator.slug}>
+                                  <TableCell className="px-4 py-3.5 font-semibold">
                                     <Link href={`/dashboard/discover/${creator.slug}`} className="inline-flex items-center gap-3 text-foreground no-underline hover:text-primary focus-visible:text-primary">
                                       <ImageWithFallback
                                         src={creator.profileImage ?? creator.featuredImage}
@@ -2092,15 +2093,15 @@ function OneUtilityClientWorkspace({
                                       />
                                       {creator.name}
                                     </Link>
-                                  </td>
-                                  <td className="px-4 py-3.5 text-[13px] text-muted-foreground">{creator.category}</td>
-                                  <td className="px-4 py-3.5 text-[13px]"><DashboardBadge tone={creator.availability === "open" ? "active" : "neutral"}>{creator.availability}</DashboardBadge></td>
-                                  <td className="whitespace-nowrap px-4 py-3.5 text-[13px] text-muted-foreground">{creator.location || "—"}</td>
-                                  <td className="whitespace-nowrap px-4 py-3.5 text-[13px] text-muted-foreground">{!creator.hideRate && creator.rateMin !== null ? creator.dayRate : "—"}</td>
-                                </tr>
+                                  </TableCell>
+                                  <TableCell className="px-4 py-3.5 text-muted-foreground">{creator.category}</TableCell>
+                                  <TableCell className="px-4 py-3.5"><DashboardBadge tone={creator.availability === "open" ? "active" : "neutral"}>{creator.availability}</DashboardBadge></TableCell>
+                                  <TableCell className="whitespace-nowrap px-4 py-3.5 text-muted-foreground">{creator.location || "—"}</TableCell>
+                                  <TableCell className="whitespace-nowrap px-4 py-3.5 text-muted-foreground">{!creator.hideRate && creator.rateMin !== null ? creator.dayRate : "—"}</TableCell>
+                                </TableRow>
                               ))}
-                            </tbody>
-                          </table>
+                            </TableBody>
+                          </Table>
                         </div>
                       )
                     ) : (

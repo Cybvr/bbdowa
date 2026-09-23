@@ -1,9 +1,8 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { Send, Copy, Check, Plus, Menu, Clock } from "lucide-react";
+import { Send, Copy, Check, Plus, Clock } from "lucide-react";
 import { QUICK_PROMPTS } from "@/lib/njeri-assistant";
-import { NjeriMark } from "./njeri-mark";
 import { FormattedContent } from "./njeri-formatted-content";
 import { ActionCard } from "./njeri-action-card";
 import type { ChatMessage, NjeriActionProposal, NjeriConversation } from "./types";
@@ -98,33 +97,13 @@ export function NjeriChatView({
     <div className={`flex flex-col bg-background h-full ${className}`}>
       {/* Header */}
       <header className="flex shrink-0 items-center justify-between border-b border-border bg-background/95 px-3 py-2 backdrop-blur z-10">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="grid h-7 w-7 shrink-0 place-items-center text-primary">
-            <NjeriMark className="h-3.5 w-3.5" />
-          </div>
-
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-sm text-foreground">Njeri</span>
-              <span className="hidden rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-mono font-medium text-primary sm:inline-block">
-                AI Guide
-              </span>
-            </div>
-          </div>
+        <div className="min-w-0">
+          <span className="block truncate text-sm font-semibold text-foreground">
+            {conversation?.title || "New conversation"}
+          </span>
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0">
-          {onNewChat && isPageMode && (
-            <button
-              type="button"
-              onClick={onNewChat}
-              aria-label="New chat"
-              title="Start new chat"
-              className="grid h-10 w-10 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-            >
-              <Plus className="h-3.5 w-3.5" />
-            </button>
-          )}
           {onToggleHistory && isPageMode && (
             <button
               type="button"
@@ -155,23 +134,13 @@ export function NjeriChatView({
               key={message.id}
               className={`flex items-start gap-2.5 ${isUser ? "flex-row-reverse" : "flex-row"}`}
             >
-              {isUser ? (
-                <div
-                  className={`grid shrink-0 place-items-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground font-mono ${
-                    isPageMode ? "h-6 w-6" : "h-5.5 w-5.5"
-                  }`}
-                >
-                  U
-                </div>
-              ) : null}
-
-              {/* Bubble */}
+              {/* Message */}
               <div
                 className={`group relative max-w-[85%] leading-relaxed transition-all ${
                   isUser
-                    ? "bg-primary text-primary-foreground rounded-tr-xs"
+                    ? "text-foreground text-right"
                     : "text-foreground"
-                } ${isUser ? "rounded-2xl px-4 py-3 shadow-2xs" : "px-0 py-1"} ${isPageMode ? "text-[15px]" : "text-sm"}`}
+                } px-0 py-1 ${isPageMode ? "text-[15px]" : "text-sm"}`}
               >
                 <FormattedContent text={message.text} isUser={isUser} />
 

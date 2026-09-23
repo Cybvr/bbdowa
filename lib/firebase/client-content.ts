@@ -7,8 +7,7 @@ import { useAuth } from "@/components/auth-provider";
 import type { BlogPost } from "@/lib/blog";
 import type { Campaign } from "@/lib/campaigns";
 import type { Client } from "@/lib/clients";
-import { CONTRACT_COLLECTION, sortContracts, type Contract } from "@/lib/contracts";
-import { CONTRACT_TEMPLATE_COLLECTION, sortContractTemplates, type ContractTemplate } from "@/lib/contract-templates";
+import { DOCUMENT_COLLECTION, sortDocuments, type AgencyDocument } from "@/lib/documents";
 import type { Job } from "@/lib/jobs";
 import { ACTIVITY_COLLECTION, type ActivityEntry } from "@/lib/time-tracking";
 import { normalizeUser, type User } from "@/lib/users";
@@ -30,11 +29,10 @@ export function readClientsFromFirestore() {
   return readCollection<Client>("clients");
 }
 
-export function readContractsForAssignee(assigneeKey: string) {
-  if (!assigneeKey) return Promise.resolve<Contract[]>([]);
-  return getDocs(query(collection(firebaseDb, CONTRACT_COLLECTION), where("assignedTo", "==", assigneeKey))).then((snapshot) =>
-    snapshot.docs.map((document) => ({ id: document.id, ...(document.data() as Omit<Contract, "id">) })),
-  );
+export async function readDocumentsForAssignee(uid: string | null | undefined, slug?: string | null) {
+  const keys = [...new Set([uid, slug].filter((value): value is string => Boolean(value)))];
+  const snapshots = await Promise.all(keys.map((key) => getDocs(query(collection(firebaseDb, DOCUMENT_COLLECTION), where("assignedTo", "==", key)))));
+  return [...new Map(snapshots.flatMap((snapshot) => snapshot.docs.map((document) => [document.id, { id: document.id, ...(document.data() as Omit<AgencyDocument, "id">) }] as const))).values()];
 }
 
 export function readTimeEntriesForUser(uid: string) {
@@ -118,76 +116,37 @@ export function useOwnUser(): OwnUserState {
   return state;
 }
 
-type FirestoreContractTemplatesState = {
-  templates: ContractTemplate[];
+type FirestoreDocumentsState = {
+  documents: AgencyDocument[];
   loading: boolean;
   error: string | null;
 };
 
-export function useFirestoreContractTemplates(): FirestoreContractTemplatesState {
-  const { loading: authLoading, user, isAdmin, role } = useAuth();
-  const isStaff = isAdmin || role === "manager";
-  const [state, setState] = useState<FirestoreContractTemplatesState>({ templates: [], loading: true, error: null });
-
-  useEffect(() => {
-    if (authLoading) return;
-
-    if (!user || !isStaff) {
-      setState({ templates: [], loading: false, error: null });
-      return;
-    }
-
-    let active = true;
-    setState((current) => ({ ...current, loading: true, error: null }));
-    getDocs(collection(firebaseDb, CONTRACT_TEMPLATE_COLLECTION))
-      .then((snapshot) => snapshot.docs.map((document) => ({ id: document.id, ...(document.data() as Omit<ContractTemplate, "id">) })))
-      .then((templates) => {
-        if (active) setState({ templates: sortContractTemplates(templates), loading: false, error: null });
-      })
-      .catch((error) => {
-        console.error("Unable to load agreement templates from Firestore", error);
-        if (active) setState({ templates: [], loading: false, error: "Unable to load agreement templates." });
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [authLoading, isStaff, user]);
-
-  return state;
-}
-
-type FirestoreContractsState = {
-  contracts: Contract[];
-  loading: boolean;
-  error: string | null;
-};
-
-export function useFirestoreContracts(): FirestoreContractsState {
+export function useFirestoreDocuments(): FirestoreDocumentsState {
   const { loading: authLoading, user, role } = useAuth();
   const isStaff = role === "admin" || role === "manager";
-  const [state, setState] = useState<FirestoreContractsState>({ contracts: [], loading: true, error: null });
+  const [state, setState] = useState<FirestoreDocumentsState>({ documents: [], loading: true, error: null });
 
   useEffect(() => {
     if (authLoading) return;
 
     if (!user || !isStaff) {
-      setState({ contracts: [], loading: false, error: null });
+      setState({ documents: [], loading: false, error: null });
       return;
     }
 
     let active = true;
     setState((current) => ({ ...current, loading: true, error: null }));
-    getDocs(collection(firebaseDb, CONTRACT_COLLECTION))
+    getDocs(collection(firebaseDb, DOCUMENT_COLLECTION))
       .then((snapshot) =>
-        snapshot.docs.map((document) => ({ id: document.id, ...(document.data() as Omit<Contract, "id">) })),
+        snapshot.docs.map((document) => ({ id: document.id, ...(document.data() as Omit<AgencyDocument, "id">) })),
       )
-      .then((contracts) => {
-        if (active) setState({ contracts: sortContracts(contracts), loading: false, error: null });
+      .then((documents) => {
+        if (active) setState({ documents: sortDocuments(documents), loading: false, error: null });
       })
       .catch((error) => {
-        console.error("Unable to load agreements from Firestore", error);
-        if (active) setState({ contracts: [], loading: false, error: "Unable to load agreements." });
+        console.error("Unable to load documents from Firestore", error);
+        if (active) setState({ documents: [], loading: false, error: "Unable to load documents." });
       });
 
     return () => {

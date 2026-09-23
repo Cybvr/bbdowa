@@ -8,7 +8,7 @@
  * controlled state.
  */
 
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { Filter, Grid2X2, List, Search } from "lucide-react";
 import { MobileHeaderSearch, useMobileHeader } from "@/components/dashboard/mobile-header";
 import {
@@ -49,7 +49,10 @@ export type SelectFilter = {
 };
 
 const FIELD =
-  "h-9 rounded-lg border-border bg-background px-3 text-[13px] text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40";
+  "h-9 rounded-none border-0 border-b border-input bg-transparent px-3 text-[13px] text-foreground shadow-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0";
+
+const SEARCH_FIELD =
+  "h-9 rounded-none border-0 border-b border-input bg-transparent px-3 text-[13px] text-foreground focus-visible:outline-none focus-visible:ring-0";
 
 function SelectControl({
   label,
@@ -150,7 +153,8 @@ export function FilterBar<TabKey extends string, SortKey extends string>({
   resultCount,
   view,
   onViewChange,
-  className = "my-6",
+  actions,
+  className = "my-4",
 }: {
   panelId: string;
   tabs?: FilterTab<TabKey>[];
@@ -168,6 +172,7 @@ export function FilterBar<TabKey extends string, SortKey extends string>({
   resultCount?: string;
   view?: ViewMode;
   onViewChange?: (view: ViewMode) => void;
+  actions?: ReactNode;
   className?: string;
 }) {
   const hasStatus = Boolean(tabs && tabs.length > 0 && onTabChange);
@@ -217,7 +222,7 @@ export function FilterBar<TabKey extends string, SortKey extends string>({
             onChange={(event) => onSearchChange(event.target.value)}
             placeholder={searchPlaceholder}
             aria-label={searchPlaceholder}
-            className={`${FIELD} ${searchClassName} w-full max-w-full flex-1 placeholder:text-muted-foreground sm:w-auto`}
+            className={`${SEARCH_FIELD} ${searchClassName} w-full max-w-full flex-1 placeholder:text-muted-foreground sm:w-auto`}
           />
         ) : null}
         {hasSheet ? (
@@ -248,7 +253,7 @@ export function FilterBar<TabKey extends string, SortKey extends string>({
                     onChange={(event) => onSearchChange!(event.target.value)}
                     placeholder={searchPlaceholder}
                     aria-label={searchPlaceholder}
-                    className={`${FIELD} w-full placeholder:text-muted-foreground`}
+                    className={`${SEARCH_FIELD} w-full placeholder:text-muted-foreground`}
                   />
                 ) : null}
                 {hasStatus ? (
@@ -330,6 +335,7 @@ export function FilterBar<TabKey extends string, SortKey extends string>({
             {resultCount}
           </p>
         ) : null}
+        {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
 
       </div>
       <div className="flex w-full items-center justify-between gap-2 sm:hidden">
@@ -338,7 +344,10 @@ export function FilterBar<TabKey extends string, SortKey extends string>({
             {resultCount}
           </p>
         ) : <span />}
-        {view && onViewChange ? <ViewToggle view={view} onChange={onViewChange} /> : null}
+        <div className="flex items-center gap-2">
+          {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
+          {view && onViewChange ? <ViewToggle view={view} onChange={onViewChange} /> : null}
+        </div>
       </div>
     </div>
   );

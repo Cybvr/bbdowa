@@ -7,7 +7,7 @@ import { FaBehance, FaGlobe } from "react-icons/fa";
 import { Mail, Pencil } from "lucide-react";
 import { isCreatorNew, isCreatorUser, type User } from "@/lib/users";
 import { useAuth } from "@/components/auth-provider";
-import { useOwnUser, readCampaignsFromFirestore, readClientsFromFirestore, readContractsForAssignee, readTimeEntriesForUser } from "@/lib/firebase/client-content";
+import { useOwnUser, readCampaignsFromFirestore, readClientsFromFirestore, readDocumentsForAssignee, readTimeEntriesForUser } from "@/lib/firebase/client-content";
 import { longDate } from "@/lib/format";
 import { campaignHref, type Campaign } from "@/lib/campaigns";
 import { clientHref, getCreatorCampaigns, type Client } from "@/lib/clients";
@@ -23,7 +23,7 @@ import {
 } from "@/components/dashboard/detail-hero";
 import { SocialIcon, type SocialIconName } from "@/components/social-icon";
 import { ProfilePageSkeleton } from "@/components/dashboard/loading-skeleton";
-import { CreatorContractsPanel } from "@/components/contracts-view";
+import { CreatorDocumentAddAction, CreatorDocumentsPanel } from "@/components/creator-documents-panel";
 import { CreatorHoursPanel } from "@/components/creator-hours-panel";
 
 type ProfilePlatform = { label: string; href: string; Icon?: IconType; brand?: SocialIconName };
@@ -41,7 +41,7 @@ function platformsFor(user: User): ProfilePlatform[] {
   return platforms;
 }
 
-type ProfileTab = "overview" | "work-history" | "campaigns" | "hours" | "contracts";
+type ProfileTab = "overview" | "work-history" | "campaigns" | "hours" | "documents";
 
 /**
  * "My profile" — the signed-in user's own profile, resolved by uid so it
@@ -57,13 +57,13 @@ export default function MyProfilePage() {
 
   const [clients, setClients] = useState<Client[]>([]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [contractCount, setContractCount] = useState(0);
+  const [documentCount, setDocumentCount] = useState(0);
   const [hasHours, setHasHours] = useState(false);
   useEffect(() => {
     if (!creator || !authUser) {
       setClients([]);
       setCampaigns([]);
-      setContractCount(0);
+      setDocumentCount(0);
       setHasHours(false);
       return;
     }
@@ -71,21 +71,21 @@ export default function MyProfilePage() {
     Promise.all([
       readClientsFromFirestore(),
       readCampaignsFromFirestore(),
-      readContractsForAssignee(authUser.uid),
+      readDocumentsForAssignee(authUser.uid, own?.slug),
       readTimeEntriesForUser(authUser.uid),
     ])
-      .then(([clientsData, campaignsData, contractsData, timeEntries]) => {
+      .then(([clientsData, campaignsData, documentsData, timeEntries]) => {
         if (!active) return;
         setClients(clientsData);
         setCampaigns(campaignsData);
-        setContractCount(contractsData.length);
+        setDocumentCount(documentsData.length);
         setHasHours(timeEntries.length > 0);
       })
       .catch((cause) => console.error("Unable to load clients/campaigns", cause));
     return () => {
       active = false;
     };
-  }, [authUser, creator]);
+  }, [authUser, creator, own?.slug]);
 
   if (authLoading || ownLoading) return <ProfilePageSkeleton />;
 
@@ -105,7 +105,7 @@ export default function MyProfilePage() {
     ...(creator && own.workHistory?.length ? ([{ id: "work-history", label: "Work history" }] as const) : []),
     ...(creator && creatorCampaigns.length ? ([{ id: "campaigns", label: "Campaigns" }] as const) : []),
     ...(hasHours ? ([{ id: "hours", label: "Hours" }] as const) : []),
-    ...(creator && contractCount > 0 ? ([{ id: "contracts", label: "Contracts" }] as const) : []),
+    ...(creator && documentCount > 0 ? ([{ id: "documents", label: "Documents" }] as const) : []),
   ];
 
   return (
@@ -264,9 +264,9 @@ export default function MyProfilePage() {
           </ProfileSection>
         )}
 
-        {tab === "contracts" && creator && (
-          <ProfileSection title="Contracts" variant="plain">
-            <CreatorContractsPanel
+        {tab === "documents" && creator && (
+          <ProfileSection title="Documents" variant="plain" action={isStaff ? <CreatorDocumentAddAction creatorUid={authUser.uid} /> : undefined}>
+            <CreatorDocumentsPanel
               creatorUid={authUser.uid}
               creatorSlug={own.slug}
               creatorName={own.name}

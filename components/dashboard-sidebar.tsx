@@ -14,7 +14,7 @@ import { firebaseDb } from "@/lib/firebase/client";
 import { ACTIVITY_COLLECTION, elapsedMs, formatClock, isPaused, runningEntry, type ActivityEntry } from "@/lib/time-tracking";
 
 const NAV_TEXT =
-  "flex min-h-11 w-full items-center gap-2 rounded-lg px-2.5 py-2 font-mono text-body font-medium leading-normal text-foreground no-underline transition-colors hover:bg-foreground/10 hover:text-foreground focus-visible:bg-foreground/10 focus-visible:text-foreground focus-visible:outline-none nav:min-h-10 nav:gap-2 nav:px-2 nav:py-2";
+  "flex min-h-10 w-full items-center gap-1.5 rounded-lg px-2.5 py-1.5 font-mono text-body font-medium leading-normal text-foreground no-underline transition-colors hover:bg-foreground/10 hover:text-foreground focus-visible:bg-foreground/10 focus-visible:text-foreground focus-visible:outline-none nav:min-h-9 nav:gap-1.5 nav:px-2 nav:py-1.5";
 
 const NAV_LABEL = "min-w-0 overflow-hidden text-ellipsis whitespace-nowrap transition-[max-width,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]";
 

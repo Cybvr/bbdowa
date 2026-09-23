@@ -7,7 +7,7 @@ import type { IconType } from "react-icons";
 import { FaBehance, FaGlobe } from "react-icons/fa";
 import { creatorCategoryOptions, isCreatorNew, isCreatorUser, type Creator } from "@/lib/users";
 import { useAuth } from "@/components/auth-provider";
-import { readCampaignsFromFirestore, readClientsFromFirestore, readContractsForAssignee, readTimeEntriesForUser, useFirestoreUsers } from "@/lib/firebase/client-content";
+import { readCampaignsFromFirestore, readClientsFromFirestore, readDocumentsForAssignee, readTimeEntriesForUser, useFirestoreUsers } from "@/lib/firebase/client-content";
 import { longDate } from "@/lib/format";
 import { campaignHref, type Campaign } from "@/lib/campaigns";
 import { clientHref, getCreatorCampaigns, type Client } from "@/lib/clients";
@@ -25,7 +25,7 @@ import { SocialIcon, type SocialIconName } from "@/components/social-icon";
 import { ShareCreatorDialog } from "@/components/share-creator-dialog";
 import { UserActions } from "@/components/user-actions";
 import { ProfilePageSkeleton } from "@/components/dashboard/loading-skeleton";
-import { CreatorContractsPanel } from "@/components/contracts-view";
+import { CreatorDocumentAddAction, CreatorDocumentsPanel } from "@/components/creator-documents-panel";
 import { CreatorHoursPanel } from "@/components/creator-hours-panel";
 
 type CreatorPlatform = { label: string; href: string; Icon?: IconType; brand?: SocialIconName };
@@ -43,7 +43,7 @@ function platformsFor(creator: Creator): CreatorPlatform[] {
   return platforms;
 }
 
-type CreatorTab = "overview" | "work-history" | "campaigns" | "hours" | "contracts";
+type CreatorTab = "overview" | "work-history" | "campaigns" | "hours" | "documents";
 
 export default function CreatorDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -55,7 +55,7 @@ export default function CreatorDetailPage() {
   // Public collections — no auth needed, so every viewer can see this.
   const [clients, setClients] = useState<Client[]>([]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [contractCount, setContractCount] = useState(0);
+  const [documentCount, setDocumentCount] = useState(0);
   const [hasHours, setHasHours] = useState(false);
   useEffect(() => {
     let active = true;
@@ -81,18 +81,18 @@ export default function CreatorDetailPage() {
   useEffect(() => {
     const assigneeKey = creator?.uid || creator?.slug;
     if (!assigneeKey) {
-      setContractCount(0);
+      setDocumentCount(0);
       setHasHours(false);
       return;
     }
     let active = true;
     Promise.all([
-      readContractsForAssignee(assigneeKey),
+      readDocumentsForAssignee(creator?.uid, creator?.slug),
       authUser && creator?.uid ? readTimeEntriesForUser(creator.uid) : Promise.resolve([]),
     ])
-      .then(([contractsData, timeEntries]) => {
+      .then(([documentsData, timeEntries]) => {
         if (!active) return;
-        setContractCount(contractsData.length);
+        setDocumentCount(documentsData.length);
         setHasHours(timeEntries.length > 0);
       })
       .catch((cause) => console.error("Unable to load creator activity", cause));
@@ -114,7 +114,7 @@ export default function CreatorDetailPage() {
     ...(creator.workHistory?.length ? ([{ id: "work-history", label: "Work history" }] as const) : []),
     ...(creatorCampaigns.length ? ([{ id: "campaigns", label: "Campaigns" }] as const) : []),
     ...(hasHours ? ([{ id: "hours", label: "Hours" }] as const) : []),
-    ...(contractCount > 0 ? ([{ id: "contracts", label: "Contracts" }] as const) : []),
+    ...(documentCount > 0 || isStaff ? ([{ id: "documents", label: "Documents" }] as const) : []),
   ];
 
   return (
@@ -278,9 +278,9 @@ export default function CreatorDetailPage() {
           </ProfileSection>
         )}
 
-        {tab === "contracts" && (
-          <ProfileSection title="Contracts" variant="plain">
-            <CreatorContractsPanel
+        {tab === "documents" && (
+          <ProfileSection title="Documents" variant="plain" action={isStaff ? <CreatorDocumentAddAction creatorUid={creator.uid} /> : undefined}>
+            <CreatorDocumentsPanel
               creatorUid={creator.uid}
               creatorSlug={creator.slug}
               creatorName={creator.name}

@@ -20,9 +20,8 @@ export function DashboardFooter({ hidden = false }: { hidden?: boolean }) {
     ? [
         { label: "Overview", href: "/admin" },
         { label: "Users", href: "/admin/users" },
-        { label: "Contracts", href: "/admin/contracts" },
-        { label: "Documents", href: "/admin/contract-templates" },
-        { label: "Home", href: "/dashboard" },
+        { label: "Documents", href: "/admin/documents" },
+        { label: "Dashboard", href: "/dashboard" },
       ]
     : NAV_ITEMS.filter(
         (item): item is Extract<typeof item, { kind: "link" }> =>

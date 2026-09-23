@@ -15,17 +15,10 @@ export default function AdminPage() {
         </span>
         <span aria-hidden="true" className="text-lg text-muted-foreground">→</span>
       </Link>
-      <Link href="/admin/contracts" className="mt-3 flex items-center justify-between rounded-xl border border-border bg-background p-4 text-foreground no-underline transition hover:border-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
-        <span>
-          <strong className="block text-[14px] font-semibold">Contracts</strong>
-          <span className="mt-1 block text-[13px] text-muted-foreground">Create, review, update, and remove creator agreements.</span>
-        </span>
-        <span aria-hidden="true" className="text-lg text-muted-foreground">→</span>
-      </Link>
-      <Link href="/admin/contract-templates" className="mt-3 flex items-center justify-between rounded-xl border border-border bg-background p-4 text-foreground no-underline transition hover:border-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
+      <Link href="/admin/documents" className="mt-3 flex items-center justify-between rounded-xl border border-border bg-background p-4 text-foreground no-underline transition hover:border-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
         <span>
           <strong className="block text-[14px] font-semibold">Documents</strong>
-          <span className="mt-1 block text-[13px] text-muted-foreground">Reusable agreement documents staff can assign to creators.</span>
+          <span className="mt-1 block text-[13px] text-muted-foreground">Draft documents and send them to creators for signature.</span>
         </span>
         <span aria-hidden="true" className="text-lg text-muted-foreground">→</span>
       </Link>

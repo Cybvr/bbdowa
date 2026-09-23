@@ -5,6 +5,7 @@ import { collection, getDocs, query, where } from "firebase/firestore";
 import { firebaseDb } from "@/lib/firebase/client";
 import { EmptyState } from "@/components/dashboard/ui";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   ACTIVITY_COLLECTION,
   elapsedMs,
@@ -82,28 +83,28 @@ export function CreatorHoursPanel({ creatorUid, creatorName }: { creatorUid: str
         <EmptyState title="Nothing logged yet" description={`${creatorName} hasn’t tracked any time yet.`} />
       ) : (
         <div className="overflow-x-auto rounded-xl border border-border">
-          <table className="min-w-[560px] w-full border-collapse text-[15px]">
-            <thead>
-              <tr className="border-b border-border bg-muted/40 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                <th className="px-4 py-3">Activity</th>
-                <th className="px-4 py-3">Campaign</th>
-                <th className="px-4 py-3">When</th>
-                <th className="px-4 py-3">Time</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table className="min-w-[560px] w-full border-collapse">
+            <TableHeader>
+              <TableRow className="bg-muted/40 text-left font-semibold uppercase text-muted-foreground">
+                <TableHead className="px-4 py-3">Activity</TableHead>
+                <TableHead className="px-4 py-3">Campaign</TableHead>
+                <TableHead className="px-4 py-3">When</TableHead>
+                <TableHead className="px-4 py-3">Time</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {recent.map((entry) => (
-                <tr key={entry.id} className="border-b border-border last:border-b-0 align-top">
-                  <td className="px-4 py-3">{entry.activity || <span className="text-muted-foreground">—</span>}</td>
-                  <td className="px-4 py-3">{entry.campaignName ?? <span className="text-muted-foreground">—</span>}</td>
-                  <td className="whitespace-nowrap px-4 py-3">{formatTimestamp(entry.startedAt)}</td>
-                  <td className="whitespace-nowrap px-4 py-3">
+                <TableRow key={entry.id} className="align-top">
+                  <TableCell className="px-4 py-3">{entry.activity || <span className="text-muted-foreground">—</span>}</TableCell>
+                  <TableCell className="px-4 py-3">{entry.campaignName ?? <span className="text-muted-foreground">—</span>}</TableCell>
+                  <TableCell className="whitespace-nowrap px-4 py-3">{formatTimestamp(entry.startedAt)}</TableCell>
+                  <TableCell className="whitespace-nowrap px-4 py-3">
                     {entry.endedAt ? formatClockFull(elapsedMs(entry, now)) : <span className="font-semibold text-primary">Running…</span>}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
     </div>

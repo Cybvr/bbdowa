@@ -12,6 +12,7 @@ import { Badge, EmptyState, ImageWithFallback } from "@/components/dashboard/ui"
 import { DashboardCard, DashboardCardActions } from "@/components/dashboard-card";
 import { CreatorAvatarStack } from "@/components/creator-avatar-stack";
 import { FilterBar, type FilterTab, type SortOption, type ViewMode } from "@/components/dashboard/filter-bar";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 function campaignCreators(campaign: Campaign, clients: Client[], users: User[]): Creator[] {
   const client = clients.find((item) => item.slug === campaign.clientId);
@@ -148,34 +149,34 @@ export function CampaignsTable({ campaigns, clients }: { campaigns: Campaign[]; 
             </ul>
           ) : (
             <div className="overflow-x-auto rounded-xl border border-border">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr>
-                    <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Campaign</th>
-                    <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Client</th>
-                    <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Status</th>
-                    <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Category</th>
-                    <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Date</th>
-                    <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Updated</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Table className="w-full border-collapse">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Campaign</TableHead>
+                    <TableHead>Client</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Updated</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {visible.map((campaign) => (
-                    <tr key={campaign.slug} className="border-b border-border last:border-0 hover:bg-muted/50">
-                      <td className="px-4 py-4 text-[15px] font-semibold">
+                    <TableRow key={campaign.slug}>
+                      <TableCell className="px-4 py-4 font-semibold">
                         <Link href={campaignHref(campaign.slug)} className="text-foreground no-underline hover:text-primary focus-visible:text-primary">
                           {campaign.campaign ?? campaign.name}
                         </Link>
-                      </td>
-                      <td className="px-4 py-4 text-[15px] text-muted-foreground">{campaign.clientName}</td>
-                      <td className="px-4 py-4 text-[15px]"><Badge tone={campaign.status === "live" ? "active" : "neutral"}>{campaign.status}</Badge></td>
-                      <td className="px-4 py-4 text-[15px] text-muted-foreground">{campaign.category}</td>
-                      <td className="whitespace-nowrap px-4 py-4 text-[15px] text-muted-foreground">{campaignLiveDateLabel(campaign)}</td>
-                      <td className="whitespace-nowrap px-4 py-4 text-[15px] text-muted-foreground">{campaign.updatedAt ? updatedDate(campaign.updatedAt) : "—"}</td>
-                    </tr>
+                      </TableCell>
+                      <TableCell className="px-4 py-4 text-muted-foreground">{campaign.clientName}</TableCell>
+                      <TableCell className="px-4 py-4"><Badge tone={campaign.status === "live" ? "active" : "neutral"}>{campaign.status}</Badge></TableCell>
+                      <TableCell className="px-4 py-4 text-muted-foreground">{campaign.category}</TableCell>
+                      <TableCell className="whitespace-nowrap px-4 py-4 text-muted-foreground">{campaignLiveDateLabel(campaign)}</TableCell>
+                      <TableCell className="whitespace-nowrap px-4 py-4 text-muted-foreground">{campaign.updatedAt ? updatedDate(campaign.updatedAt) : "—"}</TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           )
         ) : (

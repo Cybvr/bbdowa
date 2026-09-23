@@ -7,7 +7,8 @@
     "dev": "next dev -p 99",
     "build": "next build",
     "start": "next start -p 99",
-    "seed:amazing-klef": "node scripts/seed-amazing-klef.mjs"
+    "seed:amazing-klef": "node scripts/seed-amazing-klef.mjs",
+    "migrate:documents": "node --env-file=.env.local scripts/migrate-documents.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

@@ -192,7 +192,7 @@ function normalizeAction(value: unknown): NjeriActionProposal | null {
 }
 
 function researchInstructions(request: string, conversation: string): string {
-  return `You are Njeri, an internal BBDO West Africa workspace assistant. Research the request using the web, prioritising official websites and reputable professional profiles. Do not invent facts. For a campaign, use the user's stated intent as the source of truth and develop a useful first draft around it; never invent a client relationship or campaign result. Use null or an empty string when a field cannot be verified.
+  return `You are Njeri, an internal BBDO West Africa workspace assistant. Research the request using the web, prioritising official websites and reputable professional profiles. Do not invent facts, but treat details the user has pasted into the conversation (bios, handles, follower counts) as verified and use them in the record. For a campaign, use the user's stated intent as the source of truth and develop a useful first draft around it; never invent a client relationship or campaign result. Use null or an empty string when a field cannot be verified.
 
 The latest user request is: ${request}
 The recent conversation is: ${conversation}
@@ -215,6 +215,20 @@ Use action=delete_record when the user asks to delete or remove an existing crea
 If the request is only research, leave action null. Never claim the record was saved; it is only a draft until the user confirms it in the interface.`;
 }
 
+// The REST Responses API has no output_text field (that's an SDK helper), so
+// collect the text parts from the message items in output.
+function responseText(data: unknown): string {
+  if (!data || typeof data !== "object") return "";
+  const { output_text, output } = data as { output_text?: unknown; output?: unknown };
+  if (typeof output_text === "string") return output_text;
+  if (!Array.isArray(output)) return "";
+  return output
+    .filter((item): item is { type: string; content: unknown[] } => item?.type === "message" && Array.isArray(item.content))
+    .flatMap((item) => item.content)
+    .map((part) => (part && typeof part === "object" && typeof (part as { text?: unknown }).text === "string" ? (part as { text: string }).text : ""))
+    .join("");
+}
+
 async function researchAndDraft(request: string, conversation: string): Promise<{ answer: string; action?: NjeriActionProposal | null }> {
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
@@ -235,7 +249,7 @@ async function researchAndDraft(request: string, conversation: string): Promise<
   }
 
   const data = await response.json();
-  const parsed = parseJsonObject(typeof data?.output_text === "string" ? data.output_text : "");
+  const parsed = parseJsonObject(responseText(data));
   if (!parsed || typeof parsed.answer !== "string") {
     throw new Error("Research response was not valid JSON");
   }
@@ -271,7 +285,9 @@ export async function POST(request: Request) {
   }
 
   const latestMessage = messages[messages.length - 1].content;
-  if (needsResearch(latestMessage)) {
+  const previousUserMessage = messages.slice(0, -1).reverse().find((message) => message.role === "user")?.content ?? "";
+  const continuesDraft = needsResearch(previousUserMessage) && /\b(add|include|also|use|save|create)\b/i.test(latestMessage);
+  if (needsResearch(latestMessage) || continuesDraft) {
     try {
       return NextResponse.json(await researchAndDraft(latestMessage, messages.map((message) => `${message.role}: ${message.content}`).join("\n")));
     } catch (cause) {

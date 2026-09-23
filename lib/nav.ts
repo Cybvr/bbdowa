@@ -51,6 +51,6 @@ export const NAV_ITEMS: NavItem[] = [
 export const ADMIN_NAV_ITEMS: NavItem[] = [
   { kind: "link", label: "Overview", href: "/admin" },
   { kind: "link", label: "Users", href: "/admin/users" },
-  { kind: "link", label: "Contracts", href: "/admin/contracts" },
-  { kind: "link", label: "Documents", href: "/admin/contract-templates" },
+  { kind: "link", label: "Documents", href: "/admin/documents" },
+  { kind: "link", label: "Dashboard", href: "/dashboard" },
 ];

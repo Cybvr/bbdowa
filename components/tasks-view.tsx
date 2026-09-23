@@ -17,6 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -257,32 +258,32 @@ export function CreatorTasksPanel({ creatorUid, creatorName, viewer }: { creator
         />
       ) : viewer.isStaff ? (
         <div className="overflow-x-auto rounded-xl border border-border">
-          <table className="min-w-[640px] w-full border-collapse text-[15px]">
-            <thead>
-              <tr className="border-b border-border bg-muted/40 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                <th className="px-4 py-3">Task</th>
-                <th className="px-4 py-3">Due</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table className="min-w-[640px] w-full border-collapse">
+            <TableHeader>
+              <TableRow className="bg-muted/40 text-left font-semibold uppercase text-muted-foreground">
+                <TableHead className="px-4 py-3">Task</TableHead>
+                <TableHead className="px-4 py-3">Due</TableHead>
+                <TableHead className="px-4 py-3">Status</TableHead>
+                <TableHead className="px-4 py-3 text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {tasks.map((task) => (
-                <tr key={task.id} className="border-b border-border last:border-b-0 align-top">
-                  <td className="px-4 py-3">
+                <TableRow key={task.id} className="align-top">
+                  <TableCell className="px-4 py-3">
                     <p className="m-0 font-semibold">{task.title}</p>
-                    {task.description ? <p className="mb-0 mt-0.5 max-w-[40ch] text-[13px] text-muted-foreground">{task.description}</p> : null}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3">{task.dueDate ? formatDate(task.dueDate) : "—"}</td>
-                  <td className="px-4 py-3">
+                    {task.description ? <p className="mb-0 mt-0.5 max-w-[40ch] text-muted-foreground">{task.description}</p> : null}
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap px-4 py-3">{task.dueDate ? formatDate(task.dueDate) : "—"}</TableCell>
+                  <TableCell className="px-4 py-3">
                     <Select value={task.status} onValueChange={(value) => void setStatus(task, value as TaskStatus)}>
                       <SelectTrigger disabled={busyId === task.id} className="h-9 w-[150px]"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         {TASK_STATUSES.map((status) => <SelectItem key={status} value={status}>{TASK_STATUS_LABELS[status]}</SelectItem>)}
                       </SelectContent>
                     </Select>
-                  </td>
-                  <td className="px-4 py-3 text-right">
+                  </TableCell>
+                  <TableCell className="px-4 py-3 text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <button
@@ -300,11 +301,11 @@ export function CreatorTasksPanel({ creatorUid, creatorName, viewer }: { creator
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       ) : (
         <div className="space-y-3">

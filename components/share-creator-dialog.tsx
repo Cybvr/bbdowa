@@ -5,7 +5,6 @@ import { FaFacebookF, FaLinkedinIn, FaWhatsapp, FaXTwitter } from "react-icons/f
 import { FiCheck, FiCopy, FiMail, FiShare2 } from "react-icons/fi";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 
 type ShareCreatorDialogProps = {
   creatorName: string;
@@ -76,7 +75,7 @@ export function ShareCreatorDialog({ creatorName, path, className, showLabel = f
     <>
       <Button
         type="button"
-        variant="default"
+        variant="outline"
         size={showLabel ? "default" : "icon"}
         aria-label={`Share ${creatorName}`}
         title="Share"
@@ -84,7 +83,7 @@ export function ShareCreatorDialog({ creatorName, path, className, showLabel = f
           event.stopPropagation();
           setOpen(true);
         }}
-        className={cn("text-white", className)}
+        className={className}
       >
         <FiShare2 aria-hidden="true" className="h-4 w-4" />
         {showLabel ? <span className="hidden nav:inline">Share</span> : null}

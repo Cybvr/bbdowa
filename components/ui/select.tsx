@@ -34,7 +34,7 @@ function SelectTrigger({
       data-slot="select-trigger"
       className={cn(
         // Mobile: 44px tap target, readable label text. See DESIGN.md.
-        "flex h-11 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-[15px] shadow-xs ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1 sm:h-9 sm:text-sm",
+        "flex h-11 w-full items-center justify-between rounded-none border-0 border-b border-input bg-transparent px-3 py-2 text-[15px] shadow-none ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1 sm:h-9 sm:text-sm",
         className
       )}
       {...props}

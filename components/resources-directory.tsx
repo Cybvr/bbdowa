@@ -10,6 +10,7 @@ import { FilterBar } from "@/components/dashboard/filter-bar";
 import { EmptyState } from "@/components/dashboard/ui";
 import { DashboardCard, DashboardCardActions } from "@/components/dashboard-card";
 import { plural } from "@/lib/format";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const SORTS: SortOption<"name" | "group">[] = [
   { key: "name", label: "Name (A–Z)" },
@@ -62,36 +63,36 @@ export function ResourcesDirectory({ resources }: { resources: Resource[] }) {
       <section id="resources-panel" aria-label="Resources">
         {visible.length > 0 ? (
           <div className="overflow-x-auto rounded-xl border border-border">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr>
-                  <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Image</th>
-                  <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Resource</th>
-                  <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Group</th>
-                  <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Details</th>
-                  <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Link</th>
-                  <th className="whitespace-nowrap border-b border-border px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table className="w-full border-collapse">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Image</TableHead>
+                  <TableHead>Resource</TableHead>
+                  <TableHead>Group</TableHead>
+                  <TableHead>Details</TableHead>
+                  <TableHead>Link</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {visible.map((resource) => (
-                  <tr key={resource.slug} className="border-b border-border last:border-0 hover:bg-muted/50">
-                    <td className="px-4 py-4">
-                      {resource.image ? <img src={resource.image} alt="" className="h-10 w-14 rounded-md object-cover" /> : <span className="text-[12px] text-muted-foreground">—</span>}
-                    </td>
-                    <td className="px-4 py-4 text-[15px] font-semibold">{resource.label}</td>
-                    <td className="px-4 py-4 text-[15px] text-primary">{resource.group}</td>
-                    <td className="max-w-[42ch] px-4 py-4 text-[15px] text-muted-foreground">{resource.meta}</td>
-                    <td className="px-4 py-4 text-[15px]">
+                  <TableRow key={resource.slug}>
+                    <TableCell className="px-4 py-4">
+                      {resource.image ? <img src={resource.image} alt="" className="h-10 w-14 rounded-md object-cover" /> : <span className="text-muted-foreground">—</span>}
+                    </TableCell>
+                    <TableCell className="px-4 py-4 font-semibold">{resource.label}</TableCell>
+                    <TableCell className="px-4 py-4 text-primary">{resource.group}</TableCell>
+                    <TableCell className="max-w-[42ch] px-4 py-4 text-muted-foreground">{resource.meta}</TableCell>
+                    <TableCell className="px-4 py-4">
                       {resource.href ? <a href={resource.href} target="_blank" rel="noopener" className="inline-flex items-center gap-1 font-semibold text-foreground hover:text-primary focus-visible:text-primary">Open <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" /></a> : <span className="text-muted-foreground">—</span>}
-                    </td>
-                    <td className="px-4 py-4 text-right">
+                    </TableCell>
+                    <TableCell className="px-4 py-4 text-right">
                       <span className="inline-flex"><DashboardCardActions collection="resources" slug={resource.slug} titleField="label" title={resource.label} /></span>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         ) : (
           <EmptyState title={resources.length === 0 ? "No resources in Firebase" : "No resources match"} description={resources.length === 0 ? "Push the resource records to Firebase from the admin seed panel." : "Try a different search term or group filter."} />

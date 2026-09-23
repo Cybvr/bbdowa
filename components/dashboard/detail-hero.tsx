@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { ChevronRight } from "lucide-react";
 import { EmptyState, ImageWithFallback } from "@/components/dashboard/ui";
 import { DashboardSidebarSheet } from "@/components/dashboard-sidebar";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 /**
  * Shared banner + breadcrumb + horizontal tabs shell, matching the client
@@ -290,26 +291,26 @@ export function ProfileTable({
   }
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[480px] border-collapse text-left text-[15px]">
-        <thead>
-          <tr className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+      <Table className="w-full min-w-[480px] border-collapse text-left">
+        <TableHeader>
+          <TableRow className="font-semibold uppercase text-muted-foreground">
             {columns.map((column) => (
-              <th key={column.key} className="border-b border-border px-4 py-2 first:pl-0">{column.label}</th>
+              <TableHead key={column.key} className="px-4 py-2 first:pl-0">{column.label}</TableHead>
             ))}
-          </tr>
-        </thead>
-        <tbody>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {rows.map((row, index) => (
-            <tr key={index} className="border-b border-border last:border-b-0">
+            <TableRow key={index}>
               {columns.map((column) => (
-                <td key={column.key} className="px-4 py-3 align-top first:pl-0">
+                <TableCell key={column.key} className="px-4 py-3 align-top first:pl-0">
                   {row[column.key] ?? <span className="text-muted-foreground">—</span>}
-                </td>
+                </TableCell>
               ))}
-            </tr>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   );
 }

@@ -6,17 +6,17 @@ import { collection, getDocs } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { CreatorAvatarStack } from "@/components/creator-avatar-stack";
-import { CreatorThumbnail } from "@/components/creator-thumbnail";
 import { DashboardCardActions } from "@/components/dashboard-card";
 import { DashboardThumbnail } from "@/components/dashboard-thumbnail";
 import { DashboardListRow, DashboardSection } from "@/components/dashboard/section-list";
+import { CreatorCarousel } from "@/components/dashboard/creator-carousel";
 import { useFirestoreUsers } from "@/lib/firebase/client-content";
 import { firebaseDb } from "@/lib/firebase/client";
 import type { BlogPost } from "@/lib/blog";
 import type { Campaign } from "@/lib/campaigns";
 import type { Client } from "@/lib/clients";
 import type { Creator, User } from "@/lib/users";
-import { baseCity, creatorAddedTimestamp, creatorHref, isCreatorNew, isCreatorUser } from "@/lib/users";
+import { creatorAddedTimestamp, isCreatorUser } from "@/lib/users";
 import { campaignHref, campaignLiveDateLabel } from "@/lib/campaigns";
 import { CreatorRailSkeleton, DashboardHomeSkeleton } from "@/components/dashboard/loading-skeleton";
 
@@ -58,14 +58,6 @@ function campaignCreators(campaign: Campaign, clients: Client[], users: User[]):
   return (client?.creatorSlugs ?? [])
     .map((slug) => users.find((user) => user.slug === slug))
     .filter((creator): creator is Creator => Boolean(creator));
-}
-
-function NewBadge() {
-  return (
-    <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-white">
-      New
-    </span>
-  );
 }
 
 export default function HomePage() {
@@ -122,28 +114,7 @@ export default function HomePage() {
       {creatorsError ? <p className="mt-10 text-sm text-muted-foreground">{creatorsError}</p> : null}
       {creatorsLoading ? <CreatorRailSkeleton /> : null}
       {!creatorsLoading && latestCreators.length > 0 ? (
-        <div className="mt-6">
-          <DashboardSection id="new-creators-heading" title="New creators" href="/dashboard/discover">
-            {latestCreators.map((creator) => (
-              <DashboardListRow
-                key={creator.slug}
-                href={creatorHref(creator.slug)}
-                lead
-                thumbnail={
-                  <CreatorThumbnail
-                    imageSrc={creator.profileImage}
-                    avatarSeed={creator.name}
-                    rounded={false}
-                    className="h-full w-full"
-                  />
-                }
-                badge={isCreatorNew(creator) ? <NewBadge /> : null}
-                title={creator.name}
-                meta={`${creator.niche ?? creator.category} · ${baseCity(creator.location)}`}
-              />
-            ))}
-          </DashboardSection>
-        </div>
+        <CreatorCarousel creators={latestCreators} />
       ) : null}
 
       {content.error ? <p className="mt-8 text-sm text-muted-foreground">{content.error}</p> : null}

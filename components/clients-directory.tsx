@@ -10,6 +10,7 @@ import { Badge, EmptyState, ImageWithFallback } from "@/components/dashboard/ui"
 import { DashboardCard, DashboardCardActions } from "@/components/dashboard-card";
 import { CreatorAvatarStack } from "@/components/creator-avatar-stack";
 import { FilterBar, type SortOption, type ViewMode } from "@/components/dashboard/filter-bar";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const SORTS: SortOption<"name" | "date" | "modified" | "industry">[] = [
   { key: "name", label: "Name (A–Z)" },
@@ -123,19 +124,19 @@ export function ClientsDirectory({ clients }: { clients: Client[] }) {
             </ul>
           ) : (
             <div className="overflow-x-auto rounded-xl border border-border">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr>
-                    <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Client</th>
-                    <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Industry</th>
-                    <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Added</th>
-                    <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Updated</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Table className="w-full border-collapse">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Client</TableHead>
+                    <TableHead>Industry</TableHead>
+                    <TableHead>Added</TableHead>
+                    <TableHead>Updated</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {visibleClients.map((client) => (
-                    <tr key={client.slug} className="border-b border-border last:border-0 hover:bg-muted/50">
-                      <td className="px-4 py-3.5 text-[15px] font-semibold">
+                    <TableRow key={client.slug}>
+                      <TableCell className="px-4 py-3.5 font-semibold">
                         <Link href={`/dashboard/clients/${client.slug}/overview`} className="inline-flex items-center gap-3 text-foreground no-underline hover:text-primary focus-visible:text-primary">
                           <ImageWithFallback
                             src={client.profileImage}
@@ -145,14 +146,14 @@ export function ClientsDirectory({ clients }: { clients: Client[] }) {
                           />
                           {client.name}
                         </Link>
-                      </td>
-                      <td className="px-4 py-3.5 text-[15px]"><Badge>{client.industry}</Badge></td>
-                      <td className="whitespace-nowrap px-4 py-3.5 text-[15px] text-muted-foreground">{client.date ? <time dateTime={client.date}>{longDate(client.date)}</time> : "—"}</td>
-                      <td className="whitespace-nowrap px-4 py-3.5 text-[15px] text-muted-foreground">{client.updatedAt ? updatedDate(client.updatedAt) : "—"}</td>
-                    </tr>
+                      </TableCell>
+                      <TableCell className="px-4 py-3.5"><Badge>{client.industry}</Badge></TableCell>
+                      <TableCell className="whitespace-nowrap px-4 py-3.5 text-muted-foreground">{client.date ? <time dateTime={client.date}>{longDate(client.date)}</time> : "—"}</TableCell>
+                      <TableCell className="whitespace-nowrap px-4 py-3.5 text-muted-foreground">{client.updatedAt ? updatedDate(client.updatedAt) : "—"}</TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           )
         ) : (

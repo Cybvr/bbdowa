@@ -32,7 +32,7 @@ export function PageHeader({
       action={createType ? <QuickCreate type={createType} iconOnly /> : null}
       hideAll={!description && !meta && !actions}
     >
-    <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-3">
+    <div className="flex flex-wrap items-center justify-between gap-3 pb-1">
       <div>
         <h1 data-mobile-header className="m-0 text-page-title font-bold leading-tight tracking-tight sm:text-page-title-lg">{title}</h1>
         {description ? (

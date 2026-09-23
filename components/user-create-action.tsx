@@ -7,6 +7,7 @@ import { DayRateField } from "@/components/day-rate-field";
 import { CreatableSelectField, EditSheet, SelectField, TextField } from "@/components/detail-editor";
 import { firebaseDb } from "@/lib/firebase/client";
 import { creatorRateLabel, type RateCurrency, type UserRole } from "@/lib/users";
+import { LIST_ACTION_CLASS } from "@/components/dashboard/list-page-actions";
 
 // Creates any directory user, including people with multiple roles.
 const ROLE_OPTIONS: readonly { value: UserRole; label: string }[] = [
@@ -98,16 +99,16 @@ export function UserCreateAction({
 
   return (
     <EditSheet
-      title="Add user"
+      title="New user"
       description="Create a directory profile and assign one or more roles."
       trigger={(open) => (
         <button
           type="button"
           onClick={open}
-          className="inline-flex h-11 items-center gap-1.5 rounded-md bg-primary px-4 text-[14px] font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:h-9 sm:px-3 sm:text-[13px]"
+          className={LIST_ACTION_CLASS}
         >
           <Plus aria-hidden="true" className="h-3.5 w-3.5" />
-          Add user
+          New user
         </button>
       )}
       onSave={save}

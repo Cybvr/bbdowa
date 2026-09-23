@@ -233,16 +233,8 @@ export const LogOutIcon: NavIconComponent = ({ className }) => (
   </Glyph>
 );
 
-// Contracts — document with a signature line
-export const ContractsIcon: NavIconComponent = ({ className }) => (
-  <Glyph className={className}>
-    <path d="M6 3.5h9l3 3V20H6Z" />
-    <path d="M15 3.5V7h3M8.5 11h7M8.5 14h7M8.5 17h4" />
-  </Glyph>
-);
-
 // Documents — stacked document pages
-export const TemplatesIcon: NavIconComponent = ({ className }) => (
+export const DocumentsIcon: NavIconComponent = ({ className }) => (
   <Glyph className={className}>
     <path d="M8 4.5h10v13H8Z" />
     <path d="M6 7.5H4v13h10v-2M10.5 8.5h5M10.5 11.5h5M10.5 14.5h3" />
@@ -291,6 +283,5 @@ export const NAV_ICON_SET: Record<string, NavIconComponent> = {
   "Log out": LogOutIcon,
   Overview: DashboardIcon,
   Users: TeamIcon,
-  Contracts: ContractsIcon,
-  Documents: TemplatesIcon,
+  Documents: DocumentsIcon,
 };

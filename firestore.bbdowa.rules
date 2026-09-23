@@ -23,7 +23,7 @@ service cloud.firestore {
     }
 
     // Admins and managers both run the agency side of the dashboard: giving
-    // out tasks, drafting agreements, and looking up who's a creator.
+    // out tasks, drafting documents, and looking up who's a creator.
     function isStaff() {
       return isAdmin() || isManager();
     }
@@ -141,32 +141,45 @@ service cloud.firestore {
       allow delete: if isStaff();
     }
 
-    // NDAs and other agreements admins/managers draft for a creator to sign.
-    // The creator can only add a signature, never touch the agreement text.
-    // A manager can send and view agreements; editing or deleting one is
-    // admin-only.
-    match /contracts/{id} {
-      // Creator agreements are published on public creator profiles. Writes
-      // remain restricted below, and only the assigned creator can sign.
+    // A document starts as a draft, can be sent to one creator, and locks when sent.
+    match /documents/{id} {
       allow read: if true;
-      allow create: if isStaff() && request.resource.data.createdBy == request.auth.uid;
-      allow update: if isAdmin()
+      allow create: if isStaff()
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.signedAt == null
+        && request.resource.data.signedName == null
+        && ((request.resource.data.status == "draft" && request.resource.data.assignedTo == null)
+          || (request.resource.data.status == "pending_signature"
+            && request.resource.data.assignedTo is string
+            && request.resource.data.assignedTo.size() > 0));
+      allow update: if (isStaff()
+          && resource.data.status == "draft"
+          && request.resource.data.createdBy == resource.data.createdBy
+          && request.resource.data.signedAt == null
+          && request.resource.data.signedName == null
+          && (request.resource.data.status == "draft"
+            || (request.resource.data.status == "pending_signature"
+              && request.resource.data.assignedTo is string
+              && request.resource.data.assignedTo.size() > 0)))
+        || (isStaff()
+          && resource.data.status == "pending_signature"
+          && request.resource.data.status == "pending_signature"
+          && request.resource.data.assignedTo is string
+          && request.resource.data.assignedTo.size() > 0
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            "assignedTo", "assignedToName", "updatedAt"
+          ]))
         || (signedIn()
+          && resource.data.status == "pending_signature"
           && resource.data.assignedTo == request.auth.uid
-          && request.resource.data.assignedTo == resource.data.assignedTo
-          && request.resource.data.title == resource.data.title
-          && request.resource.data.body == resource.data.body
-          && resource.data.status == "pending"
-          && request.resource.data.status == "signed");
+          && request.resource.data.status == "signed"
+          && request.resource.data.signedName is string
+          && request.resource.data.signedName.size() > 0
+          && request.resource.data.signedAt is string
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            "status", "signedAt", "signedName", "updatedAt"
+          ]));
       allow delete: if isAdmin();
-    }
-
-    // Reusable agreement text admins maintain. Managers can read the list to
-    // pick one when sending an agreement, but only admins write templates.
-    match /contractTemplates/{id} {
-      allow read: if isStaff();
-      allow create: if isAdmin() && request.resource.data.createdBy == request.auth.uid;
-      allow update, delete: if isAdmin();
     }
   }
 }

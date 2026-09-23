@@ -23,6 +23,7 @@ import {
 import { useAuth } from "@/components/auth-provider";
 import { firebaseDb } from "@/lib/firebase/client";
 import { ImageUploadField } from "@/components/detail-editor";
+import { LIST_ACTION_CLASS } from "@/components/dashboard/list-page-actions";
 
 export type CreateType = "update" | "resource" | "client" | "campaign";
 type CampaignStatus = "live" | "pitch" | "completed";
@@ -288,7 +289,7 @@ export function QuickCreate({ type, iconOnly = false }: { type: CreateType; icon
         aria-label={copy.button}
         className={iconOnly
           ? "inline-flex h-9 w-9 items-center justify-center rounded-lg text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-          : "inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-border bg-background px-3 text-xs font-semibold text-foreground transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"}
+          : LIST_ACTION_CLASS}
       >
         <Plus className={iconOnly ? "h-5 w-5" : "h-4 w-4"} aria-hidden="true" />
         {iconOnly ? null : <span>{copy.button}</span>}

@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/dashboard/ui";
 import { DashboardThumbnail } from "@/components/dashboard-thumbnail";
 import { DashboardCard, DashboardCardActions } from "@/components/dashboard-card";
 import { FilterBar, type SortOption, type ViewMode } from "@/components/dashboard/filter-bar";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const CATEGORIES: { value: BlogCategory | "all"; label: string }[] = [
   { value: "all", label: "All categories" },
@@ -104,28 +105,28 @@ export function UpdatesDirectory({ posts }: { posts: BlogPost[] }) {
             </ul>
           ) : (
             <div className="overflow-x-auto rounded-xl border border-border">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr>
-                    <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Update</th>
-                    <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Category</th>
-                    <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Source</th>
-                    <th className="whitespace-nowrap border-b border-border px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Published</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Table className="w-full border-collapse">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Update</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Source</TableHead>
+                    <TableHead>Published</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {visible.map((post) => (
-                    <tr key={post.slug} className="border-b border-border last:border-0 hover:bg-muted/50">
-                      <td className="px-4 py-4 text-[15px] font-semibold">
+                    <TableRow key={post.slug}>
+                      <TableCell className="px-4 py-4 font-semibold">
                         <Link href={`/dashboard/blog/${post.slug}`} className="text-foreground no-underline hover:text-primary focus-visible:text-primary">{post.title}</Link>
-                      </td>
-                      <td className="px-4 py-4 text-[15px] text-primary">{post.category}</td>
-                      <td className="px-4 py-4 text-[15px] text-muted-foreground">{post.sourceName}</td>
-                      <td className="whitespace-nowrap px-4 py-4 text-[15px] text-muted-foreground">{formatDate(post.publishedAt)}</td>
-                    </tr>
+                      </TableCell>
+                      <TableCell className="px-4 py-4 text-primary">{post.category}</TableCell>
+                      <TableCell className="px-4 py-4 text-muted-foreground">{post.sourceName}</TableCell>
+                      <TableCell className="whitespace-nowrap px-4 py-4 text-muted-foreground">{formatDate(post.publishedAt)}</TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           )
         ) : (
