@@ -127,8 +127,8 @@ service cloud.firestore {
     // Tasks admins/managers assign to a creator. The creator can move a task
     // through status but can't edit what it says or reassign it.
     match /creatorTasks/{id} {
-      allow read: if isStaff()
-        || (signedIn() && resource.data.assignedTo == request.auth.uid);
+      // A creator's profile is public, so their assigned tasks are readable too.
+      allow read: if true;
       allow create: if isStaff() && request.resource.data.createdBy == request.auth.uid;
       allow update: if isStaff()
         || (signedIn()

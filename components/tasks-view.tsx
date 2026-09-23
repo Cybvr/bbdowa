@@ -163,6 +163,8 @@ export function CreatorTasksPanel({ creatorUid, creatorName, viewer }: { creator
   const [busyId, setBusyId] = React.useState<string | null>(null);
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const selected = tasks.find((task) => task.id === selectedId) ?? null;
+  // Only staff or the assigned creator can change a task; everyone else views it read-only.
+  const canEdit = viewer.isStaff || (Boolean(viewer.uid) && viewer.uid === creatorUid);
 
   const load = React.useCallback(async (uid: string) => {
     const snapshot = await getDocs(query(collection(firebaseDb, TASK_COLLECTION), where("assignedTo", "==", uid)));
@@ -251,8 +253,8 @@ export function CreatorTasksPanel({ creatorUid, creatorName, viewer }: { creator
 
       {tasks.length === 0 ? (
         <EmptyState
-          title={viewer.isStaff ? "No tasks yet" : "Nothing assigned to you yet"}
-          description={viewer.isStaff ? `Create a task and assign it to ${creatorName}.` : "Tasks your team gives you will show up here."}
+          title="No tasks yet"
+          description={viewer.isStaff ? `Create a task and assign it to ${creatorName}.` : `Tasks assigned to ${creatorName} will show up here.`}
         />
       ) : (
         <div className="overflow-x-auto rounded-xl border border-border bg-background">
@@ -297,12 +299,14 @@ export function CreatorTasksPanel({ creatorUid, creatorName, viewer }: { creator
                   <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Status</span>
                   <div className="flex items-center gap-3">
                     <StatusBadge status={selected.status} overdue={isOverdue(selected)} />
-                    <Select value={selected.status} onValueChange={(value) => void setStatus(selected, value as TaskStatus)}>
-                      <SelectTrigger disabled={busyId === selected.id} className="h-9 w-[160px]"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {TASK_STATUSES.map((status) => <SelectItem key={status} value={status}>{TASK_STATUS_LABELS[status]}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                    {canEdit ? (
+                      <Select value={selected.status} onValueChange={(value) => void setStatus(selected, value as TaskStatus)}>
+                        <SelectTrigger disabled={busyId === selected.id} className="h-9 w-[160px]"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {TASK_STATUSES.map((status) => <SelectItem key={status} value={status}>{TASK_STATUS_LABELS[status]}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    ) : null}
                   </div>
                 </div>
                 <div>

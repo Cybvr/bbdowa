@@ -45,7 +45,7 @@ function platformsFor(creator: Creator): CreatorPlatform[] {
   return platforms;
 }
 
-type CreatorTab = "overview" | "work-history" | "campaigns" | "hours" | "tasks" | "documents";
+type CreatorTab = "overview" | "campaigns" | "hours" | "tasks" | "documents";
 
 export default function CreatorDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -110,12 +110,10 @@ export default function CreatorDetailPage() {
   }
   const platforms = platformsFor(creator);
   const creatorCampaigns = getCreatorCampaigns(creator.slug, clients, campaigns);
-  const isOwnProfile = Boolean(authUser?.uid && creator.uid && authUser.uid === creator.uid);
-  const canSeeTasks = isStaff || isOwnProfile;
+  const canSeeTasks = isStaff || Boolean(creator.uid);
 
   const tabs: { id: CreatorTab; label: string }[] = [
     { id: "overview", label: "Overview" },
-    ...(creator.workHistory?.length ? ([{ id: "work-history", label: "Work history" }] as const) : []),
     ...(creatorCampaigns.length ? ([{ id: "campaigns", label: "Campaigns" }] as const) : []),
     ...(hasHours ? ([{ id: "hours", label: "Hours" }] as const) : []),
     ...(canSeeTasks ? ([{ id: "tasks", label: "Tasks" }] as const) : []),
@@ -232,28 +230,25 @@ export default function CreatorDetailPage() {
                 </div>
               </ProfileSection>
             ) : null}
-          </>
-        )}
 
-        {tab === "work-history" && (
-          <ProfileSection title="Work history" variant="plain">
-            <ProfileTable
-              columns={[
-                { key: "period", label: "Period" },
-                { key: "role", label: "Role" },
-                { key: "company", label: "Company" },
-                { key: "location", label: "Location" },
-              ]}
-              rows={(creator.workHistory ?? []).map((entry) => ({
-                period: entry.period,
-                role: <span className="font-semibold text-foreground">{entry.role}</span>,
-                company: entry.company,
-                location: entry.location ?? "—",
-              }))}
-              emptyTitle="No work history yet"
-              emptyDescription={`${creator.name} hasn’t added any past roles yet.`}
-            />
-          </ProfileSection>
+            {creator.workHistory?.length ? (
+              <ProfileSection title="Work history" variant="plain">
+                <div className="space-y-4">
+                  {creator.workHistory.map((entry, index) => (
+                    <div key={index} className="flex items-baseline justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="m-0 text-[15px] font-semibold text-foreground">{entry.role}</p>
+                        <p className="mb-0 mt-0.5 text-[14px] text-muted-foreground">
+                          {entry.company}{entry.location ? ` · ${entry.location}` : ""}
+                        </p>
+                      </div>
+                      {entry.period ? <span className="shrink-0 text-[13px] text-muted-foreground">{entry.period}</span> : null}
+                    </div>
+                  ))}
+                </div>
+              </ProfileSection>
+            ) : null}
+          </>
         )}
 
         {tab === "campaigns" && (
