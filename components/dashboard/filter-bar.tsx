@@ -3,11 +3,14 @@
 /**
  * Shared filter bar for dashboard list pages. Desktop keeps the controls
  * visible, while mobile keeps search on one row and moves the refinements into
- * a sheet. Each page still owns its own controlled state.
+ * a sheet. When the mobile top bar is shown, search moves into that sheet too
+ * and a search icon in the top bar opens it. Each page still owns its own
+ * controlled state.
  */
 
 import { useState } from "react";
-import { Filter, Grid2X2, List } from "lucide-react";
+import { Filter, Grid2X2, List, Search } from "lucide-react";
+import { MobileHeaderSearch, useMobileHeader } from "@/components/dashboard/mobile-header";
 import {
   Sheet,
   SheetClose,
@@ -174,6 +177,10 @@ export function FilterBar<TabKey extends string, SortKey extends string>({
     (hasStatus && activeTab !== tabs?.[0]?.key ? 1 : 0) +
     (filters?.filter((filter) => filter.value !== filter.options[0]?.value).length ?? 0) +
     (hasSort && activeSort !== sortOptions?.[0]?.key ? 1 : 0);
+  const inHeader = Boolean(useMobileHeader());
+  const sheetSearch = inHeader && Boolean(onSearchChange);
+  const hasSheet = hasStatus || Boolean(filters?.length) || hasSort || sheetSearch;
+  const sheetTitle = sheetSearch ? "Search and filter" : "Filters";
   const statusOptions = tabs?.map((tab) => ({ value: tab.key, label: tab.label })) ?? [];
 
   const clearFilters = () => {
@@ -187,7 +194,22 @@ export function FilterBar<TabKey extends string, SortKey extends string>({
 
   return (
     <div data-filter-panel={panelId} className={`${className} flex flex-wrap items-center gap-2 sm:gap-3`}>
-      <div className="flex w-full items-center gap-2 sm:contents">
+      {inHeader && hasSheet ? (
+        <MobileHeaderSearch>
+          <button
+            type="button"
+            aria-label={sheetTitle}
+            onClick={() => setMobileFiltersOpen(true)}
+            className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          >
+            <Search className="h-5 w-5" aria-hidden="true" />
+            {search || activeFilterCount > 0 ? (
+              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary" aria-hidden="true" />
+            ) : null}
+          </button>
+        </MobileHeaderSearch>
+      ) : null}
+      <div className={inHeader ? "hidden nav:contents" : "flex w-full items-center gap-2 sm:contents"}>
         {onSearchChange ? (
           <input
             type="search"
@@ -198,7 +220,7 @@ export function FilterBar<TabKey extends string, SortKey extends string>({
             className={`${FIELD} ${searchClassName} w-full max-w-full flex-1 placeholder:text-muted-foreground sm:w-auto`}
           />
         ) : null}
-        {hasStatus || filters?.length || hasSort ? (
+        {hasSheet ? (
           <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
             <SheetTrigger asChild>
               <button
@@ -216,9 +238,19 @@ export function FilterBar<TabKey extends string, SortKey extends string>({
             </SheetTrigger>
             <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto p-0">
               <SheetHeader className="border-b border-border pr-12">
-                <SheetTitle>Filters</SheetTitle>
+                <SheetTitle>{sheetTitle}</SheetTitle>
               </SheetHeader>
               <div className="space-y-5 px-4 pb-4">
+                {sheetSearch ? (
+                  <input
+                    type="search"
+                    value={search}
+                    onChange={(event) => onSearchChange!(event.target.value)}
+                    placeholder={searchPlaceholder}
+                    aria-label={searchPlaceholder}
+                    className={`${FIELD} w-full placeholder:text-muted-foreground`}
+                  />
+                ) : null}
                 {hasStatus ? (
                   <SheetSelect
                     label={tabsLabel}

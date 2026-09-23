@@ -71,7 +71,7 @@ const LABEL = "block text-[11px] font-semibold uppercase tracking-[0.08em] text-
 const TEXTAREA =
   "flex min-h-[90px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-xs shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50";
 
-export function QuickCreate({ type }: { type: CreateType }) {
+export function QuickCreate({ type, iconOnly = false }: { type: CreateType; iconOnly?: boolean }) {
   const router = useRouter();
   const { isAdmin } = useAuth();
   const [open, setOpen] = React.useState(false);
@@ -286,10 +286,12 @@ export function QuickCreate({ type }: { type: CreateType }) {
         type="button"
         onClick={() => setOpen(true)}
         aria-label={copy.button}
-        className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-border bg-background px-3 text-xs font-semibold text-foreground transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+        className={iconOnly
+          ? "inline-flex h-9 w-9 items-center justify-center rounded-lg text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          : "inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-border bg-background px-3 text-xs font-semibold text-foreground transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"}
       >
-        <Plus className="h-4 w-4" aria-hidden="true" />
-        <span>{copy.button}</span>
+        <Plus className={iconOnly ? "h-5 w-5" : "h-4 w-4"} aria-hidden="true" />
+        {iconOnly ? null : <span>{copy.button}</span>}
       </button>
 
       <Dialog open={open} onOpenChange={handleOpenChange}>

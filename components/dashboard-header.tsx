@@ -11,6 +11,7 @@ import { DashboardLogo, DashboardSidebarContent, DashboardSidebarSheet } from "@
 import { ProfileNav } from "@/components/profile-nav";
 import { TrackerIcon } from "@/components/nav-icons";
 import { TimeTracker } from "@/components/time-tracker";
+import { useMobileHeader } from "@/components/dashboard/mobile-header";
 import { firebaseDb } from "@/lib/firebase/client";
 import { ACTIVITY_COLLECTION, elapsedMs, formatClockFull, type ActivityEntry } from "@/lib/time-tracking";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -166,6 +167,7 @@ export function DashboardHeader({
   const [contentResults, setContentResults] = useState<SearchResult[]>([]);
   const [searchIndexLoaded, setSearchIndexLoaded] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+  const mobileHeader = useMobileHeader();
 
   const staticResults = useMemo(
     () => navigationSearchResults(pathname.startsWith("/admin") ? ADMIN_NAV_ITEMS : NAV_ITEMS, Boolean(user)),
@@ -319,9 +321,15 @@ export function DashboardHeader({
               </button>
             }
           />
-          <DashboardLogo />
+          {mobileHeader?.title ? (
+            <h1 className="m-0 truncate text-[20px] font-bold leading-tight tracking-tight">{mobileHeader.title}</h1>
+          ) : (
+            <DashboardLogo />
+          )}
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1">
+          <div ref={mobileHeader?.setSearchSlot} className="contents" />
+          <div ref={mobileHeader?.setActionSlot} className="contents" />
           {isViewingAs ? (
             <button
               type="button"

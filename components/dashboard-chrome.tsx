@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { DashboardFooter } from "@/components/dashboard-footer";
+import { MobileHeaderProvider } from "@/components/dashboard/mobile-header";
 
 export function DashboardChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -21,10 +22,13 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
 
   if (isApplication) return <>{children}</>;
 
+  const hideMobileHeader = isClientDetail || isCreators || isCreatorDetail || isNjeri;
+
   return (
+    <MobileHeaderProvider enabled={!hideMobileHeader}>
     <div className="flex min-h-screen flex-1 flex-col nav:flex-row">
       <DashboardHeader
-        hideMobile={isClientDetail || isCreators || isCreatorDetail || isNjeri}
+        hideMobile={hideMobileHeader}
         sidebarCollapsed={sidebarCollapsed}
         onToggleSidebar={() => setSidebarCollapsed((value) => !value)}
       />
@@ -35,5 +39,6 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
       </div>
       <DashboardFooter />
     </div>
+    </MobileHeaderProvider>
   );
 }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { QuickCreate, type CreateType } from "@/components/quick-create";
+import { MobilePageHeader } from "@/components/dashboard/mobile-header";
 
 /**
  * Shared Operate-mode primitives for the dashboard.
@@ -26,9 +27,14 @@ export function PageHeader({
   createType?: CreateType;
 }) {
   return (
+    <MobilePageHeader
+      title={title}
+      action={createType ? <QuickCreate type={createType} iconOnly /> : null}
+      hideAll={!description && !meta && !actions}
+    >
     <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-3">
       <div>
-        <h1 className="m-0 text-page-title font-bold leading-tight tracking-tight sm:text-page-title-lg">{title}</h1>
+        <h1 data-mobile-header className="m-0 text-page-title font-bold leading-tight tracking-tight sm:text-page-title-lg">{title}</h1>
         {description ? (
           <p className="mb-0 mt-1.5 max-w-[60ch] text-body leading-[1.4] text-muted-foreground">
             {description}
@@ -40,9 +46,10 @@ export function PageHeader({
           <span className="text-[13px] font-medium text-muted-foreground">{meta}</span>
         ) : null}
         {actions}
-        {createType ? <QuickCreate type={createType} /> : null}
+        {createType ? <div data-mobile-header><QuickCreate type={createType} /></div> : null}
       </div>
     </div>
+    </MobilePageHeader>
   );
 }
 
