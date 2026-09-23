@@ -167,6 +167,10 @@ export function DashboardHeader({
   const [searchIndexLoaded, setSearchIndexLoaded] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const mobileHeader = useMobileHeader();
+  const mobileTitle =
+    mobileHeader?.title ??
+    NAV_ITEMS.find((item): item is Extract<NavItem, { kind: "link" }> => item.kind === "link" && item.href === pathname)?.label ??
+    null;
 
   const staticResults = useMemo(
     () => navigationSearchResults(pathname.startsWith("/admin") ? ADMIN_NAV_ITEMS : NAV_ITEMS, Boolean(user)),
@@ -325,8 +329,8 @@ export function DashboardHeader({
               </button>
             }
           />
-          {mobileHeader?.title ? (
-            <h1 className="m-0 truncate text-[20px] font-bold leading-tight tracking-tight">{mobileHeader.title}</h1>
+          {mobileTitle ? (
+            <h1 className="m-0 truncate text-[20px] font-bold leading-tight tracking-tight">{mobileTitle}</h1>
           ) : null}
         </div>
         <div className="flex shrink-0 items-center gap-1">

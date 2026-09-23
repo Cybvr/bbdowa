@@ -35,7 +35,7 @@ export default function NjeriPage() {
   }, [popoutOpen]);
 
   return (
-    <div className="relative flex h-[calc(100dvh-64px)] nav:h-[calc(100dvh-60px)] w-full overflow-hidden bg-background">
+    <div className="relative flex h-[calc(100dvh-124px)] nav:h-[calc(100dvh-60px)] w-full overflow-hidden bg-background">
       {/* Desktop Sidebar (collapsible) */}
       <div
         className={`hidden md:flex flex-col border-r border-border transition-all duration-300 ease-in-out ${

@@ -14,15 +14,13 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
   const isCreators = pathname === "/dashboard/creators";
   const isCreatorDetail = /^\/dashboard\/creators\/[^/]+$/.test(pathname);
 
-  const isNjeri = pathname === "/dashboard/njeri";
-
   useEffect(() => {
     setSidebarCollapsed(pathname === "/dashboard/creators");
   }, [pathname]);
 
   if (isApplication) return <>{children}</>;
 
-  const hideMobileHeader = isClientDetail || isCreators || isCreatorDetail || isNjeri;
+  const hideMobileHeader = isClientDetail || isCreators || isCreatorDetail;
 
   return (
     <MobileHeaderProvider enabled={!hideMobileHeader}>
