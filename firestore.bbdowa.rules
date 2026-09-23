@@ -28,6 +28,11 @@ service cloud.firestore {
       return isAdmin() || isManager();
     }
 
+    function isCreatorProfile() {
+      return resource.data.role == "creator"
+        || resource.data.get("roles", []).hasAny(["creator"]);
+    }
+
     function validRole() {
       return request.resource.data.role in ["pending", "admin", "manager", "creator"];
     }
@@ -43,6 +48,13 @@ service cloud.firestore {
           && request.resource.data.role == "pending");
       allow update: if (isAdmin()
         && validRole())
+        || (isManager()
+          && isCreatorProfile()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            "name", "title", "department", "location", "email", "phone",
+            "profileImage", "category", "dayRate", "availability", "portfolio",
+            "behance", "linkedin", "instagram", "vouchedBy", "craftNote", "updatedAt"
+          ]))
         || (isSelf(userId)
           && resource.data.uid == userId
           && request.resource.data.uid == userId

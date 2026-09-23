@@ -16,6 +16,7 @@ import {
   where,
 } from "firebase/firestore";
 import { firebaseDb } from "@/lib/firebase/client";
+import { useAuth } from "@/components/auth-provider";
 import { CreatableSelectField, EditSheet, ImageUploadField, SelectField, TextField, TextareaField } from "@/components/detail-editor";
 import {
   DropdownMenu,
@@ -50,6 +51,8 @@ export function UserActions({
   onMutated?: () => void;
 }) {
   const router = useRouter();
+  const { isAdmin, role } = useAuth();
+  const canEditUser = isAdmin || (role === "manager" && variant === "creator");
 
   const [name, setName] = React.useState(user.name ?? "");
   const [status, setStatus] = React.useState<AccountStatus>(user.role === "pending" ? "pending" : "active");
@@ -87,11 +90,8 @@ export function UserActions({
   const save = async () => {
     const ref = await docRef();
     if (!ref) throw new Error("User document not found");
-    const primaryRole = status === "pending" ? "pending" : roles[0] ?? "manager";
     const common = {
       name: name.trim(),
-      role: primaryRole,
-      roles: status === "pending" ? [] : roles,
       title: title.trim(),
       department: department.trim(),
       location: location.trim(),
@@ -100,8 +100,14 @@ export function UserActions({
       profileImage: profileImage.trim() || null,
       updatedAt: serverTimestamp(),
     };
+    const accessFields = isAdmin
+      ? {
+          role: status === "pending" ? "pending" : roles[0] ?? "manager",
+          roles: status === "pending" ? [] : roles,
+        }
+      : {};
     const creatorFields =
-      roles.includes("creator")
+      variant === "creator" || roles.includes("creator")
         ? {
             category: category.trim(),
             dayRate: dayRate.trim(),
@@ -114,7 +120,7 @@ export function UserActions({
             craftNote: craftNote.trim(),
           }
         : {};
-    await updateDoc(ref, { ...common, ...creatorFields });
+    await updateDoc(ref, { ...common, ...accessFields, ...creatorFields });
     if (onMutated) {
       onMutated();
       return;
@@ -140,7 +146,8 @@ export function UserActions({
       title={variant === "creator" ? "Edit creator" : "Edit profile"}
       description={user.name}
       onSave={save}
-      onDelete={remove}
+      canEdit={canEditUser}
+      onDelete={isAdmin ? remove : undefined}
       deleteConfirm="Delete this person? This can’t be undone."
       trigger={compactMenu ? (_open, removeFromMenu) => (
         <DropdownMenu>
@@ -154,60 +161,64 @@ export function UserActions({
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-36">
-            {includeEditAction ? <DropdownMenuItem onSelect={_open}><Pencil className="h-4 w-4" />Edit</DropdownMenuItem> : null}
-            <DropdownMenuItem variant="destructive" onSelect={removeFromMenu}><Trash2 className="h-4 w-4" />Delete</DropdownMenuItem>
+            {canEditUser && (includeEditAction || role === "manager" || !compactMenu) ? <DropdownMenuItem onSelect={_open}><Pencil className="h-4 w-4" />Edit</DropdownMenuItem> : null}
+            {isAdmin ? <DropdownMenuItem variant="destructive" onSelect={removeFromMenu}><Trash2 className="h-4 w-4" />Delete</DropdownMenuItem> : null}
           </DropdownMenuContent>
         </DropdownMenu>
       ) : undefined}
     >
       <ImageUploadField label="Avatar" value={profileImage} onChange={setProfileImage} variant="avatar" uploadPath={`users/${user.uid ?? user.slug}/avatar`} />
       <TextField label="Name" value={name} onChange={setName} />
-      <SelectField
-        label="Account status"
-        value={status}
-        onChange={(value) => setStatus(value as AccountStatus)}
-        options={[
-          { value: "active", label: "Active" },
-          { value: "pending", label: "Pending" },
-        ]}
-      />
-      <div className="space-y-1.5">
-        <span className="text-[13px] font-medium text-foreground">Roles</span>
-        <div className="flex flex-wrap gap-2">
-          {([
-            ["admin", "Admin"],
-            ["manager", "Manager"],
-            ["creator", "Creator"],
-          ] as const).map(([value, label]) => {
-            const selected = roles.includes(value);
-            const cannotRemove = selected && roles.length === 1;
-            return (
-              <button
-                key={value}
-                type="button"
-                aria-pressed={selected}
-                disabled={cannotRemove}
-                onClick={() =>
-                  setRoles((current) =>
-                    selected ? current.filter((role) => role !== value) : [...current, value],
-                  )
-                }
-                className={`rounded-lg border px-3 py-2 text-[13px] font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-50 ${selected ? "border-foreground bg-foreground text-background" : "border-border bg-background text-muted-foreground hover:border-foreground/50 hover:text-foreground"}`}
-              >
-                {label}
-              </button>
-            );
-          })}
-        </div>
-        <p className="m-0 text-xs text-muted-foreground">A person can appear in both the team and creator directories.</p>
-      </div>
+      {isAdmin ? (
+        <>
+          <SelectField
+            label="Account status"
+            value={status}
+            onChange={(value) => setStatus(value as AccountStatus)}
+            options={[
+              { value: "active", label: "Active" },
+              { value: "pending", label: "Pending" },
+            ]}
+          />
+          <div className="space-y-1.5">
+            <span className="text-[13px] font-medium text-foreground">Roles</span>
+            <div className="flex flex-wrap gap-2">
+              {([
+                ["admin", "Admin"],
+                ["manager", "Manager"],
+                ["creator", "Creator"],
+              ] as const).map(([value, label]) => {
+                const selected = roles.includes(value);
+                const cannotRemove = selected && roles.length === 1;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    aria-pressed={selected}
+                    disabled={cannotRemove}
+                    onClick={() =>
+                      setRoles((current) =>
+                        selected ? current.filter((role) => role !== value) : [...current, value],
+                      )
+                    }
+                    className={`rounded-lg border px-3 py-2 text-[13px] font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-50 ${selected ? "border-foreground bg-foreground text-background" : "border-border bg-background text-muted-foreground hover:border-foreground/50 hover:text-foreground"}`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="m-0 text-xs text-muted-foreground">A person can appear in both the team and creator directories.</p>
+          </div>
+        </>
+      ) : null}
       {variant === "team" ? (
         <>
           <TextField label="Title" value={title} onChange={setTitle} />
           <TextField label="Department" value={department} onChange={setDepartment} />
         </>
       ) : null}
-      {roles.includes("creator") ? (
+      {variant === "creator" || roles.includes("creator") ? (
         <>
           <CreatableSelectField
             label="Category"
@@ -233,7 +244,7 @@ export function UserActions({
       <TextField label="Location" value={location} onChange={setLocation} />
       <TextField label="Email" value={email} onChange={setEmail} type="email" />
       <TextField label="Phone" value={phone} onChange={setPhone} />
-      {roles.includes("creator") ? (
+      {variant === "creator" || roles.includes("creator") ? (
         <>
           <TextField label="Portfolio URL" value={portfolio} onChange={setPortfolio} />
           <TextField label="Behance URL" value={behance} onChange={setBehance} />

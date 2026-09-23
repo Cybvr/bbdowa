@@ -354,7 +354,7 @@ export function CreatableSelectField({
 /**
  * The edit button + slide-over shell. Callers own the field state and pass
  * `onSave` / `onDelete`; this component owns busy + error state and the layout.
- * Renders nothing unless the viewer is an admin.
+ * Renders nothing unless the caller grants edit permission or the viewer is an admin.
  */
 export function EditSheet({
   title,
@@ -364,6 +364,7 @@ export function EditSheet({
   deleteConfirm = "Delete this record? This can’t be undone.",
   onSave,
   onDelete,
+  canEdit,
   trigger,
   children,
 }: {
@@ -374,6 +375,7 @@ export function EditSheet({
   deleteConfirm?: string;
   onSave: () => Promise<void>;
   onDelete?: () => Promise<void>;
+  canEdit?: boolean;
   trigger?: (open: () => void, remove: () => void) => React.ReactNode;
   children: React.ReactNode;
 }) {
@@ -382,7 +384,7 @@ export function EditSheet({
   const [busy, setBusy] = React.useState<null | "save" | "delete">(null);
   const [error, setError] = React.useState<string | null>(null);
 
-  if (!isAdmin) return null;
+  if (!(canEdit ?? isAdmin)) return null;
 
   const save = async () => {
     setBusy("save");
