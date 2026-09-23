@@ -6,7 +6,7 @@ import { NAV_ICON_SET } from "@/components/nav-icons";
 import { useOptionalAuth } from "@/components/auth-provider";
 import { NAV_ITEMS } from "@/lib/nav";
 
-const FOOTER_LABELS = ["Home", "Campaigns", "Njeri", "Creators", "Tracker"];
+const FOOTER_LABELS = ["Home", "Campaigns", "Njeri", "Tracker"];
 
 export function DashboardFooter({ hidden = false }: { hidden?: boolean }) {
   const pathname = usePathname();
@@ -49,7 +49,7 @@ export function DashboardFooter({ hidden = false }: { hidden?: boolean }) {
               current ? "text-primary font-semibold" : "text-muted-foreground"
             }`}
           >
-            {Icon ? <Icon className="h-5 w-5" /> : null}
+            {Icon ? <Icon className="h-6 w-6" /> : null}
             <span className="truncate">{item.label}</span>
           </Link>
         );
