@@ -29,7 +29,7 @@ function StatusBadge({ status, overdue }: { status: TaskStatus; overdue: boolean
   return <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.06em] ${tone}`}>{TASK_STATUS_LABELS[status]}</span>;
 }
 
-type CreatorOption = { uid: string; name: string; slug: string };
+type CreatorOption = { uid: string | null; name: string; slug: string };
 
 function NewTaskDialog({ creators, createdBy, createdByName, onCreated }: {
   creators: CreatorOption[];
@@ -99,7 +99,7 @@ function NewTaskDialog({ creators, createdBy, createdByName, onCreated }: {
               <Select value={assignedTo} onValueChange={setAssignedTo}>
                 <SelectTrigger disabled={busy || creators.length === 0} className="h-10"><SelectValue placeholder={creators.length ? "Choose a creator" : "No creators with an account yet"} /></SelectTrigger>
                 <SelectContent>
-                  {creators.map((creator) => <SelectItem key={creator.uid} value={creator.uid}>{creator.name}</SelectItem>)}
+                  {creators.map((creator) => <SelectItem key={creator.slug} value={creator.uid ?? ""} disabled={!creator.uid}>{creator.name}{creator.uid ? "" : " · hasn’t signed in"}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -138,9 +138,12 @@ export default function TasksPage() {
   const isStaff = role === "admin" || role === "manager";
 
   const creators: CreatorOption[] = users
-    .filter((candidate) => isCreatorUser(candidate) && candidate.uid)
-    .map((candidate) => ({ uid: candidate.uid as string, name: candidate.name, slug: candidate.slug }))
-    .sort((a, b) => a.name.localeCompare(b.name));
+    .filter((candidate) => isCreatorUser(candidate))
+    .map((candidate) => ({ uid: candidate.uid ?? null, name: candidate.name, slug: candidate.slug }))
+    .sort((a, b) => {
+      const accountDiff = Number(Boolean(b.uid)) - Number(Boolean(a.uid));
+      return accountDiff !== 0 ? accountDiff : a.name.localeCompare(b.name);
+    });
 
   const visible = tasks.filter((task) => {
     if (status !== "all" && task.status !== status) return false;
