@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { LoginDialog } from "@/components/login-dialog";
 import { useOptionalAuth } from "@/components/auth-provider";
+import { MobileHeaderSearch, useMobileHeader } from "@/components/dashboard/mobile-header";
 import { ShareCreatorDialog } from "@/components/share-creator-dialog";
 import { readCreatorCollections, writeCreatorCollections, type CreatorList } from "@/lib/firebase/creator-collections";
 import type { Creator } from "@/lib/users";
@@ -439,7 +440,9 @@ function CreatorDiscoveryBar({
   sort,
   setSort,
   onJoinClick,
+  searchInHeader = false,
 }: {
+  searchInHeader?: boolean;
   search: string;
   setSearch: (value: string) => void;
   categories: string[];
@@ -459,7 +462,7 @@ function CreatorDiscoveryBar({
   return (
     <div className="mb-4 sm:mb-5">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-        <div className="flex min-w-0 flex-1 items-center gap-2">
+        <div className={`flex min-w-0 flex-1 items-center gap-2 ${searchInHeader ? "max-nav:hidden" : ""}`}>
           <form role="search" onSubmit={(event) => event.preventDefault()} className="relative min-w-0 flex-1">
           <input
             type="search"
@@ -1030,6 +1033,7 @@ export function CreatorDirectory({
     return sort === "newest" ? difference : -difference;
   });
 
+  const searchInHeader = Boolean(useMobileHeader());
   const activeFilterCount = [
     location !== "all" ? location : "",
     availability !== "all" ? availability : "",
@@ -1292,9 +1296,25 @@ export function CreatorDirectory({
 
   return (
     <>
+      {searchInHeader ? (
+        <MobileHeaderSearch>
+          <button
+            type="button"
+            aria-label="Search and filter"
+            onClick={() => setFilterOpen(true)}
+            className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          >
+            <FiSearch className="h-5 w-5" aria-hidden="true" />
+            {search || activeFilterCount > 0 ? (
+              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary" aria-hidden="true" />
+            ) : null}
+          </button>
+        </MobileHeaderSearch>
+      ) : null}
       <div className="mb-7">
         <section className="min-w-0">
           <CreatorDiscoveryBar
+            searchInHeader={searchInHeader}
             search={search}
             setSearch={updateSearch}
             categories={categories}
@@ -1549,9 +1569,19 @@ export function CreatorDirectory({
           className="[&>button]:bg-muted [&>button]:text-foreground [&>button]:opacity-100"
         >
           <SheetHeader className="border-b border-border">
-            <SheetTitle>Filters</SheetTitle>
+            <SheetTitle>{searchInHeader ? <><span className="nav:hidden">Search and filter</span><span className="hidden nav:inline">Filters</span></> : "Filters"}</SheetTitle>
           </SheetHeader>
           <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+            {searchInHeader ? (
+              <input
+                type="search"
+                value={search}
+                onChange={(event) => updateSearch(event.target.value)}
+                placeholder="What kind of creator are you looking for?"
+                aria-label="Search creators"
+                className="mb-4 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:outline-none nav:hidden"
+              />
+            ) : null}
             <FilterControls
               location={location}
               setLocation={updateLocation}
