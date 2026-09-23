@@ -183,7 +183,7 @@ export default function SettingsPage() {
             <TextField label="Behance URL" value={behance} onChange={setBehance} />
             <TextField label="LinkedIn URL" value={linkedin} onChange={setLinkedin} />
             <TextField label="Instagram URL" value={instagram} onChange={setInstagram} />
-            <TextareaField label="Craft note" value={craftNote} onChange={setCraftNote} />
+            <TextareaField label="About" value={craftNote} onChange={setCraftNote} />
           </>
         ) : null}
 

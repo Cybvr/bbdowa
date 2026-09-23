@@ -286,7 +286,7 @@ export function UserActions({
           <TextField label="LinkedIn URL" value={linkedin} onChange={setLinkedin} />
           <TextField label="Instagram URL" value={instagram} onChange={setInstagram} />
           <TextField label="Vouched by" value={vouchedBy} onChange={setVouchedBy} />
-          <TextareaField label="Craft note" value={craftNote} onChange={setCraftNote} />
+          <TextareaField label="About" value={craftNote} onChange={setCraftNote} />
           <TextField label="Follower count" value={followerCount} onChange={setFollowerCount} placeholder="e.g. 202" />
           <TextField label="Follower platform" value={followerPlatform} onChange={setFollowerPlatform} placeholder="e.g. Instagram" />
           <TextField label="Gender" value={gender} onChange={setGender} />
