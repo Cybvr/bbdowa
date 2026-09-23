@@ -270,7 +270,7 @@ export default function MyProfilePage() {
               creatorUid={authUser.uid}
               creatorSlug={own.slug}
               creatorName={own.name}
-              viewer={{ uid: authUser.uid, name: authUser.name ?? authUser.email, isStaff, isAdmin }}
+              viewer={{ uid: authUser.uid, name: authUser.name ?? authUser.email, isStaff, isAdmin, canSign: !isStaff }}
             />
           </ProfileSection>
         )}

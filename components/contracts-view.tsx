@@ -25,7 +25,7 @@ import { CONTRACT_COLLECTION, formatDate, getContractUpdatedAt, sortContracts, t
  * the creator only signs. Editing and deleting an agreement is admin-only;
  * a manager can send and view agreements but not change or remove them.
  */
-export type ContractViewer = { uid: string; name: string | null; isStaff: boolean; isAdmin: boolean };
+export type ContractViewer = { uid: string | null; name: string | null; isStaff: boolean; isAdmin: boolean; canSign: boolean };
 
 function StatusBadge({ signed }: { signed: boolean }) {
   return (
@@ -373,7 +373,9 @@ export function CreatorContractsPanel({ creatorUid, creatorSlug, creatorName, vi
             <div key={contract.id} className="rounded-xl border border-border p-4 sm:p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="m-0 text-[15px] font-semibold">{contract.title}</p>
+                  <Link href={`/dashboard/contracts/${contract.id}`} className="text-[15px] font-semibold hover:text-primary">
+                    {contract.title}
+                  </Link>
                   <p className="mb-0 mt-1 text-[12px] text-muted-foreground">
                     {contract.status === "signed" && contract.signedAt
                       ? `Signed ${formatDate(contract.signedAt)} as ${contract.signedName}`
@@ -382,7 +384,7 @@ export function CreatorContractsPanel({ creatorUid, creatorSlug, creatorName, vi
                 </div>
                 <StatusBadge signed={contract.status === "signed"} />
               </div>
-              {contract.status === "pending" ? (
+              {contract.status === "pending" && viewer.canSign ? (
                 <div className="mt-4">
                   <SignDialog contract={contract} defaultName={viewer.name ?? ""} onSigned={reload} />
                 </div>

@@ -13,7 +13,7 @@ import { PageLoadingSkeleton } from "@/components/dashboard/loading-skeleton";
 import { ContractSidebarSummary } from "@/components/contract-metadata";
 import { CONTRACT_COLLECTION, type Contract } from "@/lib/contracts";
 
-/** Read-only agreement detail. Edit and delete are admin-only; anyone assigned or on staff can view. */
+/** Public agreement detail. Edit and delete are admin-only; signing stays assigned-creator-only. */
 export default function ContractDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -26,7 +26,7 @@ export default function ContractDetailPage() {
   const [busy, setBusy] = React.useState(false);
 
   React.useEffect(() => {
-    if (authLoading || !authUser) return;
+    if (authLoading) return;
     let active = true;
     getDoc(doc(firebaseDb, CONTRACT_COLLECTION, id))
       .then((snapshot) => {
@@ -47,7 +47,7 @@ export default function ContractDetailPage() {
     return () => {
       active = false;
     };
-  }, [authLoading, authUser, id]);
+  }, [authLoading, id]);
 
   const assignedSlug = contract
     ? users.find((user) => user.uid === contract.assignedTo)?.slug ?? users.find((user) => user.slug === contract.assignedTo)?.slug
@@ -68,14 +68,6 @@ export default function ContractDetailPage() {
   };
 
   if (authLoading || loading) return <PageLoadingSkeleton titleWidth="w-48" />;
-
-  if (!authUser) {
-    return (
-      <main className="flex-1 px-4 pb-10 pt-4 sm:px-8 sm:pb-16 sm:pt-4">
-        <p className="text-sm text-muted-foreground">Sign in to view this agreement.</p>
-      </main>
-    );
-  }
 
   if (error || !contract) {
     return (
@@ -145,7 +137,7 @@ export default function ContractDetailPage() {
                     www.bbdowestafrica.com
                   </a>
                 </p>
-                <p className="m-0 mt-1 text-[11px] text-muted-foreground">Confidential · not for distribution</p>
+                <p className="m-0 mt-1 text-[11px] text-muted-foreground">Published on the creator profile.</p>
               </footer>
             </div>
           </div>

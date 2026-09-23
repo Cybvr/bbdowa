@@ -80,13 +80,16 @@ export default function CreatorDetailPage() {
 
   useEffect(() => {
     const assigneeKey = creator?.uid || creator?.slug;
-    if (!authUser || !assigneeKey) {
+    if (!assigneeKey) {
       setContractCount(0);
       setHasHours(false);
       return;
     }
     let active = true;
-    Promise.all([readContractsForAssignee(assigneeKey), creator?.uid ? readTimeEntriesForUser(creator.uid) : Promise.resolve([])])
+    Promise.all([
+      readContractsForAssignee(assigneeKey),
+      authUser && creator?.uid ? readTimeEntriesForUser(creator.uid) : Promise.resolve([]),
+    ])
       .then(([contractsData, timeEntries]) => {
         if (!active) return;
         setContractCount(contractsData.length);
@@ -194,26 +197,29 @@ export default function CreatorDetailPage() {
               </ProfileSection>
             ) : null}
 
-            <ProfileSection title="Engagement" variant="plain">
-              <div>
-                <ProfileFact label="Availability" value={<span className="capitalize">{creator.availability}</span>} />
-                <ProfileFact label="Day rate estimate" value={creator.dayRate || "—"} />
-                <ProfileFact label="Terms" value={creator.terms || "—"} />
-                <ProfileFact label="Engagements" value={creator.workedOn?.length ? creator.workedOn.join(", ") : "—"} />
-              </div>
-            </ProfileSection>
+            {creator.availability || creator.dayRate || creator.terms || creator.workedOn?.length ? (
+              <ProfileSection title="Engagement" variant="plain">
+                <div>
+                  {creator.availability ? <ProfileFact label="Availability" value={<span className="capitalize">{creator.availability}</span>} /> : null}
+                  {creator.dayRate ? <ProfileFact label="Day rate estimate" value={creator.dayRate} /> : null}
+                  {creator.terms ? <ProfileFact label="Terms" value={creator.terms} /> : null}
+                  {creator.workedOn?.length ? <ProfileFact label="Engagements" value={creator.workedOn.join(", ")} /> : null}
+                </div>
+              </ProfileSection>
+            ) : null}
 
-            <ProfileSection title="Audience profile" variant="plain">
-              <div>
-                <ProfileFact
-                  label="Follower count"
-                  value={creator.followerCount ? `${creator.followerCount}${creator.followerPlatform ? ` · ${creator.followerPlatform}` : ""}` : "Not provided"}
-                />
-                <ProfileFact label="Gender" value={creator.gender ?? "Not provided"} />
-                <ProfileFact label="Age" value={creator.age ?? "Not provided"} />
-                <ProfileFact label="Niche" value={creator.niche ?? "Not provided"} />
-              </div>
-            </ProfileSection>
+            {creator.followerCount || creator.gender || creator.age != null || creator.niche ? (
+              <ProfileSection title="Audience profile" variant="plain">
+                <div>
+                  {creator.followerCount ? (
+                    <ProfileFact label="Follower count" value={`${creator.followerCount}${creator.followerPlatform ? ` · ${creator.followerPlatform}` : ""}`} />
+                  ) : null}
+                  {creator.gender ? <ProfileFact label="Gender" value={creator.gender} /> : null}
+                  {creator.age != null ? <ProfileFact label="Age" value={creator.age} /> : null}
+                  {creator.niche ? <ProfileFact label="Niche" value={creator.niche} /> : null}
+                </div>
+              </ProfileSection>
+            ) : null}
           </>
         )}
 
@@ -271,13 +277,19 @@ export default function CreatorDetailPage() {
           </ProfileSection>
         )}
 
-        {tab === "contracts" && authUser && (
+        {tab === "contracts" && (
           <ProfileSection title="Contracts" variant="plain">
             <CreatorContractsPanel
               creatorUid={creator.uid}
               creatorSlug={creator.slug}
               creatorName={creator.name}
-              viewer={{ uid: authUser.uid, name: authUser.name ?? authUser.email, isStaff, isAdmin }}
+              viewer={{
+                uid: authUser?.uid ?? null,
+                name: authUser?.name ?? authUser?.email ?? null,
+                isStaff,
+                isAdmin,
+                canSign: Boolean(authUser && creator.uid && !isStaff && authUser.uid === creator.uid),
+              }}
             />
           </ProfileSection>
         )}
