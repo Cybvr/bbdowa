@@ -5,7 +5,6 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { IconType } from "react-icons";
 import { FaBehance, FaGlobe } from "react-icons/fa";
-import { Mail } from "lucide-react";
 import { creatorCategoryOptions, isCreatorNew, isCreatorUser, type Creator } from "@/lib/users";
 import { useAuth } from "@/components/auth-provider";
 import { readCampaignsFromFirestore, readClientsFromFirestore, readContractsForAssignee, readTimeEntriesForUser, useFirestoreUsers } from "@/lib/firebase/client-content";
@@ -117,20 +116,20 @@ export default function CreatorDetailPage() {
 
   return (
     <main className="flex-1 px-4 pb-10 pt-4 sm:px-8 sm:pb-16 sm:pt-4">
-      <DetailBreadcrumb
-        crumbs={[{ label: "Discover", href: "/dashboard/discover" }, { label: creator.name }]}
-        actions={
-          <div className="flex items-center gap-2">
-            <UserActions user={creator} variant="creator" listHref="/dashboard/discover" categoryOptions={creatorCategoryOptions(categorySource)} />
-            <ShareCreatorDialog creatorName={creator.name} path={`/dashboard/discover/${creator.slug}`} showLabel />
-          </div>
-        }
-      />
-
       <ProfileBanner
         avatarSrc={creator.profileImage}
         avatarAlt={creator.name}
         name={creator.name}
+        breadcrumb={<DetailBreadcrumb crumbs={[{ label: "Discover", href: "/dashboard/discover" }, { label: creator.name }]} />}
+        actions={
+          <div className="flex items-center gap-2">
+            <UserActions user={creator} variant="creator" listHref="/dashboard/discover" categoryOptions={creatorCategoryOptions(categorySource)} iconOnly />
+            <ShareCreatorDialog
+              creatorName={creator.name}
+              path={`/dashboard/discover/${creator.slug}`}
+            />
+          </div>
+        }
         subtitle={
           <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <span>{creator.category}</span>
@@ -141,6 +140,17 @@ export default function CreatorDetailPage() {
             ) : null}
           </span>
         }
+        socials={
+          platforms.length ? (
+            <>
+              {platforms.map(({ label, href, Icon, brand }) => (
+                <ProfileIconLink key={label} href={href} label={label}>
+                  {brand ? <SocialIcon name={brand} className="h-4 w-4" /> : Icon ? <Icon aria-hidden="true" className="h-4 w-4" /> : null}
+                </ProfileIconLink>
+              ))}
+            </>
+          ) : null
+        }
         tabs={tabs}
         activeTab={tab}
         onTabChange={setTab}
@@ -150,21 +160,6 @@ export default function CreatorDetailPage() {
         showSidebarOnMobile={tab === "overview"}
         sidebar={
           <>
-            {(creator.email || creator.phone || platforms.length > 0) && (
-              <div className="flex flex-wrap gap-2">
-                {creator.email ? (
-                  <ProfileIconLink href={`mailto:${creator.email}`} label="Email">
-                    <Mail aria-hidden="true" className="h-4 w-4" />
-                  </ProfileIconLink>
-                ) : null}
-                {platforms.map(({ label, href, Icon, brand }) => (
-                  <ProfileIconLink key={label} href={href} label={label}>
-                    {brand ? <SocialIcon name={brand} className="h-4 w-4" /> : Icon ? <Icon aria-hidden="true" className="h-4 w-4" /> : null}
-                  </ProfileIconLink>
-                ))}
-              </div>
-            )}
-
             <ProfileFacts>
               <ProfileFact label="Added" value={longDate(creator.addedAt?.slice(0, 10))} />
               <ProfileFact label="Category" value={creator.category || "—"} />

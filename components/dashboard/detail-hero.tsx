@@ -105,6 +105,9 @@ export function ProfileBanner<T extends string>({
   avatarAlt,
   name,
   subtitle,
+  breadcrumb,
+  actions,
+  socials,
   tabs,
   activeTab,
   onTabChange,
@@ -113,14 +116,23 @@ export function ProfileBanner<T extends string>({
   avatarAlt: string;
   name: string;
   subtitle?: ReactNode;
+  breadcrumb?: ReactNode;
+  actions?: ReactNode;
+  socials?: ReactNode;
   tabs: { id: T; label: string }[];
   activeTab: T;
   onTabChange: (id: T) => void;
 }) {
   return (
-    <div className="overflow-hidden rounded-2xl bg-card text-foreground">
-      <div className="flex flex-wrap items-center gap-4 p-4 sm:gap-5 sm:p-7">
-        <span className="grid h-16 w-16 flex-none place-items-center overflow-hidden rounded-full bg-background sm:h-24 sm:w-24">
+    <div className="overflow-hidden rounded-2xl bg-muted/50 text-foreground">
+      {(breadcrumb || actions) ? (
+        <div className="flex items-start justify-between gap-4 px-4 pt-3 sm:px-7 sm:pt-4">
+          <div className="min-w-0">{breadcrumb}</div>
+          {actions ? <div className="shrink-0">{actions}</div> : null}
+        </div>
+      ) : null}
+      <div className="flex flex-wrap items-start gap-4 p-4 sm:gap-5 sm:px-8 sm:pb-5 sm:pt-5">
+        <span className="grid h-20 w-20 flex-none place-items-center overflow-hidden rounded-full bg-background sm:h-24 sm:w-24">
           <ImageWithFallback
             src={avatarSrc}
             alt={avatarAlt}
@@ -130,8 +142,9 @@ export function ProfileBanner<T extends string>({
           />
         </span>
         <div className="min-w-0 flex-1">
-          <h1 className="m-0 truncate text-[22px] font-bold leading-tight sm:text-[28px]">{name}</h1>
-          {subtitle ? <div className="mt-1.5 text-[14px] font-medium text-muted-foreground sm:text-[15px]">{subtitle}</div> : null}
+          <h1 className="m-0 truncate text-[26px] font-bold leading-tight sm:text-[30px]">{name}</h1>
+          {subtitle ? <div className="mt-1.5 text-[15px] font-medium text-muted-foreground sm:text-[16px]">{subtitle}</div> : null}
+          {socials ? <div className="mt-3 flex flex-wrap items-center gap-2">{socials}</div> : null}
         </div>
       </div>
       <div role="tablist" className="no-scrollbar flex touch-pan-x gap-1 overflow-x-auto overscroll-x-contain px-2 sm:px-5">
@@ -144,7 +157,7 @@ export function ProfileBanner<T extends string>({
               key={tab.id}
               aria-selected={isActive}
               onClick={() => onTabChange(tab.id)}
-              className={`flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-t-lg px-4 text-[13px] font-semibold transition focus-visible:outline-none sm:min-h-0 sm:px-4 sm:py-2.5 ${
+                className={`flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-t-lg px-4 text-[13px] font-semibold transition focus-visible:outline-none sm:min-h-0 sm:px-4 sm:py-2.5 ${
                 isActive ? "bg-background text-foreground" : "text-muted-foreground hover:text-foreground"
               }`}
             >

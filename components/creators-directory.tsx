@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type { IconType } from "react-icons";
 import { FaBehance, FaGlobe } from "react-icons/fa";
-import { FiBookmark, FiCheck, FiChevronDown, FiEdit2, FiFilter, FiFolderPlus, FiGrid, FiList, FiMail, FiPlus, FiSearch, FiTrash2 } from "react-icons/fi";
+import { FiBookmark, FiCheck, FiChevronDown, FiEdit2, FiFilter, FiFolderPlus, FiGrid, FiList, FiMail, FiPlus, FiSearch, FiShare2, FiTrash2 } from "react-icons/fi";
 import { ImageWithFallback } from "@/components/empty-thumbnail";
 import { CreatorThumbnail } from "@/components/creator-thumbnail";
 import { Badge } from "@/components/dashboard/ui";
@@ -16,7 +16,7 @@ import { LoginDialog } from "@/components/login-dialog";
 import { useOptionalAuth } from "@/components/auth-provider";
 import { MobileHeaderSearch, useMobileHeader } from "@/components/dashboard/mobile-header";
 import { ShareCreatorDialog } from "@/components/share-creator-dialog";
-import { readCreatorCollections, writeCreatorCollections, type CreatorList } from "@/lib/firebase/creator-collections";
+import { deleteSharedCreatorList, readCreatorCollections, writeCreatorCollections, writeSharedCreatorList, type CreatorList } from "@/lib/firebase/creator-collections";
 import type { Creator } from "@/lib/users";
 import { baseCity, creatorAddedTimestamp, creatorHref, isCreatorNew, rateFloorNgn } from "@/lib/users";
 
@@ -639,6 +639,7 @@ function ListBar({
   onNewList,
   onRename,
   onDelete,
+  onShare,
 }: {
   lists: CreatorList[];
   activeListId: string | null;
@@ -646,6 +647,7 @@ function ListBar({
   onNewList: () => void;
   onRename: (listId: string, name: string) => void;
   onDelete: (listId: string) => void;
+  onShare: (listId: string) => void;
 }) {
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [draftName, setDraftName] = useState("");
@@ -707,6 +709,15 @@ function ListBar({
                   className="cursor-pointer bg-transparent p-0 text-inherit opacity-70 hover:opacity-100 focus-visible:outline-none"
                 >
                   <FiEdit2 aria-hidden="true" className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  title="Share list"
+                  aria-label={`Share ${list.name}`}
+                  onClick={() => onShare(list.id)}
+                  className="cursor-pointer bg-transparent p-0 text-inherit opacity-70 hover:opacity-100 focus-visible:outline-none"
+                >
+                  <FiShare2 aria-hidden="true" className="h-3.5 w-3.5" />
                 </button>
                 <button
                   type="button"
@@ -1081,7 +1092,12 @@ export function CreatorDirectory({
       Array.isArray(value)
         ? value
             .filter((list) => list && typeof list.id === "string" && typeof list.name === "string")
-            .map((list) => ({ id: list.id, name: list.name, slugs: cleanSlugs(list.slugs) }))
+            .map((list) => ({
+              id: list.id,
+              name: list.name,
+              slugs: cleanSlugs(list.slugs),
+              shareId: typeof list.shareId === "string" ? list.shareId : undefined,
+            }))
         : [];
 
     const readLocal = (): { saved: string[]; lists: CreatorList[] } => {
@@ -1148,9 +1164,12 @@ export function CreatorDirectory({
   useEffect(() => {
     if (!listsInitialized) return;
     if (userId) {
-      writeCreatorCollections(userId, { saved: savedCreatorSlugs, lists }).catch((error) =>
-        console.error("Unable to save creators to Firestore", error),
-      );
+      Promise.all([
+        writeCreatorCollections(userId, { saved: savedCreatorSlugs, lists }),
+        ...lists
+          .filter((list) => Boolean(list.shareId))
+          .map((list) => writeSharedCreatorList(list.shareId!, list, userId)),
+      ]).catch((error) => console.error("Unable to save creators to Firestore", error));
     } else {
       window.localStorage.setItem(SAVED_CREATORS_STORAGE_KEY, JSON.stringify(savedCreatorSlugs));
       window.localStorage.setItem(CREATOR_LISTS_STORAGE_KEY, JSON.stringify(lists));
@@ -1279,8 +1298,38 @@ export function CreatorDirectory({
   };
 
   const deleteList = (listId: string) => {
+    const deleted = lists.find((list) => list.id === listId);
+    if (userId && deleted?.shareId) {
+      deleteSharedCreatorList(deleted.shareId).catch((error) => console.error("Unable to remove shared creator list", error));
+    }
     setLists((current) => current.filter((list) => list.id !== listId));
     setPage(1);
+  };
+
+  const shareList = async (listId: string) => {
+    if (!userId) {
+      setLoginModalOpen(true);
+      return;
+    }
+    const list = lists.find((item) => item.id === listId);
+    if (!list) return;
+
+    const shareId = list.shareId ?? newListId();
+    const sharedList = { ...list, shareId };
+    try {
+      await writeSharedCreatorList(shareId, sharedList, userId);
+      setLists((current) => current.map((item) => (item.id === listId ? sharedList : item)));
+      const url = `${window.location.origin}/lists/${shareId}`;
+      if (navigator.share) {
+        await navigator.share({ title: list.name, text: `Creator list: ${list.name}`, url });
+      } else if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+      }
+    } catch (error) {
+      if (!(error instanceof DOMException && error.name === "AbortError")) {
+        console.error("Unable to share creator list", error);
+      }
+    }
   };
 
   const clearFilters = () => {
@@ -1343,6 +1392,7 @@ export function CreatorDirectory({
               onNewList={() => openListDialog(null)}
               onRename={renameList}
               onDelete={deleteList}
+              onShare={(listId) => void shareList(listId)}
             />
           ) : null}
 

@@ -178,7 +178,7 @@ export function NjeriChatView({
                 {message.role === "assistant" && message.action && onConfirmAction ? (
                   <ActionCard
                     action={message.action}
-                    onConfirm={() => void onConfirmAction(message.id, message.action!)}
+                    onConfirm={(action) => void onConfirmAction(message.id, action)}
                   />
                 ) : null}
 

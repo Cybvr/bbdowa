@@ -34,6 +34,27 @@ export type ClientDraft = {
   targetAudience: string | null;
 };
 
+export type CampaignDraft = {
+  name: string;
+  clientName: string;
+  category: string;
+  status: "live" | "pitch" | "completed";
+  year: number | null;
+  liveAt: string | null;
+  summary: string;
+  challenge: string;
+  insight: string;
+  strategy: string;
+  platform: string[];
+  execution: string;
+  outcome: string;
+  target: string;
+};
+
+export type ManagedCollection = "users" | "clients" | "campaigns";
+
+export type NjeriRecordChange = string | number | boolean | null | string[];
+
 export type NjeriActionProposal =
   | {
       type: "create_creator";
@@ -45,6 +66,32 @@ export type NjeriActionProposal =
   | {
       type: "create_client";
       record: ClientDraft;
+      sources: string[];
+      status?: "pending" | "saving" | "saved" | "failed";
+      error?: string;
+    }
+  | {
+      type: "create_campaign";
+      record: CampaignDraft;
+      sources: string[];
+      status?: "pending" | "saving" | "saved" | "failed";
+      error?: string;
+    }
+  | {
+      type: "update_record";
+      collection: ManagedCollection;
+      recordId: string;
+      label: string;
+      changes: Record<string, NjeriRecordChange>;
+      sources: string[];
+      status?: "pending" | "saving" | "saved" | "failed";
+      error?: string;
+    }
+  | {
+      type: "delete_record";
+      collection: ManagedCollection;
+      recordId: string;
+      label: string;
       sources: string[];
       status?: "pending" | "saving" | "saved" | "failed";
       error?: string;

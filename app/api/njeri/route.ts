@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { NJERI_SYSTEM_PROMPT } from "@/lib/njeri-assistant";
-import type { NjeriActionProposal } from "@/lib/njeri-actions";
+import type { ManagedCollection, NjeriActionProposal, NjeriRecordChange } from "@/lib/njeri-actions";
 
 // Server-only: keeps OPENAI_API_KEY off the client. Njeri (components/njeri.tsx)
 // posts the conversation here and falls back to the canned answers in
@@ -34,7 +34,7 @@ function isChatTurn(value: unknown): value is ChatTurn {
 }
 
 function needsResearch(text: string): boolean {
-  return /\b(research|look\s*up|find\s*out\s*about|investigate|add\s+(him|her|them|this\s+person)|add\s+(this\s+)?client|create\s+(a\s+)?client|add\s+(a\s+)?creator|create\s+(a\s+)?creator)\b/i.test(text);
+  return /\b(research|look\s*up|find\s*out\s*about|investigate|add\s+(him|her|them|this\s+person)|add\s+(this\s+)?client|create\s+(a\s+)?client|add\s+(a\s+)?creator|create\s+(a\s+)?creator|create\s+(a\s+)?campaign|make\s+(a\s+)?campaign|draft\s+(a\s+)?campaign|update|edit|change|delete|remove)\b/i.test(text) && /\b(creator|client|campaign)\b/i.test(text);
 }
 
 function parseJsonObject(value: string): Record<string, unknown> | null {
@@ -62,6 +62,10 @@ function stringValue(value: unknown, fallback = ""): string {
 function nullableString(value: unknown): string | null {
   const result = stringValue(value);
   return result || null;
+}
+
+function recordSlug(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60);
 }
 
 function normalizeAction(value: unknown): NjeriActionProposal | null {
@@ -129,19 +133,75 @@ function normalizeAction(value: unknown): NjeriActionProposal | null {
     };
   }
 
+  if (action.type === "create_campaign") {
+    const name = stringValue(record.name);
+    const clientName = stringValue(record.clientName);
+    if (!name || !clientName) return null;
+    const rawPlatform = Array.isArray(record.platform) ? record.platform : [];
+    const status = record.status === "live" || record.status === "completed" ? record.status : "pitch";
+    return {
+      type: "create_campaign",
+      record: {
+        name,
+        clientName,
+        category: stringValue(record.category, "General"),
+        status,
+        year: typeof record.year === "number" && Number.isFinite(record.year) ? record.year : null,
+        liveAt: nullableString(record.liveAt),
+        summary: stringValue(record.summary),
+        challenge: stringValue(record.challenge),
+        insight: stringValue(record.insight),
+        strategy: stringValue(record.strategy),
+        platform: rawPlatform.filter((item): item is string => typeof item === "string").map((item) => item.trim()).filter(Boolean).slice(0, 12),
+        execution: stringValue(record.execution),
+        outcome: stringValue(record.outcome),
+        target: stringValue(record.target),
+      },
+      sources,
+    };
+  }
+
+  if (action.type === "update_record" || action.type === "delete_record") {
+    const collectionValue = stringValue(action.collection);
+    if (collectionValue !== "users" && collectionValue !== "clients" && collectionValue !== "campaigns") return null;
+    const collection = collectionValue as ManagedCollection;
+    const label = stringValue(action.label, stringValue(action.recordId));
+    const recordId = recordSlug(stringValue(action.recordId, label));
+    if (!recordId) return null;
+    if (action.type === "delete_record") {
+      return { type: "delete_record", collection, recordId, label, sources };
+    }
+    const rawChanges = action.changes;
+    if (!rawChanges || typeof rawChanges !== "object") return null;
+    const changes = Object.fromEntries(
+      Object.entries(rawChanges as Record<string, unknown>)
+        .filter(([key]) => /^[a-zA-Z][a-zA-Z0-9]*$/.test(key))
+        .map(([key, value]) => {
+          const normalized: NjeriRecordChange = Array.isArray(value)
+            ? value.filter((item): item is string => typeof item === "string").slice(0, 20)
+            : typeof value === "string" || typeof value === "number" || typeof value === "boolean" || value === null
+              ? value
+              : null;
+          return [key, normalized];
+        }),
+    );
+    return { type: "update_record", collection, recordId, label, changes, sources };
+  }
+
   return null;
 }
 
-function researchInstructions(request: string): string {
-  return `You are Njeri, an internal BBDO West Africa workspace assistant. Research the person or client in the user's request using the web, prioritising official websites and reputable professional profiles. Do not invent facts. Use null or an empty string when a field cannot be verified.
+function researchInstructions(request: string, conversation: string): string {
+  return `You are Njeri, an internal BBDO West Africa workspace assistant. Research the request using the web, prioritising official websites and reputable professional profiles. Do not invent facts. For a campaign, use the user's stated intent as the source of truth and develop a useful first draft around it; never invent a client relationship or campaign result. Use null or an empty string when a field cannot be verified.
 
-The user request is: ${request}
+The latest user request is: ${request}
+The recent conversation is: ${conversation}
 
 Return JSON only with exactly this shape:
 {
   "answer": "A short, useful summary of what you found. Say that any record below is a draft awaiting confirmation.",
   "action": null | {
-    "type": "create_creator" | "create_client",
+    "type": "create_creator" | "create_client" | "create_campaign" | "update_record" | "delete_record",
     "record": { ... },
     "sources": ["https://..."]
   }
@@ -149,10 +209,13 @@ Return JSON only with exactly this shape:
 
 Use action=create_creator only when the user asks to add a person to creators. Its record must contain: name, category, title, department, location, email, phone, profileImage, portfolio, linkedin, instagram, niche, followerCount, followerPlatform, yearsActive, craftNote, workHistory. workHistory is an array of {role, company, period, location}.
 Use action=create_client only when the user asks to add or create a client. Its record must contain: name, industry, date, profileImage, description, targetAudience.
+Use action=create_campaign only when the user asks to create or draft a campaign and has provided a campaign name, client, and a sentence describing what the campaign is trying to do. Its record must contain: name, clientName, category, status, year, liveAt, summary, challenge, insight, strategy, platform, execution, outcome, target. Use the user's intent to develop the other fields. If the minimum context is missing, leave action null and ask only for the missing campaign name, client, or intent.
+Use action=update_record when the user asks to update, edit, or change an existing creator, client, or campaign. Use collection users for creators, and use the record slug as recordId. Include only the fields that should change in changes.
+Use action=delete_record when the user asks to delete or remove an existing creator, client, or campaign. Include the record slug as recordId and use the matching collection.
 If the request is only research, leave action null. Never claim the record was saved; it is only a draft until the user confirms it in the interface.`;
 }
 
-async function researchAndDraft(request: string): Promise<{ answer: string; action?: NjeriActionProposal | null }> {
+async function researchAndDraft(request: string, conversation: string): Promise<{ answer: string; action?: NjeriActionProposal | null }> {
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: {
@@ -162,7 +225,7 @@ async function researchAndDraft(request: string): Promise<{ answer: string; acti
     body: JSON.stringify({
       model: process.env.OPENAI_RESEARCH_MODEL || DEFAULT_RESEARCH_MODEL,
       tools: [{ type: "web_search" }],
-      input: researchInstructions(request),
+      input: researchInstructions(request, conversation),
     }),
   });
 
@@ -210,7 +273,7 @@ export async function POST(request: Request) {
   const latestMessage = messages[messages.length - 1].content;
   if (needsResearch(latestMessage)) {
     try {
-      return NextResponse.json(await researchAndDraft(latestMessage));
+      return NextResponse.json(await researchAndDraft(latestMessage, messages.map((message) => `${message.role}: ${message.content}`).join("\n")));
     } catch (cause) {
       console.error("Njeri research unavailable", cause);
       return NextResponse.json({

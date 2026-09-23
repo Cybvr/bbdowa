@@ -198,7 +198,10 @@ export function useNjeri() {
 
       updateMessageAction({ ...action, status: "saving", error: undefined });
 
-      const result = await executeNjeriAction(action, auth?.user ? { uid: auth.user.uid } : null);
+      const result = await executeNjeriAction(
+        action,
+        auth?.user ? { uid: auth.user.uid, canManage: auth.isAdmin || auth.role === "manager" } : null,
+      );
 
       if (result.success) {
         updateMessageAction({ ...action, status: "saved", error: undefined });
@@ -206,7 +209,7 @@ export function useNjeri() {
         updateMessageAction({ ...action, status: "failed", error: result.error });
       }
     },
-    [activeConversation, auth?.user],
+    [activeConversation, auth?.isAdmin, auth?.role, auth?.user],
   );
 
   return {

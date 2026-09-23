@@ -57,23 +57,25 @@ service cloud.firestore {
             "name", "title", "department", "location", "email", "phone",
             "profileImage", "category", "dayRate", "availability", "portfolio",
             "rateMin", "rateCurrency",
-            "behance", "linkedin", "instagram", "vouchedBy", "craftNote", "updatedAt"
+            "behance", "linkedin", "instagram", "vouchedBy", "craftNote",
+            "followerCount", "followerPlatform", "gender", "age", "niche", "updatedAt"
           ]))
         || (isSelf(userId)
           && resource.data.uid == userId
           && request.resource.data.uid == userId
           && request.resource.data.role == resource.data.role);
-      allow delete: if isAdmin() && userId != request.auth.uid;
+      allow delete: if (isAdmin() && userId != request.auth.uid)
+        || (isManager() && isCreatorProfile());
     }
 
     // Dashboard content collections: public to read, admin-only to write.
     match /clients/{id} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isStaff();
     }
     match /campaigns/{id} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isStaff();
     }
     match /blogs/{id} {
       allow read: if true;
@@ -95,6 +97,17 @@ service cloud.firestore {
       allow create, update: if isSelf(userId)
         && request.resource.data.uid == userId;
       allow delete: if isSelf(userId);
+    }
+
+    // A shared creator list contains only public creator slugs and can be
+    // opened by anyone with its URL. Only its owner can publish changes.
+    match /sharedCreatorLists/{shareId} {
+      allow read: if true;
+      allow create: if signedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update: if signedIn()
+        && resource.data.ownerId == request.auth.uid
+        && request.resource.data.ownerId == request.auth.uid;
+      allow delete: if signedIn() && resource.data.ownerId == request.auth.uid;
     }
 
     // Clock in / clock out. Each shift belongs to the person who created it:

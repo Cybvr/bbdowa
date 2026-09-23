@@ -25,6 +25,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 import { creatorRateLabel, userRoles, type RateCurrency, type User, type UserRole } from "@/lib/users";
 
 type AccountStatus = "active" | "pending";
@@ -39,6 +40,7 @@ export function UserActions({
   variant,
   listHref,
   compactMenu = false,
+  iconOnly = false,
   includeEditAction = false,
   categoryOptions = [],
   onMutated,
@@ -47,6 +49,7 @@ export function UserActions({
   variant: "team" | "creator";
   listHref: string;
   compactMenu?: boolean;
+  iconOnly?: boolean;
   includeEditAction?: boolean;
   categoryOptions?: string[];
   onMutated?: () => void;
@@ -76,6 +79,11 @@ export function UserActions({
   const [instagram, setInstagram] = React.useState(user.instagram ?? "");
   const [vouchedBy, setVouchedBy] = React.useState(user.vouchedBy ?? "");
   const [craftNote, setCraftNote] = React.useState(user.craftNote ?? "");
+  const [followerCount, setFollowerCount] = React.useState(user.followerCount ?? "");
+  const [followerPlatform, setFollowerPlatform] = React.useState(user.followerPlatform ?? "");
+  const [gender, setGender] = React.useState(user.gender ?? "");
+  const [age, setAge] = React.useState(user.age == null ? "" : String(user.age));
+  const [niche, setNiche] = React.useState(user.niche ?? "");
 
   const docRef = async () => {
     if (user.uid) {
@@ -123,6 +131,11 @@ export function UserActions({
             instagram: instagram.trim() || null,
             vouchedBy: vouchedBy.trim(),
             craftNote: craftNote.trim(),
+            followerCount: followerCount.trim() || null,
+            followerPlatform: followerPlatform.trim() || null,
+            gender: gender.trim() || null,
+            age: age.trim() ? Number(age) : null,
+            niche: niche.trim() || null,
           }
         : {};
     await updateDoc(ref, { ...common, ...accessFields, ...creatorFields });
@@ -154,7 +167,18 @@ export function UserActions({
       canEdit={canEditUser}
       onDelete={isAdmin ? remove : undefined}
       deleteConfirm="Delete this person? This can’t be undone."
-      trigger={compactMenu ? (_open, removeFromMenu) => (
+      trigger={iconOnly ? (open) => (
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          aria-label={`Edit ${user.name}`}
+          title="Edit"
+          onClick={open}
+        >
+          <Pencil aria-hidden="true" className="h-5 w-5" />
+        </Button>
+      ) : compactMenu ? (_open, removeFromMenu) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
@@ -262,6 +286,11 @@ export function UserActions({
           <TextField label="Instagram URL" value={instagram} onChange={setInstagram} />
           <TextField label="Vouched by" value={vouchedBy} onChange={setVouchedBy} />
           <TextareaField label="Craft note" value={craftNote} onChange={setCraftNote} />
+          <TextField label="Follower count" value={followerCount} onChange={setFollowerCount} placeholder="e.g. 202" />
+          <TextField label="Follower platform" value={followerPlatform} onChange={setFollowerPlatform} placeholder="e.g. Instagram" />
+          <TextField label="Gender" value={gender} onChange={setGender} />
+          <TextField label="Age" value={age} onChange={setAge} type="number" />
+          <TextField label="Niche" value={niche} onChange={setNiche} placeholder="e.g. Commercial and lifestyle production" />
         </>
       ) : null}
     </EditSheet>
