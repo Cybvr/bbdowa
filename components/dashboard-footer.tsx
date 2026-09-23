@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NAV_ICON_SET } from "@/components/nav-icons";
-import { createGlyphAvatarDataUri } from "@/lib/avatar";
 import { useOptionalAuth } from "@/components/auth-provider";
 import { NAV_ITEMS } from "@/lib/nav";
 
@@ -17,9 +16,6 @@ export function DashboardFooter({ hidden = false }: { hidden?: boolean }) {
 
   const isAdminSection = pathname.startsWith("/admin");
 
-  const user = auth?.user;
-  const avatarSrc = user ? createGlyphAvatarDataUri(user.name ?? user.email?.split("@")[0] ?? "BBDO User") : null;
-
   const items = isAdminSection
     ? [
         { label: "Overview", href: "/admin" },
@@ -31,9 +27,7 @@ export function DashboardFooter({ hidden = false }: { hidden?: boolean }) {
     : NAV_ITEMS.filter(
         (item): item is Extract<typeof item, { kind: "link" }> =>
           item.kind === "link" && FOOTER_LABELS.includes(item.label) && (!item.requiresAuth || Boolean(auth?.user)),
-      )
-        .filter((item) => !(item.label === "Creators" && user))
-        .concat(user ? [{ kind: "link", label: "My profile", href: "/dashboard/me" }] : []);
+      );
 
   return (
     <nav
@@ -55,16 +49,7 @@ export function DashboardFooter({ hidden = false }: { hidden?: boolean }) {
               current ? "text-primary font-semibold" : "text-muted-foreground"
             }`}
           >
-            {item.href === "/dashboard/me" && avatarSrc ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={avatarSrc}
-                alt=""
-                className={`h-5 w-5 rounded-full bg-primary object-cover ${current ? "ring-2 ring-primary ring-offset-1 ring-offset-background" : ""}`}
-              />
-            ) : Icon ? (
-              <Icon className="h-5 w-5" />
-            ) : null}
+            {Icon ? <Icon className="h-5 w-5" /> : null}
             <span className="truncate">{item.label}</span>
           </Link>
         );

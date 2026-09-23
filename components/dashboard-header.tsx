@@ -3,12 +3,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { Search } from "lucide-react";
-import { LuMenu } from "react-icons/lu";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth-provider";
 import { DashboardNotifications } from "@/components/dashboard-notifications";
 import { DashboardSidebarContent, DashboardSidebarSheet } from "@/components/dashboard-sidebar";
 import { TrackerIcon } from "@/components/nav-icons";
+import { createGlyphAvatarDataUri } from "@/lib/avatar";
 import { TimeTracker } from "@/components/time-tracker";
 import { useMobileHeader } from "@/components/dashboard/mobile-header";
 import { firebaseDb } from "@/lib/firebase/client";
@@ -314,9 +314,14 @@ export function DashboardHeader({
               <button
                 type="button"
                 aria-label="Open dashboard menu"
-                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-primary transition hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               >
-                <LuMenu aria-hidden="true" className="h-5 w-5" />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={createGlyphAvatarDataUri(user?.name ?? user?.email?.split("@")[0] ?? "BBDO User")}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
               </button>
             }
           />
