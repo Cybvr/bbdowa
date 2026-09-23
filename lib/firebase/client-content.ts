@@ -8,6 +8,7 @@ import type { BlogPost } from "@/lib/blog";
 import type { Campaign } from "@/lib/campaigns";
 import type { Client } from "@/lib/clients";
 import { DOCUMENT_COLLECTION, sortDocuments, type AgencyDocument } from "@/lib/documents";
+import { TASK_COLLECTION, sortTasks, type Task } from "@/lib/creator-tasks";
 import type { Job } from "@/lib/jobs";
 import { ACTIVITY_COLLECTION, type ActivityEntry } from "@/lib/time-tracking";
 import { normalizeUser, type User } from "@/lib/users";
@@ -147,6 +148,47 @@ export function useFirestoreDocuments(): FirestoreDocumentsState {
       .catch((error) => {
         console.error("Unable to load documents from Firestore", error);
         if (active) setState({ documents: [], loading: false, error: "Unable to load documents." });
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [authLoading, isStaff, user]);
+
+  return state;
+}
+
+type FirestoreTasksState = {
+  tasks: Task[];
+  loading: boolean;
+  error: string | null;
+};
+
+export function useFirestoreTasks(): FirestoreTasksState {
+  const { loading: authLoading, user, role } = useAuth();
+  const isStaff = role === "admin" || role === "manager";
+  const [state, setState] = useState<FirestoreTasksState>({ tasks: [], loading: true, error: null });
+
+  useEffect(() => {
+    if (authLoading) return;
+
+    if (!user || !isStaff) {
+      setState({ tasks: [], loading: false, error: null });
+      return;
+    }
+
+    let active = true;
+    setState((current) => ({ ...current, loading: true, error: null }));
+    getDocs(collection(firebaseDb, TASK_COLLECTION))
+      .then((snapshot) =>
+        snapshot.docs.map((task) => ({ id: task.id, ...(task.data() as Omit<Task, "id">) })),
+      )
+      .then((tasks) => {
+        if (active) setState({ tasks: sortTasks(tasks), loading: false, error: null });
+      })
+      .catch((error) => {
+        console.error("Unable to load tasks from Firestore", error);
+        if (active) setState({ tasks: [], loading: false, error: "Unable to load tasks." });
       });
 
     return () => {

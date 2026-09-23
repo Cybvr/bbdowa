@@ -22,6 +22,13 @@ export default function AdminPage() {
         </span>
         <span aria-hidden="true" className="text-lg text-muted-foreground">→</span>
       </Link>
+      <Link href="/admin/tasks" className="mt-3 flex items-center justify-between rounded-xl border border-border bg-background p-4 text-foreground no-underline transition hover:border-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
+        <span>
+          <strong className="block text-[14px] font-semibold">Tasks</strong>
+          <span className="mt-1 block text-[13px] text-muted-foreground">Assign tasks to creators and track them through to done.</span>
+        </span>
+        <span aria-hidden="true" className="text-lg text-muted-foreground">→</span>
+      </Link>
     </main>
   );
 }
