@@ -30,6 +30,16 @@ export function creatorRateLabel(currency: RateCurrency, rateMin: number | null)
   return CREATOR_RATE_OPTIONS[currency].find((option) => option.value === rateMin)?.label ?? "";
 }
 
+export const REFERRAL_SOURCES = [
+  "Friend / Family",
+  "Colleague / Co-worker",
+  "Google Search",
+  "Social Media",
+  "Advertisement",
+  "Event / Conference",
+  "Other",
+] as const;
+
 export type CreatorWorkHistory = {
   role: string;
   company: string;
@@ -72,6 +82,8 @@ export type User = {
   clearance: CreatorClearance;
   /** Vetted for inclusion in the creator shortlist. */
   vetted?: boolean;
+  /** How they heard about us, one of REFERRAL_SOURCES. */
+  referralSource?: string | null;
   /** Who inside the agency brought them in and vouches for them. */
   vouchedBy: string;
   /** Agency work they have delivered on. Empty = not yet used. */

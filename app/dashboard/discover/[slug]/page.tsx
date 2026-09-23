@@ -197,13 +197,14 @@ export default function CreatorDetailPage() {
               </ProfileSection>
             ) : null}
 
-            {creator.availability || creator.dayRate || creator.terms || creator.workedOn?.length ? (
+            {creator.availability || creator.dayRate || creator.terms || creator.workedOn?.length || creator.referralSource ? (
               <ProfileSection title="Engagement" variant="plain">
                 <div>
                   {creator.availability ? <ProfileFact label="Availability" value={<span className="capitalize">{creator.availability}</span>} /> : null}
                   {creator.dayRate ? <ProfileFact label="Day rate estimate" value={creator.dayRate} /> : null}
                   {creator.terms ? <ProfileFact label="Terms" value={creator.terms} /> : null}
                   {creator.workedOn?.length ? <ProfileFact label="Engagements" value={creator.workedOn.join(", ")} /> : null}
+                  {creator.referralSource ? <ProfileFact label="Referral source" value={creator.referralSource} /> : null}
                 </div>
               </ProfileSection>
             ) : null}

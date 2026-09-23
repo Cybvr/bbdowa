@@ -26,7 +26,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { creatorRateLabel, userRoles, type RateCurrency, type User, type UserRole } from "@/lib/users";
+import { REFERRAL_SOURCES, creatorRateLabel, userRoles, type RateCurrency, type User, type UserRole } from "@/lib/users";
 
 type AccountStatus = "active" | "pending";
 
@@ -78,6 +78,7 @@ export function UserActions({
   const [linkedin, setLinkedin] = React.useState(user.linkedin ?? "");
   const [instagram, setInstagram] = React.useState(user.instagram ?? "");
   const [vouchedBy, setVouchedBy] = React.useState(user.vouchedBy ?? "");
+  const [referralSource, setReferralSource] = React.useState(user.referralSource || "none");
   const [craftNote, setCraftNote] = React.useState(user.craftNote ?? "");
   const [followerCount, setFollowerCount] = React.useState(user.followerCount ?? "");
   const [followerPlatform, setFollowerPlatform] = React.useState(user.followerPlatform ?? "");
@@ -130,6 +131,7 @@ export function UserActions({
             linkedin: linkedin.trim() || null,
             instagram: instagram.trim() || null,
             vouchedBy: vouchedBy.trim(),
+            referralSource: referralSource === "none" ? null : referralSource,
             craftNote: craftNote.trim(),
             followerCount: followerCount.trim() || null,
             followerPlatform: followerPlatform.trim() || null,
@@ -286,6 +288,15 @@ export function UserActions({
           <TextField label="LinkedIn URL" value={linkedin} onChange={setLinkedin} />
           <TextField label="Instagram URL" value={instagram} onChange={setInstagram} />
           <TextField label="Vouched by" value={vouchedBy} onChange={setVouchedBy} />
+          <SelectField
+            label="Referral source"
+            value={referralSource}
+            onChange={setReferralSource}
+            options={[
+              { value: "none", label: "Not set" },
+              ...[...REFERRAL_SOURCES, ...(referralSource !== "none" && !(REFERRAL_SOURCES as readonly string[]).includes(referralSource) ? [referralSource] : [])].map((source) => ({ value: source, label: source })),
+            ]}
+          />
           <TextareaField label="About" value={craftNote} onChange={setCraftNote} />
           <TextField label="Follower count" value={followerCount} onChange={setFollowerCount} placeholder="e.g. 202" />
           <TextField label="Follower platform" value={followerPlatform} onChange={setFollowerPlatform} placeholder="e.g. Instagram" />
