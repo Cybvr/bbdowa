@@ -2,6 +2,7 @@
 
 import { useFirestoreUsers } from "@/lib/firebase/client-content";
 import { CreatorDirectory } from "@/components/creators-directory";
+import { CreatorCreateAction } from "@/components/creator-create-action";
 import { baseCity, isCreatorUser } from "@/lib/users";
 import { PageLoadingSkeleton } from "@/components/dashboard/loading-skeleton";
 
@@ -17,6 +18,9 @@ export default function DiscoverPage() {
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-10 pt-4 sm:px-8 sm:pb-16 sm:pt-4">
       <div>
+        <div className="mb-4 flex justify-end">
+          <CreatorCreateAction existingSlugs={users.map((user) => user.slug)} categoryOptions={categories} />
+        </div>
         <CreatorDirectory creators={creators} categories={categories} locations={locations} />
       </div>
     </main>

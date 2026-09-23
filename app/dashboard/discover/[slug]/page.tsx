@@ -194,7 +194,7 @@ export default function CreatorDetailPage() {
         {tab === "overview" && (
           <>
             {creator.craftNote ? (
-              <ProfileSection title="Craft note" variant="plain">
+              <ProfileSection title="About" variant="plain">
                 <p className="m-0 max-w-[850px] text-[15px] leading-[1.5]">{creator.craftNote}</p>
               </ProfileSection>
             ) : null}

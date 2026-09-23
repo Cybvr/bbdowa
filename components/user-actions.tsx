@@ -17,6 +17,7 @@ import {
 } from "firebase/firestore";
 import { firebaseDb } from "@/lib/firebase/client";
 import { useAuth } from "@/components/auth-provider";
+import { DayRateField } from "@/components/day-rate-field";
 import { CreatableSelectField, EditSheet, ImageUploadField, SelectField, TextField, TextareaField } from "@/components/detail-editor";
 import {
   DropdownMenu,
@@ -24,7 +25,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { userRoles, type User, type UserRole } from "@/lib/users";
+import { creatorRateLabel, userRoles, type RateCurrency, type User, type UserRole } from "@/lib/users";
 
 type AccountStatus = "active" | "pending";
 
@@ -65,7 +66,9 @@ export function UserActions({
   const [profileImage, setProfileImage] = React.useState(user.profileImage ?? "");
   // Creator-only
   const [category, setCategory] = React.useState(user.category ?? "");
-  const [dayRate, setDayRate] = React.useState(user.dayRate ?? "");
+  const [dayRate] = React.useState(user.dayRate ?? "");
+  const [rateMin, setRateMin] = React.useState<number | null>(user.rateMin ?? null);
+  const [rateCurrency, setRateCurrency] = React.useState<RateCurrency>(user.rateCurrency ?? "NGN");
   const [availability, setAvailability] = React.useState(user.availability ?? "unconfirmed");
   const [portfolio, setPortfolio] = React.useState(user.portfolio ?? "");
   const [behance, setBehance] = React.useState(user.behance ?? "");
@@ -110,7 +113,9 @@ export function UserActions({
       variant === "creator" || roles.includes("creator")
         ? {
             category: category.trim(),
-            dayRate: dayRate.trim(),
+            dayRate: creatorRateLabel(rateCurrency, rateMin) || dayRate.trim(),
+            rateMin,
+            rateCurrency,
             availability,
             portfolio: portfolio.trim() || null,
             behance: behance.trim() || null,
@@ -228,7 +233,12 @@ export function UserActions({
             addLabel="Add new category…"
             placeholder="e.g. Photography"
           />
-          <TextField label="Day rate" value={dayRate} onChange={setDayRate} />
+          <DayRateField
+            currency={rateCurrency}
+            rateMin={rateMin}
+            onCurrencyChange={setRateCurrency}
+            onRateMinChange={setRateMin}
+          />
           <SelectField
             label="Availability"
             value={availability}

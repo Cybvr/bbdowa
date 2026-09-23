@@ -214,6 +214,7 @@ export function TextField({
   placeholder,
   id,
   type = "text",
+  required = false,
 }: {
   label: string;
   value: string;
@@ -221,10 +222,11 @@ export function TextField({
   placeholder?: string;
   id?: string;
   type?: string;
+  required?: boolean;
 }) {
   return (
     <Field label={label}>
-      <Input id={id} type={type} value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} />
+      <Input id={id} type={type} value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} required={required} />
     </Field>
   );
 }
@@ -256,7 +258,7 @@ export function SelectField({
   options,
 }: {
   label: string;
-  value: string;
+  value?: string;
   onChange: (value: string) => void;
   options: { value: string; label: string }[];
 }) {

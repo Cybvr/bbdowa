@@ -15,7 +15,8 @@ import {
   TextareaField,
   TextField,
 } from "@/components/detail-editor";
-import { DEFAULT_CREATOR_CATEGORIES, isCreatorUser, userRoles, type CreatorAvailability } from "@/lib/users";
+import { DayRateField } from "@/components/day-rate-field";
+import { creatorRateLabel, DEFAULT_CREATOR_CATEGORIES, isCreatorUser, userRoles, type CreatorAvailability, type RateCurrency } from "@/lib/users";
 
 export default function SettingsPage() {
   const { user: authUser, loading: authLoading } = useAuth();
@@ -29,6 +30,8 @@ export default function SettingsPage() {
   const [profileImage, setProfileImage] = useState("");
   const [category, setCategory] = useState("");
   const [dayRate, setDayRate] = useState("");
+  const [rateMin, setRateMin] = useState<number | null>(null);
+  const [rateCurrency, setRateCurrency] = useState<RateCurrency>("NGN");
   const [availability, setAvailability] = useState<CreatorAvailability>("unconfirmed");
   const [portfolio, setPortfolio] = useState("");
   const [behance, setBehance] = useState("");
@@ -50,6 +53,8 @@ export default function SettingsPage() {
     setProfileImage(own.profileImage ?? "");
     setCategory(own.category ?? "");
     setDayRate(own.dayRate ?? "");
+    setRateMin(own.rateMin ?? null);
+    setRateCurrency(own.rateCurrency ?? "NGN");
     setAvailability(own.availability ?? "unconfirmed");
     setPortfolio(own.portfolio ?? "");
     setBehance(own.behance ?? "");
@@ -101,7 +106,9 @@ export default function SettingsPage() {
       const creatorFields = creator
         ? {
             category: category.trim(),
-            dayRate: dayRate.trim(),
+            dayRate: creatorRateLabel(rateCurrency, rateMin) || dayRate.trim(),
+            rateMin,
+            rateCurrency,
             availability,
             portfolio: portfolio.trim() || null,
             behance: behance.trim() || null,
@@ -156,7 +163,12 @@ export default function SettingsPage() {
               addLabel="Add new category…"
               placeholder="e.g. Photography"
             />
-            <TextField label="Day rate" value={dayRate} onChange={setDayRate} />
+            <DayRateField
+              currency={rateCurrency}
+              rateMin={rateMin}
+              onCurrencyChange={setRateCurrency}
+              onRateMinChange={setRateMin}
+            />
             <SelectField
               label="Availability"
               value={availability}

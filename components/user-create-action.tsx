@@ -3,9 +3,10 @@
 import * as React from "react";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { Plus } from "lucide-react";
+import { DayRateField } from "@/components/day-rate-field";
 import { CreatableSelectField, EditSheet, SelectField, TextField } from "@/components/detail-editor";
 import { firebaseDb } from "@/lib/firebase/client";
-import type { UserRole } from "@/lib/users";
+import { creatorRateLabel, type RateCurrency, type UserRole } from "@/lib/users";
 
 // Creates any directory user, including people with multiple roles.
 const ROLE_OPTIONS: readonly { value: UserRole; label: string }[] = [
@@ -34,7 +35,8 @@ export function UserCreateAction({
   const [location, setLocation] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [category, setCategory] = React.useState("Content");
-  const [dayRate, setDayRate] = React.useState("");
+  const [rateMin, setRateMin] = React.useState<number | null>(null);
+  const [rateCurrency, setRateCurrency] = React.useState<RateCurrency>("NGN");
   const [availability, setAvailability] = React.useState("unconfirmed");
 
   const save = async () => {
@@ -60,9 +62,9 @@ export function UserCreateAction({
       category,
       tags: [],
       entity: "Freelancer",
-      dayRate: dayRate.trim(),
-      rateMin: null,
-      rateCurrency: "NGN",
+      dayRate: creatorRateLabel(rateCurrency, rateMin),
+      rateMin,
+      rateCurrency,
       hideRate: true,
       terms: "",
       availability,
@@ -145,7 +147,12 @@ export function UserCreateAction({
             addLabel="Add new category…"
             placeholder="e.g. Photography"
           />
-          <TextField label="Day rate" value={dayRate} onChange={setDayRate} />
+          <DayRateField
+            currency={rateCurrency}
+            rateMin={rateMin}
+            onCurrencyChange={setRateCurrency}
+            onRateMinChange={setRateMin}
+          />
           <SelectField
             label="Availability"
             value={availability}

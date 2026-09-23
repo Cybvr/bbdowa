@@ -3,10 +3,32 @@ export type UserRole = "admin" | "manager" | "creator";
 export type UserAccountRole = UserRole | "pending";
 
 export type CreatorAvailability = "open" | "busy" | "unconfirmed";
+export type RateCurrency = "NGN" | "USD";
 
 export type CreatorClearance = "cleared" | "pending";
 
 export const DEFAULT_CREATOR_CATEGORIES = ["Art", "Content", "Film", "Strategy", "UX", "Writing"] as const;
+
+export const CREATOR_RATE_OPTIONS: Record<RateCurrency, readonly { value: number; label: string }[]> = {
+  NGN: [
+    { value: 10000, label: "₦10,000–₦25,000 / day" },
+    { value: 25000, label: "₦25,000–₦50,000 / day" },
+    { value: 50000, label: "₦50,000–₦100,000 / day" },
+    { value: 100000, label: "₦100,000–₦200,000 / day" },
+    { value: 200000, label: "₦200,000+ / day" },
+  ],
+  USD: [
+    { value: 50, label: "$50–$100 / day" },
+    { value: 100, label: "$100–$250 / day" },
+    { value: 250, label: "$250–$500 / day" },
+    { value: 500, label: "$500–$1,000 / day" },
+    { value: 1000, label: "$1,000+ / day" },
+  ],
+};
+
+export function creatorRateLabel(currency: RateCurrency, rateMin: number | null): string {
+  return CREATOR_RATE_OPTIONS[currency].find((option) => option.value === rateMin)?.label ?? "";
+}
 
 export type CreatorWorkHistory = {
   role: string;
