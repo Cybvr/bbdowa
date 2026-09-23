@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, doc, getDoc, getDocs } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 import { firebaseDb } from "@/lib/firebase/client";
 import { useAuth } from "@/components/auth-provider";
 import type { BlogPost } from "@/lib/blog";
@@ -10,6 +10,7 @@ import type { Client } from "@/lib/clients";
 import { CONTRACT_COLLECTION, sortContracts, type Contract } from "@/lib/contracts";
 import { CONTRACT_TEMPLATE_COLLECTION, sortContractTemplates, type ContractTemplate } from "@/lib/contract-templates";
 import type { Job } from "@/lib/jobs";
+import { ACTIVITY_COLLECTION, type ActivityEntry } from "@/lib/time-tracking";
 import { normalizeUser, type User } from "@/lib/users";
 
 async function readCollection<T>(name: string): Promise<T[]> {
@@ -27,6 +28,20 @@ export function readCampaignsFromFirestore() {
 
 export function readClientsFromFirestore() {
   return readCollection<Client>("clients");
+}
+
+export function readContractsForAssignee(assigneeKey: string) {
+  if (!assigneeKey) return Promise.resolve<Contract[]>([]);
+  return getDocs(query(collection(firebaseDb, CONTRACT_COLLECTION), where("assignedTo", "==", assigneeKey))).then((snapshot) =>
+    snapshot.docs.map((document) => ({ id: document.id, ...(document.data() as Omit<Contract, "id">) })),
+  );
+}
+
+export function readTimeEntriesForUser(uid: string) {
+  if (!uid) return Promise.resolve<ActivityEntry[]>([]);
+  return getDocs(query(collection(firebaseDb, ACTIVITY_COLLECTION), where("uid", "==", uid))).then((snapshot) =>
+    snapshot.docs.map((document) => ({ id: document.id, ...(document.data() as Omit<ActivityEntry, "id">) })),
+  );
 }
 
 type FirestoreUsersState = {

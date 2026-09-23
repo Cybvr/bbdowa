@@ -8,7 +8,7 @@ import { FaBehance, FaGlobe } from "react-icons/fa";
 import { Mail } from "lucide-react";
 import { creatorCategoryOptions, isCreatorNew, isCreatorUser, type Creator } from "@/lib/users";
 import { useAuth } from "@/components/auth-provider";
-import { readCampaignsFromFirestore, readClientsFromFirestore, useFirestoreUsers } from "@/lib/firebase/client-content";
+import { readCampaignsFromFirestore, readClientsFromFirestore, readContractsForAssignee, readTimeEntriesForUser, useFirestoreUsers } from "@/lib/firebase/client-content";
 import { longDate } from "@/lib/format";
 import { campaignHref, type Campaign } from "@/lib/campaigns";
 import { clientHref, getCreatorCampaigns, type Client } from "@/lib/clients";
@@ -56,6 +56,8 @@ export default function CreatorDetailPage() {
   // Public collections — no auth needed, so every viewer can see this.
   const [clients, setClients] = useState<Client[]>([]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [contractCount, setContractCount] = useState(0);
+  const [hasHours, setHasHours] = useState(false);
   useEffect(() => {
     let active = true;
     Promise.all([readClientsFromFirestore(), readCampaignsFromFirestore()])
@@ -77,6 +79,26 @@ export default function CreatorDetailPage() {
   const creator = directory.users.find((user) => user.slug === slug);
   const categorySource = directory.users;
 
+  useEffect(() => {
+    const assigneeKey = creator?.uid || creator?.slug;
+    if (!authUser || !assigneeKey) {
+      setContractCount(0);
+      setHasHours(false);
+      return;
+    }
+    let active = true;
+    Promise.all([readContractsForAssignee(assigneeKey), creator?.uid ? readTimeEntriesForUser(creator.uid) : Promise.resolve([])])
+      .then(([contractsData, timeEntries]) => {
+        if (!active) return;
+        setContractCount(contractsData.length);
+        setHasHours(timeEntries.length > 0);
+      })
+      .catch((cause) => console.error("Unable to load creator activity", cause));
+    return () => {
+      active = false;
+    };
+  }, [authUser, creator?.slug, creator?.uid]);
+
   if (loading) return <ProfilePageSkeleton />;
   if (error) return <main className="flex-1 px-4 pb-10 pt-4 text-sm text-muted-foreground sm:px-8 sm:pb-16 sm:pt-4">{error}</main>;
   if (!creator || !isCreatorUser(creator)) {
@@ -87,10 +109,10 @@ export default function CreatorDetailPage() {
 
   const tabs: { id: CreatorTab; label: string }[] = [
     { id: "overview", label: "Overview" },
-    { id: "work-history", label: "Work history" },
-    { id: "campaigns", label: "Campaigns" },
-    { id: "hours", label: "Hours" },
-    { id: "contracts", label: "Contracts" },
+    ...(creator.workHistory?.length ? ([{ id: "work-history", label: "Work history" }] as const) : []),
+    ...(creatorCampaigns.length ? ([{ id: "campaigns", label: "Campaigns" }] as const) : []),
+    ...(hasHours ? ([{ id: "hours", label: "Hours" }] as const) : []),
+    ...(contractCount > 0 ? ([{ id: "contracts", label: "Contracts" }] as const) : []),
   ];
 
   return (

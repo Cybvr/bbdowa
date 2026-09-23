@@ -7,7 +7,7 @@ import { FaBehance, FaGlobe } from "react-icons/fa";
 import { Mail, Pencil } from "lucide-react";
 import { isCreatorNew, isCreatorUser, type User } from "@/lib/users";
 import { useAuth } from "@/components/auth-provider";
-import { useOwnUser, readCampaignsFromFirestore, readClientsFromFirestore } from "@/lib/firebase/client-content";
+import { useOwnUser, readCampaignsFromFirestore, readClientsFromFirestore, readContractsForAssignee, readTimeEntriesForUser } from "@/lib/firebase/client-content";
 import { longDate } from "@/lib/format";
 import { campaignHref, type Campaign } from "@/lib/campaigns";
 import { clientHref, getCreatorCampaigns, type Client } from "@/lib/clients";
@@ -57,20 +57,35 @@ export default function MyProfilePage() {
 
   const [clients, setClients] = useState<Client[]>([]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [contractCount, setContractCount] = useState(0);
+  const [hasHours, setHasHours] = useState(false);
   useEffect(() => {
-    if (!creator) return;
+    if (!creator || !authUser) {
+      setClients([]);
+      setCampaigns([]);
+      setContractCount(0);
+      setHasHours(false);
+      return;
+    }
     let active = true;
-    Promise.all([readClientsFromFirestore(), readCampaignsFromFirestore()])
-      .then(([clientsData, campaignsData]) => {
+    Promise.all([
+      readClientsFromFirestore(),
+      readCampaignsFromFirestore(),
+      readContractsForAssignee(authUser.uid),
+      readTimeEntriesForUser(authUser.uid),
+    ])
+      .then(([clientsData, campaignsData, contractsData, timeEntries]) => {
         if (!active) return;
         setClients(clientsData);
         setCampaigns(campaignsData);
+        setContractCount(contractsData.length);
+        setHasHours(timeEntries.length > 0);
       })
       .catch((cause) => console.error("Unable to load clients/campaigns", cause));
     return () => {
       active = false;
     };
-  }, [creator]);
+  }, [authUser, creator]);
 
   if (authLoading || ownLoading) return <ProfilePageSkeleton />;
 
@@ -87,9 +102,10 @@ export default function MyProfilePage() {
 
   const tabs: { id: ProfileTab; label: string }[] = [
     { id: "overview", label: "Overview" },
-    ...(creator ? ([{ id: "work-history", label: "Work history" }, { id: "campaigns", label: "Campaigns" }] as const) : []),
-    { id: "hours", label: "Hours" },
-    ...(creator ? ([{ id: "contracts", label: "Contracts" }] as const) : []),
+    ...(creator && own.workHistory?.length ? ([{ id: "work-history", label: "Work history" }] as const) : []),
+    ...(creator && creatorCampaigns.length ? ([{ id: "campaigns", label: "Campaigns" }] as const) : []),
+    ...(hasHours ? ([{ id: "hours", label: "Hours" }] as const) : []),
+    ...(creator && contractCount > 0 ? ([{ id: "contracts", label: "Contracts" }] as const) : []),
   ];
 
   return (
