@@ -20,6 +20,12 @@ export type Task = {
   status: TaskStatus;
   /** ISO date (yyyy-mm-dd), or null if there's no deadline. */
   dueDate: string | null;
+  /** Optional client this task belongs to (client slug + name). */
+  clientId?: string | null;
+  clientName?: string | null;
+  /** Optional campaign this task belongs to (campaign slug + name). */
+  campaignId?: string | null;
+  campaignName?: string | null;
   createdAt: string;
   updatedAt: string;
 };

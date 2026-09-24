@@ -10,17 +10,28 @@ import { TaskDetailSheet, TaskStatusBadge } from "@/components/tasks-view";
 import { FilterBar } from "@/components/dashboard/filter-bar";
 import { PageLoadingSkeleton } from "@/components/dashboard/loading-skeleton";
 import { firebaseDb } from "@/lib/firebase/client";
+import { readClientsFromFirestore, readCampaignsFromFirestore } from "@/lib/firebase/client-content";
 import { TASK_COLLECTION, formatDate, isOverdue, sortTasks, type Task, type TaskStatus, TASK_STATUSES, TASK_STATUS_LABELS } from "@/lib/creator-tasks";
+import type { Client } from "@/lib/clients";
+import type { Campaign } from "@/lib/campaigns";
 import { plural } from "@/lib/format";
 
 export default function TasksPage() {
   const { user, role } = useAuth();
   const isStaff = role === "admin" || role === "manager";
   const [tasks, setTasks] = React.useState<Task[]>([]);
+  const [clients, setClients] = React.useState<Client[]>([]);
+  const [campaigns, setCampaigns] = React.useState<Campaign[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [search, setSearch] = React.useState("");
   const [status, setStatus] = React.useState<TaskStatus | "all">("all");
+
+  React.useEffect(() => {
+    Promise.all([readClientsFromFirestore(), readCampaignsFromFirestore()])
+      .then(([clientsData, campaignsData]) => { setClients(clientsData); setCampaigns(campaignsData); })
+      .catch((cause) => console.error("Unable to load clients/campaigns", cause));
+  }, []);
 
   const load = React.useCallback(async () => {
     const uid = user?.uid;
@@ -80,7 +91,10 @@ export default function TasksPage() {
         task={selected}
         onOpenChange={(open) => { if (!open) setSelectedId(null); }}
         canEdit={Boolean(selected) && (isStaff || (Boolean(user?.uid) && selected?.assignedTo === user?.uid))}
+        canManage={isStaff}
         canDelete={isStaff}
+        clients={clients}
+        campaigns={campaigns}
         onChanged={() => void load()}
       />
     </main>

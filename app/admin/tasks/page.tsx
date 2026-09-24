@@ -15,18 +15,23 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CreatorPicker } from "@/components/creator-picker";
 import { TaskDetailSheet, TaskStatusBadge } from "@/components/tasks-view";
-import { useFirestoreTasks, useFirestoreUsers } from "@/lib/firebase/client-content";
+import { readClientsFromFirestore, readCampaignsFromFirestore, useFirestoreTasks, useFirestoreUsers } from "@/lib/firebase/client-content";
 import { TASK_COLLECTION, TASK_STATUSES, TASK_STATUS_LABELS, formatDate, isOverdue, type Task, type TaskStatus } from "@/lib/creator-tasks";
+import type { Client } from "@/lib/clients";
+import type { Campaign } from "@/lib/campaigns";
 import { firebaseDb } from "@/lib/firebase/client";
 import { plural } from "@/lib/format";
 import { isCreatorUser } from "@/lib/users";
 
 type AssigneeOption = { uid: string; name: string; slug: string; isCreator: boolean; hint: string };
 
-function NewTaskDialog({ assignees, createdBy, createdByName, onCreated }: {
+function NewTaskDialog({ assignees, clients, campaigns, createdBy, createdByName, onCreated }: {
   assignees: AssigneeOption[];
+  clients: Client[];
+  campaigns: Campaign[];
   createdBy: string;
   createdByName: string | null;
   onCreated: () => void;
@@ -36,10 +41,13 @@ function NewTaskDialog({ assignees, createdBy, createdByName, onCreated }: {
   const [title, setTitle] = React.useState("");
   const [description, setDescription] = React.useState("");
   const [dueDate, setDueDate] = React.useState("");
+  const [clientId, setClientId] = React.useState("");
+  const [campaignId, setCampaignId] = React.useState("");
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const clientCampaigns = campaigns.filter((campaign) => campaign.clientId === clientId);
 
-  const reset = () => { setAssignedTo(""); setTitle(""); setDescription(""); setDueDate(""); setError(null); };
+  const reset = () => { setAssignedTo(""); setTitle(""); setDescription(""); setDueDate(""); setClientId(""); setCampaignId(""); setError(null); };
   const handleOpenChange = (next: boolean) => { setOpen(next); if (!next) reset(); };
   const canSave = title.trim().length > 0 && assignedTo.length > 0 && !busy;
 
@@ -50,6 +58,8 @@ function NewTaskDialog({ assignees, createdBy, createdByName, onCreated }: {
     setError(null);
     try {
       const assignee = assignees.find((candidate) => candidate.uid === assignedTo);
+      const client = clients.find((candidate) => candidate.slug === clientId);
+      const campaign = clientCampaigns.find((candidate) => candidate.slug === campaignId);
       const now = new Date().toISOString();
       await addDoc(collection(firebaseDb, TASK_COLLECTION), {
         title: title.trim(),
@@ -60,6 +70,10 @@ function NewTaskDialog({ assignees, createdBy, createdByName, onCreated }: {
         createdByName,
         status: "todo",
         dueDate: dueDate || null,
+        clientId: clientId || null,
+        clientName: client?.name ?? null,
+        campaignId: campaign ? campaignId : null,
+        campaignName: campaign ? (campaign.campaign ?? campaign.name) : null,
         createdAt: now,
         updatedAt: now,
       });
@@ -111,6 +125,28 @@ function NewTaskDialog({ assignees, createdBy, createdByName, onCreated }: {
               <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Due date</span>
               <Input type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} disabled={busy} className="h-10" />
             </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Client</span>
+                <Select value={clientId || "none"} onValueChange={(value) => { setClientId(value === "none" ? "" : value); setCampaignId(""); }}>
+                  <SelectTrigger disabled={busy} className="h-10"><SelectValue placeholder="No client" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No client</SelectItem>
+                    {clients.map((client) => <SelectItem key={client.slug} value={client.slug}>{client.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Campaign</span>
+                <Select value={campaignId || "none"} onValueChange={(value) => setCampaignId(value === "none" ? "" : value)}>
+                  <SelectTrigger disabled={busy || !clientId} className="h-10"><SelectValue placeholder={clientId ? "No campaign" : "Pick a client first"} /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No campaign</SelectItem>
+                    {clientCampaigns.map((campaign) => <SelectItem key={campaign.slug} value={campaign.slug}>{campaign.campaign ?? campaign.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
             {error ? <p className="m-0 text-[13px] font-medium text-destructive">{error}</p> : null}
             <DialogFooter>
               <button type="button" onClick={() => setOpen(false)} disabled={busy} className="h-9 rounded-md border border-border px-4 text-[13px] font-semibold text-foreground transition hover:border-foreground disabled:opacity-50">Cancel</button>
@@ -135,6 +171,13 @@ export default function TasksPage() {
   const [renameTask, setRenameTask] = React.useState<Task | null>(null);
   const [renameValue, setRenameValue] = React.useState("");
   const isStaff = role === "admin" || role === "manager";
+  const [clients, setClients] = React.useState<Client[]>([]);
+  const [campaigns, setCampaigns] = React.useState<Campaign[]>([]);
+  React.useEffect(() => {
+    Promise.all([readClientsFromFirestore(), readCampaignsFromFirestore()])
+      .then(([clientsData, campaignsData]) => { setClients(clientsData); setCampaigns(campaignsData); })
+      .catch((cause) => console.error("Unable to load clients/campaigns", cause));
+  }, []);
 
   // Any signed-in user can be assigned a task (they need an account so the
   // task can reach them). Ordered by name and searchable in the picker.
@@ -210,7 +253,7 @@ export default function TasksPage() {
   if (authLoading || loading || usersLoading) return <UsersTableSkeleton />;
   if (!isStaff) return <main className="mx-auto w-full max-w-6xl flex-1 px-5 pb-16 pt-8 sm:px-8"><PageHeader title="Tasks" /><p className="mt-8 text-sm text-muted-foreground">A staff account is required to manage tasks.</p></main>;
 
-  return <DashboardListPage title="Tasks" actions={<NewTaskDialog assignees={assignees} createdBy={user!.uid} createdByName={user!.name ?? user!.email} onCreated={() => window.location.reload()} />}
+  return <DashboardListPage title="Tasks" actions={<NewTaskDialog assignees={assignees} clients={clients} campaigns={campaigns} createdBy={user!.uid} createdByName={user!.name ?? user!.email} onCreated={() => window.location.reload()} />}
     toolbar={<div className="space-y-3"><FilterBar panelId="admin-tasks-filter" search={search} onSearchChange={setSearch} searchPlaceholder="Search tasks" resultCount={plural(visible.length, "task")} /><div className="flex flex-wrap gap-2" aria-label="Task status filter">{(["all", ...TASK_STATUSES] as const).map((value) => <button key={value} type="button" onClick={() => setStatus(value)} aria-pressed={status === value} className={`rounded-md border px-3 py-1.5 text-[13px] font-medium ${status === value ? "border-primary bg-primary text-primary-foreground" : "border-border text-foreground"}`}>{value === "all" ? "All" : TASK_STATUS_LABELS[value]}</button>)}</div></div>}>
     {error || actionError ? <p className="mb-4 text-[13px] text-destructive">{error ?? actionError}</p> : null}
     <section className="overflow-x-auto rounded-xl border border-border bg-background">
@@ -247,7 +290,10 @@ export default function TasksPage() {
       task={visible.find((task) => task.id === selectedId) ?? null}
       onOpenChange={(open) => { if (!open) setSelectedId(null); }}
       canEdit={isStaff}
+      canManage={isStaff}
       canDelete={role === "admin"}
+      clients={clients}
+      campaigns={campaigns}
       onChanged={() => window.location.reload()}
     />
 

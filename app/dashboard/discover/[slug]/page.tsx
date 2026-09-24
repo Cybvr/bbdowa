@@ -354,6 +354,8 @@ export default function CreatorDetailPage() {
                 creatorName={creator.name}
                 createdBy={authUser?.uid ?? ""}
                 createdByName={authUser?.name ?? authUser?.email ?? null}
+                clients={clients}
+                campaigns={campaigns}
                 onCreated={() => setTaskRefresh((value) => value + 1)}
               />
             ) : undefined}
@@ -363,6 +365,8 @@ export default function CreatorDetailPage() {
               creatorName={creator.name}
               viewer={{ uid: authUser?.uid ?? "", name: authUser?.name ?? authUser?.email ?? null, isStaff }}
               refreshSignal={taskRefresh}
+              clients={clients}
+              campaigns={campaigns}
             />
           </ProfileSection>
         )}

@@ -130,14 +130,11 @@ service cloud.firestore {
     match /creatorTasks/{id} {
       allow read: if true;
       allow create: if isStaff() && request.resource.data.createdBy == request.auth.uid;
+      // The assignee can only move the task through status; staff edit the rest.
       allow update: if isStaff()
         || (signedIn()
           && resource.data.assignedTo == request.auth.uid
-          && request.resource.data.assignedTo == resource.data.assignedTo
-          && request.resource.data.createdBy == resource.data.createdBy
-          && request.resource.data.title == resource.data.title
-          && request.resource.data.description == resource.data.description
-          && request.resource.data.dueDate == resource.data.dueDate);
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status", "updatedAt"]));
       allow delete: if isStaff();
     }
 

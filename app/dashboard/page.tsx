@@ -65,7 +65,8 @@ function campaignCreators(campaign: Campaign, clients: Client[], users: User[]):
 }
 
 export default function HomePage() {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
+  const isStaff = role === "admin" || role === "manager";
   const { users, loading: creatorsLoading, error: creatorsError } = useFirestoreUsers();
   const [content, setContent] = useState<{ campaigns: Campaign[]; clients: Client[]; posts: BlogPost[]; loading: boolean; error: string | null }>({
     campaigns: [],
@@ -157,7 +158,10 @@ export default function HomePage() {
         task={selectedTask}
         onOpenChange={(open) => { if (!open) setSelectedTaskId(null); }}
         canEdit={Boolean(selectedTask)}
-        canDelete={false}
+        canManage={isStaff}
+        canDelete={isStaff}
+        clients={content.clients}
+        campaigns={content.campaigns}
         onChanged={() => void loadMyTasks()}
       />
 
