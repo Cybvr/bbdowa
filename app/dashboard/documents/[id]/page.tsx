@@ -40,7 +40,13 @@ export default function DocumentDetailPage() {
         <h1 className="m-0 text-[17px] font-bold">{document.title}</h1><DocumentStatus status={document.status} />
         <dl className="space-y-3 text-[13px]"><div><dt className="text-muted-foreground">Created</dt><dd className="m-0 font-medium">{formatDocumentDateTime(document.createdAt)}</dd></div><div><dt className="text-muted-foreground">Sent to</dt><dd className="m-0 font-medium">{document.assignedToName ?? "—"}</dd></div><div><dt className="text-muted-foreground">Signed</dt><dd className="m-0 font-medium">{formatDocumentDateTime(document.signedAt)}</dd></div><div><dt className="text-muted-foreground">Signed by</dt><dd className="m-0 font-medium">{document.signedName ?? "—"}</dd></div></dl>
       </aside>
-      <section aria-label="Document" className="min-w-0 flex-1 rounded-xl border border-border bg-muted/30 p-4 sm:p-6"><article className="mx-auto max-w-[680px] rounded-sm border border-border/60 bg-background shadow-md"><header className="border-b border-border/60 px-8 py-6 sm:px-10"><img src="/bbdo-west-africa.png" alt="BBDO West Africa" className="h-8 w-auto object-contain object-left" /><h2 className="m-0 mt-2 text-[19px] font-bold">{document.title}</h2></header><div className="px-8 py-8 text-[14px] leading-[1.75] sm:px-10"><RichTextContent value={document.body} /></div></article></section>
+      <section aria-label="Document" className="min-w-0 flex-1 rounded-xl border border-border bg-muted/30 p-4 sm:p-6">
+        <article className="mx-auto max-w-[720px] rounded-sm border border-border/60 bg-white text-black shadow-md">
+          <div className="px-8 py-10 text-[14px] leading-[1.8] text-black sm:px-12 sm:py-14 [&_a]:text-primary">
+            <RichTextContent value={document.body} />
+          </div>
+        </article>
+      </section>
     </div>
   </main>;
 }
