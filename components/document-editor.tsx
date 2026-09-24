@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { addDoc, collection, doc, updateDoc } from "firebase/firestore";
-import { ArrowLeft, Save, Send, Users } from "lucide-react";
+import { ArrowLeft, Save, Share2, Users } from "lucide-react";
 import { firebaseDb } from "@/lib/firebase/client";
 import { DOCUMENT_COLLECTION, type AgencyDocument } from "@/lib/documents";
 import { type User } from "@/lib/users";
@@ -83,8 +83,8 @@ export function DocumentEditor({ document, user, users, initialAssignee }: { doc
       <button type="button" disabled={!validContent || busy} onClick={() => void write(false)} aria-label="Save draft" title="Save draft" className="inline-flex h-10 items-center gap-1.5 rounded-md border border-border px-3 text-[13px] font-semibold disabled:opacity-50">
         <Save className="h-4 w-4" aria-hidden="true" /><span className="hidden sm:inline">{busy ? "Saving…" : "Save draft"}</span>
       </button>
-      <button type="button" disabled={!validContent || busy} onClick={() => setSendOpen(true)} aria-label="Send for signature" title="Send for signature" className="inline-flex h-10 items-center gap-1.5 rounded-md bg-primary px-3 text-[13px] font-semibold text-primary-foreground disabled:opacity-50">
-        <Send className="h-4 w-4" aria-hidden="true" /><span className="hidden sm:inline">Send for signature</span>
+      <button type="button" disabled={!validContent || busy} onClick={() => setSendOpen(true)} aria-label="Share" title="Share" className="inline-flex h-10 items-center gap-1.5 rounded-md bg-primary px-3 text-[13px] font-semibold text-primary-foreground disabled:opacity-50">
+        <Share2 className="h-4 w-4" aria-hidden="true" /><span className="hidden sm:inline">Share</span>
       </button>
     </>}
     {document?.status === "pending_signature" && <button type="button" disabled={busy} onClick={() => setReassignOpen(true)} aria-label="Change signer" title="Change signer" className="inline-flex h-10 items-center gap-1.5 rounded-md border border-border px-3 text-[13px] font-semibold disabled:opacity-50">
@@ -108,9 +108,9 @@ export function DocumentEditor({ document, user, users, initialAssignee }: { doc
     {canEdit ? <RichTextEditor hideLabel label="Document text" value={body} onChange={setBody} placeholder="Write the document text…" /> : <div className="rounded-xl border border-border bg-background p-5 text-[14px] leading-relaxed"><RichTextContent value={body} /></div>}
     <Dialog open={sendOpen} onOpenChange={setSendOpen}>
       <DialogContent className="sm:max-w-md">
-        <DialogHeader><DialogTitle>Send for signature</DialogTitle><DialogDescription>Choose who should sign this document. Its text will lock when sent.</DialogDescription></DialogHeader>
+        <DialogHeader><DialogTitle>Share document</DialogTitle><DialogDescription>Choose who to share this document with for signing. Its text will lock once shared.</DialogDescription></DialogHeader>
         {people.length ? <CreatorPicker value={assignee} onChange={setAssignee} placeholder="Search people" emptyText="No people found." options={people.map((candidate) => ({ value: candidate.uid, label: candidate.name }))} /> : <p className="text-[13px] text-muted-foreground">No people with accounts are available to sign.</p>}
-        <DialogFooter><button type="button" disabled={busy} onClick={() => setSendOpen(false)} className="h-9 rounded-md border border-border px-4">Cancel</button><button type="button" disabled={!selectedPerson || busy} onClick={() => void write(true)} className="h-9 rounded-md bg-primary px-4 font-semibold text-primary-foreground disabled:opacity-50">{busy ? "Sending…" : "Send document"}</button></DialogFooter>
+        <DialogFooter><button type="button" disabled={busy} onClick={() => setSendOpen(false)} className="h-9 rounded-md border border-border px-4">Cancel</button><button type="button" disabled={!selectedPerson || busy} onClick={() => void write(true)} className="h-9 rounded-md bg-primary px-4 font-semibold text-primary-foreground disabled:opacity-50">{busy ? "Sharing…" : "Share document"}</button></DialogFooter>
       </DialogContent>
     </Dialog>
     <Dialog open={reassignOpen} onOpenChange={setReassignOpen}>
