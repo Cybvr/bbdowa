@@ -45,7 +45,7 @@ export default function DocumentDetailPage() {
           <ChevronLeft className="h-5 w-5" aria-hidden="true" />
         </Link>
         <h1 className="m-0 truncate text-[18px] font-bold leading-tight sm:text-[20px]">{document.title}</h1>
-        <span className="hidden shrink-0 sm:block"><DocumentStatus status={document.status} /></span>
+        <span className="shrink-0"><DocumentStatus status={document.status} /></span>
       </div>
       {hasMenu ? (
         <DropdownMenu>
@@ -71,7 +71,7 @@ export default function DocumentDetailPage() {
     </header>
     {canSign ? <DocumentSignDialog document={document} defaultName={user?.name ?? ""} onSigned={() => void load()} open={signOpen} onOpenChange={setSignOpen} hideTrigger /> : null}
     <div className="mt-4 flex flex-col gap-5 nav:flex-row">
-      <aside className="space-y-4 self-start rounded-xl border border-border bg-muted/20 p-5 nav:sticky nav:top-5 nav:w-[300px] nav:flex-none">
+      <aside className="hidden space-y-4 self-start rounded-xl border border-border bg-muted/20 p-5 nav:sticky nav:top-5 nav:block nav:w-[300px] nav:flex-none">
         <h1 className="m-0 text-[17px] font-bold">{document.title}</h1><DocumentStatus status={document.status} />
         <dl className="space-y-3 text-[13px]"><div><dt className="text-muted-foreground">Created</dt><dd className="m-0 font-medium">{formatDocumentDateTime(document.createdAt)}</dd></div><div><dt className="text-muted-foreground">Sent to</dt><dd className="m-0 font-medium">{document.assignedToName ?? "—"}</dd></div><div><dt className="text-muted-foreground">Signed</dt><dd className="m-0 font-medium">{formatDocumentDateTime(document.signedAt)}</dd></div><div><dt className="text-muted-foreground">Signed by</dt><dd className="m-0 font-medium">{document.signedName ?? "—"}</dd></div></dl>
       </aside>
