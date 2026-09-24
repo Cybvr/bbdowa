@@ -10,6 +10,7 @@ import { type User } from "@/lib/users";
 import { RichTextContent, RichTextEditor, richTextHasContent } from "@/components/rich-text-editor";
 import { CreatorPicker } from "@/components/creator-picker";
 import { DocumentStatus } from "@/components/document-status";
+import { MobileHeaderActions, MobileHeaderTitle } from "@/components/dashboard/mobile-header";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export function DocumentEditor({ document, user, users, initialAssignee }: { document?: AgencyDocument; user: { uid: string; name: string | null }; users: User[]; initialAssignee?: string }) {
@@ -74,28 +75,33 @@ export function DocumentEditor({ document, user, users, initialAssignee }: { doc
     }
   };
 
+  const actionButtons = <>
+    <button type="button" onClick={() => router.push("/admin/documents")} aria-label="Back" title="Back" className="inline-flex h-10 items-center gap-1.5 rounded-md border border-border px-3 text-[13px] font-semibold">
+      <ArrowLeft className="h-4 w-4" aria-hidden="true" /><span className="hidden sm:inline">Back</span>
+    </button>
+    {canEdit && <>
+      <button type="button" disabled={!validContent || busy} onClick={() => void write(false)} aria-label="Save draft" title="Save draft" className="inline-flex h-10 items-center gap-1.5 rounded-md border border-border px-3 text-[13px] font-semibold disabled:opacity-50">
+        <Save className="h-4 w-4" aria-hidden="true" /><span className="hidden sm:inline">{busy ? "Saving…" : "Save draft"}</span>
+      </button>
+      <button type="button" disabled={!validContent || busy} onClick={() => setSendOpen(true)} aria-label="Send for signature" title="Send for signature" className="inline-flex h-10 items-center gap-1.5 rounded-md bg-primary px-3 text-[13px] font-semibold text-primary-foreground disabled:opacity-50">
+        <Send className="h-4 w-4" aria-hidden="true" /><span className="hidden sm:inline">Send for signature</span>
+      </button>
+    </>}
+    {document?.status === "pending_signature" && <button type="button" disabled={busy} onClick={() => setReassignOpen(true)} aria-label="Change signer" title="Change signer" className="inline-flex h-10 items-center gap-1.5 rounded-md border border-border px-3 text-[13px] font-semibold disabled:opacity-50">
+      <Users className="h-4 w-4" aria-hidden="true" /><span className="hidden sm:inline">Change signer</span>
+    </button>}
+  </>;
+
   return <div className="space-y-6">
+    <MobileHeaderTitle title={title.trim() || (document ? "Edit document" : "New document")} />
+    <MobileHeaderActions>{actionButtons}</MobileHeaderActions>
     <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
       <div className="min-w-0 flex-1">
         <input aria-label="Document title" value={title} onChange={(event) => setTitle(event.target.value)} disabled={!canEdit} placeholder="Untitled document" className="w-full bg-transparent text-[22px] font-bold outline-none placeholder:text-muted-foreground disabled:opacity-70" />
         {document && <div className="mt-2"><DocumentStatus status={document.status} /></div>}
       </div>
-      <div className="flex items-center gap-2">
-        <button type="button" onClick={() => router.push("/admin/documents")} aria-label="Back" title="Back" className="inline-flex h-10 items-center gap-1.5 rounded-md border border-border px-3 text-[13px] font-semibold">
-          <ArrowLeft className="h-4 w-4" aria-hidden="true" /><span className="hidden sm:inline">Back</span>
-        </button>
-        {canEdit && <>
-          <button type="button" disabled={!validContent || busy} onClick={() => void write(false)} aria-label="Save draft" title="Save draft" className="inline-flex h-10 items-center gap-1.5 rounded-md border border-border px-3 text-[13px] font-semibold disabled:opacity-50">
-            <Save className="h-4 w-4" aria-hidden="true" /><span className="hidden sm:inline">{busy ? "Saving…" : "Save draft"}</span>
-          </button>
-          <button type="button" disabled={!validContent || busy} onClick={() => setSendOpen(true)} aria-label="Send for signature" title="Send for signature" className="inline-flex h-10 items-center gap-1.5 rounded-md bg-primary px-3 text-[13px] font-semibold text-primary-foreground disabled:opacity-50">
-            <Send className="h-4 w-4" aria-hidden="true" /><span className="hidden sm:inline">Send for signature</span>
-          </button>
-        </>}
-        {document?.status === "pending_signature" && <button type="button" disabled={busy} onClick={() => setReassignOpen(true)} aria-label="Change signer" title="Change signer" className="inline-flex h-10 items-center gap-1.5 rounded-md border border-border px-3 text-[13px] font-semibold disabled:opacity-50">
-          <Users className="h-4 w-4" aria-hidden="true" /><span className="hidden sm:inline">Change signer</span>
-        </button>}
-      </div>
+      {/* Desktop actions; on phones these live in the dashboard top bar. */}
+      <div className="hidden items-center gap-2 nav:flex">{actionButtons}</div>
     </header>
     {!canEdit && <p className="text-[13px] text-muted-foreground">This document was sent for signature and its text is locked. Duplicate it to make changes.</p>}
     {error && <p className="text-[13px] text-destructive">{error}</p>}
