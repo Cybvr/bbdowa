@@ -113,11 +113,11 @@ export function DashboardCardActions({
       <DropdownMenuTrigger asChild>
         <Button
           type="button"
-          variant="outline"
+          variant="ghost"
           size="icon"
           aria-label="Card actions"
           disabled={busy}
-          className="rounded-lg border-border bg-background/95 text-muted-foreground shadow-sm backdrop-blur hover:border-foreground hover:text-foreground disabled:cursor-wait"
+          className="rounded-lg border-0 bg-transparent text-muted-foreground shadow-none hover:bg-muted hover:text-foreground disabled:cursor-wait"
         >
           <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
         </Button>

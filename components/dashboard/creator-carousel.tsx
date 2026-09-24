@@ -5,15 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { CreatorThumbnail } from "@/components/creator-thumbnail";
 import type { Creator } from "@/lib/users";
-import { baseCity, creatorHref, isCreatorNew } from "@/lib/users";
-
-function NewBadge() {
-  return (
-    <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-white">
-      New
-    </span>
-  );
-}
+import { creatorHref } from "@/lib/users";
 
 export function CreatorCarousel({ creators }: { creators: Creator[] }) {
   const trackRef = useRef<HTMLDivElement>(null);
@@ -79,32 +71,20 @@ export function CreatorCarousel({ creators }: { creators: Creator[] }) {
 
       <div
         ref={trackRef}
-        className="no-scrollbar -mx-5 flex snap-x gap-3 overflow-x-auto px-5 pb-2 sm:mx-0 sm:px-0"
+        className="no-scrollbar -mx-5 flex snap-x gap-4 overflow-x-auto px-5 pb-2 sm:mx-0 sm:px-0"
       >
         {creators.map((creator) => (
           <Link
             key={creator.slug}
             href={creatorHref(creator.slug)}
-            className="group w-[min(78vw,280px)] shrink-0 snap-start overflow-hidden rounded-2xl border border-border bg-background transition hover:-translate-y-0.5 hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:w-[260px] lg:w-[calc((100%_-_36px)/4)]"
+            className="group flex w-[84px] shrink-0 snap-start flex-col items-center gap-2 focus-visible:outline-none"
           >
-            <div className="relative aspect-[1.35] overflow-hidden bg-muted">
-              <CreatorThumbnail
-                imageSrc={creator.profileImage}
-                avatarSeed={creator.name}
-                rounded={false}
-                className="h-full w-full"
-              />
-              {isCreatorNew(creator) ? <span className="absolute left-3 top-3"><NewBadge /></span> : null}
-            </div>
-            <div className="p-4">
-              <h3 className="m-0 truncate text-[15px] font-bold text-foreground">{creator.name}</h3>
-              <p className="m-0 mt-1 truncate text-[13px] text-muted-foreground">
-                {creator.niche || creator.category || "Creator"}
-              </p>
-              <p className="m-0 mt-3 truncate text-[12px] font-medium text-muted-foreground">
-                {baseCity(creator.location) || "Location not provided"}
-              </p>
-            </div>
+            <CreatorThumbnail
+              imageSrc={creator.profileImage}
+              avatarSeed={creator.name}
+              className="h-[72px] w-[72px] transition group-hover:ring-2 group-hover:ring-primary/40"
+            />
+            <span className="w-full truncate text-center text-[13px] font-semibold text-foreground">{creator.name}</span>
           </Link>
         ))}
       </div>
