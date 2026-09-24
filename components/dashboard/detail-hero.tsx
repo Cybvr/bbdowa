@@ -109,6 +109,7 @@ export function ProfileBanner<T extends string>({
   avatarSrc,
   avatarAlt,
   name,
+  eyebrow,
   subtitle,
   breadcrumb,
   actions,
@@ -120,6 +121,7 @@ export function ProfileBanner<T extends string>({
   avatarSrc: string | null | undefined;
   avatarAlt: string;
   name: string;
+  eyebrow?: ReactNode;
   subtitle?: ReactNode;
   breadcrumb?: ReactNode;
   actions?: ReactNode;
@@ -136,8 +138,8 @@ export function ProfileBanner<T extends string>({
           {actions ? <div className="shrink-0">{actions}</div> : null}
         </div>
       ) : null}
-      <div className="flex flex-wrap items-start gap-4 p-4 sm:gap-5 sm:px-8 sm:pb-5 sm:pt-5">
-        <span className="grid h-20 w-20 flex-none place-items-center overflow-hidden rounded-full bg-background sm:h-24 sm:w-24">
+      <div className="flex flex-wrap items-start gap-3 p-3 sm:gap-4 sm:px-6 sm:pb-4 sm:pt-4">
+        <span className="grid h-16 w-16 flex-none place-items-center overflow-hidden rounded-full bg-background sm:h-20 sm:w-20">
           <ImageWithFallback
             src={avatarSrc}
             alt={avatarAlt}
@@ -147,9 +149,10 @@ export function ProfileBanner<T extends string>({
           />
         </span>
         <div className="min-w-0 flex-1">
-          <h1 className="m-0 truncate text-[26px] font-bold leading-tight sm:text-[30px]">{name}</h1>
-          {subtitle ? <div className="mt-1.5 text-[15px] font-medium text-muted-foreground sm:text-[16px]">{subtitle}</div> : null}
-          {socials ? <div className="mt-3 flex flex-wrap items-center gap-2">{socials}</div> : null}
+          {eyebrow ? <div className="mb-0.5 text-[11px] font-bold uppercase tracking-[0.08em] text-muted-foreground">{eyebrow}</div> : null}
+          <h1 className="m-0 truncate text-[22px] font-bold leading-tight sm:text-[26px]">{name}</h1>
+          {subtitle ? <div className="mt-1 text-[14px] font-medium text-muted-foreground sm:text-[15px]">{subtitle}</div> : null}
+          {socials ? <div className="mt-2.5 flex flex-wrap items-center gap-2">{socials}</div> : null}
         </div>
       </div>
       <div role="tablist" className="no-scrollbar flex touch-pan-x gap-1 overflow-x-auto overscroll-x-contain px-2 sm:px-5">
