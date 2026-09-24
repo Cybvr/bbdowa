@@ -6,14 +6,6 @@ import { Plus, Trash2 } from "lucide-react";
 import { firebaseDb } from "@/lib/firebase/client";
 import { EmptyState } from "@/components/dashboard/ui";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -54,7 +46,7 @@ function StatusBadge({ status, overdue }: { status: TaskStatus; overdue: boolean
   );
 }
 
-function NewTaskDialog({ creatorUid, creatorName, createdBy, createdByName, onCreated }: {
+export function NewTaskSheet({ creatorUid, creatorName, createdBy, createdByName, onCreated }: {
   creatorUid: string;
   creatorName: string;
   createdBy: string;
@@ -117,46 +109,47 @@ function NewTaskDialog({ creatorUid, creatorName, createdBy, createdByName, onCr
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex h-11 items-center gap-1.5 rounded-md bg-primary px-4 text-[14px] font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:h-9 sm:px-3 sm:text-[13px]"
+        className="inline-flex items-center gap-1 text-[13px] font-semibold text-primary transition hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
       >
-        <Plus aria-hidden="true" className="h-3.5 w-3.5" />
-        New task
+        <Plus aria-hidden="true" className="h-4 w-4" />New
       </button>
 
-      <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>New task</DialogTitle>
-            <DialogDescription>Assign work to {creatorName}.</DialogDescription>
-          </DialogHeader>
+      <Sheet open={open} onOpenChange={handleOpenChange}>
+        <SheetContent side="right" aria-describedby={undefined} className="[&>button]:bg-muted [&>button]:text-foreground [&>button]:opacity-100">
+          <SheetHeader className="border-b border-border">
+            <SheetTitle className="pr-8">New task</SheetTitle>
+            <SheetDescription>Assign work to {creatorName}.</SheetDescription>
+          </SheetHeader>
 
-          <form onSubmit={save} className="space-y-4">
-            <div className="space-y-1.5">
-              <label htmlFor="task-title" className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Title</label>
-              <Input id="task-title" value={title} onChange={(event) => setTitle(event.target.value)} disabled={busy} placeholder="What needs doing" required />
+          <form onSubmit={save} className="flex min-h-0 flex-1 flex-col">
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4">
+              <div className="space-y-1.5">
+                <label htmlFor="task-title" className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Title</label>
+                <Input id="task-title" value={title} onChange={(event) => setTitle(event.target.value)} disabled={busy} placeholder="What needs doing" required />
+              </div>
+              <div className="space-y-1.5">
+                <label htmlFor="task-description" className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Details</label>
+                <Textarea id="task-description" value={description} onChange={(event) => setDescription(event.target.value)} disabled={busy} placeholder="Brief, deliverables, links…" rows={4} />
+              </div>
+              <div className="space-y-1.5">
+                <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Due date</span>
+                <Input type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} disabled={busy} className="h-10" />
+              </div>
+              {error ? <p className="m-0 text-[13px] font-medium text-destructive">{error}</p> : null}
             </div>
-            <div className="space-y-1.5">
-              <label htmlFor="task-description" className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Details</label>
-              <Textarea id="task-description" value={description} onChange={(event) => setDescription(event.target.value)} disabled={busy} placeholder="Brief, deliverables, links…" rows={4} />
-            </div>
-            <div className="space-y-1.5">
-              <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Due date</span>
-              <Input type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} disabled={busy} className="h-10" />
-            </div>
-            {error ? <p className="m-0 text-[13px] font-medium text-destructive">{error}</p> : null}
-            <DialogFooter>
+            <div className="flex justify-end gap-2 border-t border-border px-4 py-3">
               <button type="button" onClick={() => setOpen(false)} disabled={busy} className="h-9 rounded-md border border-border px-4 text-[13px] font-semibold text-foreground transition hover:border-foreground disabled:opacity-50">Cancel</button>
               <button type="submit" disabled={!canSave} className="h-9 rounded-md bg-primary px-4 text-[13px] font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50">{busy ? "Creating…" : "Create task"}</button>
-            </DialogFooter>
+            </div>
           </form>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
     </>
   );
 }
 
 /** Tasks for one creator, shown on their profile page. Staff assign and manage them; the creator only moves them through status. */
-export function CreatorTasksPanel({ creatorUid, creatorName, viewer }: { creatorUid: string | null | undefined; creatorName: string; viewer: TaskViewer }) {
+export function CreatorTasksPanel({ creatorUid, creatorName, viewer, refreshSignal = 0 }: { creatorUid: string | null | undefined; creatorName: string; viewer: TaskViewer; refreshSignal?: number }) {
   const [tasks, setTasks] = React.useState<Task[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -190,7 +183,7 @@ export function CreatorTasksPanel({ creatorUid, creatorName, viewer }: { creator
     return () => {
       active = false;
     };
-  }, [creatorUid, load]);
+  }, [creatorUid, load, refreshSignal]);
 
   const reload = () => {
     if (creatorUid) void load(creatorUid);
@@ -244,12 +237,6 @@ export function CreatorTasksPanel({ creatorUid, creatorName, viewer }: { creator
   return (
     <div className="space-y-4">
       {error ? <p className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-[13px] text-primary">{error}</p> : null}
-
-      {viewer.isStaff ? (
-        <div className="flex justify-end">
-          <NewTaskDialog creatorUid={creatorUid} creatorName={creatorName} createdBy={viewer.uid} createdByName={viewer.name} onCreated={reload} />
-        </div>
-      ) : null}
 
       {tasks.length === 0 ? (
         <EmptyState

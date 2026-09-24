@@ -75,7 +75,7 @@ export function ShareCreatorDialog({ creatorName, path, className, showLabel = f
     <>
       <Button
         type="button"
-        variant="outline"
+        variant="ghost"
         size={showLabel ? "default" : "icon"}
         aria-label={`Share ${creatorName}`}
         title="Share"

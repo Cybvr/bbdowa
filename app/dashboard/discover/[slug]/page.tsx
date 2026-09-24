@@ -25,10 +25,10 @@ import { SocialIcon, type SocialIconName } from "@/components/social-icon";
 import { ShareCreatorDialog } from "@/components/share-creator-dialog";
 import { UserActions } from "@/components/user-actions";
 import { ProfilePageSkeleton } from "@/components/dashboard/loading-skeleton";
-import { MobileHeaderActions } from "@/components/dashboard/mobile-header";
+import { MobileHeaderActions, MobileHeaderTitle } from "@/components/dashboard/mobile-header";
 import { CreatorDocumentAddAction, CreatorDocumentsPanel } from "@/components/creator-documents-panel";
 import { CreatorHoursPanel } from "@/components/creator-hours-panel";
-import { CreatorTasksPanel } from "@/components/tasks-view";
+import { CreatorTasksPanel, NewTaskSheet } from "@/components/tasks-view";
 
 type CreatorPlatform = { label: string; href: string; Icon?: IconType; brand?: SocialIconName };
 
@@ -53,6 +53,7 @@ export default function CreatorDetailPage() {
   const isStaff = role === "admin" || role === "manager";
   const directory = useFirestoreUsers();
   const [tab, setTab] = useState<CreatorTab>("overview");
+  const [taskRefresh, setTaskRefresh] = useState(0);
 
   // Public collections — no auth needed, so every viewer can see this.
   const [clients, setClients] = useState<Client[]>([]);
@@ -126,16 +127,21 @@ export default function CreatorDetailPage() {
         avatarSrc={creator.profileImage}
         avatarAlt={creator.name}
         name={creator.name}
-        breadcrumb={<DetailBreadcrumb crumbs={[{ label: "Discover", href: "/dashboard/discover" }, { label: creator.name }]} />}
+        breadcrumb={
+          <div className="hidden nav:block">
+            <DetailBreadcrumb crumbs={[{ label: "Discover", href: "/dashboard/discover" }, { label: creator.name }]} />
+          </div>
+        }
         actions={
           <>
-            {/* Desktop: actions sit in the banner. On phones there's no banner
-             * hamburger anymore — the dashboard top bar is back, so edit and
-             * share become its CTAs and the creator's name its title. */}
+            {/* Desktop: actions sit in the banner. On phones the breadcrumb is
+             * hidden and the dashboard top bar carries the creator's name plus
+             * edit and share as its CTAs. */}
             <div className="hidden items-center gap-2 nav:flex">
               <UserActions user={creator} variant="creator" listHref="/dashboard/discover" categoryOptions={creatorCategoryOptions(categorySource)} iconOnly />
               <ShareCreatorDialog creatorName={creator.name} path={`/dashboard/discover/${creator.slug}`} />
             </div>
+            <MobileHeaderTitle title={creator.name} />
             <MobileHeaderActions>
               <UserActions user={creator} variant="creator" listHref="/dashboard/discover" categoryOptions={creatorCategoryOptions(categorySource)} iconOnly />
               <ShareCreatorDialog creatorName={creator.name} path={`/dashboard/discover/${creator.slug}`} />
@@ -285,11 +291,24 @@ export default function CreatorDetailPage() {
         )}
 
         {tab === "tasks" && canSeeTasks && (
-          <ProfileSection title="Tasks" variant="plain">
+          <ProfileSection
+            title="Tasks"
+            variant="plain"
+            action={isStaff && creator.uid ? (
+              <NewTaskSheet
+                creatorUid={creator.uid}
+                creatorName={creator.name}
+                createdBy={authUser?.uid ?? ""}
+                createdByName={authUser?.name ?? authUser?.email ?? null}
+                onCreated={() => setTaskRefresh((value) => value + 1)}
+              />
+            ) : undefined}
+          >
             <CreatorTasksPanel
               creatorUid={creator.uid}
               creatorName={creator.name}
               viewer={{ uid: authUser?.uid ?? "", name: authUser?.name ?? authUser?.email ?? null, isStaff }}
+              refreshSignal={taskRefresh}
             />
           </ProfileSection>
         )}

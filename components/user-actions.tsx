@@ -172,7 +172,7 @@ export function UserActions({
       trigger={iconOnly ? (open) => (
         <Button
           type="button"
-          variant="outline"
+          variant="ghost"
           size="icon"
           aria-label={`Edit ${user.name}`}
           title="Edit"

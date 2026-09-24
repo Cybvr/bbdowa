@@ -19,9 +19,9 @@ export function CreatorDocumentAddAction({ creatorUid }: { creatorUid: string | 
       href={`/admin/documents/new?assignee=${encodeURIComponent(creatorUid ?? "")}`}
       aria-label="New document"
       title="New document"
-      className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+      className="inline-flex items-center gap-1 text-[13px] font-semibold text-primary transition hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
     >
-      <Plus aria-hidden="true" className="h-5 w-5" />
+      <Plus aria-hidden="true" className="h-4 w-4" />New
     </Link>
   );
 }
