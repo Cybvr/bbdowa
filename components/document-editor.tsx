@@ -25,7 +25,14 @@ export function DocumentEditor({ document, user, users, initialAssignee }: { doc
   const canEdit = !document || document.status === "draft";
   const validContent = title.trim().length > 0 && richTextHasContent(body);
   // Anyone with a sign-in account can be sent a document to sign.
-  const people = users.filter((candidate): candidate is User & { uid: string } => Boolean(candidate.uid)).sort((a, b) => a.name.localeCompare(b.name));
+  const people: { uid: string; name: string }[] = users
+    .filter((candidate) => candidate.uid)
+    .map((candidate) => ({ uid: candidate.uid as string, name: candidate.name }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  // Always allow sharing with yourself, even if your own record has no uid yet.
+  if (user.uid && !people.some((person) => person.uid === user.uid)) {
+    people.unshift({ uid: user.uid, name: `${user.name ?? "Me"} (you)` });
+  }
   const selectedPerson = people.find((candidate) => candidate.uid === assignee);
 
   const write = async (send: boolean) => {

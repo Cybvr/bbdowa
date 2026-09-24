@@ -145,6 +145,12 @@ export default function TasksPage() {
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
+  // Always let the signed-in person assign to themselves, even if their own
+  // directory record has no uid stored yet.
+  if (user?.uid && !assignees.some((a) => a.uid === user.uid)) {
+    assignees.unshift({ uid: user.uid, name: `${user.name ?? user.email ?? "Me"} (you)`, slug: "", isCreator: false, hint: "" });
+  }
+
   const visible = tasks.filter((task) => {
     if (status !== "all" && task.status !== status) return false;
     return [task.title, task.description, task.assignedToName].filter(Boolean).join(" ").toLowerCase().includes(search.trim().toLowerCase());
