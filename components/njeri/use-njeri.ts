@@ -6,8 +6,8 @@ import { getAnswer } from "@/lib/njeri-assistant";
 import { readCampaignsFromFirestore, readClientsFromFirestore, readDocumentsForNjeri, readTasksForNjeri, readTimeEntriesForNjeri, readUserForNjeri, readUsersFromFirestore } from "@/lib/firebase/client-content";
 import { isCreatorUser } from "@/lib/users";
 import { elapsedMs } from "@/lib/time-tracking";
-import type { NjeriActionProposal, NjeriConversation, NjeriResponse, NjeriWorkspaceContext } from "@/lib/njeri-actions";
-import type { ChatMessage } from "./types";
+import type { NjeriActionProposal, NjeriResponse, NjeriWorkspaceContext } from "@/lib/njeri-actions";
+import type { ChatMessage, NjeriConversation } from "./types";
 import {
   STORAGE_CHANGE_EVENT,
   clearAllConversations,
