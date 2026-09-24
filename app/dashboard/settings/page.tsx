@@ -38,6 +38,12 @@ export default function SettingsPage() {
   const [linkedin, setLinkedin] = useState("");
   const [instagram, setInstagram] = useState("");
   const [craftNote, setCraftNote] = useState("");
+  const [terms, setTerms] = useState("");
+  const [followerCount, setFollowerCount] = useState("");
+  const [followerPlatform, setFollowerPlatform] = useState("");
+  const [gender, setGender] = useState("");
+  const [age, setAge] = useState("");
+  const [niche, setNiche] = useState("");
 
   const [busy, setBusy] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -61,6 +67,12 @@ export default function SettingsPage() {
     setLinkedin(own.linkedin ?? "");
     setInstagram(own.instagram ?? "");
     setCraftNote(own.craftNote ?? "");
+    setTerms(own.terms ?? "");
+    setFollowerCount(own.followerCount ?? "");
+    setFollowerPlatform(own.followerPlatform ?? "");
+    setGender(own.gender ?? "");
+    setAge(own.age != null ? String(own.age) : "");
+    setNiche(own.niche ?? "");
   }, [own]);
 
   if (authLoading || ownLoading) return <PageLoadingSkeleton titleWidth="w-32" />;
@@ -115,6 +127,12 @@ export default function SettingsPage() {
             linkedin: linkedin.trim() || null,
             instagram: instagram.trim() || null,
             craftNote: craftNote.trim(),
+            terms: terms.trim(),
+            followerCount: followerCount.trim() || null,
+            followerPlatform: followerPlatform.trim() || null,
+            gender: gender.trim() || null,
+            age: age.trim() ? Number(age) : null,
+            niche: niche.trim() || null,
           }
         : {};
       await updateDoc(doc(firebaseDb, "users", authUser.uid), { ...common, ...creatorFields });
@@ -184,6 +202,12 @@ export default function SettingsPage() {
             <TextField label="LinkedIn URL" value={linkedin} onChange={setLinkedin} />
             <TextField label="Instagram URL" value={instagram} onChange={setInstagram} />
             <TextareaField label="About" value={craftNote} onChange={setCraftNote} />
+            <TextField label="Terms" value={terms} onChange={setTerms} placeholder="e.g. 50% upfront" />
+            <TextField label="Follower count" value={followerCount} onChange={setFollowerCount} placeholder="e.g. 12k" />
+            <TextField label="Follower platform" value={followerPlatform} onChange={setFollowerPlatform} placeholder="e.g. Instagram" />
+            <TextField label="Gender" value={gender} onChange={setGender} />
+            <TextField label="Age" value={age} onChange={setAge} type="number" />
+            <TextField label="Niche" value={niche} onChange={setNiche} placeholder="e.g. Lifestyle and fashion" />
           </>
         ) : null}
 

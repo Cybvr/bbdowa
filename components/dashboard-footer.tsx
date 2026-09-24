@@ -6,7 +6,8 @@ import { NAV_ICON_SET } from "@/components/nav-icons";
 import { useOptionalAuth } from "@/components/auth-provider";
 import { NAV_ITEMS } from "@/lib/nav";
 
-const FOOTER_LABELS = ["Home", "Campaigns", "Njeri", "Tracker"];
+const FOOTER_LABELS = ["Home", "Campaigns", "Tracker", "Njeri", "My profile"];
+const FOOTER_LABEL_OVERRIDES: Record<string, string> = { "My profile": "Profile" };
 
 export function DashboardFooter({ hidden = false }: { hidden?: boolean }) {
   const pathname = usePathname();
@@ -50,7 +51,7 @@ export function DashboardFooter({ hidden = false }: { hidden?: boolean }) {
             }`}
           >
             {Icon ? <Icon className="h-6 w-6" /> : null}
-            <span className="truncate">{item.label}</span>
+            <span className="truncate">{FOOTER_LABEL_OVERRIDES[item.label] ?? item.label}</span>
           </Link>
         );
       })}
