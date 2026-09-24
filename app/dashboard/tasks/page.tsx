@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { CheckSquare } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { PageHeader } from "@/components/dashboard/ui";
@@ -23,9 +23,14 @@ export default function TasksPage() {
   const [status, setStatus] = React.useState<TaskStatus | "all">("all");
 
   const load = React.useCallback(async () => {
-    const snapshot = await getDocs(collection(firebaseDb, TASK_COLLECTION));
+    const uid = user?.uid;
+    if (!uid) {
+      setTasks([]);
+      return;
+    }
+    const snapshot = await getDocs(query(collection(firebaseDb, TASK_COLLECTION), where("assignedTo", "==", uid)));
     setTasks(sortTasks(snapshot.docs.map((task) => ({ id: task.id, ...(task.data() as Omit<Task, "id">) }))));
-  }, []);
+  }, [user?.uid]);
 
   React.useEffect(() => {
     let active = true;
@@ -44,7 +49,7 @@ export default function TasksPage() {
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-5 pb-16 pt-2 sm:px-8">
-      <PageHeader title="Tasks" description="Work assigned across the team." />
+      <PageHeader title="Tasks" description="Work assigned to you." />
       <FilterBar panelId="tasks-filter" search={search} onSearchChange={setSearch} searchPlaceholder="Search tasks" resultCount={plural(visible.length, "task")} />
       <div className="mb-4 flex flex-wrap gap-2" aria-label="Task status filter">
         {(["all", ...TASK_STATUSES] as const).map((value) => (
