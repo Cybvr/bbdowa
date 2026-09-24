@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { CreatorAvatarStack } from "@/components/creator-avatar-stack";
@@ -10,6 +10,10 @@ import { DashboardCardActions } from "@/components/dashboard-card";
 import { DashboardThumbnail } from "@/components/dashboard-thumbnail";
 import { DashboardListRow, DashboardSection } from "@/components/dashboard/section-list";
 import { CreatorCarousel } from "@/components/dashboard/creator-carousel";
+import { ItemCard, ItemCardList } from "@/components/dashboard/item-card";
+import { TaskStatusBadge } from "@/components/tasks-view";
+import { CheckSquare } from "lucide-react";
+import { TASK_COLLECTION, formatDate as formatTaskDate, isOverdue, sortTasks, type Task } from "@/lib/creator-tasks";
 import { useFirestoreUsers } from "@/lib/firebase/client-content";
 import { firebaseDb } from "@/lib/firebase/client";
 import type { BlogPost } from "@/lib/blog";
@@ -71,6 +75,25 @@ export default function HomePage() {
     error: null,
   });
 
+  const [myTasks, setMyTasks] = useState<Task[]>([]);
+
+  useEffect(() => {
+    const uid = user?.uid;
+    if (!uid) {
+      setMyTasks([]);
+      return;
+    }
+    let active = true;
+    getDocs(query(collection(firebaseDb, TASK_COLLECTION), where("assignedTo", "==", uid)))
+      .then((snapshot) => {
+        if (!active) return;
+        const rows = snapshot.docs.map((task) => ({ id: task.id, ...(task.data() as Omit<Task, "id">) }));
+        setMyTasks(sortTasks(rows).slice(0, 4));
+      })
+      .catch((cause) => console.error("Unable to load your tasks", cause));
+    return () => { active = false; };
+  }, [user?.uid]);
+
   const reloadContent = async () => {
     const { campaigns, clients, posts } = await readDashboardContent();
     setContent({ campaigns, clients, posts, loading: false, error: null });
@@ -110,6 +133,23 @@ export default function HomePage() {
         <h1 className="m-0 text-page-title font-bold leading-tight tracking-tight sm:text-page-title-lg">Welcome back, {name}.</h1>
         <p className="mb-0 mt-2 text-body text-muted-foreground">Here’s what’s happening across the agency.</p>
       </header>
+
+      {myTasks.length ? (
+        <section className="mt-6">
+          <h2 className="m-0 mb-1 text-eyebrow font-semibold uppercase tracking-[0.08em] text-muted-foreground">Your tasks</h2>
+          <ItemCardList>
+            {myTasks.map((task) => (
+              <ItemCard
+                key={task.id}
+                icon={<CheckSquare className="h-5 w-5" aria-hidden="true" />}
+                title={task.title}
+                subtitle={task.dueDate ? `Due ${formatTaskDate(task.dueDate)}` : "No due date"}
+                trailing={<TaskStatusBadge status={task.status} overdue={isOverdue(task)} />}
+              />
+            ))}
+          </ItemCardList>
+        </section>
+      ) : null}
 
       {creatorsError ? <p className="mt-10 text-sm text-muted-foreground">{creatorsError}</p> : null}
       {creatorsLoading ? <CreatorRailSkeleton /> : null}

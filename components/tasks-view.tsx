@@ -2,15 +2,15 @@
 
 import * as React from "react";
 import { addDoc, collection, deleteDoc, doc, getDocs, query, updateDoc, where } from "firebase/firestore";
-import { Plus, Trash2 } from "lucide-react";
+import { CheckSquare, Plus, Trash2 } from "lucide-react";
 import { firebaseDb } from "@/lib/firebase/client";
 import { EmptyState } from "@/components/dashboard/ui";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { ItemCard, ItemCardList } from "@/components/dashboard/item-card";
 import {
   TASK_COLLECTION,
   TASK_STATUSES,
@@ -25,7 +25,7 @@ import {
 /** Who's looking at this creator's tasks: staff manage them, the creator only updates status. */
 export type TaskViewer = { uid: string; name: string | null; isStaff: boolean };
 
-function StatusBadge({ status, overdue }: { status: TaskStatus; overdue: boolean }) {
+export function TaskStatusBadge({ status, overdue }: { status: TaskStatus; overdue: boolean }) {
   if (overdue) {
     return (
       <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-primary">
@@ -244,30 +244,18 @@ export function CreatorTasksPanel({ creatorUid, creatorName, viewer, refreshSign
           description={viewer.isStaff ? `Create a task and assign it to ${creatorName}.` : `Tasks assigned to ${creatorName} will show up here.`}
         />
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-border bg-background">
-          <Table className="min-w-[560px] w-full border-collapse">
-            <TableHeader>
-              <TableRow className="bg-muted/40">
-                <TableHead className="px-4 py-3">Task</TableHead>
-                <TableHead className="px-4 py-3">Due</TableHead>
-                <TableHead className="px-4 py-3">Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {tasks.map((task) => (
-                <TableRow
-                  key={task.id}
-                  onClick={() => setSelectedId(task.id)}
-                  className="cursor-pointer"
-                >
-                  <TableCell className="max-w-[320px] truncate whitespace-nowrap px-4 py-3 font-semibold">{task.title}</TableCell>
-                  <TableCell className="whitespace-nowrap px-4 py-3 text-muted-foreground">{task.dueDate ? formatDate(task.dueDate) : "—"}</TableCell>
-                  <TableCell className="whitespace-nowrap px-4 py-3"><StatusBadge status={task.status} overdue={isOverdue(task)} /></TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+        <ItemCardList>
+          {tasks.map((task) => (
+            <ItemCard
+              key={task.id}
+              onClick={() => setSelectedId(task.id)}
+              icon={<CheckSquare className="h-5 w-5" aria-hidden="true" />}
+              title={task.title}
+              subtitle={task.dueDate ? `Due ${formatDate(task.dueDate)}` : "No due date"}
+              trailing={<TaskStatusBadge status={task.status} overdue={isOverdue(task)} />}
+            />
+          ))}
+        </ItemCardList>
       )}
 
       <Sheet open={Boolean(selected)} onOpenChange={(open) => { if (!open) setSelectedId(null); }}>
@@ -285,7 +273,7 @@ export function CreatorTasksPanel({ creatorUid, creatorName, viewer, refreshSign
                 <div>
                   <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Status</span>
                   <div className="flex items-center gap-3">
-                    <StatusBadge status={selected.status} overdue={isOverdue(selected)} />
+                    <TaskStatusBadge status={selected.status} overdue={isOverdue(selected)} />
                     {canEdit ? (
                       <Select value={selected.status} onValueChange={(value) => void setStatus(selected, value as TaskStatus)}>
                         <SelectTrigger disabled={busyId === selected.id} className="h-9 w-[160px]"><SelectValue /></SelectTrigger>

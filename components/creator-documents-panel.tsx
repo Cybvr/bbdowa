@@ -2,14 +2,13 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { FileText, Plus } from "lucide-react";
 import { readDocumentsForAssignee } from "@/lib/firebase/client-content";
 import { formatDocumentDate, sortDocuments, type AgencyDocument } from "@/lib/documents";
 import { DocumentStatus } from "@/components/document-status";
-import { DocumentSignDialog } from "@/components/document-sign-dialog";
 import { EmptyState } from "@/components/dashboard/ui";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ItemCard, ItemCardList } from "@/components/dashboard/item-card";
 
 export type DocumentViewer = { uid: string | null; name: string | null; isStaff: boolean; isAdmin: boolean; canSign: boolean };
 
@@ -44,37 +43,20 @@ export function CreatorDocumentsPanel({ creatorUid, creatorSlug, creatorName, vi
     <div>
       {error && <p className="text-[13px] text-destructive">{error}</p>}
       {documents.length ? (
-        <div className="overflow-hidden rounded-xl border border-border bg-background">
-          <Table className="min-w-[620px]">
-            <TableHeader>
-              <TableRow className="bg-muted/30 hover:bg-muted/30">
-                <TableHead className="px-4">Document</TableHead>
-                <TableHead className="px-4">Status</TableHead>
-                <TableHead className="px-4">Activity</TableHead>
-                <TableHead className="px-4 text-right"><span className="sr-only">Action</span></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {documents.map((document) => {
-                const canSign = document.status === "pending_signature" && viewer.canSign && viewer.uid === document.assignedTo;
-                return (
-                  <TableRow key={document.id}>
-                    <TableCell className="max-w-[280px] px-4 py-3">
-                      <Link href={`/dashboard/documents/${document.id}`} className="block truncate font-semibold text-foreground hover:text-primary" title={document.title}>{document.title}</Link>
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap px-4 py-3"><DocumentStatus status={document.status} /></TableCell>
-                    <TableCell className="whitespace-nowrap px-4 py-3 text-muted-foreground">
-                      {document.status === "signed" ? `Signed ${formatDocumentDate(document.signedAt)} as ${document.signedName}` : `Sent ${formatDocumentDate(document.createdAt)} by ${document.createdByName ?? "staff"}`}
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap px-4 py-3 text-right">
-                      {canSign && <DocumentSignDialog document={document} defaultName={viewer.name ?? ""} onSigned={() => void load()} />}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
+        <ItemCardList>
+          {documents.map((document) => (
+            <ItemCard
+              key={document.id}
+              href={`/dashboard/documents/${document.id}`}
+              icon={<FileText className="h-5 w-5" aria-hidden="true" />}
+              title={document.title}
+              subtitle={document.status === "signed"
+                ? `Signed ${formatDocumentDate(document.signedAt)} as ${document.signedName}`
+                : `Sent ${formatDocumentDate(document.createdAt)} by ${document.createdByName ?? "staff"}`}
+              trailing={<DocumentStatus status={document.status} />}
+            />
+          ))}
+        </ItemCardList>
       ) : (
         <EmptyState title="No documents yet" description={viewer.isStaff ? `Create a document for ${creatorName}.` : "Documents sent to you will appear here."} />
       )}
