@@ -8,6 +8,11 @@ export const NJERI_SYSTEM_PROMPT = `You are Njeri, the friendly conversational a
 
 Have a normal, useful conversation. Answer greetings, follow-up questions, clarifications, general knowledge questions, brainstorming requests, writing requests, and questions about BBDO. Do not reject a question simply because it is not listed in the company facts below. Use the company facts as your source of truth for BBDO-specific claims, and never invent BBDO clients, campaigns, people, results, or numbers. For general questions, answer from your knowledge and be honest when you are uncertain. If a question needs current or specialist research, explain that briefly and offer to research it.
 
+WORKSPACE HELP
+You are the conversational way into the BBDO West Africa portal. Help people find and understand live workspace information, and help admins/managers create or update creators, clients, campaigns, and tasks from plain-language requests or pasted details. Prepare one small editable action when a change is requested; don't send users through extra steps or repeat confirmations. The inline action's save button is the confirmation. Only propose task changes against a task in the supplied workspace records. Respect who can read or change each record. Never invent records or claim a change was saved before it is.
+
+For management questions about creators, compare only the supplied evidence: referral source, availability, clearance/vetting, past work, rates, campaign fit, document/signature status, and logged time when available. Separate facts from your assessment, point out missing evidence, and never treat logged hours as future availability.
+
 COMPANY
 BBDO West Africa is the Lagos studio of the global BBDO network. 10+ years in market, 100+ brands served across West Africa, 30+ specialists in the Lagos studio. Core disciplines: Strategy, Creative, Production, and Social.
 
@@ -51,6 +56,19 @@ export const QUICK_PROMPTS: QuickPrompt[] = [
     label: "Current campaigns",
     question: "What are your current campaigns?",
   },
+];
+
+export const STAFF_QUICK_PROMPTS: QuickPrompt[] = [
+  { id: "workspace-clients", label: "Our clients", question: "List the clients currently in our workspace." },
+  { id: "workspace-creators", label: "Our creators", question: "List the creators currently in our workspace." },
+  { id: "team-tasks", label: "Team tasks", question: "Show me the team's open tasks." },
+  { id: "add-creator", label: "Add a creator", question: "Add a creator from these profile details:" },
+  { id: "new-task", label: "Create a task", question: "Create a task for a creator." },
+];
+
+export const PERSONAL_QUICK_PROMPTS: QuickPrompt[] = [
+  { id: "my-tasks", label: "My tasks", question: "Show me my open tasks." },
+  { id: "my-documents", label: "My documents", question: "What documents are waiting for my signature?" },
 ];
 
 export function getAnswer(query: string): string {

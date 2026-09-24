@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { Send, Copy, Check, Plus, Clock } from "lucide-react";
-import { QUICK_PROMPTS } from "@/lib/njeri-assistant";
+import { PERSONAL_QUICK_PROMPTS, QUICK_PROMPTS, STAFF_QUICK_PROMPTS } from "@/lib/njeri-assistant";
 import { FormattedContent } from "./njeri-formatted-content";
 import { ActionCard } from "./njeri-action-card";
 import type { ChatMessage, NjeriActionProposal, NjeriConversation } from "./types";
@@ -16,6 +16,7 @@ interface NjeriChatViewProps {
   onToggleHistory?: () => void;
   headerActions?: React.ReactNode;
   mode?: "page" | "widget";
+  canManageRecords?: boolean;
   className?: string;
 }
 
@@ -28,6 +29,7 @@ export function NjeriChatView({
   onToggleHistory,
   headerActions,
   mode = "page",
+  canManageRecords = false,
   className = "",
 }: NjeriChatViewProps) {
   const [input, setInput] = useState("");
@@ -92,6 +94,7 @@ export function NjeriChatView({
   }, [input]);
 
   const isPageMode = mode === "page";
+  const prompts = canManageRecords ? STAFF_QUICK_PROMPTS : [...QUICK_PROMPTS, ...PERSONAL_QUICK_PROMPTS];
 
   return (
     <div className={`flex flex-col bg-background h-full ${className}`}>
@@ -187,10 +190,10 @@ export function NjeriChatView({
         {messages.length <= 2 && (
           <div className={`pt-3 ${isPageMode ? "mt-4" : ""}`}>
             <div className="mb-2.5 text-[11px] font-mono font-medium uppercase tracking-wider text-muted-foreground">
-              Suggested questions
+              Try asking
             </div>
             <div className="flex flex-wrap gap-2">
-              {QUICK_PROMPTS.map((prompt) => (
+              {prompts.map((prompt) => (
                 <button
                   key={prompt.id}
                   type="button"
@@ -222,7 +225,7 @@ export function NjeriChatView({
               onChange={(e) => setInput(e.target.value)}
               onInput={(e) => resizeTextarea(e.currentTarget)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask about company, campaigns, creators, clients..."
+              placeholder="Ask about creators, campaigns, tasks, contracts, or work..."
               aria-label="Ask Njeri a question"
               disabled={isTyping}
               className={`w-full resize-none overflow-hidden text-sm text-foreground outline-none transition placeholder:text-muted-foreground disabled:opacity-50 ${isPageMode ? "rounded-lg border-0 bg-transparent px-3 py-2.5 focus:ring-0" : "rounded-xl border border-input bg-background p-3 focus:border-primary focus:ring-1 focus:ring-primary/40"}`}

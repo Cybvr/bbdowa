@@ -14,6 +14,7 @@ export function NjeriWidget() {
   const {
     activeConversation,
     isTyping,
+    canManageRecords,
     sendMessage,
     confirmAction,
     newChat,
@@ -58,6 +59,7 @@ export function NjeriWidget() {
         mode="widget"
         conversation={activeConversation}
         isTyping={isTyping}
+        canManageRecords={canManageRecords}
         onSendMessage={sendMessage}
         onConfirmAction={confirmAction}
         headerActions={

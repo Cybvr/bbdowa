@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, limit, orderBy, query, where } from "firebase/firestore";
 import { firebaseDb } from "@/lib/firebase/client";
 import { useAuth } from "@/components/auth-provider";
 import type { BlogPost } from "@/lib/blog";
@@ -22,6 +22,13 @@ export function readUsersFromFirestore() {
   return readCollection<User>("users").then((users) => users.map(normalizeUser));
 }
 
+export async function readUserForNjeri(uid: string) {
+  const direct = await getDoc(doc(firebaseDb, "users", uid));
+  if (direct.exists()) return normalizeUser(direct.data() as User);
+  const match = (await getDocs(query(collection(firebaseDb, "users"), where("uid", "==", uid), limit(1)))).docs[0];
+  return match ? normalizeUser(match.data() as User) : null;
+}
+
 export function readCampaignsFromFirestore() {
   return readCollection<Campaign>("campaigns");
 }
@@ -40,6 +47,29 @@ export function readTimeEntriesForUser(uid: string) {
   if (!uid) return Promise.resolve<ActivityEntry[]>([]);
   return getDocs(query(collection(firebaseDb, ACTIVITY_COLLECTION), where("uid", "==", uid))).then((snapshot) =>
     snapshot.docs.map((document) => ({ id: document.id, ...(document.data() as Omit<ActivityEntry, "id">) })),
+  );
+}
+
+export function readTasksForNjeri(uid: string, isStaff: boolean) {
+  const tasksQuery = isStaff
+    ? collection(firebaseDb, TASK_COLLECTION)
+    : query(collection(firebaseDb, TASK_COLLECTION), where("assignedTo", "==", uid));
+  return getDocs(tasksQuery).then((snapshot) =>
+    snapshot.docs.map((task) => ({ id: task.id, ...(task.data() as Omit<Task, "id">) })),
+  );
+}
+
+export function readDocumentsForNjeri(uid: string, slug: string | null | undefined, isStaff: boolean) {
+  if (!isStaff) return readDocumentsForAssignee(uid, slug);
+  return getDocs(collection(firebaseDb, DOCUMENT_COLLECTION)).then((snapshot) =>
+    snapshot.docs.map((document) => ({ id: document.id, ...(document.data() as Omit<AgencyDocument, "id">) })),
+  );
+}
+
+export function readTimeEntriesForNjeri(uid: string, isStaff: boolean) {
+  if (!isStaff) return readTimeEntriesForUser(uid);
+  return getDocs(query(collection(firebaseDb, ACTIVITY_COLLECTION), orderBy("startedAt", "desc"), limit(500))).then((snapshot) =>
+    snapshot.docs.map((entry) => ({ id: entry.id, ...(entry.data() as Omit<ActivityEntry, "id">) })),
   );
 }
 

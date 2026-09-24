@@ -7,7 +7,7 @@ export const STORAGE_CHANGE_EVENT = "njeri:storage-change";
 export const DEFAULT_WELCOME_MESSAGE: ChatMessage = {
   id: "welcome-1",
   role: "assistant",
-  text: "Hello! I'm Njeri, your guide to BBDO West Africa. You can ask me simple questions about our company, our projects, or current campaigns.",
+  text: "Hi, I’m Njeri. Ask me about our creators, clients, campaigns, tasks, documents, or tracked work. Admins and managers can also ask me to update the portal or add something from pasted details.",
   timestamp: Date.now(),
 };
 
@@ -22,7 +22,14 @@ export function loadConversations(): NjeriConversation[] {
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+    return parsed
+      .map((conversation) => ({
+        ...conversation,
+        messages: Array.isArray(conversation.messages)
+          ? conversation.messages.map((message: ChatMessage) => message.id === "welcome-1" ? { ...message, text: DEFAULT_WELCOME_MESSAGE.text } : message)
+          : [],
+      }))
+      .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
   } catch (error) {
     console.error("Failed to load Njeri conversations from localStorage:", error);
     return [];

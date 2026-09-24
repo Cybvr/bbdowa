@@ -11,6 +11,7 @@ export default function NjeriPage() {
     activeConversation,
     activeId,
     isTyping,
+    canManageRecords,
     selectConversation,
     newChat,
     deleteChat,
@@ -73,6 +74,7 @@ export default function NjeriPage() {
           mode="page"
           conversation={activeConversation}
           isTyping={isTyping}
+          canManageRecords={canManageRecords}
           onSendMessage={sendMessage}
           onConfirmAction={confirmAction}
           onNewChat={() => newChat()}
