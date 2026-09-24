@@ -148,12 +148,105 @@ export function NewTaskSheet({ creatorUid, creatorName, createdBy, createdByName
   );
 }
 
+/** Right-side sheet showing one task's details. Status can be changed when
+ * `canEdit`; staff (`canDelete`) can delete. Calls `onChanged` after a write. */
+export function TaskDetailSheet({ task, onOpenChange, canEdit, canDelete, onChanged }: {
+  task: Task | null;
+  onOpenChange: (open: boolean) => void;
+  canEdit: boolean;
+  canDelete: boolean;
+  onChanged: () => void;
+}) {
+  const [busy, setBusy] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const setStatus = async (status: TaskStatus) => {
+    if (!task) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await updateDoc(doc(firebaseDb, TASK_COLLECTION, task.id), { status, updatedAt: new Date().toISOString() });
+      onChanged();
+    } catch (cause) {
+      console.error("Unable to update task", cause);
+      setError("Couldn’t update that task. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const removeTask = async () => {
+    if (!task || !window.confirm("Delete this task? This can’t be undone.")) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await deleteDoc(doc(firebaseDb, TASK_COLLECTION, task.id));
+      onOpenChange(false);
+      onChanged();
+    } catch (cause) {
+      console.error("Unable to delete task", cause);
+      setError("Couldn’t delete that task. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Sheet open={Boolean(task)} onOpenChange={onOpenChange}>
+      <SheetContent side="right" aria-describedby={undefined} className="[&>button]:bg-muted [&>button]:text-foreground [&>button]:opacity-100">
+        {task ? (
+          <>
+            <SheetHeader className="border-b border-border">
+              <SheetTitle className="pr-8">{task.title}</SheetTitle>
+              <SheetDescription>
+                {task.dueDate ? `Due ${formatDate(task.dueDate)}` : "No due date"}
+                {task.assignedToName ? ` · For ${task.assignedToName}` : ""}
+                {task.createdByName ? ` · From ${task.createdByName}` : ""}
+              </SheetDescription>
+            </SheetHeader>
+            <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-4 py-4">
+              {error ? <p className="m-0 text-[13px] font-medium text-destructive">{error}</p> : null}
+              <div>
+                <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Status</span>
+                <div className="flex items-center gap-3">
+                  <TaskStatusBadge status={task.status} overdue={isOverdue(task)} />
+                  {canEdit ? (
+                    <Select value={task.status} onValueChange={(value) => void setStatus(value as TaskStatus)}>
+                      <SelectTrigger disabled={busy} className="h-9 w-[160px]"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {TASK_STATUSES.map((status) => <SelectItem key={status} value={status}>{TASK_STATUS_LABELS[status]}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  ) : null}
+                </div>
+              </div>
+              <div>
+                <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Details</span>
+                <p className="m-0 whitespace-pre-wrap text-[14px] leading-[1.55] text-foreground">{task.description || "No details added."}</p>
+              </div>
+              {canDelete ? (
+                <button
+                  type="button"
+                  onClick={() => void removeTask()}
+                  disabled={busy}
+                  className="inline-flex h-9 items-center gap-1.5 rounded-md border border-border px-3 text-[13px] font-semibold text-destructive transition hover:border-destructive disabled:opacity-50"
+                >
+                  <Trash2 className="h-4 w-4" aria-hidden="true" />Delete task
+                </button>
+              ) : null}
+            </div>
+          </>
+        ) : null}
+      </SheetContent>
+    </Sheet>
+  );
+}
+
 /** Tasks for one creator, shown on their profile page. Staff assign and manage them; the creator only moves them through status. */
 export function CreatorTasksPanel({ creatorUid, creatorName, viewer, refreshSignal = 0 }: { creatorUid: string | null | undefined; creatorName: string; viewer: TaskViewer; refreshSignal?: number }) {
   const [tasks, setTasks] = React.useState<Task[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-  const [busyId, setBusyId] = React.useState<string | null>(null);
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const selected = tasks.find((task) => task.id === selectedId) ?? null;
   // Only staff or the assigned creator can change a task; everyone else views it read-only.
@@ -187,36 +280,6 @@ export function CreatorTasksPanel({ creatorUid, creatorName, viewer, refreshSign
 
   const reload = () => {
     if (creatorUid) void load(creatorUid);
-  };
-
-  const setStatus = async (task: Task, status: TaskStatus) => {
-    setBusyId(task.id);
-    setError(null);
-    try {
-      await updateDoc(doc(firebaseDb, TASK_COLLECTION, task.id), { status, updatedAt: new Date().toISOString() });
-      reload();
-    } catch (cause) {
-      console.error("Unable to update task", cause);
-      setError("Couldn’t update that task. Try again.");
-    } finally {
-      setBusyId(null);
-    }
-  };
-
-  const removeTask = async (task: Task) => {
-    if (!window.confirm("Delete this task? This can’t be undone.")) return;
-    setBusyId(task.id);
-    setError(null);
-    try {
-      await deleteDoc(doc(firebaseDb, TASK_COLLECTION, task.id));
-      setSelectedId(null);
-      reload();
-    } catch (cause) {
-      console.error("Unable to delete task", cause);
-      setError("Couldn’t delete that task. Try again.");
-    } finally {
-      setBusyId(null);
-    }
   };
 
   if (!creatorUid) {
@@ -258,51 +321,13 @@ export function CreatorTasksPanel({ creatorUid, creatorName, viewer, refreshSign
         </ItemCardList>
       )}
 
-      <Sheet open={Boolean(selected)} onOpenChange={(open) => { if (!open) setSelectedId(null); }}>
-        <SheetContent side="right" aria-describedby={undefined} className="[&>button]:bg-muted [&>button]:text-foreground [&>button]:opacity-100">
-          {selected ? (
-            <>
-              <SheetHeader className="border-b border-border">
-                <SheetTitle className="pr-8">{selected.title}</SheetTitle>
-                <SheetDescription>
-                  {selected.dueDate ? `Due ${formatDate(selected.dueDate)}` : "No due date"}
-                  {selected.createdByName ? ` · From ${selected.createdByName}` : ""}
-                </SheetDescription>
-              </SheetHeader>
-              <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-4 py-4">
-                <div>
-                  <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Status</span>
-                  <div className="flex items-center gap-3">
-                    <TaskStatusBadge status={selected.status} overdue={isOverdue(selected)} />
-                    {canEdit ? (
-                      <Select value={selected.status} onValueChange={(value) => void setStatus(selected, value as TaskStatus)}>
-                        <SelectTrigger disabled={busyId === selected.id} className="h-9 w-[160px]"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {TASK_STATUSES.map((status) => <SelectItem key={status} value={status}>{TASK_STATUS_LABELS[status]}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    ) : null}
-                  </div>
-                </div>
-                <div>
-                  <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Details</span>
-                  <p className="m-0 whitespace-pre-wrap text-[14px] leading-[1.55] text-foreground">{selected.description || "No details added."}</p>
-                </div>
-                {viewer.isStaff ? (
-                  <button
-                    type="button"
-                    onClick={() => void removeTask(selected)}
-                    disabled={busyId === selected.id}
-                    className="inline-flex h-9 items-center gap-1.5 rounded-md border border-border px-3 text-[13px] font-semibold text-destructive transition hover:border-destructive disabled:opacity-50"
-                  >
-                    <Trash2 className="h-4 w-4" aria-hidden="true" />Delete task
-                  </button>
-                ) : null}
-              </div>
-            </>
-          ) : null}
-        </SheetContent>
-      </Sheet>
+      <TaskDetailSheet
+        task={selected}
+        onOpenChange={(open) => { if (!open) setSelectedId(null); }}
+        canEdit={canEdit}
+        canDelete={viewer.isStaff}
+        onChanged={reload}
+      />
     </div>
   );
 }

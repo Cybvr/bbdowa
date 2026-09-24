@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { collection, getDocs, query, where } from "firebase/firestore";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { CreatorAvatarStack } from "@/components/creator-avatar-stack";
 import { DashboardCardActions } from "@/components/dashboard-card";
@@ -11,7 +11,7 @@ import { DashboardThumbnail } from "@/components/dashboard-thumbnail";
 import { DashboardListRow, DashboardSection } from "@/components/dashboard/section-list";
 import { CreatorCarousel } from "@/components/dashboard/creator-carousel";
 import { ItemCard, ItemCardList } from "@/components/dashboard/item-card";
-import { TaskStatusBadge } from "@/components/tasks-view";
+import { TaskDetailSheet, TaskStatusBadge } from "@/components/tasks-view";
 import { CheckSquare } from "lucide-react";
 import { TASK_COLLECTION, formatDate as formatTaskDate, isOverdue, sortTasks, type Task } from "@/lib/creator-tasks";
 import { useFirestoreUsers } from "@/lib/firebase/client-content";
@@ -76,23 +76,24 @@ export default function HomePage() {
   });
 
   const [myTasks, setMyTasks] = useState<Task[]>([]);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
-  useEffect(() => {
+  const loadMyTasks = useCallback(async () => {
     const uid = user?.uid;
     if (!uid) {
       setMyTasks([]);
       return;
     }
-    let active = true;
-    getDocs(query(collection(firebaseDb, TASK_COLLECTION), where("assignedTo", "==", uid)))
-      .then((snapshot) => {
-        if (!active) return;
-        const rows = snapshot.docs.map((task) => ({ id: task.id, ...(task.data() as Omit<Task, "id">) }));
-        setMyTasks(sortTasks(rows).slice(0, 4));
-      })
-      .catch((cause) => console.error("Unable to load your tasks", cause));
-    return () => { active = false; };
+    const snapshot = await getDocs(query(collection(firebaseDb, TASK_COLLECTION), where("assignedTo", "==", uid)));
+    const rows = snapshot.docs.map((task) => ({ id: task.id, ...(task.data() as Omit<Task, "id">) }));
+    setMyTasks(sortTasks(rows).slice(0, 4));
   }, [user?.uid]);
+
+  useEffect(() => {
+    void loadMyTasks().catch((cause) => console.error("Unable to load your tasks", cause));
+  }, [loadMyTasks]);
+
+  const selectedTask = myTasks.find((task) => task.id === selectedTaskId) ?? null;
 
   const reloadContent = async () => {
     const { campaigns, clients, posts } = await readDashboardContent();
@@ -141,6 +142,7 @@ export default function HomePage() {
             {myTasks.map((task) => (
               <ItemCard
                 key={task.id}
+                onClick={() => setSelectedTaskId(task.id)}
                 icon={<CheckSquare className="h-5 w-5" aria-hidden="true" />}
                 title={task.title}
                 subtitle={task.dueDate ? `Due ${formatTaskDate(task.dueDate)}` : "No due date"}
@@ -150,6 +152,14 @@ export default function HomePage() {
           </ItemCardList>
         </section>
       ) : null}
+
+      <TaskDetailSheet
+        task={selectedTask}
+        onOpenChange={(open) => { if (!open) setSelectedTaskId(null); }}
+        canEdit={Boolean(selectedTask)}
+        canDelete={false}
+        onChanged={() => void loadMyTasks()}
+      />
 
       {creatorsError ? <p className="mt-10 text-sm text-muted-foreground">{creatorsError}</p> : null}
       {creatorsLoading ? <CreatorRailSkeleton /> : null}
