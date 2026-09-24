@@ -102,14 +102,17 @@ export function DocumentEditor({ document, user, users, initialAssignee }: { doc
   return <div className="space-y-6">
     <MobileHeaderTitle title={title.trim() || (document ? "Edit document" : "New document")} />
     <MobileHeaderActions>{actionButtons}</MobileHeaderActions>
-    <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
+    {/* On phones the title and actions live in the dashboard top bar; this
+     * header is desktop only. */}
+    <header className="hidden flex-wrap items-center justify-between gap-3 border-b border-border pb-4 nav:flex">
       <div className="min-w-0 flex-1">
         <input aria-label="Document title" value={title} onChange={(event) => setTitle(event.target.value)} disabled={!canEdit} placeholder="Untitled document" className="w-full bg-transparent text-[22px] font-bold outline-none placeholder:text-muted-foreground disabled:opacity-70" />
         {document && <div className="mt-2"><DocumentStatus status={document.status} /></div>}
       </div>
-      {/* Desktop actions; on phones these live in the dashboard top bar. */}
-      <div className="hidden items-center gap-2 nav:flex">{actionButtons}</div>
+      <div className="flex items-center gap-2">{actionButtons}</div>
     </header>
+    {/* Phones: the title lives in the dashboard top bar; keep just the status here. */}
+    {document && <div className="nav:hidden"><DocumentStatus status={document.status} /></div>}
     {!canEdit && <p className="text-[13px] text-muted-foreground">This document was sent for signature and its text is locked. Duplicate it to make changes.</p>}
     {error && <p className="text-[13px] text-destructive">{error}</p>}
     {canEdit ? <RichTextEditor hideLabel label="Document text" value={body} onChange={setBody} placeholder="Write the document text…" /> : <div className="rounded-xl border border-border bg-background p-5 text-[14px] leading-relaxed"><RichTextContent value={body} /></div>}
