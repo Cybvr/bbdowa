@@ -65,7 +65,7 @@ function campaignCreators(campaign: Campaign, clients: Client[], users: User[]):
 }
 
 export default function HomePage() {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const { users, loading: creatorsLoading, error: creatorsError } = useFirestoreUsers();
   const [content, setContent] = useState<{ campaigns: Campaign[]; clients: Client[]; posts: BlogPost[]; loading: boolean; error: string | null }>({
     campaigns: [],
@@ -136,7 +136,7 @@ export default function HomePage() {
       </header>
 
       {myTasks.length ? (
-        <section className="mt-6">
+        <section className="mt-6 max-w-3xl">
           <h2 className="m-0 mb-1 text-eyebrow font-semibold uppercase tracking-[0.08em] text-muted-foreground">Your tasks</h2>
           <ItemCardList>
             {myTasks.map((task) => (
@@ -145,7 +145,7 @@ export default function HomePage() {
                 onClick={() => setSelectedTaskId(task.id)}
                 icon={<CheckSquare className="h-5 w-5" aria-hidden="true" />}
                 title={task.title}
-                subtitle={task.dueDate ? `Due ${formatTaskDate(task.dueDate)}` : "No due date"}
+                subtitle={task.dueDate ? `Due ${formatTaskDate(task.dueDate)}` : undefined}
                 trailing={<TaskStatusBadge status={task.status} overdue={isOverdue(task)} />}
               />
             ))}
@@ -157,7 +157,8 @@ export default function HomePage() {
         task={selectedTask}
         onOpenChange={(open) => { if (!open) setSelectedTaskId(null); }}
         canEdit={Boolean(selectedTask)}
-        canDelete={false}
+        canDelete={Boolean(selectedTask && ((role === "admin" || role === "manager") || selectedTask.assignedTo === user?.uid))}
+        assignees={role === "admin" || role === "manager" ? users.flatMap((candidate) => candidate.uid ? [{ uid: candidate.uid, name: candidate.name }] : []) : undefined}
         onChanged={() => void loadMyTasks()}
       />
 

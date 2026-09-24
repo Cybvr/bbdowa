@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ItemCard, ItemCardList } from "@/components/dashboard/item-card";
+import { TaskClientCampaignFields, useTaskLinkOptions } from "@/components/task-link-fields";
 import {
   TASK_COLLECTION,
   TASK_STATUSES,
@@ -22,7 +23,7 @@ import {
   type TaskStatus,
 } from "@/lib/creator-tasks";
 
-/** Who's looking at this creator's tasks: staff manage them, the creator only updates status. */
+/** Who's looking at this creator's tasks. Staff and the assigned creator can edit task details. */
 export type TaskViewer = { uid: string; name: string | null; isStaff: boolean };
 
 export function TaskStatusBadge({ status, overdue }: { status: TaskStatus; overdue: boolean }) {
@@ -57,13 +58,18 @@ export function NewTaskSheet({ creatorUid, creatorName, createdBy, createdByName
   const [title, setTitle] = React.useState("");
   const [description, setDescription] = React.useState("");
   const [dueDate, setDueDate] = React.useState("");
+  const [clientId, setClientId] = React.useState<string | null>(null);
+  const [campaignId, setCampaignId] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const { clients, campaigns, loading: linksLoading } = useTaskLinkOptions();
 
   const reset = () => {
     setTitle("");
     setDescription("");
     setDueDate("");
+    setClientId(null);
+    setCampaignId(null);
     setError(null);
   };
 
@@ -84,6 +90,10 @@ export function NewTaskSheet({ creatorUid, creatorName, createdBy, createdByName
       await addDoc(collection(firebaseDb, TASK_COLLECTION), {
         title: title.trim(),
         description: description.trim(),
+        clientId,
+        clientName: clients.find((client) => client.slug === clientId)?.name ?? null,
+        campaignId,
+        campaignName: campaigns.find((campaign) => campaign.slug === campaignId)?.name ?? null,
         assignedTo: creatorUid,
         assignedToName: creatorName,
         createdBy,
@@ -128,9 +138,18 @@ export function NewTaskSheet({ creatorUid, creatorName, createdBy, createdByName
                 <Input id="task-title" value={title} onChange={(event) => setTitle(event.target.value)} disabled={busy} placeholder="What needs doing" required />
               </div>
               <div className="space-y-1.5">
-                <label htmlFor="task-description" className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Details</label>
+                <label htmlFor="task-description" className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Description</label>
                 <Textarea id="task-description" value={description} onChange={(event) => setDescription(event.target.value)} disabled={busy} placeholder="Brief, deliverables, links…" rows={4} />
               </div>
+              <TaskClientCampaignFields
+                clientId={clientId}
+                campaignId={campaignId}
+                clients={clients}
+                campaigns={campaigns}
+                disabled={busy || linksLoading}
+                onClientChange={(value) => { setClientId(value); setCampaignId(null); }}
+                onCampaignChange={setCampaignId}
+              />
               <div className="space-y-1.5">
                 <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Due date</span>
                 <Input type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} disabled={busy} className="h-10" />
@@ -148,28 +167,67 @@ export function NewTaskSheet({ creatorUid, creatorName, createdBy, createdByName
   );
 }
 
-/** Right-side sheet showing one task's details. Status can be changed when
- * `canEdit`; staff (`canDelete`) can delete. Calls `onChanged` after a write. */
-export function TaskDetailSheet({ task, onOpenChange, canEdit, canDelete, onChanged }: {
+/** Editable task record. The assignee can edit its work details; staff may also reassign it and delete it. */
+export function TaskDetailSheet({ task, onOpenChange, canEdit, canDelete, assignees, onChanged }: {
   task: Task | null;
   onOpenChange: (open: boolean) => void;
   canEdit: boolean;
   canDelete: boolean;
+  assignees?: { uid: string; name: string }[];
   onChanged: () => void;
 }) {
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [title, setTitle] = React.useState("");
+  const [description, setDescription] = React.useState("");
+  const [status, setStatus] = React.useState<TaskStatus>("todo");
+  const [dueDate, setDueDate] = React.useState("");
+  const [clientId, setClientId] = React.useState<string | null>(null);
+  const [campaignId, setCampaignId] = React.useState<string | null>(null);
+  const [assignedTo, setAssignedTo] = React.useState("");
+  const { clients, campaigns, loading: linksLoading } = useTaskLinkOptions();
+  const assigneeOptions = assignees
+    ? [...(task && !assignees.some((item) => item.uid === task.assignedTo) ? [{ uid: task.assignedTo, name: task.assignedToName ?? "Current assignee" }] : []), ...assignees]
+    : [];
 
-  const setStatus = async (status: TaskStatus) => {
+  React.useEffect(() => {
     if (!task) return;
+    setTitle(task.title);
+    setDescription(task.description ?? "");
+    setStatus(task.status);
+    setDueDate(task.dueDate ?? "");
+    setClientId(task.clientId ?? null);
+    setCampaignId(task.campaignId ?? null);
+    setAssignedTo(task.assignedTo);
+    setError(null);
+  }, [task]);
+
+  const save = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!task || !title.trim() || busy) return;
     setBusy(true);
     setError(null);
     try {
-      await updateDoc(doc(firebaseDb, TASK_COLLECTION, task.id), { status, updatedAt: new Date().toISOString() });
+      const client = clients.find((item) => item.slug === clientId);
+      const campaign = campaigns.find((item) => item.slug === campaignId && item.clientId === clientId);
+      const assignee = assignees?.find((item) => item.uid === assignedTo);
+      await updateDoc(doc(firebaseDb, TASK_COLLECTION, task.id), {
+        title: title.trim(),
+        description: description.trim(),
+        status,
+        dueDate: dueDate || null,
+        clientId: client?.slug ?? null,
+        clientName: client?.name ?? null,
+        campaignId: campaign?.slug ?? null,
+        campaignName: campaign?.name ?? null,
+        ...(assignees ? { assignedTo: assignee?.uid ?? task.assignedTo, assignedToName: assignee?.name ?? task.assignedToName } : {}),
+        updatedAt: new Date().toISOString(),
+      });
+      onOpenChange(false);
       onChanged();
     } catch (cause) {
       console.error("Unable to update task", cause);
-      setError("Couldn’t update that task. Try again.");
+      setError("Couldn’t save task changes. Try again.");
     } finally {
       setBusy(false);
     }
@@ -197,44 +255,65 @@ export function TaskDetailSheet({ task, onOpenChange, canEdit, canDelete, onChan
         {task ? (
           <>
             <SheetHeader className="border-b border-border">
-              <SheetTitle className="pr-8">{task.title}</SheetTitle>
-              <SheetDescription>
-                {task.dueDate ? `Due ${formatDate(task.dueDate)}` : "No due date"}
-                {task.assignedToName ? ` · For ${task.assignedToName}` : ""}
-                {task.createdByName ? ` · From ${task.createdByName}` : ""}
-              </SheetDescription>
+              <SheetTitle className="pr-8">{canEdit ? "Edit task" : task.title}</SheetTitle>
             </SheetHeader>
-            <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-4 py-4">
-              {error ? <p className="m-0 text-[13px] font-medium text-destructive">{error}</p> : null}
-              <div>
-                <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Status</span>
-                <div className="flex items-center gap-3">
-                  <TaskStatusBadge status={task.status} overdue={isOverdue(task)} />
-                  {canEdit ? (
-                    <Select value={task.status} onValueChange={(value) => void setStatus(value as TaskStatus)}>
-                      <SelectTrigger disabled={busy} className="h-9 w-[160px]"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {TASK_STATUSES.map((status) => <SelectItem key={status} value={status}>{TASK_STATUS_LABELS[status]}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+            {canEdit ? (
+              <form onSubmit={save} className="flex min-h-0 flex-1 flex-col">
+                <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4">
+                  {error ? <p className="m-0 text-[13px] font-medium text-destructive">{error}</p> : null}
+                  <div className="space-y-1.5">
+                    <label htmlFor="edit-task-title" className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Title</label>
+                    <Input id="edit-task-title" value={title} onChange={(event) => setTitle(event.target.value)} disabled={busy} required />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label htmlFor="edit-task-description" className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Description</label>
+                    <Textarea id="edit-task-description" value={description} onChange={(event) => setDescription(event.target.value)} disabled={busy} placeholder="Brief, deliverables, links…" rows={5} />
+                  </div>
+                  {assignees ? (
+                    <div className="space-y-1.5">
+                      <label htmlFor="edit-task-assignee" className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Assigned to</label>
+                      <Select value={assignedTo} onValueChange={setAssignedTo} disabled={busy}>
+                        <SelectTrigger id="edit-task-assignee" className="rounded-md border border-input bg-background"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {assigneeOptions.map((assignee) => <SelectItem key={assignee.uid} value={assignee.uid}>{assignee.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   ) : null}
+                  <div className="space-y-1.5">
+                    <label htmlFor="edit-task-status" className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Status</label>
+                    <Select value={status} onValueChange={(value) => setStatus(value as TaskStatus)} disabled={busy}>
+                      <SelectTrigger id="edit-task-status" className="rounded-md border border-input bg-background"><SelectValue /></SelectTrigger>
+                      <SelectContent>{TASK_STATUSES.map((value) => <SelectItem key={value} value={value}>{TASK_STATUS_LABELS[value]}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <TaskClientCampaignFields
+                    clientId={clientId}
+                    campaignId={campaignId}
+                    clients={clients}
+                    campaigns={campaigns}
+                    disabled={busy || linksLoading}
+                    onClientChange={(value) => { setClientId(value); setCampaignId(null); }}
+                    onCampaignChange={setCampaignId}
+                  />
+                  <div className="space-y-1.5">
+                    <label htmlFor="edit-task-due-date" className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Due date</label>
+                    <Input id="edit-task-due-date" type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} disabled={busy} />
+                  </div>
                 </div>
+                <div className="flex items-center justify-between gap-3 border-t border-border px-4 py-3">
+                  {canDelete ? <button type="button" onClick={() => void removeTask()} disabled={busy} className="inline-flex h-9 items-center gap-1.5 rounded-md border border-border px-3 text-[13px] font-semibold text-destructive transition hover:border-destructive disabled:opacity-50"><Trash2 className="h-4 w-4" aria-hidden="true" />Delete</button> : <span />}
+                  <button type="submit" disabled={busy || !title.trim()} className="h-9 rounded-md bg-primary px-4 text-[13px] font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50">{busy ? "Saving…" : "Save changes"}</button>
+                </div>
+              </form>
+            ) : (
+              <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-4 py-4">
+                <TaskStatusBadge status={task.status} overdue={isOverdue(task)} />
+                <div><span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Description</span><p className="m-0 whitespace-pre-wrap text-[14px] leading-[1.55] text-foreground">{task.description || "No description added."}</p></div>
+                {task.clientName ? <p className="m-0 text-[13px] text-muted-foreground">Client: {task.clientName}</p> : null}
+                {task.campaignName ? <p className="m-0 text-[13px] text-muted-foreground">Campaign: {task.campaignName}</p> : null}
               </div>
-              <div>
-                <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Details</span>
-                <p className="m-0 whitespace-pre-wrap text-[14px] leading-[1.55] text-foreground">{task.description || "No details added."}</p>
-              </div>
-              {canDelete ? (
-                <button
-                  type="button"
-                  onClick={() => void removeTask()}
-                  disabled={busy}
-                  className="inline-flex h-9 items-center gap-1.5 rounded-md border border-border px-3 text-[13px] font-semibold text-destructive transition hover:border-destructive disabled:opacity-50"
-                >
-                  <Trash2 className="h-4 w-4" aria-hidden="true" />Delete task
-                </button>
-              ) : null}
-            </div>
+            )}
           </>
         ) : null}
       </SheetContent>
@@ -242,14 +321,14 @@ export function TaskDetailSheet({ task, onOpenChange, canEdit, canDelete, onChan
   );
 }
 
-/** Tasks for one creator, shown on their profile page. Staff assign and manage them; the creator only moves them through status. */
-export function CreatorTasksPanel({ creatorUid, creatorName, viewer, refreshSignal = 0 }: { creatorUid: string | null | undefined; creatorName: string; viewer: TaskViewer; refreshSignal?: number }) {
+/** Tasks for one creator, shown on their profile page. The assignee and staff can edit task details. */
+export function CreatorTasksPanel({ creatorUid, creatorName, viewer, refreshSignal = 0, assignees }: { creatorUid: string | null | undefined; creatorName: string; viewer: TaskViewer; refreshSignal?: number; assignees?: { uid: string; name: string }[] }) {
   const [tasks, setTasks] = React.useState<Task[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const selected = tasks.find((task) => task.id === selectedId) ?? null;
-  // Only staff or the assigned creator can change a task; everyone else views it read-only.
+  // Only staff or the assigned creator can change a task; unrelated viewers can only read it.
   const canEdit = viewer.isStaff || (Boolean(viewer.uid) && viewer.uid === creatorUid);
 
   const load = React.useCallback(async (uid: string) => {
@@ -314,7 +393,7 @@ export function CreatorTasksPanel({ creatorUid, creatorName, viewer, refreshSign
               onClick={() => setSelectedId(task.id)}
               icon={<CheckSquare className="h-5 w-5" aria-hidden="true" />}
               title={task.title}
-              subtitle={task.dueDate ? `Due ${formatDate(task.dueDate)}` : "No due date"}
+              subtitle={task.dueDate ? `Due ${formatDate(task.dueDate)}` : undefined}
               trailing={<TaskStatusBadge status={task.status} overdue={isOverdue(task)} />}
             />
           ))}
@@ -325,7 +404,8 @@ export function CreatorTasksPanel({ creatorUid, creatorName, viewer, refreshSign
         task={selected}
         onOpenChange={(open) => { if (!open) setSelectedId(null); }}
         canEdit={canEdit}
-        canDelete={viewer.isStaff}
+        canDelete={canEdit}
+        assignees={viewer.isStaff ? assignees : undefined}
         onChanged={reload}
       />
     </div>

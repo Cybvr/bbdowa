@@ -362,6 +362,7 @@ export default function CreatorDetailPage() {
               creatorUid={creator.uid}
               creatorName={creator.name}
               viewer={{ uid: authUser?.uid ?? "", name: authUser?.name ?? authUser?.email ?? null, isStaff }}
+              assignees={directory.users.flatMap((candidate) => candidate.uid ? [{ uid: candidate.uid, name: candidate.name }] : [])}
               refreshSignal={taskRefresh}
             />
           </ProfileSection>

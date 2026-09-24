@@ -124,21 +124,21 @@ service cloud.firestore {
         || (signedIn() && resource.data.uid == request.auth.uid);
     }
 
-    // Tasks admins/managers assign to a creator. A creator's profile is
-    // public, so their tasks are readable by anyone; the assigned creator can
-    // move a task through status but can't edit what it says or reassign it.
+    // Tasks are readable from creator profiles. Staff manage all task fields;
+    // an assignee can edit the task's work details without changing ownership.
     match /creatorTasks/{id} {
       allow read: if true;
       allow create: if isStaff() && request.resource.data.createdBy == request.auth.uid;
       allow update: if isStaff()
         || (signedIn()
           && resource.data.assignedTo == request.auth.uid
-          && request.resource.data.assignedTo == resource.data.assignedTo
-          && request.resource.data.createdBy == resource.data.createdBy
-          && request.resource.data.title == resource.data.title
-          && request.resource.data.description == resource.data.description
-          && request.resource.data.dueDate == resource.data.dueDate);
-      allow delete: if isStaff();
+          && request.resource.data.status in ["todo", "in_progress", "done"]
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            "title", "description", "status", "dueDate",
+            "clientId", "clientName", "campaignId", "campaignName", "updatedAt"
+          ]));
+      allow delete: if isStaff()
+        || (signedIn() && resource.data.assignedTo == request.auth.uid);
     }
 
     // A document starts as a draft, can be sent to one creator, and locks when sent.
