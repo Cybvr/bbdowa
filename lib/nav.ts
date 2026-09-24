@@ -18,7 +18,7 @@ export const MARKETING_FOOTER_LINKS: NavLink[] = [
 ];
 
 export type NavItem =
-  | { kind: "link"; label: string; href: string; requiresAuth?: boolean; requiresAdmin?: boolean; hideInSidebar?: boolean }
+  | { kind: "link"; label: string; href: string; requiresAuth?: boolean; requiresStaff?: boolean; requiresAdmin?: boolean; hideInSidebar?: boolean }
   | { kind: "menu"; label: string; match: string | string[]; items: DashboardNavLink[]; requiresAuth?: boolean };
 
 export const NAV_ITEMS: NavItem[] = [
@@ -54,12 +54,12 @@ export const NAV_ITEMS: NavItem[] = [
     ],
   },
   { kind: "link", label: "Updates", href: "/dashboard/blog" },
-  { kind: "link", label: "Admin", href: "/admin", requiresAuth: true, requiresAdmin: true },
+  { kind: "link", label: "Admin", href: "/admin", requiresAuth: true, requiresStaff: true },
 ];
 
 export const ADMIN_NAV_ITEMS: NavItem[] = [
   { kind: "link", label: "Overview", href: "/admin" },
-  { kind: "link", label: "Users", href: "/admin/users" },
+  { kind: "link", label: "Users", href: "/admin/users", requiresAdmin: true },
   { kind: "link", label: "Documents", href: "/admin/documents" },
   { kind: "link", label: "Tasks", href: "/admin/tasks" },
   { kind: "link", label: "Dashboard", href: "/dashboard" },

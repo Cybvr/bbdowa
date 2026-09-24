@@ -2,8 +2,8 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { addDoc, collection, deleteDoc, doc, updateDoc } from "firebase/firestore";
-import { Copy, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
+import { addDoc, collection, deleteDoc, doc } from "firebase/firestore";
+import { Copy, MoreHorizontal, Plus, Trash2 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { PageHeader } from "@/components/dashboard/ui";
 import { DashboardListPage } from "@/components/dashboard/list-page";
@@ -15,23 +15,19 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CreatorPicker } from "@/components/creator-picker";
 import { TaskDetailSheet, TaskStatusBadge } from "@/components/tasks-view";
-import { readClientsFromFirestore, readCampaignsFromFirestore, useFirestoreTasks, useFirestoreUsers } from "@/lib/firebase/client-content";
+import { TaskClientCampaignFields, useTaskLinkOptions } from "@/components/task-link-fields";
+import { useFirestoreTasks, useFirestoreUsers } from "@/lib/firebase/client-content";
 import { TASK_COLLECTION, TASK_STATUSES, TASK_STATUS_LABELS, formatDate, isOverdue, type Task, type TaskStatus } from "@/lib/creator-tasks";
-import type { Client } from "@/lib/clients";
-import type { Campaign } from "@/lib/campaigns";
 import { firebaseDb } from "@/lib/firebase/client";
 import { plural } from "@/lib/format";
 import { isCreatorUser } from "@/lib/users";
 
 type AssigneeOption = { uid: string; name: string; slug: string; isCreator: boolean; hint: string };
 
-function NewTaskDialog({ assignees, clients, campaigns, createdBy, createdByName, onCreated }: {
+function NewTaskDialog({ assignees, createdBy, createdByName, onCreated }: {
   assignees: AssigneeOption[];
-  clients: Client[];
-  campaigns: Campaign[];
   createdBy: string;
   createdByName: string | null;
   onCreated: () => void;
@@ -41,13 +37,13 @@ function NewTaskDialog({ assignees, clients, campaigns, createdBy, createdByName
   const [title, setTitle] = React.useState("");
   const [description, setDescription] = React.useState("");
   const [dueDate, setDueDate] = React.useState("");
-  const [clientId, setClientId] = React.useState("");
-  const [campaignId, setCampaignId] = React.useState("");
+  const [clientId, setClientId] = React.useState<string | null>(null);
+  const [campaignId, setCampaignId] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const clientCampaigns = campaigns.filter((campaign) => campaign.clientId === clientId);
+  const { clients, campaigns, loading: linksLoading } = useTaskLinkOptions();
 
-  const reset = () => { setAssignedTo(""); setTitle(""); setDescription(""); setDueDate(""); setClientId(""); setCampaignId(""); setError(null); };
+  const reset = () => { setAssignedTo(""); setTitle(""); setDescription(""); setDueDate(""); setClientId(null); setCampaignId(null); setError(null); };
   const handleOpenChange = (next: boolean) => { setOpen(next); if (!next) reset(); };
   const canSave = title.trim().length > 0 && assignedTo.length > 0 && !busy;
 
@@ -58,22 +54,20 @@ function NewTaskDialog({ assignees, clients, campaigns, createdBy, createdByName
     setError(null);
     try {
       const assignee = assignees.find((candidate) => candidate.uid === assignedTo);
-      const client = clients.find((candidate) => candidate.slug === clientId);
-      const campaign = clientCampaigns.find((candidate) => candidate.slug === campaignId);
       const now = new Date().toISOString();
       await addDoc(collection(firebaseDb, TASK_COLLECTION), {
         title: title.trim(),
         description: description.trim(),
+        clientId,
+        clientName: clients.find((client) => client.slug === clientId)?.name ?? null,
+        campaignId,
+        campaignName: campaigns.find((campaign) => campaign.slug === campaignId)?.name ?? null,
         assignedTo,
         assignedToName: assignee?.name ?? null,
         createdBy,
         createdByName,
         status: "todo",
         dueDate: dueDate || null,
-        clientId: clientId || null,
-        clientName: client?.name ?? null,
-        campaignId: campaign ? campaignId : null,
-        campaignName: campaign ? (campaign.campaign ?? campaign.name) : null,
         createdAt: now,
         updatedAt: now,
       });
@@ -118,34 +112,21 @@ function NewTaskDialog({ assignees, clients, campaigns, createdBy, createdByName
               <Input id="task-title" value={title} onChange={(event) => setTitle(event.target.value)} disabled={busy} placeholder="What needs doing" required />
             </div>
             <div className="space-y-1.5">
-              <label htmlFor="task-description" className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Details</label>
+              <label htmlFor="task-description" className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Description</label>
               <Textarea id="task-description" value={description} onChange={(event) => setDescription(event.target.value)} disabled={busy} placeholder="Brief, deliverables, links…" rows={4} />
             </div>
+            <TaskClientCampaignFields
+              clientId={clientId}
+              campaignId={campaignId}
+              clients={clients}
+              campaigns={campaigns}
+              disabled={busy || linksLoading}
+              onClientChange={(value) => { setClientId(value); setCampaignId(null); }}
+              onCampaignChange={setCampaignId}
+            />
             <div className="space-y-1.5">
               <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Due date</span>
               <Input type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} disabled={busy} className="h-10" />
-            </div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Client</span>
-                <Select value={clientId || "none"} onValueChange={(value) => { setClientId(value === "none" ? "" : value); setCampaignId(""); }}>
-                  <SelectTrigger disabled={busy} className="h-10"><SelectValue placeholder="No client" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No client</SelectItem>
-                    {clients.map((client) => <SelectItem key={client.slug} value={client.slug}>{client.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Campaign</span>
-                <Select value={campaignId || "none"} onValueChange={(value) => setCampaignId(value === "none" ? "" : value)}>
-                  <SelectTrigger disabled={busy || !clientId} className="h-10"><SelectValue placeholder={clientId ? "No campaign" : "Pick a client first"} /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No campaign</SelectItem>
-                    {clientCampaigns.map((campaign) => <SelectItem key={campaign.slug} value={campaign.slug}>{campaign.campaign ?? campaign.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
             {error ? <p className="m-0 text-[13px] font-medium text-destructive">{error}</p> : null}
             <DialogFooter>
@@ -168,16 +149,7 @@ export default function TasksPage() {
   const [busyId, setBusyId] = React.useState<string | null>(null);
   const [actionError, setActionError] = React.useState<string | null>(null);
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
-  const [renameTask, setRenameTask] = React.useState<Task | null>(null);
-  const [renameValue, setRenameValue] = React.useState("");
   const isStaff = role === "admin" || role === "manager";
-  const [clients, setClients] = React.useState<Client[]>([]);
-  const [campaigns, setCampaigns] = React.useState<Campaign[]>([]);
-  React.useEffect(() => {
-    Promise.all([readClientsFromFirestore(), readCampaignsFromFirestore()])
-      .then(([clientsData, campaignsData]) => { setClients(clientsData); setCampaigns(campaignsData); })
-      .catch((cause) => console.error("Unable to load clients/campaigns", cause));
-  }, []);
 
   // Any signed-in user can be assigned a task (they need an account so the
   // task can reach them). Ordered by name and searchable in the picker.
@@ -200,7 +172,7 @@ export default function TasksPage() {
 
   const visible = tasks.filter((task) => {
     if (status !== "all" && task.status !== status) return false;
-    return [task.title, task.description, task.assignedToName].filter(Boolean).join(" ").toLowerCase().includes(search.trim().toLowerCase());
+    return [task.title, task.description, task.assignedToName, task.clientName, task.campaignName].filter(Boolean).join(" ").toLowerCase().includes(search.trim().toLowerCase());
   });
 
   const duplicate = async (task: Task) => {
@@ -210,6 +182,8 @@ export default function TasksPage() {
       const now = new Date().toISOString();
       await addDoc(collection(firebaseDb, TASK_COLLECTION), {
         title: `${task.title} (Copy)`, description: task.description,
+        clientId: task.clientId ?? null, clientName: task.clientName ?? null,
+        campaignId: task.campaignId ?? null, campaignName: task.campaignName ?? null,
         assignedTo: task.assignedTo, assignedToName: task.assignedToName,
         createdBy: user!.uid, createdByName: user!.name ?? user!.email,
         status: "todo", dueDate: task.dueDate, createdAt: now, updatedAt: now,
@@ -218,20 +192,6 @@ export default function TasksPage() {
     } catch (cause) {
       console.error("Unable to duplicate task", cause);
       setActionError("Couldn’t duplicate the task. Please try again.");
-      setBusyId(null);
-    }
-  };
-
-  const saveRename = async () => {
-    if (!renameTask || !renameValue.trim()) return;
-    setBusyId(renameTask.id);
-    setActionError(null);
-    try {
-      await updateDoc(doc(firebaseDb, TASK_COLLECTION, renameTask.id), { title: renameValue.trim(), updatedAt: new Date().toISOString() });
-      window.location.reload();
-    } catch (cause) {
-      console.error("Unable to rename task", cause);
-      setActionError("Couldn’t rename the task. Please try again.");
       setBusyId(null);
     }
   };
@@ -253,21 +213,27 @@ export default function TasksPage() {
   if (authLoading || loading || usersLoading) return <UsersTableSkeleton />;
   if (!isStaff) return <main className="mx-auto w-full max-w-6xl flex-1 px-5 pb-16 pt-8 sm:px-8"><PageHeader title="Tasks" /><p className="mt-8 text-sm text-muted-foreground">A staff account is required to manage tasks.</p></main>;
 
-  return <DashboardListPage title="Tasks" actions={<NewTaskDialog assignees={assignees} clients={clients} campaigns={campaigns} createdBy={user!.uid} createdByName={user!.name ?? user!.email} onCreated={() => window.location.reload()} />}
+  return <DashboardListPage title="Tasks" actions={<NewTaskDialog assignees={assignees} createdBy={user!.uid} createdByName={user!.name ?? user!.email} onCreated={() => window.location.reload()} />}
     toolbar={<div className="space-y-3"><FilterBar panelId="admin-tasks-filter" search={search} onSearchChange={setSearch} searchPlaceholder="Search tasks" resultCount={plural(visible.length, "task")} /><div className="flex flex-wrap gap-2" aria-label="Task status filter">{(["all", ...TASK_STATUSES] as const).map((value) => <button key={value} type="button" onClick={() => setStatus(value)} aria-pressed={status === value} className={`rounded-md border px-3 py-1.5 text-[13px] font-medium ${status === value ? "border-primary bg-primary text-primary-foreground" : "border-border text-foreground"}`}>{value === "all" ? "All" : TASK_STATUS_LABELS[value]}</button>)}</div></div>}>
     {error || actionError ? <p className="mb-4 text-[13px] text-destructive">{error ?? actionError}</p> : null}
-    <section className="overflow-x-auto rounded-xl border border-border bg-background">
-      {visible.length ? <Table className="min-w-[760px] w-full border-collapse"><TableHeader><TableRow className="bg-muted/40"><TableHead className="px-4 py-3">Task</TableHead><TableHead className="px-4 py-3">Assigned to</TableHead><TableHead className="px-4 py-3">Due</TableHead><TableHead className="px-4 py-3">Status</TableHead><TableHead className="px-4 py-3 text-right">Actions</TableHead></TableRow></TableHeader><TableBody>{visible.map((task) => {
+    <section className="mt-4 overflow-x-auto rounded-xl border border-border bg-background">
+      {visible.length ? <Table className="w-full table-fixed border-collapse"><TableHeader><TableRow className="bg-muted/40"><TableHead className="px-4 py-3">Task</TableHead><TableHead className="w-20 px-4 py-3 text-right">Actions</TableHead></TableRow></TableHeader><TableBody>{visible.map((task) => {
         const assignee = assignees.find((candidate) => candidate.uid === task.assignedTo);
         const name = task.assignedToName ?? assignee?.name ?? "—";
         return <TableRow key={task.id} className="align-top">
-          <TableCell className="max-w-[420px] px-4 py-3">
-            <button type="button" onClick={() => setSelectedId(task.id)} className="m-0 block text-left font-semibold text-foreground hover:text-primary">{task.title}</button>
-            {task.description ? <p className="mb-0 mt-0.5 max-w-[40ch] truncate text-muted-foreground">{task.description}</p> : null}
+          <TableCell className="px-4 py-3">
+            <button type="button" onClick={() => setSelectedId(task.id)} className="m-0 block max-w-full truncate text-left font-semibold text-foreground hover:text-primary">{task.title}</button>
+            <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[13px] text-muted-foreground">
+              {assignee?.isCreator ? <Link href={`/dashboard/discover/${assignee.slug}`} className="max-w-[45%] shrink-0 truncate font-semibold text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary">{name}</Link> : <span className="max-w-[45%] shrink-0 truncate">{name}</span>}
+              {task.description ? <><span aria-hidden="true" className="hidden sm:inline">·</span><span className="hidden min-w-0 truncate sm:inline">{task.description}</span></> : null}
+            </div>
+            <div className="mt-1 hidden flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted-foreground sm:flex">
+              {task.clientName ? <span>{task.clientName}</span> : null}
+              {task.campaignName ? <span>{task.campaignName}</span> : null}
+              {task.dueDate ? <span>Due {formatDate(task.dueDate)}</span> : null}
+              <TaskStatusBadge status={task.status} overdue={isOverdue(task)} />
+            </div>
           </TableCell>
-          <TableCell className="px-4 py-3">{assignee?.isCreator ? <Link href={`/dashboard/discover/${assignee.slug}`} className="font-semibold text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary">{name}</Link> : name}</TableCell>
-          <TableCell className="whitespace-nowrap px-4 py-3 text-muted-foreground">{task.dueDate ? formatDate(task.dueDate) : "—"}</TableCell>
-          <TableCell className="whitespace-nowrap px-4 py-3"><TaskStatusBadge status={task.status} overdue={isOverdue(task)} /></TableCell>
           <TableCell className="px-4 py-3">
             <div className="flex justify-end">
               <DropdownMenu>
@@ -275,7 +241,6 @@ export default function TasksPage() {
                   <button type="button" aria-label={`Actions for ${task.title}`} disabled={busyId === task.id} className="grid h-9 w-9 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-50"><MoreHorizontal className="h-4 w-4" aria-hidden="true" /></button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-40">
-                  <DropdownMenuItem onSelect={() => { setRenameTask(task); setRenameValue(task.title); }}><Pencil className="h-4 w-4" />Rename</DropdownMenuItem>
                   <DropdownMenuItem onSelect={() => void duplicate(task)}><Copy className="h-4 w-4" />Duplicate</DropdownMenuItem>
                   {role === "admin" ? <DropdownMenuItem variant="destructive" onSelect={() => void remove(task.id, task.title)}><Trash2 className="h-4 w-4" />Delete</DropdownMenuItem> : null}
                 </DropdownMenuContent>
@@ -290,22 +255,9 @@ export default function TasksPage() {
       task={visible.find((task) => task.id === selectedId) ?? null}
       onOpenChange={(open) => { if (!open) setSelectedId(null); }}
       canEdit={isStaff}
-      canManage={isStaff}
-      canDelete={role === "admin"}
-      clients={clients}
-      campaigns={campaigns}
+      canDelete={isStaff}
+      assignees={assignees.map(({ uid, name }) => ({ uid, name }))}
       onChanged={() => window.location.reload()}
     />
-
-    <Dialog open={Boolean(renameTask)} onOpenChange={(open) => { if (!open) setRenameTask(null); }}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader><DialogTitle>Rename task</DialogTitle><DialogDescription>Give this task a new title.</DialogDescription></DialogHeader>
-        <Input value={renameValue} onChange={(event) => setRenameValue(event.target.value)} placeholder="Task title" />
-        <DialogFooter>
-          <button type="button" onClick={() => setRenameTask(null)} className="h-9 rounded-md border border-border px-4 text-[13px] font-semibold">Cancel</button>
-          <button type="button" disabled={!renameValue.trim() || busyId === renameTask?.id} onClick={() => void saveRename()} className="h-9 rounded-md bg-primary px-4 text-[13px] font-semibold text-primary-foreground disabled:opacity-50">Save</button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   </DashboardListPage>;
 }

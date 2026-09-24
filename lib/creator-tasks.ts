@@ -1,9 +1,7 @@
 // Creator tasks.
 //
-// One document per task in the `creatorTasks` collection. Admins and
-// managers write a task and assign it to a creator; the assignee can move it
-// through status but can't edit its content. Admins and managers read and
-// write every task; a creator reads and updates only tasks assigned to them.
+// One document per task in the `creatorTasks` collection. Staff can manage all
+// task fields; assignees can edit work details while ownership remains fixed.
 
 export type TaskStatus = "todo" | "in_progress" | "done";
 
@@ -11,6 +9,11 @@ export type Task = {
   id: string;
   title: string;
   description: string;
+  /** Optional client and campaign context for this task. */
+  clientId?: string | null;
+  clientName?: string | null;
+  campaignId?: string | null;
+  campaignName?: string | null;
   /** Firebase uid of the creator this task is assigned to. */
   assignedTo: string;
   assignedToName: string | null;
@@ -20,12 +23,6 @@ export type Task = {
   status: TaskStatus;
   /** ISO date (yyyy-mm-dd), or null if there's no deadline. */
   dueDate: string | null;
-  /** Optional client this task belongs to (client slug + name). */
-  clientId?: string | null;
-  clientName?: string | null;
-  /** Optional campaign this task belongs to (campaign slug + name). */
-  campaignId?: string | null;
-  campaignName?: string | null;
   createdAt: string;
   updatedAt: string;
 };

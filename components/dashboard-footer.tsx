@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NAV_ICON_SET } from "@/components/nav-icons";
 import { useOptionalAuth } from "@/components/auth-provider";
+import { createGlyphAvatarDataUri } from "@/lib/avatar";
 import { NAV_ITEMS } from "@/lib/nav";
 
 const FOOTER_LABELS = ["Home", "Tasks", "Tracker", "Njeri", "My profile"];
@@ -16,19 +17,22 @@ export function DashboardFooter({ hidden = false }: { hidden?: boolean }) {
   if (hidden) return null;
 
   const isAdminSection = pathname.startsWith("/admin");
+  const isStaff = auth?.role === "admin" || auth?.role === "manager";
 
   const items = isAdminSection
     ? [
         { label: "Overview", href: "/admin" },
-        { label: "Users", href: "/admin/users" },
+        ...(auth?.role === "admin" ? [{ label: "Users", href: "/admin/users" }] : []),
         { label: "Documents", href: "/admin/documents" },
         { label: "Tasks", href: "/admin/tasks" },
-        { label: "Dashboard", href: "/dashboard" },
       ]
     : NAV_ITEMS.filter(
         (item): item is Extract<typeof item, { kind: "link" }> =>
-          item.kind === "link" && FOOTER_LABELS.includes(item.label) && (!item.requiresAuth || Boolean(auth?.user)),
-      );
+          item.kind === "link" &&
+          FOOTER_LABELS.includes(item.label) &&
+          (!item.requiresAuth || Boolean(auth?.user)) &&
+          (!item.requiresStaff || isStaff),
+      ).sort((a, b) => FOOTER_LABELS.indexOf(a.label) - FOOTER_LABELS.indexOf(b.label));
 
   return (
     <nav
@@ -41,6 +45,7 @@ export function DashboardFooter({ hidden = false }: { hidden?: boolean }) {
             ? pathname === "/admin"
             : pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(`${item.href}/`));
         const Icon = NAV_ICON_SET[item.label];
+        const avatarName = auth?.user?.name ?? auth?.user?.email?.split("@")[0] ?? "BBDO User";
         return (
           <Link
             key={item.href}
@@ -50,7 +55,12 @@ export function DashboardFooter({ hidden = false }: { hidden?: boolean }) {
               current ? "text-primary font-semibold" : "text-muted-foreground"
             }`}
           >
-            {Icon ? <Icon className="h-6 w-6" /> : null}
+            {item.label === "My profile" ? (
+              <span className="h-6 w-6 overflow-hidden rounded-full bg-primary">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={createGlyphAvatarDataUri(avatarName)} alt="" className="h-full w-full object-cover" />
+              </span>
+            ) : Icon ? <Icon className="h-6 w-6" /> : null}
             <span className="truncate">{FOOTER_LABEL_OVERRIDES[item.label] ?? item.label}</span>
           </Link>
         );

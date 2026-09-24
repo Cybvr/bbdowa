@@ -10,28 +10,19 @@ import { TaskDetailSheet, TaskStatusBadge } from "@/components/tasks-view";
 import { FilterBar } from "@/components/dashboard/filter-bar";
 import { PageLoadingSkeleton } from "@/components/dashboard/loading-skeleton";
 import { firebaseDb } from "@/lib/firebase/client";
-import { readClientsFromFirestore, readCampaignsFromFirestore } from "@/lib/firebase/client-content";
 import { TASK_COLLECTION, formatDate, isOverdue, sortTasks, type Task, type TaskStatus, TASK_STATUSES, TASK_STATUS_LABELS } from "@/lib/creator-tasks";
-import type { Client } from "@/lib/clients";
-import type { Campaign } from "@/lib/campaigns";
 import { plural } from "@/lib/format";
+import { useFirestoreUsers } from "@/lib/firebase/client-content";
 
 export default function TasksPage() {
   const { user, role } = useAuth();
+  const { users } = useFirestoreUsers();
   const isStaff = role === "admin" || role === "manager";
   const [tasks, setTasks] = React.useState<Task[]>([]);
-  const [clients, setClients] = React.useState<Client[]>([]);
-  const [campaigns, setCampaigns] = React.useState<Campaign[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [search, setSearch] = React.useState("");
   const [status, setStatus] = React.useState<TaskStatus | "all">("all");
-
-  React.useEffect(() => {
-    Promise.all([readClientsFromFirestore(), readCampaignsFromFirestore()])
-      .then(([clientsData, campaignsData]) => { setClients(clientsData); setCampaigns(campaignsData); })
-      .catch((cause) => console.error("Unable to load clients/campaigns", cause));
-  }, []);
 
   const load = React.useCallback(async () => {
     const uid = user?.uid;
@@ -53,7 +44,7 @@ export default function TasksPage() {
   const selected = tasks.find((task) => task.id === selectedId) ?? null;
   const visible = tasks.filter((task) => {
     if (status !== "all" && task.status !== status) return false;
-    return [task.title, task.description, task.assignedToName].filter(Boolean).join(" ").toLowerCase().includes(search.trim().toLowerCase());
+    return [task.title, task.description, task.assignedToName, task.clientName, task.campaignName].filter(Boolean).join(" ").toLowerCase().includes(search.trim().toLowerCase());
   });
 
   if (loading) return <PageLoadingSkeleton titleWidth="w-32" />;
@@ -78,7 +69,7 @@ export default function TasksPage() {
               onClick={() => setSelectedId(task.id)}
               icon={<CheckSquare className="h-5 w-5" aria-hidden="true" />}
               title={task.title}
-              subtitle={`${task.assignedToName ?? "Unassigned"}${task.dueDate ? ` · Due ${formatDate(task.dueDate)}` : ""}`}
+              subtitle={task.dueDate ? `Due ${formatDate(task.dueDate)}` : undefined}
               trailing={<TaskStatusBadge status={task.status} overdue={isOverdue(task)} />}
             />
           ))}
@@ -91,10 +82,8 @@ export default function TasksPage() {
         task={selected}
         onOpenChange={(open) => { if (!open) setSelectedId(null); }}
         canEdit={Boolean(selected) && (isStaff || (Boolean(user?.uid) && selected?.assignedTo === user?.uid))}
-        canManage={isStaff}
-        canDelete={isStaff}
-        clients={clients}
-        campaigns={campaigns}
+        canDelete={Boolean(selected) && (isStaff || selected?.assignedTo === user?.uid)}
+        assignees={isStaff ? users.flatMap((candidate) => candidate.uid ? [{ uid: candidate.uid, name: candidate.name }] : []) : undefined}
         onChanged={() => void load()}
       />
     </main>
