@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { addDoc, collection, deleteDoc, doc, updateDoc } from "firebase/firestore";
-import { Plus, Trash2 } from "lucide-react";
+import { Copy, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { PageHeader } from "@/components/dashboard/ui";
 import { DashboardListPage } from "@/components/dashboard/list-page";
@@ -12,12 +12,13 @@ import { LIST_ACTION_CLASS } from "@/components/dashboard/list-page-actions";
 import { UsersTableSkeleton } from "@/components/dashboard/loading-skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CreatorPicker } from "@/components/creator-picker";
+import { TaskDetailSheet, TaskStatusBadge } from "@/components/tasks-view";
 import { useFirestoreTasks, useFirestoreUsers } from "@/lib/firebase/client-content";
-import { TASK_COLLECTION, TASK_STATUSES, TASK_STATUS_LABELS, formatDate, type TaskStatus } from "@/lib/creator-tasks";
+import { TASK_COLLECTION, TASK_STATUSES, TASK_STATUS_LABELS, formatDate, isOverdue, type Task, type TaskStatus } from "@/lib/creator-tasks";
 import { firebaseDb } from "@/lib/firebase/client";
 import { plural } from "@/lib/format";
 import { isCreatorUser } from "@/lib/users";
@@ -130,6 +131,9 @@ export default function TasksPage() {
   const [status, setStatus] = React.useState<TaskStatus | "all">("all");
   const [busyId, setBusyId] = React.useState<string | null>(null);
   const [actionError, setActionError] = React.useState<string | null>(null);
+  const [selectedId, setSelectedId] = React.useState<string | null>(null);
+  const [renameTask, setRenameTask] = React.useState<Task | null>(null);
+  const [renameValue, setRenameValue] = React.useState("");
   const isStaff = role === "admin" || role === "manager";
 
   // Any signed-in user can be assigned a task (they need an account so the
@@ -156,15 +160,35 @@ export default function TasksPage() {
     return [task.title, task.description, task.assignedToName].filter(Boolean).join(" ").toLowerCase().includes(search.trim().toLowerCase());
   });
 
-  const setTaskStatus = async (id: string, next: TaskStatus) => {
-    setBusyId(id);
+  const duplicate = async (task: Task) => {
+    setBusyId(task.id);
     setActionError(null);
     try {
-      await updateDoc(doc(firebaseDb, TASK_COLLECTION, id), { status: next, updatedAt: new Date().toISOString() });
+      const now = new Date().toISOString();
+      await addDoc(collection(firebaseDb, TASK_COLLECTION), {
+        title: `${task.title} (Copy)`, description: task.description,
+        assignedTo: task.assignedTo, assignedToName: task.assignedToName,
+        createdBy: user!.uid, createdByName: user!.name ?? user!.email,
+        status: "todo", dueDate: task.dueDate, createdAt: now, updatedAt: now,
+      });
       window.location.reload();
     } catch (cause) {
-      console.error("Unable to update task", cause);
-      setActionError("Couldn’t update the task. Please try again.");
+      console.error("Unable to duplicate task", cause);
+      setActionError("Couldn’t duplicate the task. Please try again.");
+      setBusyId(null);
+    }
+  };
+
+  const saveRename = async () => {
+    if (!renameTask || !renameValue.trim()) return;
+    setBusyId(renameTask.id);
+    setActionError(null);
+    try {
+      await updateDoc(doc(firebaseDb, TASK_COLLECTION, renameTask.id), { title: renameValue.trim(), updatedAt: new Date().toISOString() });
+      window.location.reload();
+    } catch (cause) {
+      console.error("Unable to rename task", cause);
+      setActionError("Couldn’t rename the task. Please try again.");
       setBusyId(null);
     }
   };
@@ -194,13 +218,48 @@ export default function TasksPage() {
         const assignee = assignees.find((candidate) => candidate.uid === task.assignedTo);
         const name = task.assignedToName ?? assignee?.name ?? "—";
         return <TableRow key={task.id} className="align-top">
-          <TableCell className="max-w-[420px] px-4 py-3"><p className="m-0 font-semibold">{task.title}</p>{task.description ? <p className="mb-0 mt-0.5 max-w-[40ch] text-muted-foreground">{task.description}</p> : null}</TableCell>
+          <TableCell className="max-w-[420px] px-4 py-3">
+            <button type="button" onClick={() => setSelectedId(task.id)} className="m-0 block text-left font-semibold text-foreground hover:text-primary">{task.title}</button>
+            {task.description ? <p className="mb-0 mt-0.5 max-w-[40ch] truncate text-muted-foreground">{task.description}</p> : null}
+          </TableCell>
           <TableCell className="px-4 py-3">{assignee?.isCreator ? <Link href={`/dashboard/discover/${assignee.slug}`} className="font-semibold text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary">{name}</Link> : name}</TableCell>
           <TableCell className="whitespace-nowrap px-4 py-3 text-muted-foreground">{task.dueDate ? formatDate(task.dueDate) : "—"}</TableCell>
-          <TableCell className="px-4 py-3"><Select value={task.status} onValueChange={(value) => void setTaskStatus(task.id, value as TaskStatus)}><SelectTrigger disabled={busyId === task.id} className="h-9 w-[150px]"><SelectValue /></SelectTrigger><SelectContent>{TASK_STATUSES.map((value) => <SelectItem key={value} value={value}>{TASK_STATUS_LABELS[value]}</SelectItem>)}</SelectContent></Select></TableCell>
-          <TableCell className="px-4 py-3"><div className="flex justify-end gap-1.5">{role === "admin" && <button type="button" onClick={() => void remove(task.id, task.title)} disabled={busyId === task.id} aria-label={`Delete ${task.title}`} className="grid h-10 w-10 place-items-center rounded-lg text-muted-foreground hover:text-destructive disabled:opacity-50"><Trash2 className="h-4 w-4" /></button>}</div></TableCell>
+          <TableCell className="whitespace-nowrap px-4 py-3"><TaskStatusBadge status={task.status} overdue={isOverdue(task)} /></TableCell>
+          <TableCell className="px-4 py-3">
+            <div className="flex justify-end">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button type="button" aria-label={`Actions for ${task.title}`} disabled={busyId === task.id} className="grid h-9 w-9 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-50"><MoreHorizontal className="h-4 w-4" aria-hidden="true" /></button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-40">
+                  <DropdownMenuItem onSelect={() => { setRenameTask(task); setRenameValue(task.title); }}><Pencil className="h-4 w-4" />Rename</DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => void duplicate(task)}><Copy className="h-4 w-4" />Duplicate</DropdownMenuItem>
+                  {role === "admin" ? <DropdownMenuItem variant="destructive" onSelect={() => void remove(task.id, task.title)}><Trash2 className="h-4 w-4" />Delete</DropdownMenuItem> : null}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </TableCell>
         </TableRow>;
       })}</TableBody></Table> : <div className="px-5 py-12 text-center"><p className="m-0 text-[15px] font-semibold">{tasks.length ? "No tasks match" : "No tasks yet"}</p><p className="mb-0 mt-1 text-sm text-muted-foreground">{tasks.length ? "Try another search or status." : "Create a task and assign it to a creator."}</p></div>}
     </section>
+
+    <TaskDetailSheet
+      task={visible.find((task) => task.id === selectedId) ?? null}
+      onOpenChange={(open) => { if (!open) setSelectedId(null); }}
+      canEdit={isStaff}
+      canDelete={role === "admin"}
+      onChanged={() => window.location.reload()}
+    />
+
+    <Dialog open={Boolean(renameTask)} onOpenChange={(open) => { if (!open) setRenameTask(null); }}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader><DialogTitle>Rename task</DialogTitle><DialogDescription>Give this task a new title.</DialogDescription></DialogHeader>
+        <Input value={renameValue} onChange={(event) => setRenameValue(event.target.value)} placeholder="Task title" />
+        <DialogFooter>
+          <button type="button" onClick={() => setRenameTask(null)} className="h-9 rounded-md border border-border px-4 text-[13px] font-semibold">Cancel</button>
+          <button type="button" disabled={!renameValue.trim() || busyId === renameTask?.id} onClick={() => void saveRename()} className="h-9 rounded-md bg-primary px-4 text-[13px] font-semibold text-primary-foreground disabled:opacity-50">Save</button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </DashboardListPage>;
 }
