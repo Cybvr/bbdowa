@@ -16,7 +16,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { CreatorPicker } from "@/components/creator-picker";
-import { CreatorThumbnail } from "@/components/creator-thumbnail";
 import { TaskDetailSheet, TaskStatusBadge } from "@/components/tasks-view";
 import { TaskClientCampaignFields, useTaskLinkOptions } from "@/components/task-link-fields";
 import { useFirestoreTasks, useFirestoreUsers } from "@/lib/firebase/client-content";
@@ -25,7 +24,7 @@ import { firebaseDb } from "@/lib/firebase/client";
 import { plural } from "@/lib/format";
 import { isCreatorUser } from "@/lib/users";
 
-type AssigneeOption = { uid: string; name: string; slug: string; isCreator: boolean; hint: string; profileImage?: string | null };
+type AssigneeOption = { uid: string; name: string; slug: string; isCreator: boolean; hint: string };
 
 function NewTaskDialog({ assignees, createdBy, createdByName, onCreated }: {
   assignees: AssigneeOption[];
@@ -162,14 +161,13 @@ export default function TasksPage() {
       slug: candidate.slug,
       isCreator: isCreatorUser(candidate),
       hint: isCreatorUser(candidate) ? (candidate.category || "Creator") : (candidate.title || candidate.role || ""),
-      profileImage: candidate.profileImage,
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
   // Always let the signed-in person assign to themselves, even if their own
   // directory record has no uid stored yet.
   if (user?.uid && !assignees.some((a) => a.uid === user.uid)) {
-    assignees.unshift({ uid: user.uid, name: `${user.name ?? user.email ?? "Me"} (you)`, slug: "", isCreator: false, hint: "", profileImage: null });
+    assignees.unshift({ uid: user.uid, name: `${user.name ?? user.email ?? "Me"} (you)`, slug: "", isCreator: false, hint: "" });
   }
 
   const visible = tasks.filter((task) => {
@@ -219,16 +217,15 @@ export default function TasksPage() {
     toolbar={<div className="space-y-3"><FilterBar panelId="admin-tasks-filter" search={search} onSearchChange={setSearch} searchPlaceholder="Search tasks" resultCount={plural(visible.length, "task")} /><div className="flex flex-wrap gap-2" aria-label="Task status filter">{(["all", ...TASK_STATUSES] as const).map((value) => <button key={value} type="button" onClick={() => setStatus(value)} aria-pressed={status === value} className={`rounded-md border px-3 py-1.5 text-[13px] font-medium ${status === value ? "border-primary bg-primary text-primary-foreground" : "border-border text-foreground"}`}>{value === "all" ? "All" : TASK_STATUS_LABELS[value]}</button>)}</div></div>}>
     {error || actionError ? <p className="mb-4 text-[13px] text-destructive">{error ?? actionError}</p> : null}
     <section className="mt-4 overflow-x-auto rounded-xl border border-border bg-background">
-      {visible.length ? <Table className="w-full border-collapse"><TableHeader><TableRow className="bg-muted/40"><TableHead className="w-14 px-4 py-3"><span className="sr-only">Assignee avatar</span></TableHead><TableHead className="px-4 py-3">Task</TableHead><TableHead className="px-4 py-3 text-right">Actions</TableHead></TableRow></TableHeader><TableBody>{visible.map((task) => {
+      {visible.length ? <Table className="w-full table-fixed border-collapse"><TableHeader><TableRow className="bg-muted/40"><TableHead className="px-4 py-3">Task</TableHead><TableHead className="w-20 px-4 py-3 text-right">Actions</TableHead></TableRow></TableHeader><TableBody>{visible.map((task) => {
         const assignee = assignees.find((candidate) => candidate.uid === task.assignedTo);
         const name = task.assignedToName ?? assignee?.name ?? "—";
         return <TableRow key={task.id} className="align-top">
-          <TableCell className="w-14 px-4 py-3 align-middle"><CreatorThumbnail imageSrc={assignee?.profileImage} avatarSeed={assignee?.name ?? task.assignedToName ?? undefined} className="h-9 w-9" /></TableCell>
           <TableCell className="px-4 py-3">
-            <button type="button" onClick={() => setSelectedId(task.id)} className="m-0 block text-left font-semibold text-foreground hover:text-primary">{task.title}</button>
+            <button type="button" onClick={() => setSelectedId(task.id)} className="m-0 block max-w-full truncate text-left font-semibold text-foreground hover:text-primary">{task.title}</button>
             <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[13px] text-muted-foreground">
-              {assignee?.isCreator ? <Link href={`/dashboard/discover/${assignee.slug}`} className="shrink-0 font-semibold text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary">{name}</Link> : <span className="shrink-0">{name}</span>}
-              {task.description ? <><span aria-hidden="true">·</span><span className="truncate">{task.description}</span></> : null}
+              {assignee?.isCreator ? <Link href={`/dashboard/discover/${assignee.slug}`} className="max-w-[45%] shrink-0 truncate font-semibold text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary">{name}</Link> : <span className="max-w-[45%] shrink-0 truncate">{name}</span>}
+              {task.description ? <><span aria-hidden="true">·</span><span className="min-w-0 truncate">{task.description}</span></> : null}
             </div>
             <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted-foreground">
               {task.clientName ? <span>{task.clientName}</span> : null}
