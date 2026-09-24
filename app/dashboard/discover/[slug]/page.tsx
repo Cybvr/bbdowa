@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import type { IconType } from "react-icons";
 import { FaBehance, FaGlobe } from "react-icons/fa";
+import { LayoutGrid, Mail, MapPin, Phone } from "lucide-react";
 import { creatorCategoryOptions, isCreatorNew, isCreatorUser, type Creator } from "@/lib/users";
 import { useAuth } from "@/components/auth-provider";
 import { readCampaignsFromFirestore, readClientsFromFirestore, readDocumentsForAssignee, readTimeEntriesForUser, useFirestoreUsers } from "@/lib/firebase/client-content";
@@ -113,6 +114,22 @@ export default function CreatorDetailPage() {
   const creatorCampaigns = getCreatorCampaigns(creator.slug, clients, campaigns);
   const canSeeTasks = isStaff || Boolean(creator.uid);
 
+  type EngagementCell = { label: string; value: ReactNode };
+  const engagementCells = ([
+    creator.dayRate ? { label: "Day rate", value: creator.dayRate } : null,
+    creator.availability ? { label: "Availability", value: <span className="capitalize">{creator.availability}</span> } : null,
+    creator.terms ? { label: "Terms", value: creator.terms } : null,
+    creator.referralSource ? { label: "Referred by", value: creator.referralSource } : null,
+  ] as (EngagementCell | null)[]).filter((cell): cell is EngagementCell => cell !== null);
+
+  type DetailRow = { icon: ReactNode; label: string; value: ReactNode };
+  const detailRows = ([
+    { icon: <LayoutGrid className="h-5 w-5" aria-hidden="true" />, label: "Category", value: creator.category || "—" },
+    creator.location ? { icon: <MapPin className="h-5 w-5" aria-hidden="true" />, label: "Location", value: creator.location } : null,
+    creator.email ? { icon: <Mail className="h-5 w-5" aria-hidden="true" />, label: "Email", value: <a href={`mailto:${creator.email}`} className="hover:text-primary">{creator.email}</a> } : null,
+    creator.phone ? { icon: <Phone className="h-5 w-5" aria-hidden="true" />, label: "Phone", value: creator.phone } : null,
+  ] as (DetailRow | null)[]).filter((row): row is DetailRow => row !== null);
+
   const tabs: { id: CreatorTab; label: string }[] = [
     { id: "overview", label: "Overview" },
     ...(creatorCampaigns.length ? ([{ id: "campaigns", label: "Campaigns" }] as const) : []),
@@ -175,7 +192,7 @@ export default function CreatorDetailPage() {
       />
 
       <ProfileLayout
-        showSidebarOnMobile={tab === "overview"}
+        showSidebarOnMobile={false}
         sidebar={
           <>
             <ProfileFacts>
@@ -206,23 +223,61 @@ export default function CreatorDetailPage() {
       >
         {tab === "overview" && (
           <>
-            {creator.craftNote ? (
-              <ProfileSection title="About" variant="plain">
-                <p className="m-0 max-w-[850px] text-[15px] leading-[1.5]">{creator.craftNote}</p>
-              </ProfileSection>
+            {creator.phone || creator.email ? (
+              <div className="flex gap-2">
+                {creator.phone ? (
+                  <a href={`tel:${creator.phone}`} className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-primary text-[15px] font-semibold text-primary-foreground transition hover:bg-primary/90">
+                    <Phone aria-hidden="true" className="h-4 w-4" />Call
+                  </a>
+                ) : null}
+                {creator.email ? (
+                  <a href={`mailto:${creator.email}`} className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-muted text-[15px] font-semibold text-foreground transition hover:bg-muted/75">
+                    <Mail aria-hidden="true" className="h-4 w-4" />Email
+                  </a>
+                ) : null}
+              </div>
             ) : null}
 
-            {creator.availability || creator.dayRate || creator.terms || creator.workedOn?.length || creator.referralSource ? (
+            {creator.craftNote ? (
+              <p className="m-0 text-[15px] leading-[1.55]">{creator.craftNote}</p>
+            ) : null}
+
+            {creator.tags?.length ? (
+              <div className="flex flex-wrap gap-1.5 lg:hidden">
+                {creator.tags.map((tag) => (
+                  <span key={tag} className="rounded-full bg-muted px-2.5 py-1 text-[11px] text-foreground">{tag}</span>
+                ))}
+              </div>
+            ) : null}
+
+            {engagementCells.length ? (
               <ProfileSection title="Engagement" variant="plain">
-                <div>
-                  {creator.availability ? <ProfileFact label="Availability" value={<span className="capitalize">{creator.availability}</span>} /> : null}
-                  {creator.dayRate ? <ProfileFact label="Day rate estimate" value={creator.dayRate} /> : null}
-                  {creator.terms ? <ProfileFact label="Terms" value={creator.terms} /> : null}
-                  {creator.workedOn?.length ? <ProfileFact label="Engagements" value={creator.workedOn.join(", ")} /> : null}
-                  {creator.referralSource ? <ProfileFact label="Referral source" value={creator.referralSource} /> : null}
+                <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border">
+                  {engagementCells.map((cell) => (
+                    <div key={cell.label} className="bg-background p-4">
+                      <p className="m-0 text-[13px] text-muted-foreground">{cell.label}</p>
+                      <p className="mb-0 mt-1 text-[16px] font-semibold text-foreground">{cell.value}</p>
+                    </div>
+                  ))}
                 </div>
               </ProfileSection>
             ) : null}
+
+            <div className="lg:hidden">
+              <ProfileSection title="Details" variant="plain">
+                <div>
+                  {detailRows.map((row) => (
+                    <div key={row.label} className="flex items-center gap-3 border-b border-border py-3 last:border-0">
+                      <span className="shrink-0 text-muted-foreground">{row.icon}</span>
+                      <div className="min-w-0">
+                        <p className="m-0 text-[13px] text-muted-foreground">{row.label}</p>
+                        <p className="mb-0 mt-0.5 truncate text-[15px] font-semibold text-foreground">{row.value}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </ProfileSection>
+            </div>
 
             {creator.followerCount || creator.gender || creator.age != null || creator.niche ? (
               <ProfileSection title="Audience profile" variant="plain">
