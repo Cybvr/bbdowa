@@ -9,6 +9,7 @@ import { useAuth } from "@/components/auth-provider";
 import { DocumentSignDialog } from "@/components/document-sign-dialog";
 import { DocumentStatus } from "@/components/document-status";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { MobileHeaderActions, MobileHeaderTitle } from "@/components/dashboard/mobile-header";
 import { PageLoadingSkeleton } from "@/components/dashboard/loading-skeleton";
 import { RichTextContent } from "@/components/rich-text-editor";
 import { firebaseDb } from "@/lib/firebase/client";
@@ -37,9 +38,34 @@ export default function DocumentDetailPage() {
   const isStaff = role === "admin" || role === "manager";
   const canSign = document.status === "pending_signature" && user?.uid === document.assignedTo;
   const backHref = isStaff ? "/admin/documents" : "/dashboard/me";
-  const hasMenu = isStaff || canSign;
+  const canEditDraft = isStaff && document.status === "draft";
+  const hasMenu = canEditDraft || canSign;
+  const actionsMenu = hasMenu ? (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button type="button" aria-label="Document actions" className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
+          <MoreHorizontal className="h-5 w-5" aria-hidden="true" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-44">
+        {canEditDraft ? (
+          <DropdownMenuItem onSelect={() => router.push(`/admin/documents/${document.id}/edit`)}>
+            <Pencil className="h-4 w-4" />Edit
+          </DropdownMenuItem>
+        ) : null}
+        {canSign ? (
+          <DropdownMenuItem onSelect={() => setSignOpen(true)}>
+            <PenLine className="h-4 w-4" />Review and sign
+          </DropdownMenuItem>
+        ) : null}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  ) : null;
   return <main className="flex flex-1 flex-col px-4 pb-8 pt-4 sm:px-8">
-    <header className="flex items-center justify-between gap-3 border-b border-border pb-3">
+    <MobileHeaderTitle title={document.title} />
+    {actionsMenu ? <MobileHeaderActions>{actionsMenu}</MobileHeaderActions> : null}
+    {/* Desktop page header — on phones the title and actions live in the top bar. */}
+    <header className="hidden items-center justify-between gap-3 border-b border-border pb-3 nav:flex">
       <div className="flex min-w-0 items-center gap-2">
         <Link href={backHref} aria-label="Back to documents" className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-foreground transition hover:bg-muted">
           <ChevronLeft className="h-5 w-5" aria-hidden="true" />
@@ -47,30 +73,11 @@ export default function DocumentDetailPage() {
         <h1 className="m-0 truncate text-[18px] font-bold leading-tight sm:text-[20px]">{document.title}</h1>
         <span className="shrink-0"><DocumentStatus status={document.status} /></span>
       </div>
-      {hasMenu ? (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button type="button" aria-label="Document actions" className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
-              <MoreHorizontal className="h-5 w-5" aria-hidden="true" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-44">
-            {isStaff ? (
-              <DropdownMenuItem onSelect={() => router.push(`/admin/documents/${document.id}/edit`)}>
-                <Pencil className="h-4 w-4" />{document.status === "draft" ? "Edit" : "View record"}
-              </DropdownMenuItem>
-            ) : null}
-            {canSign ? (
-              <DropdownMenuItem onSelect={() => setSignOpen(true)}>
-                <PenLine className="h-4 w-4" />Review and sign
-              </DropdownMenuItem>
-            ) : null}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ) : null}
+      {actionsMenu}
     </header>
     {canSign ? <DocumentSignDialog document={document} defaultName={user?.name ?? ""} onSigned={() => void load()} open={signOpen} onOpenChange={setSignOpen} hideTrigger /> : null}
-    <div className="mt-4 flex flex-col gap-5 nav:flex-row">
+    <div className="flex flex-col gap-5 nav:mt-4 nav:flex-row">
+      <div className="nav:hidden"><DocumentStatus status={document.status} /></div>
       <aside className="hidden space-y-4 self-start rounded-xl border border-border bg-muted/20 p-5 nav:sticky nav:top-5 nav:block nav:w-[300px] nav:flex-none">
         <h1 className="m-0 text-[17px] font-bold">{document.title}</h1><DocumentStatus status={document.status} />
         <dl className="space-y-3 text-[13px]"><div><dt className="text-muted-foreground">Created</dt><dd className="m-0 font-medium">{formatDocumentDateTime(document.createdAt)}</dd></div><div><dt className="text-muted-foreground">Sent to</dt><dd className="m-0 font-medium">{document.assignedToName ?? "—"}</dd></div><div><dt className="text-muted-foreground">Signed</dt><dd className="m-0 font-medium">{formatDocumentDateTime(document.signedAt)}</dd></div><div><dt className="text-muted-foreground">Signed by</dt><dd className="m-0 font-medium">{document.signedName ?? "—"}</dd></div></dl>
