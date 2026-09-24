@@ -25,7 +25,6 @@ export function DashboardFooter({ hidden = false }: { hidden?: boolean }) {
         ...(auth?.role === "admin" ? [{ label: "Users", href: "/admin/users" }] : []),
         { label: "Documents", href: "/admin/documents" },
         { label: "Tasks", href: "/admin/tasks" },
-        { label: "Dashboard", href: "/dashboard" },
       ]
     : NAV_ITEMS.filter(
         (item): item is Extract<typeof item, { kind: "link" }> =>
