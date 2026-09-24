@@ -433,10 +433,11 @@ function CreatorDiscoveryBar({
         type="button"
         onClick={onOpenFilters}
         aria-label="More creator filters"
-        className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-[13px] font-semibold text-foreground transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+        title="More filters"
+        className="inline-flex h-9 w-9 items-center justify-center gap-1.5 rounded-lg border border-border bg-background text-[13px] font-semibold text-foreground transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:w-auto sm:px-3"
       >
         <FiFilter aria-hidden="true" className="h-3.5 w-3.5" />
-        More filters
+        <span className="hidden sm:inline">More filters</span>
         {activeFilterCount > 0 ? <span className="text-[11px] text-muted-foreground">{activeFilterCount}</span> : null}
       </button>
       {canSaveResultsAsList ? (
