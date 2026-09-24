@@ -6,7 +6,7 @@ import { UserCreateAction } from "@/components/user-create-action";
 import { UserActions } from "@/components/user-actions";
 import { BackfillUidsAction } from "@/components/backfill-uids-action";
 import { useAuth } from "@/components/auth-provider";
-import { ImageWithFallback, PageHeader } from "@/components/dashboard/ui";
+import { PageHeader } from "@/components/dashboard/ui";
 import { DashboardListPage } from "@/components/dashboard/list-page";
 import { FilterBar } from "@/components/dashboard/filter-bar";
 import { useFirestoreUsers } from "@/lib/firebase/client-content";
@@ -42,24 +42,18 @@ function UserRow({ user, categoryOptions }: { user: User; categoryOptions: strin
   return (
     <TableRow className="align-middle">
       <TableCell className="px-4 py-3.5 sm:px-5">
-        <div className="flex min-w-[220px] items-center gap-3">
-          <span className="relative grid h-9 w-9 flex-none place-items-center overflow-hidden rounded-full border border-border bg-muted font-bold text-muted-foreground">
-            <ImageWithFallback src={user.profileImage} alt={`${user.name} profile image`} className="h-full w-full object-cover" fallbackClassName="h-full w-full" fallbackSeed={user.name || user.email || user.slug} />
-          </span>
-          <div className="min-w-0">
-            <strong className="block truncate font-semibold text-foreground">{user.name}</strong>
-            <span className="block truncate text-muted-foreground">{user.email ?? "No email added"}</span>
+        <div className="min-w-0">
+          <strong className="block truncate font-semibold text-foreground">{user.name}</strong>
+          <div className="mt-1 flex flex-wrap gap-1.5">
+            {user.role === "pending" && !userRoles(user).length ? <PendingBadge /> : userRoles(user).map((role) => <RoleBadge key={role} role={role} />)}
+          </div>
+          <div className="mt-1 hidden min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground sm:flex">
+            <span className="max-w-[260px] truncate">{user.email ?? "No email added"}</span>
+            <span aria-hidden="true">·</span>
+            <span className="max-w-[220px] truncate">{user.title || "No position"}</span>
+            {user.department ? <><span aria-hidden="true">·</span><span className="max-w-[180px] truncate">{user.department}</span></> : null}
           </div>
         </div>
-      </TableCell>
-      <TableCell className="px-4 py-3.5 sm:px-5">
-        <div className="flex max-w-[220px] flex-wrap gap-1.5">
-          {user.role === "pending" && !userRoles(user).length ? <PendingBadge /> : userRoles(user).map((role) => <RoleBadge key={role} role={role} />)}
-        </div>
-      </TableCell>
-      <TableCell className="px-4 py-3.5 text-foreground">
-        <span className="block max-w-[190px] truncate">{user.title || "—"}</span>
-        <span className="mt-0.5 block max-w-[190px] truncate text-muted-foreground">{user.department || "No department"}</span>
       </TableCell>
       <TableCell className="px-4 py-3.5 text-right">
         <div className="flex items-center justify-end gap-2">
@@ -154,14 +148,12 @@ export default function AdminUsersPage() {
 
       <section className="overflow-hidden rounded-xl border border-border bg-background">
         {visibleUsers.length ? (
-          <div className="overflow-x-auto">
-            <Table className="w-full min-w-[760px] border-collapse text-left">
+          <div>
+            <Table className="w-full table-fixed border-collapse text-left">
               <TableHeader className="bg-muted/35 font-semibold uppercase text-muted-foreground">
                 <TableRow>
                   <TableHead className="px-4 py-3 sm:px-5">User</TableHead>
-                  <TableHead className="px-4 py-3 sm:px-5">Roles</TableHead>
-                  <TableHead className="px-4 py-3 sm:px-5">Position</TableHead>
-                  <TableHead className="px-4 py-3 text-right sm:px-5">Actions</TableHead>
+                  <TableHead className="w-28 px-4 py-3 text-right sm:px-5">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
