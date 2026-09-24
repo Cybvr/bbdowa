@@ -8,8 +8,10 @@ import { RichTextContent } from "@/components/rich-text-editor";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-export function DocumentSignDialog({ document, defaultName, onSigned }: { document: AgencyDocument; defaultName: string; onSigned: () => void }) {
-  const [open, setOpen] = React.useState(false);
+export function DocumentSignDialog({ document, defaultName, onSigned, open: controlledOpen, onOpenChange, hideTrigger = false }: { document: AgencyDocument; defaultName: string; onSigned: () => void; open?: boolean; onOpenChange?: (open: boolean) => void; hideTrigger?: boolean }) {
+  const [uncontrolledOpen, setUncontrolledOpen] = React.useState(false);
+  const open = controlledOpen ?? uncontrolledOpen;
+  const setOpen = onOpenChange ?? setUncontrolledOpen;
   const [name, setName] = React.useState(defaultName);
   const [agreed, setAgreed] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
@@ -36,7 +38,7 @@ export function DocumentSignDialog({ document, defaultName, onSigned }: { docume
   };
 
   return <>
-    <button type="button" onClick={() => setOpen(true)} className="inline-flex h-10 items-center rounded-md bg-primary px-4 text-[13px] font-semibold text-primary-foreground">Review and sign</button>
+    {hideTrigger ? null : <button type="button" onClick={() => setOpen(true)} className="inline-flex h-10 items-center rounded-md bg-primary px-4 text-[13px] font-semibold text-primary-foreground">Review and sign</button>}
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader><DialogTitle>{document.title}</DialogTitle><DialogDescription>Read the document, then type your full name to sign.</DialogDescription></DialogHeader>
