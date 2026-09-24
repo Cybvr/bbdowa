@@ -216,20 +216,24 @@ export default function TasksPage() {
   return <DashboardListPage title="Tasks" actions={<NewTaskDialog assignees={assignees} createdBy={user!.uid} createdByName={user!.name ?? user!.email} onCreated={() => window.location.reload()} />}
     toolbar={<div className="space-y-3"><FilterBar panelId="admin-tasks-filter" search={search} onSearchChange={setSearch} searchPlaceholder="Search tasks" resultCount={plural(visible.length, "task")} /><div className="flex flex-wrap gap-2" aria-label="Task status filter">{(["all", ...TASK_STATUSES] as const).map((value) => <button key={value} type="button" onClick={() => setStatus(value)} aria-pressed={status === value} className={`rounded-md border px-3 py-1.5 text-[13px] font-medium ${status === value ? "border-primary bg-primary text-primary-foreground" : "border-border text-foreground"}`}>{value === "all" ? "All" : TASK_STATUS_LABELS[value]}</button>)}</div></div>}>
     {error || actionError ? <p className="mb-4 text-[13px] text-destructive">{error ?? actionError}</p> : null}
-    <section className="overflow-x-auto rounded-xl border border-border bg-background">
-      {visible.length ? <Table className="min-w-[1000px] w-full border-collapse"><TableHeader><TableRow className="bg-muted/40"><TableHead className="px-4 py-3">Task</TableHead><TableHead className="px-4 py-3">Assigned to</TableHead><TableHead className="px-4 py-3">Client</TableHead><TableHead className="px-4 py-3">Campaign</TableHead><TableHead className="px-4 py-3">Due</TableHead><TableHead className="px-4 py-3">Status</TableHead><TableHead className="px-4 py-3 text-right">Actions</TableHead></TableRow></TableHeader><TableBody>{visible.map((task) => {
+    <section className="mt-4 overflow-x-auto rounded-xl border border-border bg-background">
+      {visible.length ? <Table className="w-full border-collapse"><TableHeader><TableRow className="bg-muted/40"><TableHead className="px-4 py-3">Task</TableHead><TableHead className="px-4 py-3 text-right">Actions</TableHead></TableRow></TableHeader><TableBody>{visible.map((task) => {
         const assignee = assignees.find((candidate) => candidate.uid === task.assignedTo);
         const name = task.assignedToName ?? assignee?.name ?? "—";
         return <TableRow key={task.id} className="align-top">
-          <TableCell className="max-w-[420px] px-4 py-3">
+          <TableCell className="px-4 py-3">
             <button type="button" onClick={() => setSelectedId(task.id)} className="m-0 block text-left font-semibold text-foreground hover:text-primary">{task.title}</button>
-            {task.description ? <p className="mb-0 mt-0.5 max-w-[40ch] truncate text-muted-foreground">{task.description}</p> : null}
+            <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[13px] text-muted-foreground">
+              {assignee?.isCreator ? <Link href={`/dashboard/discover/${assignee.slug}`} className="shrink-0 font-semibold text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary">{name}</Link> : <span className="shrink-0">{name}</span>}
+              {task.description ? <><span aria-hidden="true">·</span><span className="truncate">{task.description}</span></> : null}
+            </div>
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted-foreground">
+              {task.clientName ? <span>{task.clientName}</span> : null}
+              {task.campaignName ? <span>{task.campaignName}</span> : null}
+              {task.dueDate ? <span>Due {formatDate(task.dueDate)}</span> : null}
+              <TaskStatusBadge status={task.status} overdue={isOverdue(task)} />
+            </div>
           </TableCell>
-          <TableCell className="px-4 py-3">{assignee?.isCreator ? <Link href={`/dashboard/discover/${assignee.slug}`} className="font-semibold text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary">{name}</Link> : name}</TableCell>
-          <TableCell className="px-4 py-3">{task.clientName ?? "—"}</TableCell>
-          <TableCell className="px-4 py-3">{task.campaignName ?? "—"}</TableCell>
-          <TableCell className="whitespace-nowrap px-4 py-3 text-muted-foreground">{task.dueDate ? formatDate(task.dueDate) : "—"}</TableCell>
-          <TableCell className="whitespace-nowrap px-4 py-3"><TaskStatusBadge status={task.status} overdue={isOverdue(task)} /></TableCell>
           <TableCell className="px-4 py-3">
             <div className="flex justify-end">
               <DropdownMenu>
