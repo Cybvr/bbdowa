@@ -405,6 +405,7 @@ function CreatorDiscoveryBar({
   onSaveResultsAsList,
   canSaveResultsAsList,
   onJoinClick,
+  createAction,
 }: {
   search: string;
   setSearch: (value: string) => void;
@@ -421,6 +422,7 @@ function CreatorDiscoveryBar({
   onSaveResultsAsList: () => void;
   canSaveResultsAsList: boolean;
   onJoinClick?: () => void;
+  createAction?: React.ReactNode;
 }) {
   const auth = useOptionalAuth();
   const showJoinAction = auth ? !auth.loading && !auth.user : true;
@@ -483,6 +485,7 @@ function CreatorDiscoveryBar({
       view={view === "list" ? "table" : "cards"}
       onViewChange={(next) => setView(next === "table" ? "list" : "cards")}
       actions={filterActions}
+      mobileAction={createAction}
     />
   );
 }
@@ -915,10 +918,12 @@ export function CreatorDirectory({
   creators,
   categories,
   locations,
+  createAction,
 }: {
   creators: Creator[];
   categories: string[];
   locations: string[];
+  createAction?: React.ReactNode;
 }) {
   const router = useRouter();
   const auth = useOptionalAuth();
@@ -1319,6 +1324,7 @@ export function CreatorDirectory({
             onSaveResultsAsList={saveResultsAsList}
             canSaveResultsAsList={tab !== "my-lists" && visible.length > 0}
             onJoinClick={() => setLoginModalOpen(true)}
+            createAction={createAction}
           />
           <CreatorTabs
             tab={tab}

@@ -154,6 +154,7 @@ export function FilterBar<TabKey extends string, SortKey extends string>({
   view,
   onViewChange,
   actions,
+  mobileAction,
   className = "my-4",
 }: {
   panelId: string;
@@ -173,6 +174,8 @@ export function FilterBar<TabKey extends string, SortKey extends string>({
   view?: ViewMode;
   onViewChange?: (view: ViewMode) => void;
   actions?: ReactNode;
+  /** Extra control shown only in the mobile row, next to the view toggle. */
+  mobileAction?: ReactNode;
   className?: string;
 }) {
   const hasStatus = Boolean(tabs && tabs.length > 0 && onTabChange);
@@ -346,6 +349,7 @@ export function FilterBar<TabKey extends string, SortKey extends string>({
         ) : <span />}
         <div className="flex items-center gap-2">
           {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
+          {mobileAction}
           {view && onViewChange ? <ViewToggle view={view} onChange={onViewChange} /> : null}
         </div>
       </div>

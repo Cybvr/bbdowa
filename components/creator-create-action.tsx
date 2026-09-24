@@ -18,9 +18,11 @@ function slugify(value: string) {
 export function CreatorCreateAction({
   existingSlugs,
   categoryOptions = [],
+  iconOnly = false,
 }: {
   existingSlugs: string[];
   categoryOptions?: string[];
+  iconOnly?: boolean;
 }) {
   const router = useRouter();
   const { isAdmin, role } = useAuth();
@@ -100,7 +102,17 @@ export function CreatorCreateAction({
       title="New creator"
       description="Create a creator profile and open it after saving."
       canEdit={canCreate}
-      trigger={(open) => (
+      trigger={(open) => iconOnly ? (
+        <button
+          type="button"
+          onClick={open}
+          aria-label="New creator"
+          title="New creator"
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-background text-foreground transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+        >
+          <Plus aria-hidden="true" className="h-4 w-4" />
+        </button>
+      ) : (
         <button
           type="button"
           onClick={open}
