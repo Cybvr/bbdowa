@@ -37,7 +37,7 @@ export default function AdminPage() {
       <PageHeader title="Admin" description="Data tools for the dashboard." />
 
       <div className="mt-6 space-y-8">
-        <section>
+        {role === "admin" ? <section>
           <div className="mb-1 flex items-center justify-between gap-3">
             <h2 className="m-0 text-eyebrow font-semibold uppercase tracking-[0.08em] text-muted-foreground">Users</h2>
             <Link href="/admin/users" className="inline-flex items-center gap-1 text-[13px] font-semibold text-primary transition hover:underline">View all<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></Link>
@@ -55,7 +55,7 @@ export default function AdminPage() {
               ))}
             </ItemCardList>
           ) : <p className="py-3 text-[13px] text-muted-foreground">No users yet.</p>}
-        </section>
+        </section> : null}
 
         <section>
           <div className="mb-1 flex items-center justify-between gap-3">

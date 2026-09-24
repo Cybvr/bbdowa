@@ -37,10 +37,11 @@ type SearchResult = {
   keywords: string;
 };
 
-function navigationSearchResults(items: NavItem[], canViewAuthLinks: boolean): SearchResult[] {
+function navigationSearchResults(items: NavItem[], canViewAuthLinks: boolean, role: string | null): SearchResult[] {
   return items.flatMap((item) => {
     if (item.kind === "link") {
-      if (item.requiresAdmin) return [];
+      if (item.requiresAdmin && role !== "admin") return [];
+      if (item.requiresStaff && role !== "admin" && role !== "manager") return [];
       return !item.requiresAuth || canViewAuthLinks
         ? [{ id: `nav-${item.href}`, label: item.label, detail: "Dashboard", href: item.href, keywords: item.label }]
         : [];
@@ -158,7 +159,7 @@ export function DashboardHeader({
   sidebarCollapsed?: boolean;
   onToggleSidebar?: () => void;
 }) {
-  const { user, isViewingAs, viewAsUser, stopViewingAs } = useAuth();
+  const { user, role, isViewingAs, viewAsUser, stopViewingAs } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
   const [trackerOpen, setTrackerOpen] = useState(false);
@@ -174,8 +175,8 @@ export function DashboardHeader({
     null;
 
   const staticResults = useMemo(
-    () => navigationSearchResults(pathname.startsWith("/admin") ? ADMIN_NAV_ITEMS : NAV_ITEMS, Boolean(user)),
-    [pathname, user],
+    () => navigationSearchResults(pathname.startsWith("/admin") ? ADMIN_NAV_ITEMS : NAV_ITEMS, Boolean(user), role),
+    [pathname, role, user],
   );
 
   useEffect(() => {
