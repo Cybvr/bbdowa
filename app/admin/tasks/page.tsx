@@ -15,16 +15,17 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CreatorPicker } from "@/components/creator-picker";
 import { useFirestoreTasks, useFirestoreUsers } from "@/lib/firebase/client-content";
 import { TASK_COLLECTION, TASK_STATUSES, TASK_STATUS_LABELS, formatDate, type TaskStatus } from "@/lib/creator-tasks";
 import { firebaseDb } from "@/lib/firebase/client";
 import { plural } from "@/lib/format";
 import { isCreatorUser } from "@/lib/users";
 
-type CreatorOption = { uid: string | null; name: string; slug: string };
+type AssigneeOption = { uid: string; name: string; slug: string; isCreator: boolean; hint: string };
 
-function NewTaskDialog({ creators, createdBy, createdByName, onCreated }: {
-  creators: CreatorOption[];
+function NewTaskDialog({ assignees, createdBy, createdByName, onCreated }: {
+  assignees: AssigneeOption[];
   createdBy: string;
   createdByName: string | null;
   onCreated: () => void;
@@ -47,13 +48,13 @@ function NewTaskDialog({ creators, createdBy, createdByName, onCreated }: {
     setBusy(true);
     setError(null);
     try {
-      const creator = creators.find((candidate) => candidate.uid === assignedTo);
+      const assignee = assignees.find((candidate) => candidate.uid === assignedTo);
       const now = new Date().toISOString();
       await addDoc(collection(firebaseDb, TASK_COLLECTION), {
         title: title.trim(),
         description: description.trim(),
         assignedTo,
-        assignedToName: creator?.name ?? null,
+        assignedToName: assignee?.name ?? null,
         createdBy,
         createdByName,
         status: "todo",
@@ -82,18 +83,20 @@ function NewTaskDialog({ creators, createdBy, createdByName, onCreated }: {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>New task</DialogTitle>
-            <DialogDescription>Assign a piece of work to a creator.</DialogDescription>
+            <DialogDescription>Assign a piece of work to anyone with an account.</DialogDescription>
           </DialogHeader>
 
           <form onSubmit={save} className="space-y-4">
             <div className="space-y-1.5">
               <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Assign to</span>
-              <Select value={assignedTo} onValueChange={setAssignedTo}>
-                <SelectTrigger disabled={busy || creators.length === 0} className="h-10"><SelectValue placeholder={creators.length ? "Choose a creator" : "No creators with an account yet"} /></SelectTrigger>
-                <SelectContent>
-                  {creators.map((creator) => <SelectItem key={creator.slug} value={creator.uid ?? ""} disabled={!creator.uid}>{creator.name}{creator.uid ? "" : " · hasn’t signed in"}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <CreatorPicker
+                options={assignees.map((a) => ({ value: a.uid, label: a.hint ? `${a.name} · ${a.hint}` : a.name }))}
+                value={assignedTo}
+                onChange={setAssignedTo}
+                placeholder="Search people"
+                emptyText="No people found."
+                autoFocus={false}
+              />
             </div>
             <div className="space-y-1.5">
               <label htmlFor="task-title" className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Title</label>
@@ -129,13 +132,18 @@ export default function TasksPage() {
   const [actionError, setActionError] = React.useState<string | null>(null);
   const isStaff = role === "admin" || role === "manager";
 
-  const creators: CreatorOption[] = users
-    .filter((candidate) => isCreatorUser(candidate))
-    .map((candidate) => ({ uid: candidate.uid ?? null, name: candidate.name, slug: candidate.slug }))
-    .sort((a, b) => {
-      const accountDiff = Number(Boolean(b.uid)) - Number(Boolean(a.uid));
-      return accountDiff !== 0 ? accountDiff : a.name.localeCompare(b.name);
-    });
+  // Any signed-in user can be assigned a task (they need an account so the
+  // task can reach them). Ordered by name and searchable in the picker.
+  const assignees: AssigneeOption[] = users
+    .filter((candidate) => candidate.uid)
+    .map((candidate) => ({
+      uid: candidate.uid as string,
+      name: candidate.name,
+      slug: candidate.slug,
+      isCreator: isCreatorUser(candidate),
+      hint: isCreatorUser(candidate) ? (candidate.category || "Creator") : (candidate.title || candidate.role || ""),
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   const visible = tasks.filter((task) => {
     if (status !== "all" && task.status !== status) return false;
@@ -172,16 +180,16 @@ export default function TasksPage() {
   if (authLoading || loading || usersLoading) return <UsersTableSkeleton />;
   if (!isStaff) return <main className="mx-auto w-full max-w-6xl flex-1 px-5 pb-16 pt-8 sm:px-8"><PageHeader title="Tasks" /><p className="mt-8 text-sm text-muted-foreground">A staff account is required to manage tasks.</p></main>;
 
-  return <DashboardListPage title="Tasks" actions={<NewTaskDialog creators={creators} createdBy={user!.uid} createdByName={user!.name ?? user!.email} onCreated={() => window.location.reload()} />}
+  return <DashboardListPage title="Tasks" actions={<NewTaskDialog assignees={assignees} createdBy={user!.uid} createdByName={user!.name ?? user!.email} onCreated={() => window.location.reload()} />}
     toolbar={<div className="space-y-3"><FilterBar panelId="admin-tasks-filter" search={search} onSearchChange={setSearch} searchPlaceholder="Search tasks" resultCount={plural(visible.length, "task")} /><div className="flex flex-wrap gap-2" aria-label="Task status filter">{(["all", ...TASK_STATUSES] as const).map((value) => <button key={value} type="button" onClick={() => setStatus(value)} aria-pressed={status === value} className={`rounded-md border px-3 py-1.5 text-[13px] font-medium ${status === value ? "border-primary bg-primary text-primary-foreground" : "border-border text-foreground"}`}>{value === "all" ? "All" : TASK_STATUS_LABELS[value]}</button>)}</div></div>}>
     {error || actionError ? <p className="mb-4 text-[13px] text-destructive">{error ?? actionError}</p> : null}
     <section className="overflow-x-auto rounded-xl border border-border bg-background">
       {visible.length ? <Table className="min-w-[760px] w-full border-collapse"><TableHeader><TableRow className="bg-muted/40"><TableHead className="px-4 py-3">Task</TableHead><TableHead className="px-4 py-3">Assigned to</TableHead><TableHead className="px-4 py-3">Due</TableHead><TableHead className="px-4 py-3">Status</TableHead><TableHead className="px-4 py-3 text-right">Actions</TableHead></TableRow></TableHeader><TableBody>{visible.map((task) => {
-        const creator = creators.find((candidate) => candidate.uid === task.assignedTo);
-        const name = task.assignedToName ?? creator?.name ?? "—";
+        const assignee = assignees.find((candidate) => candidate.uid === task.assignedTo);
+        const name = task.assignedToName ?? assignee?.name ?? "—";
         return <TableRow key={task.id} className="align-top">
           <TableCell className="max-w-[420px] px-4 py-3"><p className="m-0 font-semibold">{task.title}</p>{task.description ? <p className="mb-0 mt-0.5 max-w-[40ch] text-muted-foreground">{task.description}</p> : null}</TableCell>
-          <TableCell className="px-4 py-3">{creator ? <Link href={`/dashboard/discover/${creator.slug}`} className="font-semibold text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary">{name}</Link> : name}</TableCell>
+          <TableCell className="px-4 py-3">{assignee?.isCreator ? <Link href={`/dashboard/discover/${assignee.slug}`} className="font-semibold text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary">{name}</Link> : name}</TableCell>
           <TableCell className="whitespace-nowrap px-4 py-3 text-muted-foreground">{task.dueDate ? formatDate(task.dueDate) : "—"}</TableCell>
           <TableCell className="px-4 py-3"><Select value={task.status} onValueChange={(value) => void setTaskStatus(task.id, value as TaskStatus)}><SelectTrigger disabled={busyId === task.id} className="h-9 w-[150px]"><SelectValue /></SelectTrigger><SelectContent>{TASK_STATUSES.map((value) => <SelectItem key={value} value={value}>{TASK_STATUS_LABELS[value]}</SelectItem>)}</SelectContent></Select></TableCell>
           <TableCell className="px-4 py-3"><div className="flex justify-end gap-1.5">{role === "admin" && <button type="button" onClick={() => void remove(task.id, task.title)} disabled={busyId === task.id} aria-label={`Delete ${task.title}`} className="grid h-10 w-10 place-items-center rounded-lg text-muted-foreground hover:text-destructive disabled:opacity-50"><Trash2 className="h-4 w-4" /></button>}</div></TableCell>
