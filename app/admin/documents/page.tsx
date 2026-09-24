@@ -82,7 +82,7 @@ export default function DocumentsPage() {
         const creator = recipient?.slug && isCreatorUser(recipient) ? recipient : null;
         const recipientName = document.assignedToName ?? recipient?.name ?? "Unassigned";
         return <TableRow key={document.id}>
-        <TableCell className="px-4 py-3"><div className="min-w-0"><Link href={`/dashboard/documents/${document.id}`} className="block truncate font-semibold hover:text-primary">{document.title}</Link><div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted-foreground"><DocumentStatus status={document.status} />{creator ? (
+        <TableCell className="px-4 py-3"><div className="min-w-0"><Link href={`/dashboard/documents/${document.id}`} className="block truncate font-semibold hover:text-primary">{document.title}</Link><div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted-foreground"><span className="hidden sm:inline-flex"><DocumentStatus status={document.status} /></span>{creator ? (
             <Link href={`/dashboard/discover/${creator.slug}`} className="font-semibold text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary">
               Sent to {recipientName}
             </Link>

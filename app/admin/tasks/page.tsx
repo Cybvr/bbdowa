@@ -225,9 +225,9 @@ export default function TasksPage() {
             <button type="button" onClick={() => setSelectedId(task.id)} className="m-0 block max-w-full truncate text-left font-semibold text-foreground hover:text-primary">{task.title}</button>
             <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[13px] text-muted-foreground">
               {assignee?.isCreator ? <Link href={`/dashboard/discover/${assignee.slug}`} className="max-w-[45%] shrink-0 truncate font-semibold text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary">{name}</Link> : <span className="max-w-[45%] shrink-0 truncate">{name}</span>}
-              {task.description ? <><span aria-hidden="true">·</span><span className="min-w-0 truncate">{task.description}</span></> : null}
+              {task.description ? <><span aria-hidden="true" className="hidden sm:inline">·</span><span className="hidden min-w-0 truncate sm:inline">{task.description}</span></> : null}
             </div>
-            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted-foreground">
+            <div className="mt-1 hidden flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted-foreground sm:flex">
               {task.clientName ? <span>{task.clientName}</span> : null}
               {task.campaignName ? <span>{task.campaignName}</span> : null}
               {task.dueDate ? <span>Due {formatDate(task.dueDate)}</span> : null}
