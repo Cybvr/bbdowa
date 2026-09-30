@@ -236,7 +236,7 @@ export function DashboardHeader({
       {/* Desktop sidebar */}
       <nav
         aria-label="Primary navigation"
-        className={`hidden flex-col gap-2 overflow-y-auto rounded-2xl bg-background p-2.5 text-foreground transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] nav:fixed nav:inset-y-4 nav:left-4 nav:flex ${sidebarCollapsed ? "nav:w-[64px]" : "nav:w-[192px]"}`}
+        className={`hidden flex-col gap-2 overflow-y-auto border-r border-border bg-background p-2.5 text-foreground transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] nav:fixed nav:inset-y-4 nav:left-4 nav:flex ${sidebarCollapsed ? "nav:w-[64px]" : "nav:w-[192px]"}`}
       >
         <DashboardSidebarContent
           collapsed={sidebarCollapsed}

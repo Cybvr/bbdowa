@@ -23,6 +23,8 @@ export type Task = {
   createdBy: string;
   createdByName: string | null;
   status: TaskStatus;
+  /** Enables editing through a task share link. */
+  shareEnabled?: boolean;
   /** ISO date (yyyy-mm-dd), or null if there's no deadline. */
   dueDate: string | null;
   createdAt: string;

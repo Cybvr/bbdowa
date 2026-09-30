@@ -228,15 +228,34 @@ export function TaskDetailSheet({ task, onOpenChange, canEdit, canDelete, assign
     setShareOpen(false);
     setShareUrl("");
     setShareMessage(null);
-  }, [task]);
+  }, [task?.id]);
 
-  const shareTask = () => {
+  React.useEffect(() => {
     if (!task) return;
-    const url = new URL("/dashboard/tasks", window.location.origin);
-    url.searchParams.set("task", task.id);
-    setShareUrl(url.toString());
+    if (new URLSearchParams(window.location.search).get("task") === task.id) {
+      setExpanded(true);
+    }
+  }, [task?.id]);
+
+  const shareTask = async () => {
+    if (!task) return;
+    setShareUrl("");
     setShareMessage(null);
-    setShareOpen(true);
+    try {
+      await updateDoc(doc(firebaseDb, TASK_COLLECTION, task.id), {
+        shareEnabled: true,
+        updatedAt: new Date().toISOString(),
+      });
+      const url = new URL("/dashboard/tasks", window.location.origin);
+      url.searchParams.set("task", task.id);
+      url.searchParams.set("shared", "1");
+      setShareUrl(url.toString());
+      setShareOpen(true);
+    } catch (cause) {
+      console.error("Unable to enable task sharing", cause);
+      setShareMessage("You need permission to create an editable task link.");
+      setShareOpen(true);
+    }
   };
 
   const copyShareLink = async () => {
@@ -305,9 +324,9 @@ export function TaskDetailSheet({ task, onOpenChange, canEdit, canDelete, assign
           <>
             <SheetHeader className="relative border-b border-border pr-36">
               <SheetTitle>{canEdit ? "Edit task" : task.title}</SheetTitle>
-              <button type="button" onClick={shareTask} aria-label="Share task" title="Share task" className="absolute right-[5.5rem] top-2.5 grid h-9 w-9 place-items-center rounded-full text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+              {canEdit ? <button type="button" onClick={() => void shareTask()} aria-label="Share task" title="Share task" className="absolute right-[5.5rem] top-2.5 grid h-9 w-9 place-items-center rounded-full text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
                 <Share2 className="h-4 w-4" aria-hidden="true" />
-              </button>
+              </button> : null}
               <button type="button" onClick={() => setExpanded((value) => !value)} aria-label={expanded ? "Return to side panel" : "Expand task to modal"} title={expanded ? "Return to side panel" : "Expand to modal"} className="absolute right-12 top-2.5 grid h-9 w-9 place-items-center rounded-full text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
                 {expanded ? <Minimize2 className="h-4 w-4" aria-hidden="true" /> : <Expand className="h-4 w-4" aria-hidden="true" />}
               </button>
@@ -315,28 +334,28 @@ export function TaskDetailSheet({ task, onOpenChange, canEdit, canDelete, assign
             </SheetHeader>
             {canEdit ? (
               <form onSubmit={save} className="flex min-h-0 flex-1 flex-col">
-                <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4">
+                <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3">
                   {error ? <p className="m-0 text-[13px] font-medium text-destructive">{error}</p> : null}
-                  <div className="space-y-1.5">
-                    <label htmlFor="edit-task-title" className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Title</label>
+                  <div className="space-y-1">
+                    <label htmlFor="edit-task-title" className="block text-[13px] text-muted-foreground">Title</label>
                     <Input id="edit-task-title" value={title} onChange={(event) => setTitle(event.target.value)} disabled={busy} required />
                   </div>
-                  <div className="space-y-1.5">
-                    <label htmlFor="edit-task-description" className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Description</label>
+                  <div className="space-y-1">
+                    <label htmlFor="edit-task-description" className="block text-[13px] text-muted-foreground">Description</label>
                     <Input id="edit-task-description" value={description} onChange={(event) => setDescription(event.target.value)} disabled={busy} placeholder="Short task summary" />
                   </div>
-                  <div className="grid items-center gap-x-4 gap-y-3 grid-cols-1 sm:grid-cols-2">
+                  <div className="grid grid-cols-1 items-start gap-x-4 gap-y-2.5 min-[480px]:grid-cols-2">
                     {assignees ? (
-                      <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2">
-                        <label htmlFor="edit-task-assignee" className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Assigned to</label>
+                      <div className="min-w-0 space-y-1">
+                        <label htmlFor="edit-task-assignee" className="block text-[13px] text-muted-foreground">Assigned to</label>
                         <Select value={assignedTo} onValueChange={setAssignedTo} disabled={busy}>
                           <SelectTrigger id="edit-task-assignee" className="min-w-0 rounded-md border border-input bg-background"><SelectValue /></SelectTrigger>
                           <SelectContent>{assigneeOptions.map((assignee) => <SelectItem key={assignee.uid} value={assignee.uid}>{assignee.name}</SelectItem>)}</SelectContent>
                         </Select>
                       </div>
                     ) : null}
-                    <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2">
-                      <label htmlFor="edit-task-status" className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Status</label>
+                    <div className="min-w-0 space-y-1">
+                      <label htmlFor="edit-task-status" className="block text-[13px] text-muted-foreground">Status</label>
                       <Select value={status} onValueChange={(value) => setStatus(value as TaskStatus)} disabled={busy}>
                         <SelectTrigger id="edit-task-status" className="min-w-0 rounded-md border border-input bg-background"><SelectValue /></SelectTrigger>
                         <SelectContent>{TASK_STATUSES.map((value) => <SelectItem key={value} value={value}>{TASK_STATUS_LABELS[value]}</SelectItem>)}</SelectContent>
@@ -348,14 +367,14 @@ export function TaskDetailSheet({ task, onOpenChange, canEdit, canDelete, assign
                       clients={clients}
                       campaigns={campaigns}
                       disabled={busy || linksLoading}
-                      inlineLabels
+                      inlineLabels={false}
                       onClientChange={(value) => { setClientId(value); setCampaignId(null); }}
                       onCampaignChange={setCampaignId}
                     />
-                    <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2">
-                      <label htmlFor="edit-task-due-date" className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Due date</label>
-                      <Input id="edit-task-due-date" type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} disabled={busy} className="min-w-0" />
-                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label htmlFor="edit-task-due-date" className="block text-[13px] text-muted-foreground">Due date</label>
+                    <Input id="edit-task-due-date" type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} disabled={busy} className="min-w-0" />
                   </div>
                   <RichTextEditor label="Content" value={content} onChange={setContent} placeholder="Add detailed instructions and copy…" compact />
                 </div>
@@ -381,18 +400,18 @@ export function TaskDetailSheet({ task, onOpenChange, canEdit, canDelete, assign
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Share task</DialogTitle>
-            <DialogDescription>Copy this link to share “{task?.title}”.</DialogDescription>
+            <DialogDescription>{shareUrl ? `Anyone with this link can edit “${task?.title}”.` : "This task could not be shared for editing."}</DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
-            <Input aria-label="Task share link" readOnly value={shareUrl} onFocus={(event) => event.currentTarget.select()} />
+            {shareUrl ? <Input aria-label="Task share link" readOnly value={shareUrl} onFocus={(event) => event.currentTarget.select()} /> : null}
             {shareMessage ? <p role="status" className="m-0 text-[13px] text-muted-foreground">{shareMessage}</p> : null}
           </div>
           <DialogFooter>
             <button type="button" onClick={() => setShareOpen(false)} className="h-9 rounded-md border border-border px-4 text-[13px] font-semibold text-foreground">Close</button>
-            <button type="button" onClick={() => void copyShareLink()} className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-4 text-[13px] font-semibold text-primary-foreground hover:bg-primary/90">
+            {shareUrl ? <button type="button" onClick={() => void copyShareLink()} className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-4 text-[13px] font-semibold text-primary-foreground hover:bg-primary/90">
               {shareMessage === "Task link copied" ? <Check className="h-4 w-4" aria-hidden="true" /> : <Copy className="h-4 w-4" aria-hidden="true" />}
               {shareMessage === "Task link copied" ? "Copied" : "Copy link"}
-            </button>
+            </button> : null}
           </DialogFooter>
         </DialogContent>
       </Dialog>

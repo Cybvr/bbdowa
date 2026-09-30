@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, query, updateDoc, where } from "firebase/firestore";
 import { useAuth } from "@/components/auth-provider";
 import { TaskDetailSheet, TaskStatusBadge } from "@/components/tasks-view";
 import TasksManagementPage from "@/components/tasks-management-page";
@@ -32,6 +32,7 @@ function MyTasksPage() {
   const [loading, setLoading] = React.useState(true);
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [sharedTask, setSharedTask] = React.useState<Task | null>(null);
+  const [sharedEditLink, setSharedEditLink] = React.useState(false);
   const [search, setSearch] = React.useState("");
   const [status, setStatus] = React.useState<TaskStatus | "all">("all");
   const [campaignId, setCampaignId] = React.useState("all");
@@ -56,16 +57,31 @@ function MyTasksPage() {
   }, [load]);
 
   React.useEffect(() => {
-    const taskId = new URLSearchParams(window.location.search).get("task");
+    const params = new URLSearchParams(window.location.search);
+    const taskId = params.get("task");
     if (taskId) setSelectedId(taskId);
+    setSharedEditLink(params.has("task"));
   }, []);
 
   React.useEffect(() => {
     if (!selectedId || tasks.some((task) => task.id === selectedId) || sharedTask?.id === selectedId) return;
     let active = true;
     getDoc(doc(firebaseDb, TASK_COLLECTION, selectedId))
-      .then((snapshot) => {
-        if (active && snapshot.exists()) setSharedTask({ id: snapshot.id, ...(snapshot.data() as Omit<Task, "id">) });
+      .then(async (snapshot) => {
+        if (!active || !snapshot.exists()) return;
+        const task = { id: snapshot.id, ...(snapshot.data() as Omit<Task, "id">) };
+        if (new URLSearchParams(window.location.search).get("task") === task.id && !task.shareEnabled) {
+          try {
+            await updateDoc(doc(firebaseDb, TASK_COLLECTION, task.id), {
+              shareEnabled: true,
+              updatedAt: new Date().toISOString(),
+            });
+            task.shareEnabled = true;
+          } catch (cause) {
+            console.error("Unable to enable editing from task link", cause);
+          }
+        }
+        if (active) setSharedTask(task);
       })
       .catch((cause) => console.error("Unable to open shared task", cause));
     return () => { active = false; };
@@ -149,13 +165,14 @@ function MyTasksPage() {
           if (!open) {
             setSelectedId(null);
             const url = new URL(window.location.href);
-            if (url.searchParams.has("task")) {
+            if (url.searchParams.has("task") || url.searchParams.has("shared")) {
               url.searchParams.delete("task");
+              url.searchParams.delete("shared");
               window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
             }
           }
         }}
-        canEdit={Boolean(selected) && Boolean(user?.uid) && selected?.assignedTo === user?.uid}
+        canEdit={Boolean(selected) && ((Boolean(user?.uid) && selected?.assignedTo === user?.uid) || (sharedEditLink && selected?.shareEnabled === true))}
         canDelete={Boolean(selected) && selected?.assignedTo === user?.uid}
         onChanged={() => void load()}
       />

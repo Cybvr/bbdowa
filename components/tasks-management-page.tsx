@@ -326,8 +326,9 @@ export default function TasksPage() {
         if (!open) {
           setSelectedId(null);
           const url = new URL(window.location.href);
-          if (url.searchParams.has("task")) {
+          if (url.searchParams.has("task") || url.searchParams.has("shared")) {
             url.searchParams.delete("task");
+            url.searchParams.delete("shared");
             window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
           }
         }

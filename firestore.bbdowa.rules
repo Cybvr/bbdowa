@@ -124,18 +124,27 @@ service cloud.firestore {
         || (signedIn() && resource.data.uid == request.auth.uid);
     }
 
-    // Tasks are readable from creator profiles. Staff manage all task fields;
-    // an assignee can edit the task's work details without changing ownership.
+    // Tasks are public to read for creator profiles. Staff manage all task fields;
+    // assignees can edit their tasks, and enabled share links can edit task details.
     match /creatorTasks/{id} {
       allow read: if true;
       allow create: if isStaff() && request.resource.data.createdBy == request.auth.uid;
       allow update: if isStaff()
+        || (request.resource.data.shareEnabled == true
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["shareEnabled", "updatedAt"]))
+        || (resource.data.shareEnabled == true
+          && request.resource.data.shareEnabled == true
+          && request.resource.data.status in ["todo", "in_progress", "done"]
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            "title", "description", "content", "status", "dueDate",
+            "clientId", "clientName", "campaignId", "campaignName", "updatedAt"
+          ]))
         || (signedIn()
           && resource.data.assignedTo == request.auth.uid
           && request.resource.data.status in ["todo", "in_progress", "done"]
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
             "title", "description", "content", "status", "dueDate",
-            "clientId", "clientName", "campaignId", "campaignName", "updatedAt"
+            "clientId", "clientName", "campaignId", "campaignName", "updatedAt", "shareEnabled"
           ]));
       allow delete: if isStaff()
         || (signedIn() && resource.data.assignedTo == request.auth.uid);

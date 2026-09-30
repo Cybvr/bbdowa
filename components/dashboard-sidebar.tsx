@@ -348,7 +348,7 @@ export function DashboardSidebarSheet({ trigger }: { trigger?: React.ReactNode }
           </button>
         )}
       </SheetTrigger>
-      <SheetContent side="left" className="w-[min(264px,84vw)] gap-1 overflow-y-auto rounded-2xl border-0 bg-background p-2 text-foreground shadow-2xl">
+      <SheetContent side="left" className="w-[min(264px,84vw)] gap-1 overflow-y-auto border-r border-border bg-background p-2 text-foreground shadow-2xl">
         <SheetHeader className="sr-only">
           <SheetTitle>Navigation</SheetTitle>
         </SheetHeader>

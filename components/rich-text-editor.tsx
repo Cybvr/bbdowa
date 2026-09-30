@@ -113,7 +113,7 @@ export function RichTextEditor({
 
   return (
     <div className="space-y-1.5">
-      <span className={hideLabel ? "sr-only" : "block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground"}>{label}</span>
+      <span className={hideLabel ? "sr-only" : compact ? "block text-[13px] text-muted-foreground" : "block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground"}>{label}</span>
       <div className="overflow-hidden rounded-md border border-input bg-background transition focus-within:border-foreground focus-within:ring-2 focus-within:ring-primary/20">
         <div className="flex flex-wrap items-center gap-0.5 border-b border-border bg-muted/30 px-2 py-1" aria-label={`${label} formatting`}>
           <ToolbarButton label="Bold" active={editor?.isActive("bold")} disabled={!editor} onClick={() => editor?.chain().focus().toggleBold().run()}>

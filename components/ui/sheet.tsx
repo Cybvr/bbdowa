@@ -59,7 +59,7 @@ function SheetContent({
           side === "bottom" &&
             "data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom inset-x-3 bottom-3 h-auto rounded-2xl",
           side === "center" &&
-            "left-1/2 top-1/2 h-[min(760px,calc(100dvh-2rem))] w-[calc(100vw-2rem)] max-w-4xl -translate-x-1/2 -translate-y-1/2 rounded-2xl data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0",
+            "left-1/2 top-1/2 h-[min(760px,calc(100dvh-2rem))] w-[calc(100vw-2rem)] max-w-6xl -translate-x-1/2 -translate-y-1/2 rounded-2xl data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0",
           className,
         )}
         {...props}
