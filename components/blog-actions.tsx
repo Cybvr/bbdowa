@@ -34,7 +34,7 @@ export function BlogActions({ post }: { post: BlogPost }) {
 
   const remove = async () => {
     await deleteDoc(doc(firebaseDb, "blogs", post.slug));
-    router.push("/dashboard/blog");
+    router.push("/blog");
   };
 
   return (

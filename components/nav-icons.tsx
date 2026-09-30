@@ -259,6 +259,14 @@ export const NjeriIcon: NavIconComponent = ({ className }) => (
   </Glyph>
 );
 
+// Messages — speech bubble with a tail
+export const MessagesIcon: NavIconComponent = ({ className }) => (
+  <Glyph className={className}>
+    <path d="M5.5 4.5h13a2 2 0 0 1 2 2V15a2 2 0 0 1-2 2H10l-4.5 3.5V17a2 2 0 0 1-2-2V6.5a2 2 0 0 1 2-2Z" />
+    <path d="M8 9.5h8M8 12.5h5" />
+  </Glyph>
+);
+
 export const NAV_ICON_SET: Record<string, NavIconComponent> = {
   Home: HomeIcon,
   Dashboard: DashboardIcon,
@@ -280,15 +288,17 @@ export const NAV_ICON_SET: Record<string, NavIconComponent> = {
   People: PeopleIcon,
   Tracker: TrackerIcon,
   Njeri: NjeriIcon,
+  Messages: MessagesIcon,
   Updates: UpdatesIcon,
   Blog: BlogIcon,
   Company: CompanyIcon,
   About: AboutIcon,
   Careers: CareersIcon,
+  Work: CareersIcon,
   Admin: AdminIcon,
   Settings: SettingsIcon,
   "Log out": LogOutIcon,
-  "The studio": CompanyIcon,
+  "The Studio": CompanyIcon,
   Overview: DashboardIcon,
   Users: TeamIcon,
   Documents: DocumentsIcon,

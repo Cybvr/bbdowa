@@ -13,7 +13,11 @@ const robotoMono = Roboto_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "BBDO West Africa",
+  metadataBase: new URL("https://bbdowa.vercel.app"),
+  title: {
+    default: "BBDO West Africa",
+    template: "%s | BBDO West Africa",
+  },
   description:
     "BBDO West Africa is the Lagos studio of the BBDO network: strategy, creative, production and social for brands across the region.",
   manifest: "/manifest.webmanifest",
@@ -22,10 +26,18 @@ export const metadata: Metadata = {
     apple: "/pwa/apple-touch-icon.png",
   },
   openGraph: {
+    siteName: "BBDO West Africa",
     title: "BBDO West Africa",
     description:
       "The Lagos studio of the BBDO network. Strategy, creative, production and social for brands across West Africa.",
     type: "website",
+    url: "/",
+  },
+  twitter: {
+    card: "summary",
+    title: "BBDO West Africa",
+    description:
+      "The Lagos studio of the BBDO network. Strategy, creative, production and social for brands across West Africa.",
   },
 };
 

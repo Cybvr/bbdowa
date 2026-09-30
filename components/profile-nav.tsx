@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { LuChevronRight } from "react-icons/lu";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,6 +31,8 @@ export type ProfileNavProps = {
   variant?: "avatar" | "row";
   tone?: "primary" | "background";
   showHandleOnly?: boolean;
+  showRole?: boolean;
+  showChevron?: boolean;
   showAdminForStaff?: boolean;
   menuAlign?: "start" | "center" | "end";
   menuSide?: "top" | "right" | "bottom" | "left";
@@ -86,6 +89,8 @@ export function ProfileNav({
   variant = "avatar",
   tone = "primary",
   showHandleOnly = false,
+  showRole = false,
+  showChevron = false,
   showAdminForStaff = false,
   menuAlign = "end",
   menuSide = "bottom",
@@ -134,7 +139,12 @@ export function ProfileNav({
             </span>
             <span className="min-w-0 flex-1">
               {showHandleOnly ? (
-                <span className="block truncate text-sm font-medium leading-tight text-foreground">{handle ? `@${handle}` : displayName}</span>
+                <span className="block truncate text-sm font-normal leading-tight text-foreground">{handle ? `@${handle}` : displayName}</span>
+              ) : showRole ? (
+                <>
+                  <span className="block truncate text-sm font-normal leading-tight text-foreground">{displayName}</span>
+                  <span className="mt-0.5 block truncate text-xs font-normal leading-tight text-muted-foreground">{roleLabel ?? "Member"}</span>
+                </>
               ) : (
                 <>
                   <span className="block truncate text-sm font-bold leading-tight text-foreground">{displayName}</span>
@@ -146,6 +156,7 @@ export function ProfileNav({
                 </>
               )}
             </span>
+            {showChevron ? <LuChevronRight aria-hidden="true" className="h-4 w-4 shrink-0 text-muted-foreground" /> : null}
           </button>
         ) : (
           <button

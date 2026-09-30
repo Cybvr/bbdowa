@@ -90,7 +90,7 @@ function contentSearchResults(users: User[], clients: Client[], campaigns: Campa
       id: `post-${post.slug}`,
       label: post.title,
       detail: `Update · ${post.category}`,
-      href: `/dashboard/blog/${post.slug}`,
+      href: `/blog/${post.slug}`,
       keywords: [post.title, post.excerpt, post.category].filter(Boolean).join(" "),
     })),
     ...jobs.map((job) => ({
@@ -236,7 +236,7 @@ export function DashboardHeader({
       {/* Desktop sidebar */}
       <nav
         aria-label="Primary navigation"
-        className={`hidden flex-col gap-2 overflow-y-auto border-r border-border bg-background p-2.5 text-foreground transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] nav:fixed nav:inset-y-4 nav:left-4 nav:flex ${sidebarCollapsed ? "nav:w-[64px]" : "nav:w-[192px]"}`}
+        className={`hidden flex-col gap-2 overflow-y-auto border-r border-border bg-background p-2.5 text-foreground transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] nav:fixed nav:inset-y-4 nav:left-4 nav:flex ${sidebarCollapsed ? "nav:w-[64px]" : "nav:w-[256px]"}`}
       >
         <DashboardSidebarContent
           collapsed={sidebarCollapsed}
@@ -248,7 +248,7 @@ export function DashboardHeader({
       {/* Desktop dashboard header */}
       <header
         className={`fixed right-0 top-0 z-30 hidden h-[60px] items-center gap-4 bg-background/95 px-6 backdrop-blur nav:flex ${
-          sidebarCollapsed ? "nav:left-[80px]" : "nav:left-[208px]"
+          sidebarCollapsed ? "nav:left-[80px]" : "nav:left-[272px]"
         }`}
       >
         <form role="search" className="flex min-w-0 items-center" onSubmit={(event) => { event.preventDefault(); if (searchResults[0]) goToSearchResult(searchResults[0].href); }}>

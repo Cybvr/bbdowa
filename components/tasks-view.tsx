@@ -246,7 +246,7 @@ export function TaskDetailSheet({ task, onOpenChange, canEdit, canDelete, assign
         shareEnabled: true,
         updatedAt: new Date().toISOString(),
       });
-      const url = new URL("/dashboard/tasks", window.location.origin);
+      const url = new URL("/dashboard/work", window.location.origin);
       url.searchParams.set("task", task.id);
       url.searchParams.set("shared", "1");
       setShareUrl(url.toString());

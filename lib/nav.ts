@@ -7,6 +7,7 @@ export const MARKETING_NAV: NavLink[] = [
   { label: "About", href: "/about" },
   { label: "Clients", href: "/clients" },
   { label: "The Plug", href: "/the-plug" },
+  { label: "Blog", href: "/blog" },
   { label: "Contact", href: "/contact" },
 ];
 
@@ -14,6 +15,7 @@ export const MARKETING_FOOTER_LINKS: NavLink[] = [
   { label: "About", href: "/about" },
   { label: "Work", href: "/#work" },
   { label: "The Plug", href: "/the-plug" },
+  { label: "Blog", href: "/blog" },
   { label: "Contact", href: "/contact" },
 ];
 
@@ -24,26 +26,29 @@ export type NavItem =
 export const NAV_ITEMS: NavItem[] = [
   { kind: "link", label: "My profile", href: "/dashboard/me", requiresAuth: true, hideInSidebar: true },
   { kind: "link", label: "Home", href: "/dashboard" },
-  { kind: "link", label: "Tasks", href: "/dashboard/tasks", requiresAuth: true },
+  { kind: "link", label: "Work", href: "/dashboard/work", requiresAuth: true },
   { kind: "link", label: "Tracker", href: "/dashboard/tracker", requiresAuth: true },
   { kind: "link", label: "Njeri", href: "/dashboard/njeri" },
+  { kind: "link", label: "Messages", href: "/dashboard/messages", requiresAuth: true },
   {
     kind: "menu",
-    label: "The studio",
+    label: "The Studio",
     requiresAuth: true,
-    match: ["/dashboard/campaigns", "/dashboard/clients", "/dashboard/discover"],
+    match: [
+      "/dashboard/campaigns",
+      "/dashboard/clients",
+      "/dashboard/discover",
+      "/dashboard/workflows",
+      "/dashboard/brand",
+      "/dashboard/resources",
+      "/dashboard/about",
+      "/dashboard/careers",
+      "/dashboard/people",
+    ],
     items: [
       { label: "Discover", href: "/dashboard/discover" },
       { label: "Campaigns", href: "/dashboard/campaigns" },
       { label: "Clients", href: "/dashboard/clients" },
-    ],
-  },
-  {
-    kind: "menu",
-    label: "Resources",
-    requiresAuth: true,
-    match: ["/dashboard/workflows", "/dashboard/brand", "/dashboard/resources", "/dashboard/about", "/dashboard/careers", "/dashboard/people"],
-    items: [
       { label: "Agency workflow", href: "/dashboard/workflows/agency" },
       { label: "Pitch workflow", href: "/dashboard/workflows/pitch" },
       { label: "Brand assets", href: "/dashboard/brand" },
@@ -53,7 +58,6 @@ export const NAV_ITEMS: NavItem[] = [
       { label: "Team", href: "/dashboard/people" },
     ],
   },
-  { kind: "link", label: "Updates", href: "/dashboard/blog" },
   { kind: "link", label: "Admin", href: "/admin", requiresAuth: true, requiresStaff: true, hideInSidebar: true },
 ];
 

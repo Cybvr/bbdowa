@@ -200,7 +200,7 @@ export function QuickCreate({ type, iconOnly = false }: { type: CreateType; icon
         });
         setOpen(false);
         reset();
-        router.push(`/dashboard/blog/${slug}`);
+        router.push(`/blog/${slug}`);
       } else if (type === "resource") {
         const slug = slugify(label);
         await setDoc(doc(firebaseDb, "resources", slug), {

@@ -1,82 +1,37 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element */
-
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { useAuth } from "@/components/auth-provider";
-import { CreatorAvatarStack } from "@/components/creator-avatar-stack";
-import { DashboardCardActions } from "@/components/dashboard-card";
-import { DashboardThumbnail } from "@/components/dashboard-thumbnail";
-import { DashboardListRow, DashboardSection } from "@/components/dashboard/section-list";
-import { CreatorCarousel } from "@/components/dashboard/creator-carousel";
 import { ItemCard, ItemCardList } from "@/components/dashboard/item-card";
 import { TaskDetailSheet, TaskStatusBadge } from "@/components/tasks-view";
-import { CheckSquare } from "lucide-react";
 import { TASK_COLLECTION, formatDate as formatTaskDate, isOverdue, sortTasks, type Task } from "@/lib/creator-tasks";
 import { useFirestoreUsers } from "@/lib/firebase/client-content";
 import { firebaseDb } from "@/lib/firebase/client";
-import type { BlogPost } from "@/lib/blog";
-import type { Campaign } from "@/lib/campaigns";
-import type { Client } from "@/lib/clients";
-import type { Creator, User } from "@/lib/users";
-import { creatorAddedTimestamp, isCreatorUser } from "@/lib/users";
-import { campaignHref, campaignLiveDateLabel } from "@/lib/campaigns";
-import { CreatorRailSkeleton, DashboardHomeSkeleton } from "@/components/dashboard/loading-skeleton";
+import { ACTIVITY_COLLECTION, elapsedMs, formatClockFull, startOfWeek, type ActivityEntry } from "@/lib/time-tracking";
+import type { User } from "@/lib/users";
 
-async function readDashboardCollection<T>(name: string): Promise<T[]> {
-  const snapshot = await getDocs(collection(firebaseDb, name));
-  return snapshot.docs.map((document) => document.data() as T);
-}
+const PROFILE_FIELDS = ["Availability", "Hours this week", "Title", "Location"] as const;
 
-async function readDashboardContent(): Promise<{ campaigns: Campaign[]; clients: Client[]; posts: BlogPost[] }> {
-  const [campaigns, clients, posts] = await Promise.all([
-    readDashboardCollection<Campaign>("campaigns"),
-    readDashboardCollection<Client>("clients"),
-    readDashboardCollection<BlogPost>("blogs"),
-  ]);
-
-  return { campaigns, clients, posts };
-}
-
-function dateValue(value: string | null | undefined): number {
-  if (!value) return 0;
-  const timestamp = Date.parse(value.length === 4 ? `${value}-01-01` : value);
-  return Number.isNaN(timestamp) ? 0 : timestamp;
-}
-
-function formatDate(value: string): string {
-  const [year, month, day] = value.split("-").map(Number);
-  if (!month) return String(year);
-
-  return new Intl.DateTimeFormat("en-GB", {
-    day: day ? "numeric" : undefined,
-    month: "short",
-    year: "numeric",
-    timeZone: "UTC",
-  }).format(new Date(Date.UTC(year, month - 1, day || 1)));
-}
-
-function campaignCreators(campaign: Campaign, clients: Client[], users: User[]): Creator[] {
-  const client = clients.find((item) => item.slug === campaign.clientId);
-  return (client?.creatorSlugs ?? [])
-    .map((slug) => users.find((user) => user.slug === slug))
-    .filter((creator): creator is Creator => Boolean(creator));
+function availabilityLabel(user: User | undefined, loading: boolean): string {
+  if (loading) return "Loading…";
+  if (user?.availability === "open") return "Available";
+  if (user?.availability === "busy") return "Busy";
+  if (user?.availability === "unconfirmed") return "Unconfirmed";
+  return "—";
 }
 
 export default function HomePage() {
   const { user, role } = useAuth();
-  const { users, loading: creatorsLoading, error: creatorsError } = useFirestoreUsers();
-  const [content, setContent] = useState<{ campaigns: Campaign[]; clients: Client[]; posts: BlogPost[]; loading: boolean; error: string | null }>({
-    campaigns: [],
-    clients: [],
-    posts: [],
-    loading: true,
-    error: null,
-  });
-
+  const { users, loading: usersLoading } = useFirestoreUsers();
   const [myTasks, setMyTasks] = useState<Task[]>([]);
+  const [tasksLoading, setTasksLoading] = useState(true);
+  const [activities, setActivities] = useState<ActivityEntry[]>([]);
+  const [hoursLoading, setHoursLoading] = useState(true);
+  const [hoursUnavailable, setHoursUnavailable] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [now, setNow] = useState(() => Date.now());
 
   const loadMyTasks = useCallback(async () => {
     const uid = user?.uid;
@@ -90,138 +45,118 @@ export default function HomePage() {
   }, [user?.uid]);
 
   useEffect(() => {
-    void loadMyTasks().catch((cause) => console.error("Unable to load your tasks", cause));
+    let active = true;
+    setTasksLoading(true);
+    loadMyTasks()
+      .catch((cause) => console.error("Unable to load your tasks", cause))
+      .finally(() => { if (active) setTasksLoading(false); });
+    return () => { active = false; };
   }, [loadMyTasks]);
-
-  const selectedTask = myTasks.find((task) => task.id === selectedTaskId) ?? null;
-
-  const reloadContent = async () => {
-    const { campaigns, clients, posts } = await readDashboardContent();
-    setContent({ campaigns, clients, posts, loading: false, error: null });
-  };
 
   useEffect(() => {
     let active = true;
+    const uid = user?.uid;
+    setHoursLoading(true);
+    setHoursUnavailable(false);
+    if (!uid) {
+      setActivities([]);
+      setHoursLoading(false);
+      return () => { active = false; };
+    }
 
-    readDashboardContent()
-      .then(({ campaigns, clients, posts }) => {
-        if (active) setContent({ campaigns, clients, posts, loading: false, error: null });
+    getDocs(query(collection(firebaseDb, ACTIVITY_COLLECTION), where("uid", "==", uid)))
+      .then((snapshot) => {
+        if (active) setActivities(snapshot.docs.map((entry) => ({ id: entry.id, ...(entry.data() as Omit<ActivityEntry, "id">) })));
       })
-      .catch((error) => {
-        console.error("Unable to load dashboard content from Firestore", error);
-        if (active) setContent((current) => ({ ...current, loading: false, error: "Unable to load dashboard content from Firestore." }));
-      });
+      .catch((cause) => {
+        console.error("Unable to load your tracked hours", cause);
+        if (active) setHoursUnavailable(true);
+      })
+      .finally(() => { if (active) setHoursLoading(false); });
 
-    return () => {
-      active = false;
-    };
-  }, []);
+    return () => { active = false; };
+  }, [user?.uid]);
 
+  useEffect(() => {
+    if (!activities.some((entry) => !entry.endedAt && !entry.pausedAt)) return;
+    const interval = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(interval);
+  }, [activities]);
+
+  const selectedTask = myTasks.find((task) => task.id === selectedTaskId) ?? null;
+  const profile = users.find((candidate) => candidate.uid === user?.uid);
   const name = user?.name?.trim().split(/\s+/)[0] ?? user?.email?.split("@")[0] ?? "there";
-  const latestCreators = [...users]
-    .filter(isCreatorUser)
-    .filter((creator) => creator.addedAt)
-    .sort((a, b) => creatorAddedTimestamp(b) - creatorAddedTimestamp(a))
-    .slice(0, 6);
-  const latestCampaigns = [...content.campaigns]
-    .sort((a, b) => dateValue(b.liveAt?.date) - dateValue(a.liveAt?.date))
-    .slice(0, 5);
-  const latestNews = [...content.posts].sort((a, b) => dateValue(b.publishedAt) - dateValue(a.publishedAt)).slice(0, 5);
+  const weekStart = startOfWeek();
+  const weeklyHours = activities
+    .filter((entry) => Date.parse(entry.startedAt) >= weekStart)
+    .reduce((total, entry) => total + elapsedMs(entry, now), 0);
+  const facts = [
+    { label: PROFILE_FIELDS[0], value: availabilityLabel(profile, usersLoading) },
+    { label: PROFILE_FIELDS[1], value: hoursLoading ? "Loading…" : hoursUnavailable ? "Unavailable" : formatClockFull(weeklyHours) },
+    { label: PROFILE_FIELDS[2], value: usersLoading ? "Loading…" : profile?.title || "—" },
+    { label: PROFILE_FIELDS[3], value: usersLoading ? "Loading…" : profile?.location || "—" },
+  ];
+  const canManageTasks = role === "admin" || role === "manager";
+  const assignees = canManageTasks ? users.flatMap((candidate) => candidate.uid ? [{ uid: candidate.uid, name: candidate.name }] : []) : undefined;
 
   return (
     <main className="flex-1 px-5 pb-16 pt-4 sm:px-8">
       <header className="border-b border-border pb-5">
-        <h1 className="m-0 text-page-title font-bold leading-tight tracking-tight sm:text-page-title-lg">Welcome back, {name}.</h1>
+        <h1 className="m-0 text-page-title font-bold leading-tight tracking-tight sm:text-page-title-lg">
+          Welcome back, {name}<span aria-hidden="true"> 👋</span>
+        </h1>
         <p className="mb-0 mt-2 text-body text-muted-foreground">Here’s what’s happening across the agency.</p>
       </header>
 
-      {myTasks.length ? (
-        <section className="mt-6 max-w-3xl">
-          <h2 className="m-0 mb-1 text-eyebrow font-semibold uppercase tracking-[0.08em] text-muted-foreground">Your tasks</h2>
-          <ItemCardList>
-            {myTasks.map((task) => (
-              <ItemCard
-                key={task.id}
-                onClick={() => setSelectedTaskId(task.id)}
-                icon={<CheckSquare className="h-5 w-5" aria-hidden="true" />}
-                title={task.title}
-                subtitle={task.dueDate ? `Due ${formatTaskDate(task.dueDate)}` : undefined}
-                trailing={<TaskStatusBadge status={task.status} overdue={isOverdue(task)} />}
-              />
-            ))}
-          </ItemCardList>
+      <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.45fr)_minmax(280px,0.75fr)] lg:gap-10">
+        <section aria-labelledby="your-tasks-heading" className="min-w-0">
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <h2 id="your-tasks-heading" className="m-0 text-item-title font-semibold">Your tasks</h2>
+            <Link href="/dashboard/work" className="shrink-0 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">View all</Link>
+          </div>
+          {tasksLoading ? (
+            <p className="py-5 text-sm text-muted-foreground">Loading your tasks…</p>
+          ) : myTasks.length ? (
+            <ItemCardList>
+              {myTasks.map((task) => (
+                <ItemCard
+                  key={task.id}
+                  onClick={() => setSelectedTaskId(task.id)}
+                  title={task.title}
+                  subtitle={task.dueDate ? `Due ${formatTaskDate(task.dueDate)}` : undefined}
+                  trailing={<TaskStatusBadge status={task.status} overdue={isOverdue(task)} />}
+                />
+              ))}
+            </ItemCardList>
+          ) : (
+            <p className="py-5 text-sm text-muted-foreground">No tasks assigned yet.</p>
+          )}
         </section>
-      ) : null}
+
+        <aside aria-labelledby="profile-overview-heading" className="min-w-0 lg:border-l lg:border-border lg:pl-7">
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <h2 id="profile-overview-heading" className="m-0 text-item-title font-semibold">Your profile</h2>
+            <Link href="/dashboard/me" className="shrink-0 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">Edit profile</Link>
+          </div>
+          <dl className="m-0 divide-y divide-border">
+            {facts.map((fact) => (
+              <div key={fact.label} className="flex min-h-12 items-center justify-between gap-4 py-3">
+                <dt className="text-sm text-muted-foreground">{fact.label}</dt>
+                <dd className="m-0 min-w-0 truncate text-right text-sm font-medium text-foreground">{fact.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </aside>
+      </div>
 
       <TaskDetailSheet
         task={selectedTask}
         onOpenChange={(open) => { if (!open) setSelectedTaskId(null); }}
         canEdit={Boolean(selectedTask)}
-        canDelete={Boolean(selectedTask && ((role === "admin" || role === "manager") || selectedTask.assignedTo === user?.uid))}
-        assignees={role === "admin" || role === "manager" ? users.flatMap((candidate) => candidate.uid ? [{ uid: candidate.uid, name: candidate.name }] : []) : undefined}
+        canDelete={Boolean(selectedTask && (canManageTasks || selectedTask.assignedTo === user?.uid))}
+        assignees={assignees}
         onChanged={() => void loadMyTasks()}
       />
-
-      {creatorsError ? <p className="mt-10 text-sm text-muted-foreground">{creatorsError}</p> : null}
-      {creatorsLoading ? <CreatorRailSkeleton /> : null}
-      {!creatorsLoading && latestCreators.length > 0 ? (
-        <CreatorCarousel creators={latestCreators} />
-      ) : null}
-
-      {content.error ? <p className="mt-8 text-sm text-muted-foreground">{content.error}</p> : null}
-      {content.loading ? <DashboardHomeSkeleton /> : null}
-      {!content.loading && !content.error ? (
-        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-5">
-          <DashboardSection id="latest-campaigns-heading" title="Latest campaigns" href="/dashboard/campaigns">
-            {latestCampaigns.map((campaign) => (
-              <DashboardListRow
-                key={campaign.slug}
-                href={campaignHref(campaign.slug)}
-                thumbnail={<DashboardThumbnail src={campaign.image} alt={campaign.imageAlt} className="h-full w-full" />}
-                eyebrow={campaign.clientName}
-                title={campaign.campaign ?? campaign.name}
-                meta={
-                  <div className="flex items-center gap-2">
-                    <CreatorAvatarStack creators={campaignCreators(campaign, content.clients, users)} max={3} size="h-5 w-5" />
-                    <span>{campaignLiveDateLabel(campaign)}</span>
-                  </div>
-                }
-                actions={
-                  <DashboardCardActions
-                    collection="campaigns"
-                    slug={campaign.slug}
-                    titleField="campaign"
-                    title={campaign.campaign ?? campaign.name}
-                    onMutated={reloadContent}
-                  />
-                }
-              />
-            ))}
-          </DashboardSection>
-
-          <DashboardSection id="latest-news-heading" title="Latest news" href="/dashboard/blog">
-            {latestNews.map((post) => (
-              <DashboardListRow
-                key={post.slug}
-                href={`/dashboard/blog/${post.slug}`}
-                thumbnail={<DashboardThumbnail src={post.image} label={post.category} className="h-full w-full" />}
-                eyebrow={post.category}
-                title={post.title}
-                meta={formatDate(post.publishedAt)}
-                actions={
-                  <DashboardCardActions
-                    collection="blogs"
-                    slug={post.slug}
-                    titleField="title"
-                    title={post.title}
-                    onMutated={reloadContent}
-                  />
-                }
-              />
-            ))}
-          </DashboardSection>
-        </div>
-      ) : null}
     </main>
   );
 }

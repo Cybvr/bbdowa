@@ -89,7 +89,7 @@ export function UpdatesDirectory({ posts }: { posts: BlogPost[] }) {
                     className="h-full"
                     actions={<DashboardCardActions collection="blogs" slug={post.slug} titleField="title" title={post.title} />}
                   >
-                    <Link href={`/dashboard/blog/${post.slug}`} className="group flex h-full flex-col text-foreground no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
+                    <Link href={`/blog/${post.slug}`} className="group flex h-full flex-col text-foreground no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
                     <DashboardThumbnail src={post.image} label={post.category} className="h-36 w-full" imageClassName="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]" />
                     <div className="flex min-h-[164px] flex-col p-4">
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
@@ -117,9 +117,9 @@ export function UpdatesDirectory({ posts }: { posts: BlogPost[] }) {
                 </TableHeader>
                 <TableBody>
                   {visible.map((post) => (
-                    <ClickableTableRow key={post.slug} href={`/dashboard/blog/${post.slug}`} label={`Open update ${post.title}`}>
+                    <ClickableTableRow key={post.slug} href={`/blog/${post.slug}`} label={`Open update ${post.title}`}>
                       <TableCell className="px-4 py-4 font-semibold">
-                        <Link href={`/dashboard/blog/${post.slug}`} className="text-foreground no-underline hover:text-primary focus-visible:text-primary">{post.title}</Link>
+                        <Link href={`/blog/${post.slug}`} className="text-foreground no-underline hover:text-primary focus-visible:text-primary">{post.title}</Link>
                       </TableCell>
                       <TableCell className="px-4 py-4 text-primary">{post.category}</TableCell>
                       <TableCell className="px-4 py-4 text-muted-foreground">{post.sourceName}</TableCell>

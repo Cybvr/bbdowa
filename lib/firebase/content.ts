@@ -5,6 +5,7 @@ import type { Campaign } from "@/lib/campaigns";
 import type { Client } from "@/lib/clients";
 import type { Job } from "@/lib/jobs";
 import type { Resource } from "@/lib/resources";
+import { TASK_COLLECTION, type Task } from "@/lib/creator-tasks";
 
 type FirestoreValue = {
   nullValue?: null;
@@ -127,3 +128,6 @@ export async function getResources(): Promise<Resource[]> {
 }
 
 export const getJobBySlug = (slug: string) => getDocument<Job>("jobs", slug);
+
+export const getTaskById = (id: string) =>
+  getDocument<Pick<Task, "title" | "description"> & Partial<Pick<Task, "content">>>(TASK_COLLECTION, id);

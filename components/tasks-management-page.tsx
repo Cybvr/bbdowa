@@ -253,9 +253,9 @@ export default function TasksPage() {
   };
 
   if (authLoading || loading || usersLoading) return <UsersTableSkeleton />;
-  if (!isStaff) return <main className="mx-auto w-full max-w-6xl flex-1 px-5 pb-16 pt-8 sm:px-8"><PageHeader title="Tasks" /><p className="mt-8 text-sm text-muted-foreground">A staff account is required to manage tasks.</p></main>;
+  if (!isStaff) return <main className="mx-auto w-full max-w-6xl flex-1 px-5 pb-16 pt-8 sm:px-8"><PageHeader title="Work" /><p className="mt-8 text-sm text-muted-foreground">A staff account is required to manage tasks.</p></main>;
 
-  return <DashboardListPage title="Tasks" actions={<NewTaskDialog assignees={assignees} createdBy={user!.uid} createdByName={user!.name ?? user!.email} onCreated={() => window.location.reload()} />}
+  return <DashboardListPage title="Work" actions={<NewTaskDialog assignees={assignees} createdBy={user!.uid} createdByName={user!.name ?? user!.email} onCreated={() => window.location.reload()} />}
     toolbar={<FilterBar
       panelId="admin-tasks-filter"
       tabs={TASK_STATUS_TABS}

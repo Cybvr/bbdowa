@@ -14,15 +14,11 @@ import { firebaseDb } from "@/lib/firebase/client";
 import { ACTIVITY_COLLECTION, elapsedMs, formatClock, isPaused, runningEntry, type ActivityEntry } from "@/lib/time-tracking";
 
 const NAV_TEXT =
-  "flex min-h-10 w-full items-center gap-1.5 rounded-lg px-2.5 py-1.5 font-mono text-body font-medium leading-normal text-foreground no-underline transition-colors hover:bg-foreground/10 hover:text-foreground focus-visible:bg-foreground/10 focus-visible:text-foreground focus-visible:outline-none nav:min-h-9 nav:gap-1.5 nav:px-2 nav:py-1.5";
+  "flex min-h-10 w-full items-center gap-1.5 rounded-lg px-2.5 py-1.5 font-sans text-body font-normal leading-normal text-foreground no-underline transition-colors hover:bg-foreground/10 hover:text-foreground focus-visible:bg-foreground/10 focus-visible:text-foreground focus-visible:outline-none nav:min-h-9 nav:gap-1.5 nav:px-2 nav:py-1.5";
 
 const NAV_LABEL = "min-w-0 overflow-hidden text-ellipsis whitespace-nowrap transition-[max-width,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]";
 
 const NAV_ACTIVE = "bg-muted !text-foreground hover:bg-muted";
-
-function sentenceCase(label: string) {
-  return label.charAt(0).toUpperCase() + label.slice(1).toLowerCase();
-}
 
 function NavIcon({ label }: { label: string }) {
   const Icon = NAV_ICON_SET[label];
@@ -154,7 +150,7 @@ export function DashboardNavList({ onNavigate, collapsed = false }: { onNavigate
                 <div className={`${NAV_TEXT} ${current ? NAV_ACTIVE : ""}`}>
                   <Link href={item.href} aria-current={current ? "page" : undefined} onClick={onNavigate} className="flex min-w-0 flex-1 items-center gap-2 no-underline">
                     <NavIcon label={item.label} />
-                    <span className="overflow-hidden text-ellipsis whitespace-nowrap text-body">{sentenceCase(item.label)}</span>
+                    <span className="overflow-hidden text-ellipsis whitespace-nowrap text-body">{item.label}</span>
                   </Link>
                   <span className="font-mono text-[11px] font-semibold tabular-nums text-primary">{formatClock(elapsedMs(running, now))}</span>
                   <button type="button" aria-label={isPaused(running) ? "Resume timer" : "Pause timer"} title={isPaused(running) ? "Resume timer" : "Pause timer"} onClick={() => void togglePause()} disabled={trackerBusy} className="grid h-6 w-6 shrink-0 cursor-pointer place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-wait disabled:opacity-50">
@@ -174,12 +170,12 @@ export function DashboardNavList({ onNavigate, collapsed = false }: { onNavigate
                 href={item.href}
                 aria-current={current ? "page" : undefined}
                 onClick={onNavigate}
-                title={collapsed ? sentenceCase(item.label) : undefined}
+                title={collapsed ? item.label : undefined}
                 className={`${NAV_TEXT} ${collapsed ? "justify-center px-0" : ""} ${current ? NAV_ACTIVE : ""}`}
               >
                 <NavIcon label={item.label} />
-                <span className={`${NAV_LABEL} ${collapsed ? "max-w-0 opacity-0" : "max-w-[140px] opacity-100"}`}>
-                  {sentenceCase(item.label)}
+                <span className={`${NAV_LABEL} ${collapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}>
+                  {item.label}
                 </span>
                 {item.label === "Tracker" && !collapsed && running ? (
                   <span className="ml-auto font-mono text-[11px] font-semibold tabular-nums text-primary">
@@ -202,14 +198,14 @@ export function DashboardNavList({ onNavigate, collapsed = false }: { onNavigate
               type="button"
               aria-expanded={open}
               onClick={() => setOpenMenu(open ? null : item.label)}
-              title={collapsed ? sentenceCase(item.label) : undefined}
+              title={collapsed ? item.label : undefined}
               className={`cursor-pointer border-0 text-left ${NAV_TEXT} ${collapsed ? "justify-center px-0" : ""} ${
                 sectionActive ? NAV_ACTIVE : "bg-transparent"
               }`}
             >
               <NavIcon label={item.label} />
-              <span className={`${NAV_LABEL} ${collapsed ? "max-w-0 opacity-0" : "max-w-[140px] opacity-100"}`}>
-                {sentenceCase(item.label)}
+              <span className={`${NAV_LABEL} ${collapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}>
+                {item.label}
               </span>
               <LuChevronDown aria-hidden="true" className={`${collapsed ? "hidden" : "ml-auto"} h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
             </button>
@@ -232,12 +228,12 @@ export function DashboardNavList({ onNavigate, collapsed = false }: { onNavigate
                             aria-current={current ? "page" : undefined}
                             onClick={onNavigate}
                             tabIndex={open ? 0 : -1}
-                            title={collapsed ? sentenceCase(entry.label) : undefined}
+                            title={collapsed ? entry.label : undefined}
                             className={`${NAV_TEXT} ${collapsed ? "justify-center px-0" : "pl-7"} ${current ? NAV_ACTIVE : ""}`}
                           >
                             <NavIcon label={entry.label} />
-                            <span className={`${NAV_LABEL} ${collapsed ? "max-w-0 opacity-0" : "max-w-[140px] opacity-100"}`}>
-                              {sentenceCase(entry.label)}
+                            <span className={`${NAV_LABEL} ${collapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}>
+                              {entry.label}
                             </span>
                           </Link>
                         </li>
@@ -256,34 +252,14 @@ export function DashboardNavList({ onNavigate, collapsed = false }: { onNavigate
 export function DashboardNavFooter({ onNavigate, collapsed = false }: { onNavigate?: () => void; collapsed?: boolean }) {
   const auth = useOptionalAuth();
 
-  if (!auth?.user) {
-    return (
-      <div className="mt-auto pt-2">
-        <Link href="/auth/login" onClick={onNavigate} className={`${NAV_TEXT} ${collapsed ? "justify-center px-0" : ""}`}>
-          <NavIcon label="My profile" />
-          <span className={`${NAV_LABEL} ${collapsed ? "max-w-0 opacity-0" : "max-w-[140px] opacity-100"}`}>Sign in</span>
-        </Link>
-      </div>
-    );
-  }
+  if (auth?.user) return null;
 
   return (
-    <div className="mt-auto border-t border-border pt-2">
-      <ProfileNav
-        variant="row"
-        showHandleOnly
-        showAdminForStaff
-        menuAlign="start"
-        menuSide="top"
-        items={[
-          { label: "My profile", href: "/dashboard/me", icon: <NavIcon label="My profile" /> },
-          { label: "Settings", href: "/dashboard/settings", icon: <NavIcon label="Settings" /> },
-        ]}
-        onLogout={() => {
-          onNavigate?.();
-          void auth.logout();
-        }}
-      />
+    <div className="mt-auto pt-2">
+      <Link href="/auth/login" onClick={onNavigate} className={`${NAV_TEXT} ${collapsed ? "justify-center px-0" : ""}`}>
+        <NavIcon label="My profile" />
+        <span className={`${NAV_LABEL} ${collapsed ? "max-w-0 opacity-0" : "max-w-[180px] opacity-100"}`}>Sign in</span>
+      </Link>
     </div>
   );
 }
@@ -321,9 +297,36 @@ export function DashboardSidebarContent({
           </button>
         ) : null}
       </div>
+      <SidebarProfileNav onNavigate={onNavigate} collapsed={collapsed} />
       <DashboardNavList onNavigate={onNavigate} collapsed={collapsed} />
       <DashboardNavFooter onNavigate={onNavigate} collapsed={collapsed} />
     </>
+  );
+}
+
+function SidebarProfileNav({ onNavigate, collapsed }: { onNavigate?: () => void; collapsed: boolean }) {
+  const auth = useOptionalAuth();
+  if (!auth?.user) return null;
+
+  return (
+    <div className={`w-full shrink-0 ${collapsed ? "flex justify-center" : ""}`}>
+      <ProfileNav
+        variant={collapsed ? "avatar" : "row"}
+        showRole
+        showChevron={!collapsed}
+        showAdminForStaff
+        menuAlign="start"
+        menuSide="bottom"
+        items={[
+          { label: "My profile", href: "/dashboard/me", icon: <NavIcon label="My profile" /> },
+          { label: "Settings", href: "/dashboard/settings", icon: <NavIcon label="Settings" /> },
+        ]}
+        onLogout={() => {
+          onNavigate?.();
+          void auth.logout();
+        }}
+      />
+    </div>
   );
 }
 
