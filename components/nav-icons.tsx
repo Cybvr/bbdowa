@@ -267,6 +267,15 @@ export const MessagesIcon: NavIconComponent = ({ className }) => (
   </Glyph>
 );
 
+// Payments — banknote with a centre mark
+export const PaymentsIcon: NavIconComponent = ({ className }) => (
+  <Glyph className={className}>
+    <rect x="3" y="6.5" width="18" height="11" rx="1.6" />
+    <circle cx="12" cy="12" r="2.4" />
+    <path d="M6.5 9.5v0M17.5 14.5v0" />
+  </Glyph>
+);
+
 // Help — question mark in a circle
 export const HelpIcon: NavIconComponent = ({ className }) => (
   <Glyph className={className}>
@@ -299,6 +308,7 @@ export const NAV_ICON_SET: Record<string, NavIconComponent> = {
   Njeri: NjeriIcon,
   Messages: MessagesIcon,
   Help: HelpIcon,
+  Payments: PaymentsIcon,
   Updates: UpdatesIcon,
   Blog: BlogIcon,
   Company: CompanyIcon,

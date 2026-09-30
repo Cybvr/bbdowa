@@ -43,9 +43,9 @@ export function NjeriWidget() {
         onClick={() => setOpen(true)}
         aria-label="Open Njeri assistant"
         title="Open Njeri Assistant"
-        className="fixed bottom-4 right-4 z-50 hidden md:grid h-14 w-14 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-xl transition-all hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
+        className="fixed bottom-3 right-3 z-50 hidden h-[132px] w-[80px] cursor-pointer place-items-center border-0 bg-transparent p-0 transition-transform duration-200 hover:scale-105 active:scale-95 focus-visible:rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 md:grid"
       >
-        <NjeriMark className="h-6 w-6" />
+        <NjeriMark className="h-full w-full object-contain drop-shadow-[0_2px_5px_rgba(0,0,0,0.18)]" />
       </button>
     );
   }

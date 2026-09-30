@@ -151,6 +151,13 @@ service cloud.firestore {
     }
 
     // A document starts as a draft, can be sent to one creator, and locks when sent.
+    // Payments owed to people. Staff record and settle them; each payee
+    // can read only their own.
+    match /payments/{id} {
+      allow read: if isStaff() || (signedIn() && resource.data.payeeUid == request.auth.uid);
+      allow create, update, delete: if isStaff();
+    }
+
     // Direct messages between two signed-in people. Only the two
     // participants can read the conversation or post into it.
     match /conversations/{conversationId} {

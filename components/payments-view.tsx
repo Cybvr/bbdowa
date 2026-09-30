@@ -1,0 +1,325 @@
+"use client";
+
+import * as React from "react";
+import { addDoc, collection, doc, getDocs, onSnapshot, query, updateDoc, where } from "firebase/firestore";
+import { LuPlus } from "react-icons/lu";
+import { useAuth } from "@/components/auth-provider";
+import { firebaseDb } from "@/lib/firebase/client";
+import { Badge, EmptyState, PageHeader, StatItem, StatRow } from "@/components/dashboard/ui";
+import { FilterBar, type FilterTab } from "@/components/dashboard/filter-bar";
+import { LIST_ACTION_CLASS } from "@/components/dashboard/list-page-actions";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { longDate, plural } from "@/lib/format";
+import {
+  PAYMENTS_COLLECTION,
+  formatAmount,
+  formatTotals,
+  type Payment,
+  type PaymentCurrency,
+  type PaymentStatus,
+} from "@/lib/payments";
+
+type Payee = { uid: string; name: string };
+
+const STATUS_TABS: FilterTab<"all" | PaymentStatus>[] = [
+  { key: "all", label: "All" },
+  { key: "pending", label: "Pending" },
+  { key: "paid", label: "Paid" },
+];
+
+const FIELD = "flex flex-col gap-1.5 text-[13px] font-medium";
+const SELECT = "h-11 w-full border-0 border-b border-input bg-transparent px-3 text-[15px] focus-visible:outline-none sm:h-9 sm:text-sm";
+
+export function PaymentsView() {
+  const { user, role } = useAuth();
+  const uid = user?.uid ?? null;
+  const isStaff = role === "admin" || role === "manager";
+
+  const [payments, setPayments] = React.useState<Payment[]>([]);
+  const [loaded, setLoaded] = React.useState(false);
+  const [status, setStatus] = React.useState<"all" | PaymentStatus>("all");
+  const [search, setSearch] = React.useState("");
+  const [adding, setAdding] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!uid) return;
+    // Staff see every payment, everyone else only the ones made to them.
+    const source = isStaff
+      ? collection(firebaseDb, PAYMENTS_COLLECTION)
+      : query(collection(firebaseDb, PAYMENTS_COLLECTION), where("payeeUid", "==", uid));
+    return onSnapshot(
+      source,
+      (snapshot) => {
+        const rows = snapshot.docs.map((document) => ({ id: document.id, ...document.data() }) as Payment);
+        setPayments(rows.sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+        setLoaded(true);
+      },
+      (error) => {
+        console.error("Unable to load payments", error);
+        setLoaded(true);
+      },
+    );
+  }, [uid, isStaff]);
+
+  const term = search.trim().toLowerCase();
+  const visible = payments.filter(
+    (payment) =>
+      (status === "all" || payment.status === status) &&
+      (!term || [payment.payeeName, payment.description, payment.campaignName ?? ""].join(" ").toLowerCase().includes(term)),
+  );
+
+  const pending = payments.filter((payment) => payment.status === "pending");
+  const year = String(new Date().getFullYear());
+  const paidThisYear = payments.filter((payment) => payment.status === "paid" && payment.paidAt?.startsWith(year));
+
+  const toggleStatus = async (payment: Payment) => {
+    await updateDoc(
+      doc(firebaseDb, PAYMENTS_COLLECTION, payment.id),
+      payment.status === "paid" ? { status: "pending", paidAt: null } : { status: "paid", paidAt: new Date().toISOString() },
+    );
+  };
+
+  return (
+    <main className="mx-auto w-full max-w-6xl flex-1 px-5 pb-16 pt-2 sm:px-8">
+      <PageHeader
+        title="Payments"
+        actions={
+          isStaff ? (
+            <button type="button" onClick={() => setAdding(true)} className={LIST_ACTION_CLASS}>
+              <LuPlus aria-hidden="true" className="h-3.5 w-3.5" />
+              Add payment
+            </button>
+          ) : null
+        }
+      />
+
+      <div className="mt-4">
+        <StatRow>
+          <StatItem label="Outstanding" value={formatTotals(pending)} detail={plural(pending.length, "payment")} />
+          <StatItem label={`Paid in ${year}`} value={formatTotals(paidThisYear)} detail={plural(paidThisYear.length, "payment")} />
+          <StatItem label="All payments" value={payments.length} />
+        </StatRow>
+      </div>
+
+      <FilterBar
+        panelId="payments-panel"
+        tabs={STATUS_TABS}
+        activeTab={status}
+        onTabChange={setStatus}
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search payments"
+        resultCount={plural(visible.length, "payment")}
+        className="mb-4 mt-6"
+      />
+
+      <section id="payments-panel" aria-label="Payments">
+        {visible.length > 0 ? (
+          <div className="overflow-x-auto">
+            <Table className="w-full border-collapse">
+              <TableHeader>
+                <TableRow>
+                  {isStaff ? <TableHead>Payee</TableHead> : null}
+                  <TableHead>For</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Due</TableHead>
+                  <TableHead>Status</TableHead>
+                  {isStaff ? <TableHead><span className="sr-only">Actions</span></TableHead> : null}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {visible.map((payment) => (
+                  <TableRow key={payment.id}>
+                    {isStaff ? <TableCell className="px-4 py-4 font-semibold">{payment.payeeName}</TableCell> : null}
+                    <TableCell className="px-4 py-4">
+                      <span className="block">{payment.description}</span>
+                      {payment.campaignName ? (
+                        <span className="text-[12px] text-muted-foreground">{payment.campaignName}</span>
+                      ) : null}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap px-4 py-4 font-semibold tabular-nums">
+                      {formatAmount(payment.amount, payment.currency)}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap px-4 py-4 text-muted-foreground">
+                      {payment.dueDate ? longDate(payment.dueDate) : "Not set"}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap px-4 py-4">
+                      <Badge tone={payment.status === "paid" ? "neutral" : "active"}>
+                        {payment.status === "paid"
+                          ? `Paid${payment.paidAt ? ` ${longDate(payment.paidAt.slice(0, 10))}` : ""}`
+                          : "Pending"}
+                      </Badge>
+                    </TableCell>
+                    {isStaff ? (
+                      <TableCell className="px-4 py-4 text-right">
+                        <button type="button" onClick={() => void toggleStatus(payment)} className={LIST_ACTION_CLASS}>
+                          {payment.status === "paid" ? "Mark pending" : "Mark paid"}
+                        </button>
+                      </TableCell>
+                    ) : null}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        ) : loaded ? (
+          <EmptyState
+            title={payments.length ? "No payments match" : "No payments yet"}
+            description={
+              payments.length
+                ? "Try a different search term or status."
+                : isStaff
+                  ? "Add a payment to start tracking what is owed and what has been paid."
+                  : "Payments owed to you will show up here."
+            }
+          />
+        ) : null}
+      </section>
+
+      {isStaff && uid ? <AddPaymentDialog open={adding} onOpenChange={setAdding} createdBy={uid} /> : null}
+    </main>
+  );
+}
+
+function AddPaymentDialog({
+  open,
+  onOpenChange,
+  createdBy,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  createdBy: string;
+}) {
+  const [payees, setPayees] = React.useState<Payee[]>([]);
+  const [payeeUid, setPayeeUid] = React.useState("");
+  const [amount, setAmount] = React.useState("");
+  const [currency, setCurrency] = React.useState<PaymentCurrency>("NGN");
+  const [description, setDescription] = React.useState("");
+  const [campaignName, setCampaignName] = React.useState("");
+  const [dueDate, setDueDate] = React.useState("");
+  const [saving, setSaving] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (!open || payees.length) return;
+    void getDocs(collection(firebaseDb, "users")).then((snapshot) => {
+      const seen = new Set<string>();
+      const people: Payee[] = [];
+      snapshot.docs.forEach((document) => {
+        const data = document.data();
+        if (typeof data.uid !== "string" || seen.has(data.uid)) return;
+        seen.add(data.uid);
+        people.push({ uid: data.uid, name: data.name || data.email || "Unnamed" });
+      });
+      setPayees(people.sort((a, b) => a.name.localeCompare(b.name)));
+    });
+  }, [open, payees.length]);
+
+  const reset = () => {
+    setPayeeUid("");
+    setAmount("");
+    setCurrency("NGN");
+    setDescription("");
+    setCampaignName("");
+    setDueDate("");
+    setError(null);
+  };
+
+  const save = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const payee = payees.find((entry) => entry.uid === payeeUid);
+    const value = Number(amount.replace(/,/g, ""));
+    if (!payee || !Number.isFinite(value) || value <= 0 || !description.trim()) {
+      setError("Choose a payee, then enter an amount and what it is for.");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await addDoc(collection(firebaseDb, PAYMENTS_COLLECTION), {
+        payeeUid: payee.uid,
+        payeeName: payee.name,
+        amount: value,
+        currency,
+        description: description.trim(),
+        campaignName: campaignName.trim() || null,
+        status: "pending",
+        dueDate: dueDate || null,
+        paidAt: null,
+        createdBy,
+        createdAt: new Date().toISOString(),
+      });
+      reset();
+      onOpenChange(false);
+    } catch (cause) {
+      console.error("Unable to add payment", cause);
+      setError("Unable to save this payment.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Add payment</DialogTitle>
+          <DialogDescription>Record a payment owed to someone, then mark it paid once it has gone out.</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={save} className="flex flex-col gap-4">
+          <label className={FIELD}>
+            Payee
+            <select value={payeeUid} onChange={(event) => setPayeeUid(event.target.value)} className={SELECT}>
+              <option value="">Choose a person</option>
+              {payees.map((payee) => (
+                <option key={payee.uid} value={payee.uid}>
+                  {payee.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="grid grid-cols-[minmax(0,1fr)_110px] gap-3">
+            <label className={FIELD}>
+              Amount
+              <Input inputMode="decimal" value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="0" />
+            </label>
+            <label className={FIELD}>
+              Currency
+              <select value={currency} onChange={(event) => setCurrency(event.target.value as PaymentCurrency)} className={SELECT}>
+                <option value="NGN">NGN</option>
+                <option value="USD">USD</option>
+              </select>
+            </label>
+          </div>
+          <label className={FIELD}>
+            What it is for
+            <Input value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Illustration for launch key visual" />
+          </label>
+          <label className={FIELD}>
+            Campaign
+            <Input value={campaignName} onChange={(event) => setCampaignName(event.target.value)} placeholder="Optional" />
+          </label>
+          <label className={FIELD}>
+            Due date
+            <Input type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} />
+          </label>
+          {error ? <p className="m-0 text-[13px] text-primary">{error}</p> : null}
+          <div className="flex justify-end gap-2">
+            <button type="button" onClick={() => onOpenChange(false)} className={LIST_ACTION_CLASS}>
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="inline-flex h-8 items-center justify-center rounded-lg bg-primary px-3 text-xs font-semibold text-white hover:bg-primary/90 disabled:opacity-50"
+            >
+              {saving ? "Saving" : "Add payment"}
+            </button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

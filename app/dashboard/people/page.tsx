@@ -222,7 +222,7 @@ export default function PeoplePage() {
           ))}
         </div>
         <Link
-          href="/dashboard/workflows/agency"
+          href="/dashboard/workflows"
           className="mt-6 inline-block text-[13px] font-semibold text-foreground underline decoration-border underline-offset-4 hover:text-primary focus-visible:text-primary"
         >
           View the agency workflow

@@ -1,5 +1,5 @@
-import { Folder } from "lucide-react";
+import Image from "next/image";
 
 export function NjeriMark({ className }: { className?: string }) {
-  return <Folder aria-hidden="true" className={className} strokeWidth={1.75} />;
+  return <Image src="/njeri-character.png" alt="" aria-hidden="true" width={971} height={1620} className={className} />;
 }

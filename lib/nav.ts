@@ -28,6 +28,7 @@ export const NAV_ITEMS: NavItem[] = [
   { kind: "link", label: "Home", href: "/dashboard" },
   { kind: "link", label: "Work", href: "/dashboard/work", requiresAuth: true },
   { kind: "link", label: "Tracker", href: "/dashboard/tracker", requiresAuth: true },
+  { kind: "link", label: "Payments", href: "/dashboard/payments", requiresAuth: true },
   { kind: "link", label: "Njeri", href: "/dashboard/njeri" },
   { kind: "link", label: "Messages", href: "/dashboard/messages", requiresAuth: true },
   {
@@ -45,8 +46,7 @@ export const NAV_ITEMS: NavItem[] = [
     items: [
       { label: "Discover", href: "/dashboard/discover" },
       { label: "Clients", href: "/dashboard/clients" },
-      { label: "Agency workflow", href: "/dashboard/workflows/agency" },
-      { label: "Pitch workflow", href: "/dashboard/workflows/pitch" },
+      { label: "Workflows", href: "/dashboard/workflows" },
       { label: "Brand assets", href: "/dashboard/brand" },
       { label: "Resources", href: "/dashboard/resources" },
       { label: "Team", href: "/dashboard/people" },
