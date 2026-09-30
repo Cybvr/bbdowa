@@ -17,8 +17,8 @@ import {
 } from "firebase/firestore";
 import { firebaseDb } from "@/lib/firebase/client";
 import { useAuth } from "@/components/auth-provider";
-import { DayRateField } from "@/components/day-rate-field";
-import { CreatableSelectField, EditSheet, ImageUploadField, SelectField, TextField, TextareaField } from "@/components/detail-editor";
+import { ProfileFields, profileDraftFrom, profileDraftToFirestore, type ProfileDraft } from "@/components/profile-fields";
+import { EditSheet, ImageUploadField, SelectField } from "@/components/detail-editor";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,7 +26,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { REFERRAL_SOURCES, creatorRateLabel, userRoles, type RateCurrency, type User, type UserRole } from "@/lib/users";
+import { userRoles, type User, type UserRole } from "@/lib/users";
 
 type AccountStatus = "active" | "pending";
 
@@ -58,33 +58,10 @@ export function UserActions({
   const { isAdmin, role } = useAuth();
   const canEditUser = isAdmin || (role === "manager" && variant === "creator");
 
-  const [name, setName] = React.useState(user.name ?? "");
   const [status, setStatus] = React.useState<AccountStatus>(user.role === "pending" ? "pending" : "active");
   const [roles, setRoles] = React.useState<UserRole[]>(userRoles(user).length ? userRoles(user) : ["manager"]);
-  const [title, setTitle] = React.useState(user.title ?? "");
-  const [department, setDepartment] = React.useState(user.department ?? "");
-  const [location, setLocation] = React.useState(user.location ?? "");
-  const [email, setEmail] = React.useState(user.email ?? "");
-  const [phone, setPhone] = React.useState(user.phone ?? "");
+  const [draft, setDraft] = React.useState<ProfileDraft>(() => profileDraftFrom(user));
   const [profileImage, setProfileImage] = React.useState(user.profileImage ?? "");
-  // Creator-only
-  const [category, setCategory] = React.useState(user.category ?? "");
-  const [dayRate] = React.useState(user.dayRate ?? "");
-  const [rateMin, setRateMin] = React.useState<number | null>(user.rateMin ?? null);
-  const [rateCurrency, setRateCurrency] = React.useState<RateCurrency>(user.rateCurrency ?? "NGN");
-  const [availability, setAvailability] = React.useState(user.availability ?? "unconfirmed");
-  const [portfolio, setPortfolio] = React.useState(user.portfolio ?? "");
-  const [behance, setBehance] = React.useState(user.behance ?? "");
-  const [linkedin, setLinkedin] = React.useState(user.linkedin ?? "");
-  const [instagram, setInstagram] = React.useState(user.instagram ?? "");
-  const [vouchedBy, setVouchedBy] = React.useState(user.vouchedBy ?? "");
-  const [referralSource, setReferralSource] = React.useState(user.referralSource || "none");
-  const [craftNote, setCraftNote] = React.useState(user.craftNote ?? "");
-  const [followerCount, setFollowerCount] = React.useState(user.followerCount ?? "");
-  const [followerPlatform, setFollowerPlatform] = React.useState(user.followerPlatform ?? "");
-  const [gender, setGender] = React.useState(user.gender ?? "");
-  const [age, setAge] = React.useState(user.age == null ? "" : String(user.age));
-  const [niche, setNiche] = React.useState(user.niche ?? "");
 
   const docRef = async () => {
     if (user.uid) {
@@ -102,45 +79,20 @@ export function UserActions({
   const save = async () => {
     const ref = await docRef();
     if (!ref) throw new Error("User document not found");
-    const common = {
-      name: name.trim(),
-      title: title.trim(),
-      department: department.trim(),
-      location: location.trim(),
-      email: email.trim() || null,
-      phone: phone.trim() || null,
-      profileImage: profileImage.trim() || null,
-      updatedAt: serverTimestamp(),
-    };
     const accessFields = isAdmin
       ? {
           role: status === "pending" ? "pending" : roles[0] ?? "manager",
           roles: status === "pending" ? [] : roles,
         }
       : {};
-    const creatorFields =
-      variant === "creator" || roles.includes("creator")
-        ? {
-            category: category.trim(),
-            dayRate: creatorRateLabel(rateCurrency, rateMin) || dayRate.trim(),
-            rateMin,
-            rateCurrency,
-            availability,
-            portfolio: portfolio.trim() || null,
-            behance: behance.trim() || null,
-            linkedin: linkedin.trim() || null,
-            instagram: instagram.trim() || null,
-            vouchedBy: vouchedBy.trim(),
-            referralSource: referralSource === "none" ? null : referralSource,
-            craftNote: craftNote.trim(),
-            followerCount: followerCount.trim() || null,
-            followerPlatform: followerPlatform.trim() || null,
-            gender: gender.trim() || null,
-            age: age.trim() ? Number(age) : null,
-            niche: niche.trim() || null,
-          }
-        : {};
-    await updateDoc(ref, { ...common, ...accessFields, ...creatorFields });
+    await updateDoc(ref, {
+      ...profileDraftToFirestore(draft),
+      email: draft.email.trim() || null,
+      vouchedBy: draft.vouchedBy.trim(),
+      profileImage: profileImage.trim() || null,
+      updatedAt: serverTimestamp(),
+      ...accessFields,
+    });
     if (onMutated) {
       onMutated();
       return;
@@ -199,7 +151,6 @@ export function UserActions({
       ) : undefined}
     >
       <ImageUploadField label="Avatar" value={profileImage} onChange={setProfileImage} variant="avatar" uploadPath={`users/${user.uid ?? user.slug}/avatar`} />
-      <TextField label="Name" value={name} onChange={setName} />
       {isAdmin ? (
         <>
           <SelectField
@@ -243,67 +194,7 @@ export function UserActions({
           </div>
         </>
       ) : null}
-      {variant === "team" ? (
-        <>
-          <TextField label="Title" value={title} onChange={setTitle} />
-          <TextField label="Department" value={department} onChange={setDepartment} />
-        </>
-      ) : null}
-      {variant === "creator" || roles.includes("creator") ? (
-        <>
-          <CreatableSelectField
-            label="Category"
-            value={category}
-            onChange={setCategory}
-            options={categoryOptions}
-            addLabel="Add new category…"
-            placeholder="e.g. Photography"
-          />
-          <DayRateField
-            currency={rateCurrency}
-            rateMin={rateMin}
-            onCurrencyChange={setRateCurrency}
-            onRateMinChange={setRateMin}
-          />
-          <SelectField
-            label="Availability"
-            value={availability}
-            onChange={(value) => setAvailability(value as User["availability"])}
-            options={[
-              { value: "open", label: "Open" },
-              { value: "busy", label: "Busy" },
-              { value: "unconfirmed", label: "Unconfirmed" },
-            ]}
-          />
-        </>
-      ) : null}
-      <TextField label="Location" value={location} onChange={setLocation} />
-      <TextField label="Email" value={email} onChange={setEmail} type="email" />
-      <TextField label="Phone" value={phone} onChange={setPhone} />
-      {variant === "creator" || roles.includes("creator") ? (
-        <>
-          <TextField label="Portfolio URL" value={portfolio} onChange={setPortfolio} />
-          <TextField label="Behance URL" value={behance} onChange={setBehance} />
-          <TextField label="LinkedIn URL" value={linkedin} onChange={setLinkedin} />
-          <TextField label="Instagram URL" value={instagram} onChange={setInstagram} />
-          <TextField label="Vouched by" value={vouchedBy} onChange={setVouchedBy} />
-          <SelectField
-            label="Referral source"
-            value={referralSource}
-            onChange={setReferralSource}
-            options={[
-              { value: "none", label: "Not set" },
-              ...[...REFERRAL_SOURCES, ...(referralSource !== "none" && !(REFERRAL_SOURCES as readonly string[]).includes(referralSource) ? [referralSource] : [])].map((source) => ({ value: source, label: source })),
-            ]}
-          />
-          <TextareaField label="About" value={craftNote} onChange={setCraftNote} />
-          <TextField label="Follower count" value={followerCount} onChange={setFollowerCount} placeholder="e.g. 202" />
-          <TextField label="Follower platform" value={followerPlatform} onChange={setFollowerPlatform} placeholder="e.g. Instagram" />
-          <TextField label="Gender" value={gender} onChange={setGender} />
-          <TextField label="Age" value={age} onChange={setAge} type="number" />
-          <TextField label="Niche" value={niche} onChange={setNiche} placeholder="e.g. Commercial and lifestyle production" />
-        </>
-      ) : null}
+      <ProfileFields draft={draft} onChange={setDraft} categoryOptions={categoryOptions} editableEmail showVouchedBy />
     </EditSheet>
   );
 }

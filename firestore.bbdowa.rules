@@ -58,7 +58,8 @@ service cloud.firestore {
             "profileImage", "category", "dayRate", "availability", "portfolio",
             "rateMin", "rateCurrency",
             "behance", "linkedin", "instagram", "vouchedBy", "craftNote",
-            "followerCount", "followerPlatform", "gender", "age", "niche", "updatedAt"
+            "followerCount", "followerPlatform", "gender", "age", "niche", "updatedAt",
+            "entity", "hideRate", "terms", "tags", "referralSource", "workHistory"
           ]))
         || (isSelf(userId)
           && resource.data.uid == userId
