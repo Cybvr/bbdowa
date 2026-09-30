@@ -297,10 +297,10 @@ export function ProfileTable({
     return <EmptyState title={emptyTitle} description={emptyDescription} />;
   }
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-background">
+    <div className="overflow-x-auto">
       <Table className="min-w-[480px]">
         <TableHeader>
-          <TableRow className="bg-muted/30 hover:bg-muted/30">
+          <TableRow>
             {columns.map((column) => (
               <TableHead key={column.key} className="px-4">{column.label}</TableHead>
             ))}

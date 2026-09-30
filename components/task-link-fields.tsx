@@ -35,6 +35,7 @@ export function TaskClientCampaignFields({
   clients,
   campaigns,
   disabled = false,
+  inlineLabels = false,
   onClientChange,
   onCampaignChange,
 }: {
@@ -43,6 +44,7 @@ export function TaskClientCampaignFields({
   clients: Client[];
   campaigns: Campaign[];
   disabled?: boolean;
+  inlineLabels?: boolean;
   onClientChange: (clientId: string | null) => void;
   onCampaignChange: (campaignId: string | null) => void;
 }) {
@@ -51,20 +53,20 @@ export function TaskClientCampaignFields({
 
   return (
     <>
-      <div className="space-y-1.5">
-        <label className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground" htmlFor={`${id}-client`}>Client</label>
+      <div className={inlineLabels ? "grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2" : "space-y-1.5"}>
+        <label className={`${inlineLabels ? "" : "block "}text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground`} htmlFor={`${id}-client`}>Client</label>
         <Select value={clientId ?? NO_SELECTION} onValueChange={(value) => onClientChange(value === NO_SELECTION ? null : value)} disabled={disabled}>
-          <SelectTrigger id={`${id}-client`} className="rounded-md border border-input bg-background"><SelectValue placeholder="Choose a client" /></SelectTrigger>
+          <SelectTrigger id={`${id}-client`} className="min-w-0 rounded-md border border-input bg-background"><SelectValue placeholder="Choose a client" /></SelectTrigger>
           <SelectContent>
             <SelectItem value={NO_SELECTION}>No client</SelectItem>
             {clients.map((client) => <SelectItem key={client.slug} value={client.slug}>{client.name}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
-      <div className="space-y-1.5">
-        <label className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground" htmlFor={`${id}-campaign`}>Campaign</label>
+      <div className={inlineLabels ? "grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2" : "space-y-1.5"}>
+        <label className={`${inlineLabels ? "" : "block "}text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground`} htmlFor={`${id}-campaign`}>Campaign</label>
         <Select value={campaignId ?? NO_SELECTION} onValueChange={(value) => onCampaignChange(value === NO_SELECTION ? null : value)} disabled={disabled || !clientId}>
-          <SelectTrigger id={`${id}-campaign`} className="rounded-md border border-input bg-background"><SelectValue placeholder={clientId ? "Choose a campaign" : "Choose a client first"} /></SelectTrigger>
+          <SelectTrigger id={`${id}-campaign`} className="min-w-0 rounded-md border border-input bg-background"><SelectValue placeholder={clientId ? "Choose a campaign" : "Choose a client first"} /></SelectTrigger>
           <SelectContent>
             <SelectItem value={NO_SELECTION}>No campaign</SelectItem>
             {linkedCampaigns.map((campaign) => <SelectItem key={campaign.slug} value={campaign.slug}>{campaign.name}</SelectItem>)}

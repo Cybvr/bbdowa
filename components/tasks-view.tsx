@@ -2,14 +2,15 @@
 
 import * as React from "react";
 import { addDoc, collection, deleteDoc, doc, getDocs, query, updateDoc, where } from "firebase/firestore";
-import { CheckSquare, Plus, Trash2 } from "lucide-react";
+import { Check, CheckSquare, Copy, Expand, Minimize2, Plus, Share2, Trash2 } from "lucide-react";
 import { firebaseDb } from "@/lib/firebase/client";
 import { EmptyState } from "@/components/dashboard/ui";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { RichTextContent, RichTextEditor } from "@/components/rich-text-editor";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ItemCard, ItemCardList } from "@/components/dashboard/item-card";
 import { TaskClientCampaignFields, useTaskLinkOptions } from "@/components/task-link-fields";
 import {
@@ -47,6 +48,16 @@ export function TaskStatusBadge({ status, overdue }: { status: TaskStatus; overd
   );
 }
 
+function taskEditorText(task: Task) {
+  if (typeof task.content === "string") return { description: task.description ?? "", content: task.content };
+  const description = task.description ?? "";
+  if (description.length <= 160 && !description.includes("\n")) return { description, content: "" };
+  return {
+    description: (description.split(/\r?\n/).find((line) => line.trim()) ?? description).trim().slice(0, 160),
+    content: description,
+  };
+}
+
 export function NewTaskSheet({ creatorUid, creatorName, createdBy, createdByName, onCreated }: {
   creatorUid: string;
   creatorName: string;
@@ -57,6 +68,7 @@ export function NewTaskSheet({ creatorUid, creatorName, createdBy, createdByName
   const [open, setOpen] = React.useState(false);
   const [title, setTitle] = React.useState("");
   const [description, setDescription] = React.useState("");
+  const [content, setContent] = React.useState("");
   const [dueDate, setDueDate] = React.useState("");
   const [clientId, setClientId] = React.useState<string | null>(null);
   const [campaignId, setCampaignId] = React.useState<string | null>(null);
@@ -67,6 +79,7 @@ export function NewTaskSheet({ creatorUid, creatorName, createdBy, createdByName
   const reset = () => {
     setTitle("");
     setDescription("");
+    setContent("");
     setDueDate("");
     setClientId(null);
     setCampaignId(null);
@@ -90,6 +103,7 @@ export function NewTaskSheet({ creatorUid, creatorName, createdBy, createdByName
       await addDoc(collection(firebaseDb, TASK_COLLECTION), {
         title: title.trim(),
         description: description.trim(),
+        content,
         clientId,
         clientName: clients.find((client) => client.slug === clientId)?.name ?? null,
         campaignId,
@@ -125,7 +139,7 @@ export function NewTaskSheet({ creatorUid, creatorName, createdBy, createdByName
       </button>
 
       <Sheet open={open} onOpenChange={handleOpenChange}>
-        <SheetContent side="right" aria-describedby={undefined} className="[&>button]:bg-muted [&>button]:text-foreground [&>button]:opacity-100">
+        <SheetContent side="right" aria-describedby={undefined} className="w-[min(520px,calc(100vw-1.5rem))] max-w-none gap-0 [&>button]:bg-muted [&>button]:text-foreground [&>button]:opacity-100">
           <SheetHeader className="border-b border-border">
             <SheetTitle className="pr-8">New task</SheetTitle>
             <SheetDescription>Assign work to {creatorName}.</SheetDescription>
@@ -139,20 +153,24 @@ export function NewTaskSheet({ creatorUid, creatorName, createdBy, createdByName
               </div>
               <div className="space-y-1.5">
                 <label htmlFor="task-description" className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Description</label>
-                <Textarea id="task-description" value={description} onChange={(event) => setDescription(event.target.value)} disabled={busy} placeholder="Brief, deliverables, links…" rows={4} />
+                <Input id="task-description" value={description} onChange={(event) => setDescription(event.target.value)} disabled={busy} placeholder="Short task summary" />
               </div>
-              <TaskClientCampaignFields
-                clientId={clientId}
-                campaignId={campaignId}
-                clients={clients}
-                campaigns={campaigns}
-                disabled={busy || linksLoading}
-                onClientChange={(value) => { setClientId(value); setCampaignId(null); }}
-                onCampaignChange={setCampaignId}
-              />
-              <div className="space-y-1.5">
-                <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Due date</span>
-                <Input type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} disabled={busy} className="h-10" />
+              <RichTextEditor label="Content" value={content} onChange={setContent} placeholder="Add detailed instructions and copy…" compact />
+              <div className="grid gap-3 sm:grid-cols-2">
+                <TaskClientCampaignFields
+                  clientId={clientId}
+                  campaignId={campaignId}
+                  clients={clients}
+                  campaigns={campaigns}
+                  disabled={busy || linksLoading}
+                  inlineLabels
+                  onClientChange={(value) => { setClientId(value); setCampaignId(null); }}
+                  onCampaignChange={setCampaignId}
+                />
+                <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2">
+                  <label htmlFor="new-task-due-date" className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Due date</label>
+                  <Input id="new-task-due-date" type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} disabled={busy} className="min-w-0" />
+                </div>
               </div>
               {error ? <p className="m-0 text-[13px] font-medium text-destructive">{error}</p> : null}
             </div>
@@ -180,11 +198,16 @@ export function TaskDetailSheet({ task, onOpenChange, canEdit, canDelete, assign
   const [error, setError] = React.useState<string | null>(null);
   const [title, setTitle] = React.useState("");
   const [description, setDescription] = React.useState("");
+  const [content, setContent] = React.useState("");
   const [status, setStatus] = React.useState<TaskStatus>("todo");
   const [dueDate, setDueDate] = React.useState("");
   const [clientId, setClientId] = React.useState<string | null>(null);
   const [campaignId, setCampaignId] = React.useState<string | null>(null);
   const [assignedTo, setAssignedTo] = React.useState("");
+  const [expanded, setExpanded] = React.useState(false);
+  const [shareOpen, setShareOpen] = React.useState(false);
+  const [shareUrl, setShareUrl] = React.useState("");
+  const [shareMessage, setShareMessage] = React.useState<string | null>(null);
   const { clients, campaigns, loading: linksLoading } = useTaskLinkOptions();
   const assigneeOptions = assignees
     ? [...(task && !assignees.some((item) => item.uid === task.assignedTo) ? [{ uid: task.assignedTo, name: task.assignedToName ?? "Current assignee" }] : []), ...assignees]
@@ -193,14 +216,38 @@ export function TaskDetailSheet({ task, onOpenChange, canEdit, canDelete, assign
   React.useEffect(() => {
     if (!task) return;
     setTitle(task.title);
-    setDescription(task.description ?? "");
+    const text = taskEditorText(task);
+    setDescription(text.description);
+    setContent(text.content);
     setStatus(task.status);
     setDueDate(task.dueDate ?? "");
     setClientId(task.clientId ?? null);
     setCampaignId(task.campaignId ?? null);
     setAssignedTo(task.assignedTo);
     setError(null);
+    setShareOpen(false);
+    setShareUrl("");
+    setShareMessage(null);
   }, [task]);
+
+  const shareTask = () => {
+    if (!task) return;
+    const url = new URL("/dashboard/tasks", window.location.origin);
+    url.searchParams.set("task", task.id);
+    setShareUrl(url.toString());
+    setShareMessage(null);
+    setShareOpen(true);
+  };
+
+  const copyShareLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setShareMessage("Task link copied");
+      window.setTimeout(() => setShareMessage(null), 2500);
+    } catch {
+      setShareMessage("Couldn’t copy the link. Select it to copy manually.");
+    }
+  };
 
   const save = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -214,6 +261,7 @@ export function TaskDetailSheet({ task, onOpenChange, canEdit, canDelete, assign
       await updateDoc(doc(firebaseDb, TASK_COLLECTION, task.id), {
         title: title.trim(),
         description: description.trim(),
+        content,
         status,
         dueDate: dueDate || null,
         clientId: client?.slug ?? null,
@@ -250,12 +298,20 @@ export function TaskDetailSheet({ task, onOpenChange, canEdit, canDelete, assign
   };
 
   return (
-    <Sheet open={Boolean(task)} onOpenChange={onOpenChange}>
-      <SheetContent side="right" aria-describedby={undefined} className="[&>button]:bg-muted [&>button]:text-foreground [&>button]:opacity-100">
+    <>
+    <Sheet open={Boolean(task)} onOpenChange={(open) => { if (!open) setExpanded(false); onOpenChange(open); }}>
+      <SheetContent side={expanded ? "center" : "right"} aria-describedby={undefined} className={expanded ? "gap-0 [&>button]:bg-muted [&>button]:text-foreground [&>button]:opacity-100" : "w-[min(520px,calc(100vw-1.5rem))] max-w-none gap-0 [&>button]:bg-muted [&>button]:text-foreground [&>button]:opacity-100"}>
         {task ? (
           <>
-            <SheetHeader className="border-b border-border">
-              <SheetTitle className="pr-8">{canEdit ? "Edit task" : task.title}</SheetTitle>
+            <SheetHeader className="relative border-b border-border pr-36">
+              <SheetTitle>{canEdit ? "Edit task" : task.title}</SheetTitle>
+              <button type="button" onClick={shareTask} aria-label="Share task" title="Share task" className="absolute right-[5.5rem] top-2.5 grid h-9 w-9 place-items-center rounded-full text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                <Share2 className="h-4 w-4" aria-hidden="true" />
+              </button>
+              <button type="button" onClick={() => setExpanded((value) => !value)} aria-label={expanded ? "Return to side panel" : "Expand task to modal"} title={expanded ? "Return to side panel" : "Expand to modal"} className="absolute right-12 top-2.5 grid h-9 w-9 place-items-center rounded-full text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                {expanded ? <Minimize2 className="h-4 w-4" aria-hidden="true" /> : <Expand className="h-4 w-4" aria-hidden="true" />}
+              </button>
+              <span role="status" className="sr-only">{shareMessage}</span>
             </SheetHeader>
             {canEdit ? (
               <form onSubmit={save} className="flex min-h-0 flex-1 flex-col">
@@ -267,39 +323,41 @@ export function TaskDetailSheet({ task, onOpenChange, canEdit, canDelete, assign
                   </div>
                   <div className="space-y-1.5">
                     <label htmlFor="edit-task-description" className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Description</label>
-                    <Textarea id="edit-task-description" value={description} onChange={(event) => setDescription(event.target.value)} disabled={busy} placeholder="Brief, deliverables, links…" rows={5} />
+                    <Input id="edit-task-description" value={description} onChange={(event) => setDescription(event.target.value)} disabled={busy} placeholder="Short task summary" />
                   </div>
-                  {assignees ? (
-                    <div className="space-y-1.5">
-                      <label htmlFor="edit-task-assignee" className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Assigned to</label>
-                      <Select value={assignedTo} onValueChange={setAssignedTo} disabled={busy}>
-                        <SelectTrigger id="edit-task-assignee" className="rounded-md border border-input bg-background"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {assigneeOptions.map((assignee) => <SelectItem key={assignee.uid} value={assignee.uid}>{assignee.name}</SelectItem>)}
-                        </SelectContent>
+                  <div className="grid items-center gap-x-4 gap-y-3 grid-cols-1 sm:grid-cols-2">
+                    {assignees ? (
+                      <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2">
+                        <label htmlFor="edit-task-assignee" className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Assigned to</label>
+                        <Select value={assignedTo} onValueChange={setAssignedTo} disabled={busy}>
+                          <SelectTrigger id="edit-task-assignee" className="min-w-0 rounded-md border border-input bg-background"><SelectValue /></SelectTrigger>
+                          <SelectContent>{assigneeOptions.map((assignee) => <SelectItem key={assignee.uid} value={assignee.uid}>{assignee.name}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                    ) : null}
+                    <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2">
+                      <label htmlFor="edit-task-status" className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Status</label>
+                      <Select value={status} onValueChange={(value) => setStatus(value as TaskStatus)} disabled={busy}>
+                        <SelectTrigger id="edit-task-status" className="min-w-0 rounded-md border border-input bg-background"><SelectValue /></SelectTrigger>
+                        <SelectContent>{TASK_STATUSES.map((value) => <SelectItem key={value} value={value}>{TASK_STATUS_LABELS[value]}</SelectItem>)}</SelectContent>
                       </Select>
                     </div>
-                  ) : null}
-                  <div className="space-y-1.5">
-                    <label htmlFor="edit-task-status" className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Status</label>
-                    <Select value={status} onValueChange={(value) => setStatus(value as TaskStatus)} disabled={busy}>
-                      <SelectTrigger id="edit-task-status" className="rounded-md border border-input bg-background"><SelectValue /></SelectTrigger>
-                      <SelectContent>{TASK_STATUSES.map((value) => <SelectItem key={value} value={value}>{TASK_STATUS_LABELS[value]}</SelectItem>)}</SelectContent>
-                    </Select>
+                    <TaskClientCampaignFields
+                      clientId={clientId}
+                      campaignId={campaignId}
+                      clients={clients}
+                      campaigns={campaigns}
+                      disabled={busy || linksLoading}
+                      inlineLabels
+                      onClientChange={(value) => { setClientId(value); setCampaignId(null); }}
+                      onCampaignChange={setCampaignId}
+                    />
+                    <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2">
+                      <label htmlFor="edit-task-due-date" className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Due date</label>
+                      <Input id="edit-task-due-date" type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} disabled={busy} className="min-w-0" />
+                    </div>
                   </div>
-                  <TaskClientCampaignFields
-                    clientId={clientId}
-                    campaignId={campaignId}
-                    clients={clients}
-                    campaigns={campaigns}
-                    disabled={busy || linksLoading}
-                    onClientChange={(value) => { setClientId(value); setCampaignId(null); }}
-                    onCampaignChange={setCampaignId}
-                  />
-                  <div className="space-y-1.5">
-                    <label htmlFor="edit-task-due-date" className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Due date</label>
-                    <Input id="edit-task-due-date" type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} disabled={busy} />
-                  </div>
+                  <RichTextEditor label="Content" value={content} onChange={setContent} placeholder="Add detailed instructions and copy…" compact />
                 </div>
                 <div className="flex items-center justify-between gap-3 border-t border-border px-4 py-3">
                   {canDelete ? <button type="button" onClick={() => void removeTask()} disabled={busy} className="inline-flex h-9 items-center gap-1.5 rounded-md border border-border px-3 text-[13px] font-semibold text-destructive transition hover:border-destructive disabled:opacity-50"><Trash2 className="h-4 w-4" aria-hidden="true" />Delete</button> : <span />}
@@ -310,6 +368,7 @@ export function TaskDetailSheet({ task, onOpenChange, canEdit, canDelete, assign
               <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-4 py-4">
                 <TaskStatusBadge status={task.status} overdue={isOverdue(task)} />
                 <div><span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Description</span><p className="m-0 whitespace-pre-wrap text-[14px] leading-[1.55] text-foreground">{task.description || "No description added."}</p></div>
+                {task.content ? <div><span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Content</span><RichTextContent value={task.content} className="text-[14px] leading-[1.55]" /></div> : null}
                 {task.clientName ? <p className="m-0 text-[13px] text-muted-foreground">Client: {task.clientName}</p> : null}
                 {task.campaignName ? <p className="m-0 text-[13px] text-muted-foreground">Campaign: {task.campaignName}</p> : null}
               </div>
@@ -318,6 +377,26 @@ export function TaskDetailSheet({ task, onOpenChange, canEdit, canDelete, assign
         ) : null}
       </SheetContent>
     </Sheet>
+      <Dialog open={shareOpen && Boolean(task)} onOpenChange={setShareOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Share task</DialogTitle>
+            <DialogDescription>Copy this link to share “{task?.title}”.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Input aria-label="Task share link" readOnly value={shareUrl} onFocus={(event) => event.currentTarget.select()} />
+            {shareMessage ? <p role="status" className="m-0 text-[13px] text-muted-foreground">{shareMessage}</p> : null}
+          </div>
+          <DialogFooter>
+            <button type="button" onClick={() => setShareOpen(false)} className="h-9 rounded-md border border-border px-4 text-[13px] font-semibold text-foreground">Close</button>
+            <button type="button" onClick={() => void copyShareLink()} className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-4 text-[13px] font-semibold text-primary-foreground hover:bg-primary/90">
+              {shareMessage === "Task link copied" ? <Check className="h-4 w-4" aria-hidden="true" /> : <Copy className="h-4 w-4" aria-hidden="true" />}
+              {shareMessage === "Task link copied" ? "Copied" : "Copy link"}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 

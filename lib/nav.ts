@@ -22,18 +22,18 @@ export type NavItem =
   | { kind: "menu"; label: string; match: string | string[]; items: DashboardNavLink[]; requiresAuth?: boolean };
 
 export const NAV_ITEMS: NavItem[] = [
-  { kind: "link", label: "My profile", href: "/dashboard/me", requiresAuth: true },
+  { kind: "link", label: "My profile", href: "/dashboard/me", requiresAuth: true, hideInSidebar: true },
   { kind: "link", label: "Home", href: "/dashboard" },
-  { kind: "link", label: "Discover", href: "/dashboard/discover" },
   { kind: "link", label: "Tasks", href: "/dashboard/tasks", requiresAuth: true },
   { kind: "link", label: "Tracker", href: "/dashboard/tracker", requiresAuth: true },
   { kind: "link", label: "Njeri", href: "/dashboard/njeri" },
   {
     kind: "menu",
-    label: "The office",
+    label: "The studio",
     requiresAuth: true,
-    match: ["/dashboard/campaigns", "/dashboard/clients"],
+    match: ["/dashboard/campaigns", "/dashboard/clients", "/dashboard/discover"],
     items: [
+      { label: "Discover", href: "/dashboard/discover" },
       { label: "Campaigns", href: "/dashboard/campaigns" },
       { label: "Clients", href: "/dashboard/clients" },
     ],
@@ -54,7 +54,7 @@ export const NAV_ITEMS: NavItem[] = [
     ],
   },
   { kind: "link", label: "Updates", href: "/dashboard/blog" },
-  { kind: "link", label: "Admin", href: "/admin", requiresAuth: true, requiresStaff: true },
+  { kind: "link", label: "Admin", href: "/admin", requiresAuth: true, requiresStaff: true, hideInSidebar: true },
 ];
 
 export const ADMIN_NAV_ITEMS: NavItem[] = [

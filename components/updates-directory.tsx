@@ -9,6 +9,7 @@ import { DashboardThumbnail } from "@/components/dashboard-thumbnail";
 import { DashboardCard, DashboardCardActions } from "@/components/dashboard-card";
 import { FilterBar, type SortOption, type ViewMode } from "@/components/dashboard/filter-bar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 
 const CATEGORIES: { value: BlogCategory | "all"; label: string }[] = [
   { value: "all", label: "All categories" },
@@ -104,7 +105,7 @@ export function UpdatesDirectory({ posts }: { posts: BlogPost[] }) {
               ))}
             </ul>
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-border">
+            <div className="overflow-x-auto">
               <Table className="w-full border-collapse">
                 <TableHeader>
                   <TableRow>
@@ -116,14 +117,14 @@ export function UpdatesDirectory({ posts }: { posts: BlogPost[] }) {
                 </TableHeader>
                 <TableBody>
                   {visible.map((post) => (
-                    <TableRow key={post.slug}>
+                    <ClickableTableRow key={post.slug} href={`/dashboard/blog/${post.slug}`} label={`Open update ${post.title}`}>
                       <TableCell className="px-4 py-4 font-semibold">
                         <Link href={`/dashboard/blog/${post.slug}`} className="text-foreground no-underline hover:text-primary focus-visible:text-primary">{post.title}</Link>
                       </TableCell>
                       <TableCell className="px-4 py-4 text-primary">{post.category}</TableCell>
                       <TableCell className="px-4 py-4 text-muted-foreground">{post.sourceName}</TableCell>
                       <TableCell className="whitespace-nowrap px-4 py-4 text-muted-foreground">{formatDate(post.publishedAt)}</TableCell>
-                    </TableRow>
+                    </ClickableTableRow>
                   ))}
                 </TableBody>
               </Table>

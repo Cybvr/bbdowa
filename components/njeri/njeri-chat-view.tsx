@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { Send, Copy, Check, Plus, Clock } from "lucide-react";
+import { Send, Copy, Check, PanelLeft } from "lucide-react";
 import { PERSONAL_QUICK_PROMPTS, QUICK_PROMPTS, STAFF_QUICK_PROMPTS } from "@/lib/njeri-assistant";
 import { FormattedContent } from "./njeri-formatted-content";
 import { ActionCard } from "./njeri-action-card";
@@ -12,7 +12,6 @@ interface NjeriChatViewProps {
   isTyping: boolean;
   onSendMessage: (text: string) => Promise<void>;
   onConfirmAction?: (messageId: string | number, action: NjeriActionProposal) => Promise<void>;
-  onNewChat?: () => void;
   onToggleHistory?: () => void;
   headerActions?: React.ReactNode;
   mode?: "page" | "widget";
@@ -25,7 +24,6 @@ export function NjeriChatView({
   isTyping,
   onSendMessage,
   onConfirmAction,
-  onNewChat,
   onToggleHistory,
   headerActions,
   mode = "page",
@@ -111,11 +109,11 @@ export function NjeriChatView({
             <button
               type="button"
               onClick={onToggleHistory}
-              aria-label="Toggle history popout"
-              title="Conversation history"
-              className="grid h-10 w-10 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              aria-label="Show chat history"
+              title="Chat history"
+              className="grid h-10 w-10 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 md:hidden"
             >
-              <Clock className="h-3.5 w-3.5" />
+              <PanelLeft className="h-4 w-4" />
             </button>
           )}
           {headerActions}
@@ -233,18 +231,6 @@ export function NjeriChatView({
           </div>
 
           <div className={isPageMode ? "flex w-full items-center justify-between" : "contents"}>
-            {isPageMode && onNewChat ? (
-              <button
-                type="button"
-                onClick={onNewChat}
-                aria-label="New chat"
-                title="Start new chat"
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-muted-foreground transition hover:bg-background/80 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              </button>
-            ) : null}
-
             <button
               type="submit"
               disabled={!input.trim() || isTyping}

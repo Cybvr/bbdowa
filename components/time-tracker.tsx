@@ -5,7 +5,11 @@ import { addDoc, collection, doc, getDocs, query, updateDoc, where } from "fireb
 import { LuArrowUpRight, LuPause, LuPlay, LuPlus, LuSquare } from "react-icons/lu";
 import { useAuth } from "@/components/auth-provider";
 import { firebaseDb } from "@/lib/firebase/client";
-import { EmptyState, SectionHeading, StatItem, StatRow } from "@/components/dashboard/ui";
+import { EmptyState, PageHeader } from "@/components/dashboard/ui";
+import { DashboardCard } from "@/components/dashboard-card";
+import { FilterBar, type FilterTab, type SortOption, type ViewMode } from "@/components/dashboard/filter-bar";
+import { LIST_ACTION_CLASS } from "@/components/dashboard/list-page-actions";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -16,6 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 import {
   ACTIVITY_COLLECTION,
   elapsedMs,
@@ -61,6 +66,20 @@ async function stopEntryDoc(entry: ActivityEntry) {
 
 type CampaignOption = { slug: string; name: string };
 
+const TRACKER_STATUS_TABS: FilterTab<"all" | "running" | "paused" | "completed">[] = [
+  { key: "all", label: "All" },
+  { key: "running", label: "Running" },
+  { key: "paused", label: "Paused" },
+  { key: "completed", label: "Completed" },
+];
+
+const TRACKER_SORTS: SortOption<"recent" | "oldest" | "activity" | "duration">[] = [
+  { key: "recent", label: "Most recent" },
+  { key: "oldest", label: "Oldest" },
+  { key: "activity", label: "Activity (A–Z)" },
+  { key: "duration", label: "Longest duration" },
+];
+
 const NO_CAMPAIGN = "none";
 
 function localDateValue(date: Date = new Date()): string {
@@ -89,7 +108,14 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
   const [now, setNow] = React.useState(() => Date.now());
 
   const [mode, setMode] = React.useState<"timer" | "manual">("timer");
+  const [trackerOpen, setTrackerOpen] = React.useState(false);
   const [addingTimer, setAddingTimer] = React.useState(false);
+  const [search, setSearch] = React.useState("");
+  const [statusFilter, setStatusFilter] = React.useState<"all" | "running" | "paused" | "completed">("all");
+  const [campaignFilter, setCampaignFilter] = React.useState("all");
+  const [sort, setSort] = React.useState<"recent" | "oldest" | "activity" | "duration">("recent");
+  const [view, setView] = React.useState<ViewMode>("table");
+  const [selectedEntryId, setSelectedEntryId] = React.useState<string | null>(null);
   const [activity, setActivity] = React.useState("");
   const [campaignSlug, setCampaignSlug] = React.useState<string>(NO_CAMPAIGN);
   const [entryDate, setEntryDate] = React.useState(() => localDateValue());
@@ -150,7 +176,6 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
   // The single open (not-yet-stopped) activity, whether running or paused.
   // Compact mode can have several open at once; full mode only ever starts one.
   const openList = openEntries(entries);
-  const current = openList[0] ?? null;
 
   // Tick the live timer once a second while anything is running.
   const anyRunning = openList.some((entry) => !isPaused(entry));
@@ -199,10 +224,38 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
       });
       resetForm();
       setAddingTimer(false);
+      setTrackerOpen(false);
       await load(user.uid);
     } catch (cause) {
       console.error("Unable to start activity", cause);
       setError("Couldn’t start that. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const restartActivity = async (entry: ActivityEntry) => {
+    if (!user || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const active = runningEntry(entries);
+      if (active) await pauseEntryDoc(active);
+      await addDoc(collection(firebaseDb, ACTIVITY_COLLECTION), {
+        uid: user.uid,
+        name: user.name ?? user.email ?? null,
+        campaignSlug: entry.campaignSlug,
+        campaignName: entry.campaignName,
+        activity: entry.activity,
+        startedAt: new Date().toISOString(),
+        endedAt: null,
+        pausedAt: null,
+        pausedMs: 0,
+      });
+      await load(user.uid);
+    } catch (cause) {
+      console.error("Unable to restart activity", cause);
+      setError("Couldn’t restart that activity. Try again.");
     } finally {
       setBusy(false);
     }
@@ -230,6 +283,7 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
         pausedMs: 0,
       });
       resetForm();
+      setTrackerOpen(false);
       await load(user.uid);
     } catch (cause) {
       console.error("Unable to log activity", cause);
@@ -280,7 +334,8 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
 
   if (!authLoading && !user) {
     return (
-      <div className={compact ? "mt-2" : "mt-8"}>
+      <div className={compact ? "mt-2" : "space-y-4"}>
+        {!compact ? <PageHeader title="Tracker" /> : null}
         <EmptyState title="Sign in to track activity" description="Start an activity once you’re signed in." />
       </div>
     );
@@ -288,14 +343,24 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
 
   const todayStart = startOfToday();
   const done = entries.filter((entry) => entry.endedAt);
-  const todayMs = done
-    .filter((entry) => Date.parse(entry.startedAt) >= todayStart)
-    .reduce((total, entry) => total + elapsedMs(entry, now), 0);
   const weekStart = startOfWeek();
   const weekMs = entries
     .filter((entry) => Date.parse(entry.startedAt) >= weekStart)
     .reduce((total, entry) => total + elapsedMs(entry, now), 0);
-  const recent = entries.slice(0, 30);
+  const visibleEntries = entries.filter((entry) => {
+    if (statusFilter === "running" && (entry.endedAt || isPaused(entry))) return false;
+    if (statusFilter === "paused" && (entry.endedAt || !isPaused(entry))) return false;
+    if (statusFilter === "completed" && !entry.endedAt) return false;
+    if (campaignFilter !== "all" && entry.campaignSlug !== campaignFilter) return false;
+    const needle = search.trim().toLowerCase();
+    return !needle || `${entry.activity} ${entry.campaignName ?? ""}`.toLowerCase().includes(needle);
+  }).sort((a, b) => {
+    if (sort === "oldest") return a.startedAt.localeCompare(b.startedAt);
+    if (sort === "activity") return a.activity.localeCompare(b.activity);
+    if (sort === "duration") return elapsedMs(b, now) - elapsedMs(a, now);
+    return b.startedAt.localeCompare(a.startedAt);
+  });
+  const selectedEntry = entries.find((entry) => entry.id === selectedEntryId) ?? null;
 
   if (compact) {
     // Today's history: anything still open, plus anything already stopped
@@ -425,197 +490,148 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
   }
 
   return (
-    <div className={compact ? "space-y-6" : "mt-8 space-y-8"}>
-      {error ? (
-        <p className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-[13px] text-primary">{error}</p>
-      ) : null}
+    <div className="space-y-4">
+      <PageHeader
+        title="Tracker"
+        actions={<button type="button" onClick={() => setTrackerOpen(true)} className={LIST_ACTION_CLASS}><LuPlus className="h-4 w-4" aria-hidden="true" />New tracker</button>}
+      />
+      {error ? <p role="alert" className="text-[13px] text-primary">{error}</p> : null}
 
-      <div className="mx-auto w-full max-w-md border-b border-border pb-10">
-        {current ? (
-          <div className="flex flex-col items-center gap-7 py-4 text-center">
-            <span
-              className={`inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.1em] ${isPaused(current) ? "text-muted-foreground" : "text-primary"}`}
-            >
-              <span className={`h-2 w-2 rounded-full ${isPaused(current) ? "bg-muted-foreground/50" : "animate-pulse bg-primary"}`} />
-              {isPaused(current) ? "Paused" : "Now tracking"}
-            </span>
-            <p className="m-0 font-mono text-[56px] font-bold leading-none tabular-nums sm:text-[68px]">
-              {formatClockFull(elapsedMs(current, now))}
-            </p>
-            <div className="min-w-0 px-2">
-              <p className="m-0 truncate text-[18px] font-bold leading-tight">{current.activity}</p>
-              <p className="mb-0 mt-1 text-[13px] text-muted-foreground">
-                {current.campaignName ? `${current.campaignName} · ` : ""}
-                Started {formatTimestamp(current.startedAt)}
-              </p>
-            </div>
-            <div className="flex items-center gap-5">
-              <button
-                type="button"
-                aria-label={isPaused(current) ? "Resume timer" : "Pause timer"}
-                title={isPaused(current) ? "Resume timer" : "Pause timer"}
-                onClick={() => void toggleEntry(current)}
-                disabled={busy}
-                className="grid h-16 w-16 place-items-center rounded-full border border-border bg-background text-foreground transition hover:border-foreground active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-              >
-                {isPaused(current) ? <LuPlay aria-hidden="true" className="h-6 w-6" /> : <LuPause aria-hidden="true" className="h-6 w-6" />}
-              </button>
-              <button
-                type="button"
-                aria-label="Stop timer"
-                title="Stop timer"
-                onClick={() => void stopEntry(current)}
-                disabled={busy}
-                className="grid h-16 w-16 place-items-center rounded-full bg-primary text-primary-foreground shadow-sm transition hover:bg-primary/90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-              >
-                <LuSquare aria-hidden="true" className="h-6 w-6" />
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div>
-            <div className="grid grid-cols-2 gap-1 rounded-full border border-border bg-muted/40 p-1 text-[13px] font-semibold">
-              <button
-                type="button"
-                onClick={() => setMode("timer")}
-                className={`rounded-full py-2 transition ${mode === "timer" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-              >
-                Timer
-              </button>
-              <button
-                type="button"
-                onClick={() => setMode("manual")}
-                className={`rounded-full py-2 transition ${mode === "manual" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-              >
-                Manual
-              </button>
-            </div>
+      <FilterBar
+        panelId="tracker-filter"
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search activity"
+        tabs={TRACKER_STATUS_TABS}
+        activeTab={statusFilter}
+        onTabChange={setStatusFilter}
+        filters={[{
+          label: "Campaign",
+          value: campaignFilter,
+          onChange: setCampaignFilter,
+          options: [{ value: "all", label: "All campaigns" }, ...campaigns.map((item) => ({ value: item.slug, label: item.name }))],
+        }]}
+        sortOptions={TRACKER_SORTS}
+        activeSort={sort}
+        onSortChange={setSort}
+        resultCount={`${visibleEntries.length} ${visibleEntries.length === 1 ? "activity" : "activities"}`}
+        view={view}
+        onViewChange={setView}
+      />
 
-            {mode === "timer" ? (
-              <form onSubmit={(event) => { event.preventDefault(); void startActivity(); }} className="mt-6 space-y-3">
-                <div className="flex items-center gap-3">
-                  <Input
-                    value={activity}
-                    onChange={(event) => setActivity(event.target.value)}
-                    disabled={busy}
-                    placeholder="What are you working on?"
-                    className="h-14 flex-1 rounded-xl text-[15px]"
-                  />
-                  <button
-                    type="submit"
-                    aria-label="Start timer"
-                    title="Start timer"
-                    disabled={busy || !canStart}
-                    className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground shadow-sm transition hover:bg-primary/90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                  >
-                    <LuPlay aria-hidden="true" className="h-6 w-6" />
-                  </button>
-                </div>
-                <Select value={campaignSlug === NO_CAMPAIGN ? "" : campaignSlug} onValueChange={setCampaignSlug}>
-                  <SelectTrigger aria-required="true" className="h-12 w-full rounded-xl">
-                    <SelectValue placeholder="Select a campaign" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {campaigns.map((option) => (
-                      <SelectItem key={option.slug} value={option.slug}>{option.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="m-0 pt-1 text-center text-[12px] text-muted-foreground">Pick a campaign, then hit play to start the clock.</p>
-              </form>
-            ) : (
-              <form onSubmit={(event) => { event.preventDefault(); void logActivity(); }} className="mt-6 space-y-3">
-                <Input
-                  value={activity}
-                  onChange={(event) => setActivity(event.target.value)}
-                  disabled={busy}
-                  placeholder="What did you work on?"
-                  className="h-12 rounded-xl text-[15px]"
-                />
-                <Select value={campaignSlug === NO_CAMPAIGN ? "" : campaignSlug} onValueChange={setCampaignSlug}>
-                  <SelectTrigger aria-required="true" className="h-12 w-full rounded-xl">
-                    <SelectValue placeholder="Select a campaign" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {campaigns.map((option) => (
-                      <SelectItem key={option.slug} value={option.slug}>{option.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Date</span>
-                    <Input type="date" value={entryDate} onChange={(event) => setEntryDate(event.target.value)} disabled={busy} className="h-12 rounded-xl" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Start time</span>
-                    <Input type="time" step={60} value={entryTime} onChange={(event) => setEntryTime(event.target.value)} disabled={busy} className="h-12 rounded-xl" />
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Time spent</span>
-                  <Input type="time" step={60} value={duration} onChange={(event) => setDuration(event.target.value)} disabled={busy} className="h-12 rounded-xl" />
-                </div>
-                <button
-                  type="submit"
-                  disabled={busy || !canLog}
-                  className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-primary px-6 text-[15px] font-semibold text-primary-foreground transition hover:bg-primary/90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                >
-                  Log time
+      <section aria-label="Tracked activities">
+        {loading ? (
+          <div role="status" aria-label="Loading activities" className="space-y-2"><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /></div>
+        ) : visibleEntries.length === 0 ? (
+          <EmptyState title={entries.length ? "No activities match" : "Nothing tracked yet"} description={entries.length ? "Try another search or filter." : "Add a tracker to start recording time."} />
+        ) : view === "cards" ? (
+          <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2 lg:grid-cols-3">
+            {visibleEntries.map((entry) => {
+              const open = !entry.endedAt;
+              const paused = open && isPaused(entry);
+              return <li key={entry.id}><DashboardCard className="h-full">
+                <button type="button" onClick={() => setSelectedEntryId(entry.id)} className="flex min-h-36 w-full flex-col p-4 text-left text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
+                  <span className="line-clamp-2 font-semibold leading-tight">{entry.activity || "Untitled activity"}</span>
+                  <span className="mt-1 truncate text-sm text-muted-foreground">{entry.campaignName ?? "No campaign"}</span>
+                  <span className="mt-auto flex items-center justify-between gap-3 pt-5 text-xs text-muted-foreground">
+                    <span>{formatTimestamp(entry.startedAt)}</span>
+                    <span className={open && !paused ? "text-primary" : ""}>{open ? (paused ? "Paused" : "Running") : "Completed"}</span>
+                  </span>
                 </button>
-              </form>
-            )}
+                <div className="flex items-center justify-between border-t border-border px-4 py-3">
+                  <span className="font-mono text-sm font-semibold tabular-nums">{formatClockFull(elapsedMs(entry, now))}</span>
+                  {open ? <div className="flex items-center gap-1">
+                    <button type="button" onClick={() => void toggleEntry(entry)} disabled={busy} aria-label={`${paused ? "Play" : "Pause"} ${entry.activity}`} title={paused ? "Play" : "Pause"} className="grid h-9 w-9 place-items-center rounded-md text-foreground transition hover:bg-muted disabled:opacity-50">{paused ? <LuPlay className="h-4 w-4" aria-hidden="true" /> : <LuPause className="h-4 w-4" aria-hidden="true" />}</button>
+                    <button type="button" onClick={() => void stopEntry(entry)} disabled={busy} aria-label={`Stop ${entry.activity}`} title="Stop" className="grid h-9 w-9 place-items-center rounded-md text-primary transition hover:bg-primary/10 disabled:opacity-50"><LuSquare className="h-4 w-4" aria-hidden="true" /></button>
+                  </div> : <button type="button" onClick={() => void restartActivity(entry)} disabled={busy} aria-label={`Restart ${entry.activity}`} title="Start again" className="grid h-9 w-9 place-items-center rounded-md text-foreground transition hover:bg-muted disabled:opacity-50"><LuPlay className="h-4 w-4" aria-hidden="true" /></button>}
+                </div>
+              </DashboardCard></li>;
+            })}
+          </ul>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table className="min-w-[700px] w-full border-collapse">
+              <TableHeader>
+                <TableRow className="text-left font-semibold uppercase text-muted-foreground">
+                  <TableHead className="px-4 py-3 font-semibold">Activity</TableHead>
+                  <TableHead className="px-4 py-3 font-semibold">Campaign</TableHead>
+                  <TableHead className="px-4 py-3 font-semibold">Started</TableHead>
+                  <TableHead className="px-4 py-3 font-semibold">Time</TableHead>
+                  <TableHead className="w-28 px-4 py-3 text-right font-semibold">Controls</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {visibleEntries.map((entry) => {
+                  const open = !entry.endedAt;
+                  const paused = open && isPaused(entry);
+                  return (
+                    <ClickableTableRow key={entry.id} label={`Open activity ${entry.activity}`} onActivate={() => setSelectedEntryId(entry.id)} className="align-middle">
+                      <TableCell className="px-4 py-3">
+                        <button type="button" onClick={() => setSelectedEntryId(entry.id)} className="font-semibold hover:text-primary">{entry.activity || "—"}</button>
+                        <span className={`ml-2 text-xs ${open && !paused ? "text-primary" : "text-muted-foreground"}`}>{open ? (paused ? "Paused" : "Running") : "Completed"}</span>
+                      </TableCell>
+                      <TableCell className="px-4 py-3">{entry.campaignName ?? <span className="text-muted-foreground">—</span>}</TableCell>
+                      <TableCell className="whitespace-nowrap px-4 py-3">{formatTimestamp(entry.startedAt)}</TableCell>
+                      <TableCell className="whitespace-nowrap px-4 py-3 font-semibold tabular-nums">{formatClockFull(elapsedMs(entry, now))}</TableCell>
+                      <TableCell className="px-4 py-3">
+                        {open ? <div className="flex justify-end gap-1">
+                          <button type="button" onClick={() => void toggleEntry(entry)} disabled={busy} aria-label={`${paused ? "Play" : "Pause"} ${entry.activity}`} title={paused ? "Play" : "Pause"} className="grid h-9 w-9 place-items-center rounded-md text-foreground transition hover:bg-muted disabled:opacity-50">{paused ? <LuPlay className="h-4 w-4" aria-hidden="true" /> : <LuPause className="h-4 w-4" aria-hidden="true" />}</button>
+                          <button type="button" onClick={() => void stopEntry(entry)} disabled={busy} aria-label={`Stop ${entry.activity}`} title="Stop" className="grid h-9 w-9 place-items-center rounded-md text-primary transition hover:bg-primary/10 disabled:opacity-50"><LuSquare className="h-4 w-4" aria-hidden="true" /></button>
+                        </div> : <div className="flex justify-end">
+                          <button type="button" onClick={() => void restartActivity(entry)} disabled={busy} aria-label={`Restart ${entry.activity}`} title="Start again" className="grid h-9 w-9 place-items-center rounded-md text-foreground transition hover:bg-muted disabled:opacity-50"><LuPlay className="h-4 w-4" aria-hidden="true" /></button>
+                        </div>}
+                      </TableCell>
+                    </ClickableTableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
           </div>
         )}
-      </div>
+      </section>
 
-      {!compact ? (
-        <>
-          <StatRow>
-            <StatItem label="Today" value={formatClockFull(todayMs)} />
-            <StatItem label="Activities" value={done.length} />
-            <StatItem label="Campaigns" value={new Set(entries.map((entry) => entry.campaignSlug).filter(Boolean)).size} />
-          </StatRow>
+      <Dialog open={Boolean(selectedEntry)} onOpenChange={(open) => { if (!open) setSelectedEntryId(null); }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader className="pr-10">
+            <DialogTitle>{selectedEntry?.activity || "Activity"}</DialogTitle>
+            <DialogDescription>{selectedEntry?.campaignName || "No campaign"}</DialogDescription>
+          </DialogHeader>
+          {selectedEntry ? <dl className="grid grid-cols-2 gap-x-4 gap-y-5 text-sm">
+            <div><dt className="text-xs text-muted-foreground">Status</dt><dd className="mt-1 font-semibold">{selectedEntry.endedAt ? "Completed" : isPaused(selectedEntry) ? "Paused" : "Running"}</dd></div>
+            <div><dt className="text-xs text-muted-foreground">Time</dt><dd className="mt-1 font-semibold tabular-nums">{formatClockFull(elapsedMs(selectedEntry, now))}</dd></div>
+            <div><dt className="text-xs text-muted-foreground">Started</dt><dd className="mt-1 font-semibold">{formatTimestamp(selectedEntry.startedAt)}</dd></div>
+            {selectedEntry.endedAt ? <div><dt className="text-xs text-muted-foreground">Stopped</dt><dd className="mt-1 font-semibold">{formatTimestamp(selectedEntry.endedAt)}</dd></div> : null}
+          </dl> : null}
+        </DialogContent>
+      </Dialog>
 
-          <section aria-labelledby="recent-activity">
-            <SectionHeading id="recent-activity">Recent activity</SectionHeading>
-            {loading ? (
-              <div role="status" aria-label="Loading recent activity" className="overflow-hidden rounded-xl border border-border"><Skeleton className="h-12 w-full rounded-none" /><Skeleton className="h-12 w-full rounded-none" /><Skeleton className="h-12 w-full rounded-none" /></div>
-            ) : recent.length === 0 ? (
-              <EmptyState title="Nothing logged yet" description="Start your first activity above." />
-            ) : (
-              <div className="overflow-x-auto rounded-xl border border-border">
-                <Table className="min-w-[680px] w-full border-collapse">
-                  <TableHeader>
-                    <TableRow className="bg-muted/40 text-left font-semibold uppercase text-muted-foreground">
-                      <TableHead className="px-4 py-3 font-semibold">Activity</TableHead>
-                      <TableHead className="px-4 py-3 font-semibold">Campaign</TableHead>
-                      <TableHead className="px-4 py-3 font-semibold">When</TableHead>
-                      <TableHead className="px-4 py-3 font-semibold">Time</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {recent.map((entry) => (
-                      <TableRow key={entry.id} className="align-top">
-                        <TableCell className="px-4 py-3">{entry.activity || <span className="text-muted-foreground">—</span>}</TableCell>
-                        <TableCell className="px-4 py-3">{entry.campaignName ?? <span className="text-muted-foreground">—</span>}</TableCell>
-                        <TableCell className="whitespace-nowrap px-4 py-3">{formatTimestamp(entry.startedAt)}</TableCell>
-                        <TableCell className="px-4 py-3 whitespace-nowrap">
-                          {entry.endedAt ? (
-                            formatClockFull(elapsedMs(entry, now))
-                          ) : (
-                            <span className="font-semibold text-primary">Running…</span>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+      <Dialog open={trackerOpen} onOpenChange={(open) => { setTrackerOpen(open); if (!open) resetForm(); }}>
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader className="pr-10">
+            <DialogTitle>Add tracker</DialogTitle>
+            <DialogDescription>Start a timer or log time you have already spent.</DialogDescription>
+          </DialogHeader>
+          <div role="group" aria-label="Entry type" className="flex gap-1 border-b border-border">
+            <button type="button" onClick={() => setMode("timer")} aria-pressed={mode === "timer"} className={`px-4 py-2 text-sm font-semibold ${mode === "timer" ? "border-b-2 border-primary text-foreground" : "text-muted-foreground"}`}>Timer</button>
+            <button type="button" onClick={() => setMode("manual")} aria-pressed={mode === "manual"} className={`px-4 py-2 text-sm font-semibold ${mode === "manual" ? "border-b-2 border-primary text-foreground" : "text-muted-foreground"}`}>Manual</button>
+          </div>
+          <form onSubmit={(event) => { event.preventDefault(); void (mode === "timer" ? startActivity() : logActivity()); }} className="space-y-4">
+            <div className="space-y-1.5"><label htmlFor="tracker-activity" className="text-xs font-semibold">Activity</label><Input id="tracker-activity" value={activity} onChange={(event) => setActivity(event.target.value)} disabled={busy} placeholder="What are you working on?" required /></div>
+            <div className="space-y-1.5"><span className="text-xs font-semibold">Campaign</span><Select value={campaignSlug === NO_CAMPAIGN ? "" : campaignSlug} onValueChange={setCampaignSlug}><SelectTrigger aria-label="Campaign"><SelectValue placeholder="Select a campaign" /></SelectTrigger><SelectContent>{campaigns.map((option) => <SelectItem key={option.slug} value={option.slug}>{option.name}</SelectItem>)}</SelectContent></Select></div>
+            {mode === "manual" ? <>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5"><label htmlFor="tracker-date" className="text-xs font-semibold">Date</label><Input id="tracker-date" type="date" value={entryDate} onChange={(event) => setEntryDate(event.target.value)} disabled={busy} /></div>
+                <div className="space-y-1.5"><label htmlFor="tracker-start-time" className="text-xs font-semibold">Start time</label><Input id="tracker-start-time" type="time" value={entryTime} onChange={(event) => setEntryTime(event.target.value)} disabled={busy} /></div>
               </div>
-            )}
-          </section>
-        </>
-      ) : null}
+              <div className="space-y-1.5"><label htmlFor="tracker-duration" className="text-xs font-semibold">Time spent</label><Input id="tracker-duration" type="time" value={duration} onChange={(event) => setDuration(event.target.value)} disabled={busy} /></div>
+            </> : null}
+            <div className="flex justify-end gap-2 pt-2">
+              <button type="button" onClick={() => setTrackerOpen(false)} disabled={busy} className="h-9 rounded-md px-4 text-[13px] font-semibold text-muted-foreground hover:text-foreground">Cancel</button>
+              <button type="submit" disabled={busy || (mode === "timer" ? !canStart : !canLog)} className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-4 text-[13px] font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50">{mode === "timer" ? <LuPlay className="h-4 w-4" aria-hidden="true" /> : null}{busy ? "Saving…" : mode === "timer" ? "Start tracker" : "Log time"}</button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

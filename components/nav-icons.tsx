@@ -288,7 +288,7 @@ export const NAV_ICON_SET: Record<string, NavIconComponent> = {
   Admin: AdminIcon,
   Settings: SettingsIcon,
   "Log out": LogOutIcon,
-  "The office": CompanyIcon,
+  "The studio": CompanyIcon,
   Overview: DashboardIcon,
   Users: TeamIcon,
   Documents: DocumentsIcon,

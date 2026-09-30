@@ -11,6 +11,7 @@ import { DashboardCard, DashboardCardActions } from "@/components/dashboard-card
 import { CreatorAvatarStack } from "@/components/creator-avatar-stack";
 import { FilterBar, type SortOption, type ViewMode } from "@/components/dashboard/filter-bar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 
 const SORTS: SortOption<"name" | "date" | "modified" | "industry">[] = [
   { key: "name", label: "Name (A–Z)" },
@@ -123,7 +124,7 @@ export function ClientsDirectory({ clients }: { clients: Client[] }) {
               ))}
             </ul>
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-border">
+            <div className="overflow-x-auto">
               <Table className="w-full border-collapse">
                 <TableHeader>
                   <TableRow>
@@ -135,7 +136,7 @@ export function ClientsDirectory({ clients }: { clients: Client[] }) {
                 </TableHeader>
                 <TableBody>
                   {visibleClients.map((client) => (
-                    <TableRow key={client.slug}>
+                    <ClickableTableRow key={client.slug} href={`/dashboard/clients/${client.slug}/overview`} label={`Open client ${client.name}`}>
                       <TableCell className="px-4 py-3.5 font-semibold">
                         <Link href={`/dashboard/clients/${client.slug}/overview`} className="inline-flex items-center gap-3 text-foreground no-underline hover:text-primary focus-visible:text-primary">
                           <ImageWithFallback
@@ -150,7 +151,7 @@ export function ClientsDirectory({ clients }: { clients: Client[] }) {
                       <TableCell className="px-4 py-3.5"><Badge>{client.industry}</Badge></TableCell>
                       <TableCell className="whitespace-nowrap px-4 py-3.5 text-muted-foreground">{client.date ? <time dateTime={client.date}>{longDate(client.date)}</time> : "—"}</TableCell>
                       <TableCell className="whitespace-nowrap px-4 py-3.5 text-muted-foreground">{client.updatedAt ? updatedDate(client.updatedAt) : "—"}</TableCell>
-                    </TableRow>
+                    </ClickableTableRow>
                   ))}
                 </TableBody>
               </Table>

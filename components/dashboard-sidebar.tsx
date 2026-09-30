@@ -7,7 +7,7 @@ import { collection, doc, onSnapshot, query, updateDoc, where } from "firebase/f
 import { LuChevronDown, LuChevronLeft, LuChevronRight, LuMenu, LuPause, LuPlay, LuSquare } from "react-icons/lu";
 import { ADMIN_NAV_ITEMS, NAV_ITEMS } from "@/lib/nav";
 import { NAV_ICON_SET } from "@/components/nav-icons";
-import { createGlyphAvatarDataUri } from "@/lib/avatar";
+import { ProfileNav } from "@/components/profile-nav";
 import { useOptionalAuth } from "@/components/auth-provider";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { firebaseDb } from "@/lib/firebase/client";
@@ -148,31 +148,6 @@ export function DashboardNavList({ onNavigate, collapsed = false }: { onNavigate
             pathname === item.href ||
             (item.href !== "/dashboard" && pathname.startsWith(`${item.href}/`));
 
-          if (item.label === "My profile" && auth?.user) {
-            const name = auth.user.name ?? auth.user.email?.split("@")[0] ?? "BBDO User";
-            const handle = auth.user.email?.split("@")[0]?.toLowerCase();
-            return (
-              <li key={item.label} className="w-full">
-                <Link
-                  href={item.href}
-                  aria-current={current ? "page" : undefined}
-                  onClick={onNavigate}
-                  title={collapsed ? name : undefined}
-                  className={`${NAV_TEXT} font-sans ${collapsed ? "justify-center px-0" : ""} ${current ? NAV_ACTIVE : ""}`}
-                >
-                  <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={createGlyphAvatarDataUri(name)} alt="" className="h-full w-full object-cover" />
-                  </span>
-                  <span className={`${NAV_LABEL} ${collapsed ? "max-w-0 opacity-0" : "max-w-[140px] opacity-100"}`}>
-                    <span className="block truncate text-sm font-bold leading-tight">{name}</span>
-                    {handle ? <span className="block truncate text-xs font-normal leading-tight text-muted-foreground">@{handle}</span> : null}
-                  </span>
-                </Link>
-              </li>
-            );
-          }
-
           if (item.label === "Tracker" && !collapsed && running) {
             return (
               <li key={item.label} className="w-full">
@@ -279,8 +254,8 @@ export function DashboardNavList({ onNavigate, collapsed = false }: { onNavigate
 }
 
 export function DashboardNavFooter({ onNavigate, collapsed = false }: { onNavigate?: () => void; collapsed?: boolean }) {
-  const pathname = usePathname();
   const auth = useOptionalAuth();
+
   if (!auth?.user) {
     return (
       <div className="mt-auto pt-2">
@@ -292,36 +267,24 @@ export function DashboardNavFooter({ onNavigate, collapsed = false }: { onNaviga
     );
   }
 
-  const settingsCurrent = pathname === "/dashboard/settings";
   return (
-    <ul className="m-0 mt-auto flex list-none flex-col gap-0 border-t border-border p-0 pt-2 nav:gap-0.5">
-      <li className="w-full">
-        <Link
-          href="/dashboard/settings"
-          aria-current={settingsCurrent ? "page" : undefined}
-          onClick={onNavigate}
-          title={collapsed ? "Settings" : undefined}
-          className={`${NAV_TEXT} ${collapsed ? "justify-center px-0" : ""} ${settingsCurrent ? NAV_ACTIVE : ""}`}
-        >
-          <NavIcon label="Settings" />
-          <span className={`${NAV_LABEL} ${collapsed ? "max-w-0 opacity-0" : "max-w-[140px] opacity-100"}`}>Settings</span>
-        </Link>
-      </li>
-      <li className="w-full">
-        <button
-          type="button"
-          onClick={() => {
-            onNavigate?.();
-            void auth.logout();
-          }}
-          title={collapsed ? "Log out" : undefined}
-          className={`cursor-pointer border-0 bg-transparent text-left ${NAV_TEXT} ${collapsed ? "justify-center px-0" : ""}`}
-        >
-          <NavIcon label="Log out" />
-          <span className={`${NAV_LABEL} ${collapsed ? "max-w-0 opacity-0" : "max-w-[140px] opacity-100"}`}>Log out</span>
-        </button>
-      </li>
-    </ul>
+    <div className="mt-auto border-t border-border pt-2">
+      <ProfileNav
+        variant="row"
+        showHandleOnly
+        showAdminForStaff
+        menuAlign="start"
+        menuSide="top"
+        items={[
+          { label: "My profile", href: "/dashboard/me", icon: <NavIcon label="My profile" /> },
+          { label: "Settings", href: "/dashboard/settings", icon: <NavIcon label="Settings" /> },
+        ]}
+        onLogout={() => {
+          onNavigate?.();
+          void auth.logout();
+        }}
+      />
+    </div>
   );
 }
 

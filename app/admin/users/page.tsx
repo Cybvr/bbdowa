@@ -10,10 +10,11 @@ import { PageHeader } from "@/components/dashboard/ui";
 import { DashboardListPage } from "@/components/dashboard/list-page";
 import { FilterBar } from "@/components/dashboard/filter-bar";
 import { useFirestoreUsers } from "@/lib/firebase/client-content";
-import { creatorCategoryOptions, isCreatorUser, isTeamUser, userRoles, type User, type UserRole } from "@/lib/users";
+import { creatorCategoryOptions, isCreatorUser, isTeamUser, userHref, userRoles, type User, type UserRole } from "@/lib/users";
 import { UsersTableSkeleton } from "@/components/dashboard/loading-skeleton";
 import { plural } from "@/lib/format";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 
 type RoleFilter = "all" | UserRole | "pending";
 
@@ -40,18 +41,14 @@ function UserRow({ user, categoryOptions }: { user: User; categoryOptions: strin
   const variant = isCreatorUser(user) && !isTeamUser(user) ? "creator" : "team";
   const targetUid = user.uid;
   return (
-    <TableRow className="align-middle">
+    <ClickableTableRow href={user.slug ? userHref(user, variant) : undefined} label={`Open user ${user.name}`} className="align-middle">
       <TableCell className="px-4 py-3.5 sm:px-5">
         <div className="min-w-0">
           <strong className="block truncate font-semibold text-foreground">{user.name}</strong>
-          <div className="mt-1 flex flex-wrap gap-1.5">
+          <div className="mt-1 flex min-w-0 items-center gap-2 overflow-hidden whitespace-nowrap text-sm text-muted-foreground">
             {user.role === "pending" && !userRoles(user).length ? <PendingBadge /> : userRoles(user).map((role) => <RoleBadge key={role} role={role} />)}
-          </div>
-          <div className="mt-1 hidden min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground sm:flex">
-            <span className="max-w-[260px] truncate">{user.email ?? "No email added"}</span>
-            <span aria-hidden="true">·</span>
-            <span className="max-w-[220px] truncate">{user.title || "No position"}</span>
-            {user.department ? <><span aria-hidden="true">·</span><span className="max-w-[180px] truncate">{user.department}</span></> : null}
+            <span className="hidden truncate sm:inline">{user.email ?? "No email added"}</span>
+            {user.title ? <span className="hidden truncate lg:inline">· {user.title}</span> : null}
           </div>
         </div>
       </TableCell>
@@ -79,7 +76,7 @@ function UserRow({ user, categoryOptions }: { user: User; categoryOptions: strin
           />
         </div>
       </TableCell>
-    </TableRow>
+    </ClickableTableRow>
   );
 }
 
@@ -146,11 +143,11 @@ export default function AdminUsersPage() {
         resultCount={plural(visibleUsers.length, "user")}
       />}>
 
-      <section className="overflow-hidden rounded-xl border border-border bg-background">
+      <section className="overflow-x-auto">
         {visibleUsers.length ? (
           <div>
             <Table className="w-full table-fixed border-collapse text-left">
-              <TableHeader className="bg-muted/35 font-semibold uppercase text-muted-foreground">
+              <TableHeader className="font-semibold uppercase text-muted-foreground">
                 <TableRow>
                   <TableHead className="px-4 py-3 sm:px-5">User</TableHead>
                   <TableHead className="w-28 px-4 py-3 text-right sm:px-5">Actions</TableHead>

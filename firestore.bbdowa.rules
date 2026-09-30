@@ -134,7 +134,7 @@ service cloud.firestore {
           && resource.data.assignedTo == request.auth.uid
           && request.resource.data.status in ["todo", "in_progress", "done"]
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-            "title", "description", "status", "dueDate",
+            "title", "description", "content", "status", "dueDate",
             "clientId", "clientName", "campaignId", "campaignName", "updatedAt"
           ]));
       allow delete: if isStaff()

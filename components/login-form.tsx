@@ -9,7 +9,10 @@ import {
   OAuthProvider,
   browserLocalPersistence,
   browserSessionPersistence,
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
   setPersistence,
+  signInWithEmailAndPassword,
   signInWithPopup,
   type User,
 } from "firebase/auth";
@@ -62,6 +65,8 @@ export function LoginForm({
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
 
   const destination =
     redirectTo.startsWith("/") && !redirectTo.startsWith("//")
@@ -86,6 +91,18 @@ export function LoginForm({
         return "This domain is not authorized in Firebase Authentication.";
       case "auth/operation-not-allowed":
         return "This sign-in method is not enabled in Firebase Authentication yet.";
+      case "auth/invalid-email":
+        return "Enter a valid email address.";
+      case "auth/invalid-credential":
+      case "auth/wrong-password":
+      case "auth/user-not-found":
+        return "That email and password did not match. Try again or reset your password.";
+      case "auth/email-already-in-use":
+        return "An account already uses this email. Sign in instead.";
+      case "auth/weak-password":
+        return "Use a password with at least 6 characters.";
+      case "auth/too-many-requests":
+        return "Too many attempts. Wait a little, then try again.";
       default:
         return "Firebase could not complete the sign-in. Please try again.";
     }
@@ -121,6 +138,42 @@ export function LoginForm({
     }
   };
 
+  const handleEmailSignIn = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    setSuccessMessage(null);
+    setIsLoading(true);
+    try {
+      await setPersistence(firebaseAuth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
+      const credential = mode === "signup"
+        ? await createUserWithEmailAndPassword(firebaseAuth, email.trim(), password)
+        : await signInWithEmailAndPassword(firebaseAuth, email.trim(), password);
+      await finishClientSession(credential.user, mode === "signup" ? "creator" : "member");
+    } catch (authError) {
+      setError(authErrorMessage(authError));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resetPassword = async () => {
+    if (!email.trim()) {
+      setError("Enter your email address to reset your password.");
+      return;
+    }
+    setError(null);
+    setSuccessMessage(null);
+    setIsLoading(true);
+    try {
+      await sendPasswordResetEmail(firebaseAuth, email.trim());
+      setSuccessMessage("If this email has an account, a password reset link is on its way.");
+    } catch (authError) {
+      setError(authErrorMessage(authError));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className={cn("w-full", className)}>
       <div className="mb-6 flex flex-col items-center text-center">
@@ -131,8 +184,8 @@ export function LoginForm({
         </h2>
         <p className="mt-1.5 max-w-sm text-xs text-muted-foreground sm:text-sm">
           {mode === "signin"
-            ? "Sign in with Google or Microsoft to access Bantaba."
-            : "Start with Google or Microsoft, then complete your creator onboarding."}
+            ? "Sign in with email, Google or Microsoft to access Bantaba."
+            : "Start with email, Google or Microsoft, then complete your creator onboarding."}
         </p>
       </div>
 
@@ -170,6 +223,26 @@ export function LoginForm({
 
       {error ? <div role="alert" className="mb-5 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs font-medium text-destructive">{error}</div> : null}
 
+      <form onSubmit={handleEmailSignIn} className="space-y-3">
+        <div className="space-y-1.5">
+          <label htmlFor="login-email" className="text-xs font-semibold text-foreground">Email</label>
+          <input id="login-email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required disabled={isLoading} className="h-11 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary" placeholder="you@example.com" />
+        </div>
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between gap-3">
+            <label htmlFor="login-password" className="text-xs font-semibold text-foreground">Password</label>
+            {mode === "signin" ? <button type="button" onClick={() => void resetPassword()} disabled={isLoading} className="text-xs font-semibold text-primary hover:underline disabled:opacity-50">Forgot password?</button> : null}
+          </div>
+          <input id="login-password" type="password" autoComplete={mode === "signup" ? "new-password" : "current-password"} value={password} onChange={(event) => setPassword(event.target.value)} minLength={mode === "signup" ? 6 : undefined} required disabled={isLoading} className="h-11 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary" placeholder={mode === "signup" ? "At least 6 characters" : "Your password"} />
+        </div>
+        <button type="submit" disabled={isLoading} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:opacity-60">
+          {isLoading ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : null}
+          {mode === "signup" ? "Create account with email" : "Sign in with email"}
+        </button>
+      </form>
+
+      <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground"><span className="h-px flex-1 bg-border" /><span>or continue with</span><span className="h-px flex-1 bg-border" /></div>
+
       <div className="space-y-3">
         <button
           type="button"
@@ -199,7 +272,7 @@ export function LoginForm({
           Remember this device for 14 days
         </label>
       ) : (
-        <p className="mt-5 text-center text-xs leading-relaxed text-muted-foreground">New creators complete their profile, craft and portfolio details after social sign-in.</p>
+        <p className="mt-5 text-center text-xs leading-relaxed text-muted-foreground">New creators complete their profile, craft and portfolio details after sign-in.</p>
       )}
 
       <p className="mt-6 text-center text-[11px] leading-relaxed text-muted-foreground">

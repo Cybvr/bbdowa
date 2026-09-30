@@ -13,6 +13,7 @@ import { DashboardCard, DashboardCardActions } from "@/components/dashboard-card
 import { CreatorAvatarStack } from "@/components/creator-avatar-stack";
 import { FilterBar, type FilterTab, type SortOption, type ViewMode } from "@/components/dashboard/filter-bar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 
 function campaignCreators(campaign: Campaign, clients: Client[], users: User[]): Creator[] {
   const client = clients.find((item) => item.slug === campaign.clientId);
@@ -148,7 +149,7 @@ export function CampaignsTable({ campaigns, clients }: { campaigns: Campaign[]; 
               ))}
             </ul>
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-border">
+            <div className="overflow-x-auto">
               <Table className="w-full border-collapse">
                 <TableHeader>
                   <TableRow>
@@ -162,7 +163,7 @@ export function CampaignsTable({ campaigns, clients }: { campaigns: Campaign[]; 
                 </TableHeader>
                 <TableBody>
                   {visible.map((campaign) => (
-                    <TableRow key={campaign.slug}>
+                    <ClickableTableRow key={campaign.slug} href={campaignHref(campaign.slug)} label={`Open campaign ${campaign.campaign ?? campaign.name}`}>
                       <TableCell className="px-4 py-4 font-semibold">
                         <Link href={campaignHref(campaign.slug)} className="text-foreground no-underline hover:text-primary focus-visible:text-primary">
                           {campaign.campaign ?? campaign.name}
@@ -173,7 +174,7 @@ export function CampaignsTable({ campaigns, clients }: { campaigns: Campaign[]; 
                       <TableCell className="px-4 py-4 text-muted-foreground">{campaign.category}</TableCell>
                       <TableCell className="whitespace-nowrap px-4 py-4 text-muted-foreground">{campaignLiveDateLabel(campaign)}</TableCell>
                       <TableCell className="whitespace-nowrap px-4 py-4 text-muted-foreground">{campaign.updatedAt ? updatedDate(campaign.updatedAt) : "—"}</TableCell>
-                    </TableRow>
+                    </ClickableTableRow>
                   ))}
                 </TableBody>
               </Table>

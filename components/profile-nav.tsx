@@ -29,6 +29,10 @@ export type ProfileNavProps = {
   onLogout?: () => void;
   variant?: "avatar" | "row";
   tone?: "primary" | "background";
+  showHandleOnly?: boolean;
+  showAdminForStaff?: boolean;
+  menuAlign?: "start" | "center" | "end";
+  menuSide?: "top" | "right" | "bottom" | "left";
 };
 
 function UserIcon() {
@@ -81,6 +85,10 @@ export function ProfileNav({
   onLogout,
   variant = "avatar",
   tone = "primary",
+  showHandleOnly = false,
+  showAdminForStaff = false,
+  menuAlign = "end",
+  menuSide = "bottom",
 }: ProfileNavProps) {
   const auth = useOptionalAuth();
   const user = auth?.user ?? null;
@@ -91,7 +99,7 @@ export function ProfileNav({
   const isAdmin = auth?.isAdmin ?? false;
   const menuItems: readonly ProfileNavItem[] = [
     ...(auth?.isViewingAs ? [{ label: "Exit view as", onSelect: auth.stopViewingAs }] : []),
-    ...(isAdmin ? [{ label: "Admin", href: "/admin", icon: <AdminIcon /> }] : []),
+    ...(isAdmin || (showAdminForStaff && role === "manager") ? [{ label: "Admin", href: "/admin", icon: <AdminIcon /> }] : []),
     ...items,
   ];
   const displayName = name ?? user?.name ?? user?.email?.split("@")[0] ?? "BBDO User";
@@ -125,12 +133,18 @@ export function ProfileNav({
               <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-bold leading-tight text-foreground">{displayName}</span>
-              {handle ? (
-                <span className="mt-0.5 block truncate text-xs leading-tight text-muted-foreground">@{handle}</span>
-              ) : roleLabel ? (
-                <span className="mt-0.5 block truncate text-xs leading-tight text-muted-foreground">{roleLabel}</span>
-              ) : null}
+              {showHandleOnly ? (
+                <span className="block truncate text-sm font-medium leading-tight text-foreground">{handle ? `@${handle}` : displayName}</span>
+              ) : (
+                <>
+                  <span className="block truncate text-sm font-bold leading-tight text-foreground">{displayName}</span>
+                  {handle ? (
+                    <span className="mt-0.5 block truncate text-xs leading-tight text-muted-foreground">@{handle}</span>
+                  ) : roleLabel ? (
+                    <span className="mt-0.5 block truncate text-xs leading-tight text-muted-foreground">{roleLabel}</span>
+                  ) : null}
+                </>
+              )}
             </span>
           </button>
         ) : (
@@ -145,7 +159,7 @@ export function ProfileNav({
         )}
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" className="w-64">
+      <DropdownMenuContent align={menuAlign} side={menuSide} className="w-64">
         <DropdownMenuLabel>
           <div className="flex items-center gap-2">
             <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary">

@@ -24,6 +24,7 @@ import { campaignWorkspaceStatuses } from "@/lib/client-data";
 import { fontOptions, ctaOptions } from "@/lib/campaign-options";
 import { ClientWorkspaceSkeleton } from "@/components/dashboard/loading-skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 import type {
   PhaseContent,
   CampaignListItem,
@@ -1091,7 +1092,7 @@ function OneUtilityClientWorkspace({
                           })}
                         </ul>
                       ) : (
-                        <div className="overflow-x-auto rounded-xl border border-border">
+                        <div className="overflow-x-auto">
                           <Table className="w-full border-collapse">
                             <TableHeader>
                               <TableRow>
@@ -1106,7 +1107,7 @@ function OneUtilityClientWorkspace({
                               {visibleCampaigns.map((campaign) => {
                                 const record = availableCampaigns.find((item) => item.slug === campaign.id);
                                 return (
-                                  <TableRow key={campaign.id}>
+                                  <ClickableTableRow key={campaign.id} label={`Open campaign ${campaign.title}`} onActivate={() => handleOpenCampaign(campaign)}>
                                     <TableCell className="px-4 py-3.5 font-semibold">
                                       <button type="button" onClick={() => handleOpenCampaign(campaign)} className="text-left text-foreground hover:text-primary focus-visible:text-primary">
                                         {campaign.title}
@@ -1128,7 +1129,7 @@ function OneUtilityClientWorkspace({
                                         </span>
                                       ) : null}
                                     </TableCell>
-                                  </TableRow>
+                                  </ClickableTableRow>
                                 );
                               })}
                             </TableBody>
@@ -2068,7 +2069,7 @@ function OneUtilityClientWorkspace({
                           ))}
                         </ul>
                       ) : (
-                        <div className="overflow-x-auto rounded-xl border border-border">
+                        <div className="overflow-x-auto">
                           <Table className="w-full border-collapse">
                             <TableHeader>
                               <TableRow>
@@ -2081,7 +2082,7 @@ function OneUtilityClientWorkspace({
                             </TableHeader>
                             <TableBody>
                               {visibleCreators.map((creator) => (
-                                <TableRow key={creator.slug}>
+                                <ClickableTableRow key={creator.slug} href={`/dashboard/discover/${creator.slug}`} label={`Open creator ${creator.name}`}>
                                   <TableCell className="px-4 py-3.5 font-semibold">
                                     <Link href={`/dashboard/discover/${creator.slug}`} className="inline-flex items-center gap-3 text-foreground no-underline hover:text-primary focus-visible:text-primary">
                                       <ImageWithFallback
@@ -2098,7 +2099,7 @@ function OneUtilityClientWorkspace({
                                   <TableCell className="px-4 py-3.5"><DashboardBadge tone={creator.availability === "open" ? "active" : "neutral"}>{creator.availability}</DashboardBadge></TableCell>
                                   <TableCell className="whitespace-nowrap px-4 py-3.5 text-muted-foreground">{creator.location || "—"}</TableCell>
                                   <TableCell className="whitespace-nowrap px-4 py-3.5 text-muted-foreground">{!creator.hideRate && creator.rateMin !== null ? creator.dayRate : "—"}</TableCell>
-                                </TableRow>
+                                </ClickableTableRow>
                               ))}
                             </TableBody>
                           </Table>

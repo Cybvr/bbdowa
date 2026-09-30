@@ -11,6 +11,7 @@ import { EmptyState } from "@/components/dashboard/ui";
 import { DashboardCard, DashboardCardActions } from "@/components/dashboard-card";
 import { plural } from "@/lib/format";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 
 const SORTS: SortOption<"name" | "group">[] = [
   { key: "name", label: "Name (A–Z)" },
@@ -62,7 +63,7 @@ export function ResourcesDirectory({ resources }: { resources: Resource[] }) {
 
       <section id="resources-panel" aria-label="Resources">
         {visible.length > 0 ? (
-          <div className="overflow-x-auto rounded-xl border border-border">
+          <div className="overflow-x-auto">
             <Table className="w-full border-collapse">
               <TableHeader>
                 <TableRow>
@@ -76,7 +77,7 @@ export function ResourcesDirectory({ resources }: { resources: Resource[] }) {
               </TableHeader>
               <TableBody>
                 {visible.map((resource) => (
-                  <TableRow key={resource.slug}>
+                  <ClickableTableRow key={resource.slug} href={resource.href || undefined} external label={`Open resource ${resource.label}`} className={resource.href ? undefined : "cursor-default"}>
                     <TableCell className="px-4 py-4">
                       {resource.image ? <img src={resource.image} alt="" className="h-10 w-14 rounded-md object-cover" /> : <span className="text-muted-foreground">—</span>}
                     </TableCell>
@@ -89,7 +90,7 @@ export function ResourcesDirectory({ resources }: { resources: Resource[] }) {
                     <TableCell className="px-4 py-4 text-right">
                       <span className="inline-flex"><DashboardCardActions collection="resources" slug={resource.slug} titleField="label" title={resource.label} /></span>
                     </TableCell>
-                  </TableRow>
+                  </ClickableTableRow>
                 ))}
               </TableBody>
             </Table>

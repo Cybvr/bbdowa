@@ -9,6 +9,8 @@ export type Task = {
   id: string;
   title: string;
   description: string;
+  /** Rich text instructions and supporting copy. Older tasks may not have this field. */
+  content?: string;
   /** Optional client and campaign context for this task. */
   clientId?: string | null;
   clientName?: string | null;

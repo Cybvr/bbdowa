@@ -81,12 +81,14 @@ export function RichTextEditor({
   onChange,
   placeholder = "Write the document text…",
   hideLabel = false,
+  compact = false,
 }: {
   label: string;
   hideLabel?: boolean;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  compact?: boolean;
 }) {
   const editor = useEditor({
     extensions: [StarterKit],
@@ -95,7 +97,7 @@ export function RichTextEditor({
     editorProps: {
       attributes: {
         "aria-label": label,
-        class: "min-h-56 px-4 py-3 text-[14px] leading-[1.65] outline-none",
+        class: `${compact ? "min-h-36" : "min-h-56"} px-4 py-3 text-[14px] leading-[1.65] outline-none`,
       },
     },
     onUpdate: ({ editor: currentEditor }) => onChange(currentEditor.getHTML()),
