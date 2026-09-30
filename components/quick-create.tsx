@@ -271,7 +271,7 @@ export function QuickCreate({ type, iconOnly = false }: { type: CreateType; icon
         });
         setOpen(false);
         reset();
-        router.push(`/dashboard/campaigns/${slug}`);
+        router.push(`/admin/campaigns/${slug}`);
       }
       router.refresh();
     } catch (cause) {

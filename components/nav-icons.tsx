@@ -267,6 +267,15 @@ export const MessagesIcon: NavIconComponent = ({ className }) => (
   </Glyph>
 );
 
+// Help — question mark in a circle
+export const HelpIcon: NavIconComponent = ({ className }) => (
+  <Glyph className={className}>
+    <circle cx="12" cy="12" r="8.5" />
+    <path d="M9.6 9.5a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.6" />
+    <path d="M12 17v0" />
+  </Glyph>
+);
+
 export const NAV_ICON_SET: Record<string, NavIconComponent> = {
   Home: HomeIcon,
   Dashboard: DashboardIcon,
@@ -289,6 +298,7 @@ export const NAV_ICON_SET: Record<string, NavIconComponent> = {
   Tracker: TrackerIcon,
   Njeri: NjeriIcon,
   Messages: MessagesIcon,
+  Help: HelpIcon,
   Updates: UpdatesIcon,
   Blog: BlogIcon,
   Company: CompanyIcon,

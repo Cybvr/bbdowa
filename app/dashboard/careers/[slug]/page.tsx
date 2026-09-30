@@ -24,7 +24,7 @@ export default async function CareerDetailPage({ params }: Params) {
   return (
     <main className="flex-1 px-5 pb-16 pt-4 sm:px-8">
       <div className="mb-5 flex items-center justify-between gap-4">
-        <BackLink href="/dashboard/careers">Back to careers</BackLink>
+        <BackLink href="/dashboard/help?tab=careers">Back to careers</BackLink>
         <JobActions job={job} />
       </div>
 

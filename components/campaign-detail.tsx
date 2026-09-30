@@ -39,7 +39,7 @@ export function CampaignDetail({ campaign }: { campaign: Campaign }) {
     <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
       <DetailBreadcrumb
         crumbs={[
-          { label: "All campaigns", href: "/dashboard/campaigns" },
+          { label: "All campaigns", href: "/admin/campaigns" },
           { label: campaign.clientName, href: `/dashboard/clients/${campaign.clientId}/overview` },
           { label: title },
         ]}

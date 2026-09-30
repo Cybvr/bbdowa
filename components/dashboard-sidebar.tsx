@@ -251,15 +251,27 @@ export function DashboardNavList({ onNavigate, collapsed = false }: { onNavigate
 
 export function DashboardNavFooter({ onNavigate, collapsed = false }: { onNavigate?: () => void; collapsed?: boolean }) {
   const auth = useOptionalAuth();
-
-  if (auth?.user) return null;
+  const pathname = usePathname();
+  const helpCurrent = pathname === "/dashboard/help";
 
   return (
-    <div className="mt-auto pt-2">
-      <Link href="/auth/login" onClick={onNavigate} className={`${NAV_TEXT} ${collapsed ? "justify-center px-0" : ""}`}>
-        <NavIcon label="My profile" />
-        <span className={`${NAV_LABEL} ${collapsed ? "max-w-0 opacity-0" : "max-w-[180px] opacity-100"}`}>Sign in</span>
+    <div className="mt-auto flex flex-col gap-0.5 pt-2">
+      <Link
+        href="/dashboard/help"
+        aria-current={helpCurrent ? "page" : undefined}
+        onClick={onNavigate}
+        title={collapsed ? "Help" : undefined}
+        className={`${NAV_TEXT} ${collapsed ? "justify-center px-0" : ""} ${helpCurrent ? NAV_ACTIVE : ""}`}
+      >
+        <NavIcon label="Help" />
+        <span className={`${NAV_LABEL} ${collapsed ? "max-w-0 opacity-0" : "max-w-[180px] opacity-100"}`}>Help</span>
       </Link>
+      {auth?.user ? null : (
+        <Link href="/auth/login" onClick={onNavigate} className={`${NAV_TEXT} ${collapsed ? "justify-center px-0" : ""}`}>
+          <NavIcon label="My profile" />
+          <span className={`${NAV_LABEL} ${collapsed ? "max-w-0 opacity-0" : "max-w-[180px] opacity-100"}`}>Sign in</span>
+        </Link>
+      )}
     </div>
   );
 }

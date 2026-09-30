@@ -52,7 +52,7 @@ export type Campaign = {
 } & Partial<ClientWorkspace>;
 
 export function campaignHref(slug: string): string {
-  return `/dashboard/campaigns/${slug}`;
+  return `/admin/campaigns/${slug}`;
 }
 
 function liveSortValue(campaign: Campaign): number {

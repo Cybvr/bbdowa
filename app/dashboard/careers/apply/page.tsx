@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "Apply" };
 export default function CareersApplyPage() {
   return (
     <main className="flex-1 px-5 pb-16 pt-4 sm:px-8">
-      <BackLink href="/dashboard/careers">Back to careers</BackLink>
+      <BackLink href="/dashboard/help?tab=careers">Back to careers</BackLink>
       <WorkStyleForm />
     </main>
   );

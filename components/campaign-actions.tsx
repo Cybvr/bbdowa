@@ -73,7 +73,7 @@ export function CampaignActions({ campaign, compactMenu = false }: { campaign: C
 
   const remove = async () => {
     await deleteDoc(doc(firebaseDb, "campaigns", campaign.slug));
-    router.push("/dashboard/campaigns");
+    router.push("/admin/campaigns");
   };
 
   return (

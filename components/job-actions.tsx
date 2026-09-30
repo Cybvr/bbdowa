@@ -49,7 +49,7 @@ export function JobActions({ job }: { job: Job }) {
 
   const remove = async () => {
     await deleteDoc(doc(firebaseDb, "jobs", job.slug));
-    router.push("/dashboard/careers");
+    router.push("/dashboard/help?tab=careers");
   };
 
   return (
