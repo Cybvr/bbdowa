@@ -22,13 +22,21 @@ function jobCreators(job: Job, clients: Client[], users: User[]): Creator[] {
     .filter((creator): creator is Creator => Boolean(creator));
 }
 
-const STATUS_TABS: FilterTab<"all" | "live" | "completed">[] = [
+const STATUS_TABS: FilterTab<"all" | "active" | "completed" | "archive">[] = [
   { key: "all", label: "All" },
-  { key: "live", label: "Live" },
+  { key: "active", label: "Active" },
   { key: "completed", label: "Completed" },
+  { key: "archive", label: "Archive" },
 ];
 
 type StatusKey = (typeof STATUS_TABS)[number]["key"];
+
+function jobMatchesStatus(job: Job, status: StatusKey) {
+  if (status === "all") return true;
+  if (status === "active") return job.status === "live";
+  if (status === "completed") return job.status === "completed";
+  return job.status === "pitch";
+}
 
 const SORTS: SortOption<"recent" | "name" | "client" | "modified">[] = [
   { key: "recent", label: "Most recent" },
@@ -70,7 +78,7 @@ export function JobsTable({ jobs, clients }: { jobs: Job[]; clients: Client[] })
     const query = search.trim().toLowerCase();
 
     const filtered = jobs.filter((job) => {
-      const matchesStatus = status === "all" || job.status === status;
+      const matchesStatus = jobMatchesStatus(job, status);
       const matchesCategory = category === "all" || job.category === category;
       const matchesSearch =
         !query ||

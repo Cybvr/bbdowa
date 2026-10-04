@@ -13,7 +13,15 @@ import { JOB_STATUS_LABELS, type Job } from "@/lib/jobs";
 import { JOB_TERMS_COLLECTION } from "@/lib/job-terms";
 import { jobHref } from "@/lib/jobs";
 
-const filters = ["all", "live", "pitch", "completed"] as const;
+const filters = ["all", "active", "completed", "archive"] as const;
+type JobFilter = (typeof filters)[number];
+
+function matchesFilter(job: Job, filter: JobFilter) {
+  if (filter === "all") return true;
+  if (filter === "active") return job.status === "live";
+  if (filter === "completed") return job.status === "completed";
+  return job.status === "pitch";
+}
 
 /** Jobs assigned to the signed-in person. Staff manage every job from /admin/jobs. */
 export function JobsList() {
@@ -21,7 +29,7 @@ export function JobsList() {
   const [jobs, setJobs] = React.useState<Job[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-  const [filter, setFilter] = React.useState<(typeof filters)[number]>("all");
+  const [filter, setFilter] = React.useState<JobFilter>("all");
 
   React.useEffect(() => {
     if (authLoading) return;
@@ -39,12 +47,12 @@ export function JobsList() {
   }, [authLoading, user]);
 
   if (authLoading || loading) return <PageLoadingSkeleton titleWidth="w-32" />;
-  const visible = filter === "all" ? jobs : jobs.filter((job) => job.status === filter);
+  const visible = jobs.filter((job) => matchesFilter(job, filter));
 
   return <DashboardListPage title="My jobs">
     <p className="mt-2 text-sm text-muted-foreground">Client jobs assigned to you, with their tasks, timesheets and payments in one place.</p>
     <div className="mt-6 flex gap-5 overflow-x-auto border-b border-border" role="group" aria-label="Job status">
-      {filters.map((value) => <button key={value} type="button" onClick={() => setFilter(value)} aria-pressed={filter === value} className={`shrink-0 border-b-2 px-1 pb-3 text-sm font-medium ${filter === value ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>{value === "all" ? "All" : JOB_STATUS_LABELS[value]}</button>)}
+      {filters.map((value) => <button key={value} type="button" onClick={() => setFilter(value)} aria-pressed={filter === value} className={`shrink-0 border-b-2 px-1 pb-3 text-sm font-medium ${filter === value ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>{value[0].toUpperCase() + value.slice(1)}</button>)}
     </div>
     {error ? <p role="alert" className="mt-5 text-sm text-destructive">{error}</p> : null}
     {visible.length ? <ul className="mt-6 grid list-none gap-3 p-0 sm:grid-cols-2 lg:grid-cols-3">
