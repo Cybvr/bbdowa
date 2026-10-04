@@ -26,6 +26,7 @@ import { ClientWorkspaceSkeleton } from "@/components/dashboard/loading-skeleton
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 import { TaskStatusBadge } from "@/components/tasks-view";
+import { NewTaskDialog, type AssigneeOption } from "@/components/tasks-management-page";
 import { formatDate as formatTaskDate, isOverdue } from "@/lib/creator-tasks";
 import type {
   PhaseContent,
@@ -272,6 +273,8 @@ export default function ClientPage() {
       clients={content.clients}
       jobs={content.jobs}
       users={content.users}
+      createdBy={user?.uid ?? ""}
+      createdByName={user?.name ?? user?.email ?? null}
     />
   );
 }
@@ -528,6 +531,8 @@ function OneUtilityClientWorkspace({
   clients: Client[];
   jobs: Job[];
   users: User[];
+  createdBy: string;
+  createdByName: string | null;
 }) {
   const client = getClient(slug, clients);
   const clientName = client?.name ?? "Client";
@@ -542,7 +547,8 @@ function OneUtilityClientWorkspace({
   const [activeMainTab, setActiveMainTab] = useState<
     OneUtilityWorkspaceView
   >(initialView);
-  const { tasks: allTasks, loading: tasksLoading } = useFirestoreTasks();
+  const [taskRefreshToken, setTaskRefreshToken] = useState(0);
+  const { tasks: allTasks, loading: tasksLoading } = useFirestoreTasks(taskRefreshToken);
   const clientJobIds = React.useMemo(
     () => new Set(availableJobs.filter((job) => job.clientId === slug).map((job) => job.slug)),
     [availableJobs, slug],
@@ -550,6 +556,19 @@ function OneUtilityClientWorkspace({
   const clientTasks = React.useMemo(
     () => allTasks.filter((task) => task.clientId === slug || (task.jobId ? clientJobIds.has(task.jobId) : false)),
     [allTasks, clientJobIds, slug],
+  );
+  const assignees = React.useMemo<AssigneeOption[]>(
+    () => availableUsers
+      .filter((candidate) => candidate.uid)
+      .map((candidate) => ({
+        uid: candidate.uid as string,
+        name: candidate.name,
+        slug: candidate.slug,
+        isCreator: isCreatorUser(candidate),
+        hint: isCreatorUser(candidate) ? (candidate.category || "Creator") : (candidate.title || candidate.role || ""),
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name)),
+    [availableUsers],
   );
   const [profileSection, setProfileSection] = useState<"company" | "design">("company");
   const [jobView, setJobView] = useState<"home" | "editor">("home");
@@ -1483,14 +1502,7 @@ function OneUtilityClientWorkspace({
             <ClientWorkspaceContent>
               <ClientWorkspaceHeading
                 title="Tasks"
-                actions={
-                  <Link
-                    href={`/admin/tasks?client=${encodeURIComponent(slug)}`}
-                    className="inline-flex h-9 items-center rounded-md border border-border px-3 text-sm font-medium text-foreground transition hover:bg-muted"
-                  >
-                    Manage tasks
-                  </Link>
-                }
+                actions={<NewTaskDialog assignees={assignees} createdBy={createdBy} createdByName={createdByName} initialClientId={slug} onCreated={() => setTaskRefreshToken((value) => value + 1)} />}
               />
               {tasksLoading ? (
                 <p className="py-10 text-sm text-muted-foreground">Loading tasks…</p>

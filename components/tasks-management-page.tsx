@@ -27,7 +27,7 @@ import { firebaseDb } from "@/lib/firebase/client";
 import { plural } from "@/lib/format";
 import { isCreatorUser } from "@/lib/users";
 
-type AssigneeOption = { uid: string; name: string; slug: string; isCreator: boolean; hint: string };
+export type AssigneeOption = { uid: string; name: string; slug: string; isCreator: boolean; hint: string };
 
 const TASK_STATUS_TABS: FilterTab<TaskStatus | "all">[] = [
   { key: "all", label: "All" },
@@ -41,10 +41,11 @@ const TASK_SORTS: SortOption<"recent" | "due" | "title" | "updated">[] = [
   { key: "updated", label: "Recently updated" },
 ];
 
-function NewTaskDialog({ assignees, createdBy, createdByName, onCreated }: {
+export function NewTaskDialog({ assignees, createdBy, createdByName, initialClientId = null, onCreated }: {
   assignees: AssigneeOption[];
   createdBy: string;
   createdByName: string | null;
+  initialClientId?: string | null;
   onCreated: () => void;
 }) {
   const [open, setOpen] = React.useState(false);
@@ -53,13 +54,13 @@ function NewTaskDialog({ assignees, createdBy, createdByName, onCreated }: {
   const [description, setDescription] = React.useState("");
   const [content, setContent] = React.useState("");
   const [dueDate, setDueDate] = React.useState("");
-  const [clientId, setClientId] = React.useState<string | null>(null);
+  const [clientId, setClientId] = React.useState<string | null>(initialClientId);
   const [jobId, setJobId] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const { clients, jobs, loading: linksLoading } = useTaskLinkOptions();
 
-  const reset = () => { setAssignedTo(""); setTitle(""); setDescription(""); setContent(""); setDueDate(""); setClientId(null); setJobId(null); setError(null); };
+  const reset = () => { setAssignedTo(""); setTitle(""); setDescription(""); setContent(""); setDueDate(""); setClientId(initialClientId); setJobId(null); setError(null); };
   const handleOpenChange = (next: boolean) => { setOpen(next); if (!next) reset(); };
   const canSave = title.trim().length > 0 && assignedTo.length > 0 && !busy;
 

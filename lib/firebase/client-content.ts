@@ -196,7 +196,7 @@ type FirestoreTasksState = {
   error: string | null;
 };
 
-export function useFirestoreTasks(): FirestoreTasksState {
+export function useFirestoreTasks(refreshToken = 0): FirestoreTasksState {
   const { loading: authLoading, user, role } = useAuth();
   const isStaff = role === "admin" || role === "manager";
   const [state, setState] = useState<FirestoreTasksState>({ tasks: [], loading: true, error: null });
@@ -226,7 +226,7 @@ export function useFirestoreTasks(): FirestoreTasksState {
     return () => {
       active = false;
     };
-  }, [authLoading, isStaff, user]);
+  }, [authLoading, isStaff, refreshToken, user]);
 
   return state;
 }
