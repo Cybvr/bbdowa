@@ -140,7 +140,7 @@ export function JobDetail({ job, adminMode = false }: { job: Job; adminMode?: bo
     <DetailBreadcrumb
       crumbs={[
         { label: adminMode ? "All jobs" : "Jobs", href: jobsBase },
-        { label: job.clientName, href: `/dashboard/clients/${job.clientId}/overview` },
+        { label: job.clientName, href: `/admin/clients/${job.clientId}/overview` },
         { label: title },
       ]}
       actions={canManage ? <JobActions job={job} onSaved={() => void loadTerms()} /> : null}
@@ -193,7 +193,7 @@ export function JobDetail({ job, adminMode = false }: { job: Job; adminMode?: bo
           <Detail label="Updated">{longDate(job.updatedAt?.slice(0, 10))}</Detail>
         </dl></section>
         <section className={CARD}><h2 className="m-0 text-lg font-semibold">Client</h2><dl className="mt-4 space-y-3">
-          <Detail label="Name"><Link href={`/dashboard/clients/${job.clientId}/overview`} className="text-foreground underline decoration-border underline-offset-4 hover:text-primary">{client?.name ?? job.clientName}</Link></Detail>
+          <Detail label="Name"><Link href={`/admin/clients/${job.clientId}/overview`} className="text-foreground underline decoration-border underline-offset-4 hover:text-primary">{client?.name ?? job.clientName}</Link></Detail>
           <Detail label="Industry">{client?.industry || "—"}</Detail>
           <Detail label="Team size">{client?.teamSize ?? "—"}</Detail>
           <Detail label="Year founded">{client?.yearFounded ?? "—"}</Detail>

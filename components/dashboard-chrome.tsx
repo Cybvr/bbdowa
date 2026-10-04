@@ -11,7 +11,7 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => pathname === "/dashboard/discover");
   const [hydrated, setHydrated] = useState(false);
   const isApplication = pathname === "/dashboard/careers/apply";
-  const isClientDetail = /^\/dashboard\/clients\/[^/]+(?:\/|$)/.test(pathname);
+  const isClientDetail = /^\/admin\/clients\/[^/]+(?:\/|$)/.test(pathname);
 
   useEffect(() => {
     setSidebarCollapsed(pathname === "/dashboard/discover");

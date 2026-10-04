@@ -1,5 +1,6 @@
-import ClientPage from "../page";
+import { redirect } from "next/navigation";
 
-export default function ClientCreatorsPage() {
-  return <ClientPage />;
+export default async function DashboardClientCreatorsRedirect({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  redirect(`/admin/clients/${encodeURIComponent(slug)}/creators`);
 }

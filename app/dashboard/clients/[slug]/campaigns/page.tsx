@@ -1,8 +1,6 @@
 import { redirect } from "next/navigation";
 
-type Params = { params: Promise<{ slug: string }> };
-
-export default async function ClientCampaignsPage({ params }: Params) {
+export default async function DashboardClientCampaignsRedirect({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  redirect(`/dashboard/clients/${slug}/jobs`);
+  redirect(`/admin/clients/${encodeURIComponent(slug)}/jobs`);
 }

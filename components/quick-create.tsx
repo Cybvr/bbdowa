@@ -233,7 +233,7 @@ export function QuickCreate({ type, iconOnly = false }: { type: CreateType; icon
         });
         setOpen(false);
         reset();
-        router.push(`/dashboard/clients/${slug}/overview`);
+        router.push(`/admin/clients/${slug}/overview`);
       } else {
         const selectedClient = clients.find((client) => client.slug === jobClientId);
         if (!selectedClient) throw new Error("Choose a client before creating the job.");

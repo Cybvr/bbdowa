@@ -37,7 +37,6 @@ export const NAV_ITEMS: NavItem[] = [
     label: "The Studio",
     requiresAuth: true,
     match: [
-      "/dashboard/clients",
       "/dashboard/discover",
       "/dashboard/workflows",
       "/dashboard/brand",
@@ -46,7 +45,6 @@ export const NAV_ITEMS: NavItem[] = [
     ],
     items: [
       { label: "Discover", href: "/dashboard/discover" },
-      { label: "Clients", href: "/dashboard/clients" },
       { label: "Workflows", href: "/dashboard/workflows" },
       { label: "Brand assets", href: "/dashboard/brand" },
       { label: "Resources", href: "/dashboard/resources" },
@@ -60,6 +58,7 @@ export const ADMIN_NAV_ITEMS: NavItem[] = [
   { kind: "link", label: "Overview", href: "/admin" },
   { kind: "link", label: "Users", href: "/admin/users", requiresAdmin: true },
   { kind: "link", label: "Jobs", href: "/admin/jobs" },
+  { kind: "link", label: "Clients", href: "/admin/clients" },
   { kind: "link", label: "Documents", href: "/admin/documents" },
   { kind: "link", label: "Tasks", href: "/admin/tasks" },
   { kind: "link", label: "Dashboard", href: "/dashboard" },

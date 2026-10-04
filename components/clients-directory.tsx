@@ -95,7 +95,7 @@ export function ClientsDirectory({ clients }: { clients: Client[] }) {
                     className="h-full"
                     actions={<DashboardCardActions collection="clients" slug={client.slug} titleField="name" title={client.name} />}
                   >
-                    <Link href={`/dashboard/clients/${client.slug}/overview`} className="group flex h-full flex-col text-foreground no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
+                    <Link href={`/admin/clients/${client.slug}/overview`} className="group flex h-full flex-col text-foreground no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
                     <div className="flex h-28 shrink-0 items-center justify-center overflow-hidden bg-muted px-6 py-4">
                       <ImageWithFallback
                         src={client.profileImage}
@@ -136,9 +136,9 @@ export function ClientsDirectory({ clients }: { clients: Client[] }) {
                 </TableHeader>
                 <TableBody>
                   {visibleClients.map((client) => (
-                    <ClickableTableRow key={client.slug} href={`/dashboard/clients/${client.slug}/overview`} label={`Open client ${client.name}`}>
+                    <ClickableTableRow key={client.slug} href={`/admin/clients/${client.slug}/overview`} label={`Open client ${client.name}`}>
                       <TableCell className="px-4 py-3.5 font-semibold">
-                        <Link href={`/dashboard/clients/${client.slug}/overview`} className="inline-flex items-center gap-3 text-foreground no-underline hover:text-primary focus-visible:text-primary">
+                        <Link href={`/admin/clients/${client.slug}/overview`} className="inline-flex items-center gap-3 text-foreground no-underline hover:text-primary focus-visible:text-primary">
                           <ImageWithFallback
                             src={client.profileImage}
                             alt=""

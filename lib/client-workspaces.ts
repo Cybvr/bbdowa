@@ -1,4 +1,4 @@
-// Client workspace content shown on /dashboard/clients/[slug]
+// Client workspace content shown on /admin/clients/[slug]
 // (overview, jobs, strategy, creatives, brand DNA).
 //
 // The workspace fields live directly on the project (they are spread onto it in

@@ -96,5 +96,5 @@ export function getClientWorkspace(
 }
 
 export function clientHref(slug: string): string {
-  return `/dashboard/clients/${slug}/overview`;
+  return `/admin/clients/${slug}/overview`;
 }

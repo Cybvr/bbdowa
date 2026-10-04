@@ -1,5 +1,5 @@
 // Shape of the client workspace's editable job content
-// (/dashboard/clients/[slug]). The actual content lives in Firestore; this
+// (/admin/clients/[slug]). The actual content lives in Firestore; this
 // file only holds the types and small fixed enums the workspace UI needs.
 
 export type PhaseKey = "tease" | "launch" | "experience" | "sustain";

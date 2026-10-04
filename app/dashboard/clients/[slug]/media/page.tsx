@@ -1,5 +1,6 @@
-import ClientPage from "../page";
+import { redirect } from "next/navigation";
 
-export default function ClientMediaPage() {
-  return <ClientPage />;
+export default async function DashboardClientMediaRedirect({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  redirect(`/admin/clients/${encodeURIComponent(slug)}/media`);
 }

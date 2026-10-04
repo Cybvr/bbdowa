@@ -99,7 +99,7 @@ export function ClientActions({ client }: { client: Client }) {
   const remove = async () => {
     await deleteDoc(doc(firebaseDb, "clients", client.slug));
     await deleteDoc(doc(firebaseDb, CLIENT_CONTACTS_COLLECTION, client.slug));
-    router.push("/dashboard/clients");
+    router.push("/admin/clients");
   };
 
   return (
