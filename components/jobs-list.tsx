@@ -81,11 +81,24 @@ export function JobsList({ assignedOnly = false }: { assignedOnly?: boolean }) {
     {error ? <p role="alert" className="mt-5 text-sm text-destructive">{error}</p> : null}
     {visible.length ? <ul className="mt-6 grid list-none gap-3 p-0 sm:grid-cols-2 lg:grid-cols-3">
       {visible.map((job) => <li key={job.slug} className="rounded-xl border border-border bg-background">
-        <Link href={jobHref(job.slug)} className="flex h-full min-h-44 flex-col p-5 text-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-          <span className="text-xs font-medium text-muted-foreground">{JOB_STATUS_LABELS[job.status] ?? job.status}</span>
+        <Link href={jobHref(job.slug)} className="flex h-full min-h-64 flex-col p-5 text-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-xs font-medium text-muted-foreground">{JOB_STATUS_LABELS[job.status] ?? job.status}</span>
+            {job.jobPostedAt ? <span className="text-xs text-muted-foreground">Posted {formatDate(job.jobPostedAt)}</span> : null}
+          </div>
           <span className="mt-4 line-clamp-1 text-lg font-semibold">{job.clientName}</span>
           <span className="mt-1 line-clamp-2 text-sm text-muted-foreground">{job.title ?? job.name}</span>
-          <span className="mt-auto pt-5 text-xs text-muted-foreground">{job.startDate ? `Started ${formatDate(job.startDate)}` : "No start date"}{job.endDate ? ` · Ends ${formatDate(job.endDate)}` : ""}</span>
+          <div className="mt-4 flex flex-wrap gap-x-3 gap-y-1 text-xs font-medium text-muted-foreground">
+            {job.specialization || job.category ? <span>{job.specialization || job.category}</span> : null}
+            {job.workSetup ? <span>{job.workSetup}</span> : null}
+            {job.estimatedLength ? <span>{job.estimatedLength}</span> : null}
+          </div>
+          {job.summary ? <p className="mt-4 line-clamp-3 text-sm leading-relaxed text-muted-foreground">{job.summary}</p> : null}
+          {job.requiredSkills?.length ? <div className="mt-4 flex flex-wrap gap-1.5">
+            {job.requiredSkills.slice(0, 4).map((skill) => <span key={skill} className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">{skill}</span>)}
+            {job.requiredSkills.length > 4 ? <span className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">+{job.requiredSkills.length - 4}</span> : null}
+          </div> : null}
+          <span className="mt-auto pt-5 text-xs text-muted-foreground">{job.desiredStartDate ? `Starts ${formatDate(job.desiredStartDate)}` : job.startDate ? `Started ${formatDate(job.startDate)}` : "Start date not set"}{job.endDate ? ` · Ends ${formatDate(job.endDate)}` : ""}</span>
         </Link>
       </li>)}
     </ul> : <div className="py-14 text-center"><h2 className="text-lg font-semibold">{jobs.length ? "No jobs match" : "No jobs yet"}</h2><p className="text-sm text-muted-foreground">{jobs.length ? "Choose another status." : assignedOnly ? "Jobs assigned to you will appear here." : "Jobs will appear here when they are added."}</p></div>}
