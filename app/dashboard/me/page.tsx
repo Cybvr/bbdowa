@@ -7,10 +7,10 @@ import { FaBehance, FaGlobe } from "react-icons/fa";
 import { Mail, Pencil } from "lucide-react";
 import { isCreatorNew, isCreatorUser, type User } from "@/lib/users";
 import { useAuth } from "@/components/auth-provider";
-import { useOwnUser, readCampaignsFromFirestore, readClientsFromFirestore, readDocumentsForAssignee, readTimeEntriesForUser } from "@/lib/firebase/client-content";
+import { useOwnUser, readJobsFromFirestore, readClientsFromFirestore, readDocumentsForAssignee, readTimeEntriesForUser } from "@/lib/firebase/client-content";
 import { longDate } from "@/lib/format";
-import { campaignHref, type Campaign } from "@/lib/campaigns";
-import { clientHref, getCreatorCampaigns, type Client } from "@/lib/clients";
+import { jobHref, type Job } from "@/lib/jobs";
+import { clientHref, getCreatorJobs, type Client } from "@/lib/clients";
 import {
   DetailBreadcrumb,
   ProfileBanner,
@@ -41,7 +41,7 @@ function platformsFor(user: User): ProfilePlatform[] {
   return platforms;
 }
 
-type ProfileTab = "overview" | "work-history" | "campaigns" | "hours" | "documents";
+type ProfileTab = "overview" | "work-history" | "jobs" | "hours" | "documents";
 
 /**
  * "My profile" — the signed-in user's own profile, resolved by uid so it
@@ -56,13 +56,13 @@ export default function MyProfilePage() {
   const [tab, setTab] = useState<ProfileTab>("overview");
 
   const [clients, setClients] = useState<Client[]>([]);
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [jobs, setJobs] = useState<Job[]>([]);
   const [documentCount, setDocumentCount] = useState(0);
   const [hasHours, setHasHours] = useState(false);
   useEffect(() => {
     if (!creator || !authUser) {
       setClients([]);
-      setCampaigns([]);
+      setJobs([]);
       setDocumentCount(0);
       setHasHours(false);
       return;
@@ -70,18 +70,18 @@ export default function MyProfilePage() {
     let active = true;
     Promise.all([
       readClientsFromFirestore(),
-      readCampaignsFromFirestore(),
+      readJobsFromFirestore(),
       readDocumentsForAssignee(authUser.uid, own?.slug),
       readTimeEntriesForUser(authUser.uid),
     ])
-      .then(([clientsData, campaignsData, documentsData, timeEntries]) => {
+      .then(([clientsData, jobsData, documentsData, timeEntries]) => {
         if (!active) return;
         setClients(clientsData);
-        setCampaigns(campaignsData);
+        setJobs(jobsData);
         setDocumentCount(documentsData.length);
         setHasHours(timeEntries.length > 0);
       })
-      .catch((cause) => console.error("Unable to load clients/campaigns", cause));
+      .catch((cause) => console.error("Unable to load clients/jobs", cause));
     return () => {
       active = false;
     };
@@ -98,12 +98,12 @@ export default function MyProfilePage() {
   }
 
   const platforms = platformsFor(own);
-  const creatorCampaigns = creator ? getCreatorCampaigns(own.slug, clients, campaigns) : [];
+  const creatorJobs = creator ? getCreatorJobs(own.slug, clients, jobs) : [];
 
   const tabs: { id: ProfileTab; label: string }[] = [
     { id: "overview", label: "Overview" },
     ...(creator && own.workHistory?.length ? ([{ id: "work-history", label: "Work history" }] as const) : []),
-    ...(creator && creatorCampaigns.length ? ([{ id: "campaigns", label: "Jobs" }] as const) : []),
+    ...(creator && creatorJobs.length ? ([{ id: "jobs", label: "Jobs" }] as const) : []),
     ...(hasHours ? ([{ id: "hours", label: "Hours" }] as const) : []),
     ...(creator && documentCount > 0 ? ([{ id: "documents", label: "Documents" }] as const) : []),
   ];
@@ -231,26 +231,26 @@ export default function MyProfilePage() {
           </ProfileSection>
         )}
 
-        {tab === "campaigns" && creator && (
+        {tab === "jobs" && creator && (
           <ProfileSection title="Jobs" variant="plain">
             <ProfileTable
               columns={[
-                { key: "campaign", label: "Job" },
+                { key: "job", label: "Job" },
                 { key: "client", label: "Client" },
                 { key: "status", label: "Status" },
               ]}
-              rows={creatorCampaigns.map((campaign) => ({
-                campaign: (
-                  <Link href={campaignHref(campaign.slug)} className="font-semibold text-foreground hover:text-primary">
-                    {campaign.campaign ?? campaign.name}
+              rows={creatorJobs.map((job) => ({
+                job: (
+                  <Link href={jobHref(job.slug)} className="font-semibold text-foreground hover:text-primary">
+                    {job.title ?? job.name}
                   </Link>
                 ),
                 client: (
-                  <Link href={clientHref(campaign.clientId)} className="text-foreground hover:text-primary">
-                    {campaign.clientName}
+                  <Link href={clientHref(job.clientId)} className="text-foreground hover:text-primary">
+                    {job.clientName}
                   </Link>
                 ),
-                status: <span className="capitalize">{campaign.status}</span>,
+                status: <span className="capitalize">{job.status}</span>,
               }))}
               emptyTitle="No jobs yet"
               emptyDescription="You haven’t been added to a job yet."

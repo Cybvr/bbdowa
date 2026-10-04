@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import type { Campaign } from "@/lib/campaigns";
-import { campaignHref, campaignLiveDateLabel } from "@/lib/campaigns";
+import type { Job } from "@/lib/jobs";
+import { jobHref, jobLiveDateLabel } from "@/lib/jobs";
 import type { Client } from "@/lib/clients";
 import { longDate, plural } from "@/lib/format";
 import type { Creator, User } from "@/lib/users";
@@ -15,8 +15,8 @@ import { FilterBar, type FilterTab, type SortOption, type ViewMode } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 
-function campaignCreators(campaign: Campaign, clients: Client[], users: User[]): Creator[] {
-  const client = clients.find((item) => item.slug === campaign.clientId);
+function jobCreators(job: Job, clients: Client[], users: User[]): Creator[] {
+  const client = clients.find((item) => item.slug === job.clientId);
   return (client?.creatorSlugs ?? [])
     .map((slug) => users.find((user) => user.slug === slug))
     .filter((creator): creator is Creator => Boolean(creator));
@@ -39,8 +39,8 @@ const SORTS: SortOption<"recent" | "name" | "client" | "modified">[] = [
 
 type SortKey = (typeof SORTS)[number]["key"];
 
-function liveTime(campaign: Campaign): number {
-  return campaign.liveAt ? Date.parse(`${campaign.liveAt.date}T00:00:00Z`) : 0;
+function liveTime(job: Job): number {
+  return job.liveAt ? Date.parse(`${job.liveAt.date}T00:00:00Z`) : 0;
 }
 
 /** Formats an ISO datetime (e.g. Firestore's updatedAt) using the date-only formatter. */
@@ -48,7 +48,7 @@ function updatedDate(iso: string | null | undefined): string {
   return longDate(iso?.slice(0, 10));
 }
 
-export function CampaignsTable({ campaigns, clients }: { campaigns: Campaign[]; clients: Client[] }) {
+export function JobsTable({ jobs, clients }: { jobs: Job[]; clients: Client[] }) {
   const { users } = useFirestoreUsers();
   const [status, setStatus] = useState<StatusKey>("all");
   const [category, setCategory] = useState("all");
@@ -59,22 +59,22 @@ export function CampaignsTable({ campaigns, clients }: { campaigns: Campaign[]; 
   const categoryOptions = useMemo(
     () => [
       { value: "all", label: "All categories" },
-      ...[...new Set(campaigns.map((campaign) => campaign.category))]
+      ...[...new Set(jobs.map((job) => job.category))]
         .sort((a, b) => a.localeCompare(b))
         .map((value) => ({ value, label: value })),
     ],
-    [campaigns],
+    [jobs],
   );
 
   const visible = useMemo(() => {
     const query = search.trim().toLowerCase();
 
-    const filtered = campaigns.filter((campaign) => {
-      const matchesStatus = status === "all" || campaign.status === status;
-      const matchesCategory = category === "all" || campaign.category === category;
+    const filtered = jobs.filter((job) => {
+      const matchesStatus = status === "all" || job.status === status;
+      const matchesCategory = category === "all" || job.category === category;
       const matchesSearch =
         !query ||
-        [campaign.campaign, campaign.name, campaign.clientName, campaign.category, campaign.leadUserId]
+        [job.title, job.name, job.clientName, job.category, job.leadUserId]
           .join(" ")
           .toLowerCase()
           .includes(query);
@@ -87,12 +87,12 @@ export function CampaignsTable({ campaigns, clients }: { campaigns: Campaign[]; 
       if (sort === "modified") return (b.updatedAt ?? "").localeCompare(a.updatedAt ?? "");
       return liveTime(b) - liveTime(a);
     });
-  }, [campaigns, status, category, search, sort]);
+  }, [jobs, status, category, search, sort]);
 
   return (
     <>
       <FilterBar
-        panelId="campaign-panel"
+        panelId="job-panel"
         tabs={STATUS_TABS}
         activeTab={status}
         onTabChange={setStatus}
@@ -111,35 +111,35 @@ export function CampaignsTable({ campaigns, clients }: { campaigns: Campaign[]; 
         onViewChange={setView}
       />
 
-      <section id="campaign-panel" aria-label="Jobs">
+      <section id="job-panel" aria-label="Jobs">
         {visible.length > 0 ? (
           view === "cards" ? (
             <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2 lg:grid-cols-3">
-              {visible.map((campaign) => (
-                <li key={campaign.slug}>
+              {visible.map((job) => (
+                <li key={job.slug}>
                   <DashboardCard
                     className="h-full"
-                    actions={<DashboardCardActions collection="campaigns" slug={campaign.slug} titleField="campaign" title={campaign.campaign ?? campaign.name} />}
+                    actions={<DashboardCardActions collection="jobs" slug={job.slug} titleField="title" title={job.title ?? job.name} />}
                   >
-                    <Link href={campaignHref(campaign.slug)} className="group flex h-full flex-col text-foreground no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
+                    <Link href={jobHref(job.slug, true)} className="group flex h-full flex-col text-foreground no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
                     <div className="h-28 shrink-0 overflow-hidden bg-muted">
                       <ImageWithFallback
-                        src={campaign.image}
-                        alt={campaign.imageAlt}
+                        src={job.image}
+                        alt={job.imageAlt}
                         className="h-full w-full object-cover"
                       />
                     </div>
                     <div className="flex min-h-[170px] flex-col gap-3 p-4">
-                      <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-primary">{campaign.clientName}</span>
-                      <h3 className="m-0 line-clamp-2 text-[16px] font-semibold leading-tight group-hover:text-primary">{campaign.campaign ?? campaign.name}</h3>
-                      <CreatorAvatarStack creators={campaignCreators(campaign, clients, users)} />
+                      <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-primary">{job.clientName}</span>
+                      <h3 className="m-0 line-clamp-2 text-[16px] font-semibold leading-tight group-hover:text-primary">{job.title ?? job.name}</h3>
+                      <CreatorAvatarStack creators={jobCreators(job, clients, users)} />
                       <div className="mt-auto flex flex-col gap-1">
                         <div className="flex items-center justify-between gap-3 text-[12px] text-muted-foreground">
-                          <Badge tone={campaign.status === "live" ? "active" : "neutral"}>{campaign.status}</Badge>
-                          <span>{campaignLiveDateLabel(campaign)}</span>
+                          <Badge tone={job.status === "live" ? "active" : "neutral"}>{job.status}</Badge>
+                          <span>{jobLiveDateLabel(job)}</span>
                         </div>
-                        {campaign.updatedAt ? (
-                          <span className="text-[11px] text-muted-foreground">Updated {updatedDate(campaign.updatedAt)}</span>
+                        {job.updatedAt ? (
+                          <span className="text-[11px] text-muted-foreground">Updated {updatedDate(job.updatedAt)}</span>
                         ) : null}
                       </div>
                     </div>
@@ -162,18 +162,18 @@ export function CampaignsTable({ campaigns, clients }: { campaigns: Campaign[]; 
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {visible.map((campaign) => (
-                    <ClickableTableRow key={campaign.slug} href={campaignHref(campaign.slug)} label={`Open job ${campaign.campaign ?? campaign.name}`}>
+                  {visible.map((job) => (
+                    <ClickableTableRow key={job.slug} href={jobHref(job.slug, true)} label={`Open job ${job.title ?? job.name}`}>
                       <TableCell className="px-4 py-4 font-semibold">
-                        <Link href={campaignHref(campaign.slug)} className="text-foreground no-underline hover:text-primary focus-visible:text-primary">
-                          {campaign.campaign ?? campaign.name}
+                        <Link href={jobHref(job.slug, true)} className="text-foreground no-underline hover:text-primary focus-visible:text-primary">
+                          {job.title ?? job.name}
                         </Link>
                       </TableCell>
-                      <TableCell className="px-4 py-4 text-muted-foreground">{campaign.clientName}</TableCell>
-                      <TableCell className="px-4 py-4"><Badge tone={campaign.status === "live" ? "active" : "neutral"}>{campaign.status}</Badge></TableCell>
-                      <TableCell className="px-4 py-4 text-muted-foreground">{campaign.category}</TableCell>
-                      <TableCell className="whitespace-nowrap px-4 py-4 text-muted-foreground">{campaignLiveDateLabel(campaign)}</TableCell>
-                      <TableCell className="whitespace-nowrap px-4 py-4 text-muted-foreground">{campaign.updatedAt ? updatedDate(campaign.updatedAt) : "—"}</TableCell>
+                      <TableCell className="px-4 py-4 text-muted-foreground">{job.clientName}</TableCell>
+                      <TableCell className="px-4 py-4"><Badge tone={job.status === "live" ? "active" : "neutral"}>{job.status}</Badge></TableCell>
+                      <TableCell className="px-4 py-4 text-muted-foreground">{job.category}</TableCell>
+                      <TableCell className="whitespace-nowrap px-4 py-4 text-muted-foreground">{jobLiveDateLabel(job)}</TableCell>
+                      <TableCell className="whitespace-nowrap px-4 py-4 text-muted-foreground">{job.updatedAt ? updatedDate(job.updatedAt) : "—"}</TableCell>
                     </ClickableTableRow>
                   ))}
                 </TableBody>

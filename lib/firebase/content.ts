@@ -1,9 +1,10 @@
 import "server-only";
 
 import type { BlogPost } from "@/lib/blog";
-import type { Campaign } from "@/lib/campaigns";
+import { normalizeJob, type Job } from "@/lib/jobs";
+import { MIGRATION_COLLECTION, MIGRATION_ID, collectionsFor, type MigrationState } from "@/lib/job-migration";
 import type { Client } from "@/lib/clients";
-import type { Job } from "@/lib/jobs";
+import type { Opening } from "@/lib/openings";
 import type { Resource } from "@/lib/resources";
 import { TASK_COLLECTION, type Task } from "@/lib/creator-tasks";
 
@@ -107,11 +108,21 @@ export async function getClients(): Promise<Client[]> {
 
 export const getClientBySlug = (slug: string) => getDocument<Client>("clients", slug);
 
-export async function getCampaigns(): Promise<Campaign[]> {
-  return getCollection<Campaign>("campaigns");
+/** Collection names, depending on whether the campaigns → jobs migration has run. */
+async function collections() {
+  const state = await getDocument<MigrationState>(MIGRATION_COLLECTION, MIGRATION_ID).catch(() => undefined);
+  return collectionsFor(state?.done === true);
 }
 
-export const getCampaignBySlug = (slug: string) => getDocument<Campaign>("campaigns", slug);
+export async function getJobs(): Promise<Job[]> {
+  const records = await getCollection<Record<string, unknown>>((await collections()).jobs);
+  return records.map((record) => normalizeJob(record));
+}
+
+export async function getJobBySlug(slug: string): Promise<Job | undefined> {
+  const record = await getDocument<Record<string, unknown>>((await collections()).jobs, slug);
+  return record ? normalizeJob(record, slug) : undefined;
+}
 
 export async function getBlogPosts(): Promise<BlogPost[]> {
   return getCollection<BlogPost>("blogs");
@@ -119,15 +130,17 @@ export async function getBlogPosts(): Promise<BlogPost[]> {
 
 export const getBlogPostBySlug = (slug: string) => getDocument<BlogPost>("blogs", slug);
 
-export async function getJobs(): Promise<Job[]> {
-  return getCollection<Job>("jobs");
+export async function getOpenings(): Promise<Opening[]> {
+  return getCollection<Opening>((await collections()).openings);
 }
 
 export async function getResources(): Promise<Resource[]> {
   return (await getCollection<Resource>("resources")).sort((a, b) => a.label.localeCompare(b.label));
 }
 
-export const getJobBySlug = (slug: string) => getDocument<Job>("jobs", slug);
+export async function getOpeningBySlug(slug: string): Promise<Opening | undefined> {
+  return getDocument<Opening>((await collections()).openings, slug);
+}
 
 export const getTaskById = (id: string) =>
   getDocument<Pick<Task, "title" | "description"> & Partial<Pick<Task, "content">>>(TASK_COLLECTION, id);

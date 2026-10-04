@@ -13,8 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ItemCard, ItemCardList } from "@/components/dashboard/item-card";
-import { TaskClientCampaignFields, useTaskLinkOptions } from "@/components/task-link-fields";
-import { jobHref } from "@/lib/job-terms";
+import { TaskClientJobFields, useTaskLinkOptions } from "@/components/task-link-fields";
+import { jobHref } from "@/lib/jobs";
 import {
   TASK_COLLECTION,
   TASK_STATUSES,
@@ -73,10 +73,10 @@ export function NewTaskSheet({ creatorUid, creatorName, createdBy, createdByName
   const [content, setContent] = React.useState("");
   const [dueDate, setDueDate] = React.useState("");
   const [clientId, setClientId] = React.useState<string | null>(null);
-  const [campaignId, setCampaignId] = React.useState<string | null>(null);
+  const [jobId, setJobId] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const { clients, campaigns, loading: linksLoading } = useTaskLinkOptions();
+  const { clients, jobs, loading: linksLoading } = useTaskLinkOptions();
 
   const reset = () => {
     setTitle("");
@@ -84,7 +84,7 @@ export function NewTaskSheet({ creatorUid, creatorName, createdBy, createdByName
     setContent("");
     setDueDate("");
     setClientId(null);
-    setCampaignId(null);
+    setJobId(null);
     setError(null);
   };
 
@@ -108,8 +108,8 @@ export function NewTaskSheet({ creatorUid, creatorName, createdBy, createdByName
         content,
         clientId,
         clientName: clients.find((client) => client.slug === clientId)?.name ?? null,
-        campaignId,
-        campaignName: campaigns.find((campaign) => campaign.slug === campaignId)?.name ?? null,
+        jobId,
+        jobName: jobs.find((job) => job.slug === jobId)?.name ?? null,
         assignedTo: creatorUid,
         assignedToName: creatorName,
         createdBy,
@@ -159,15 +159,15 @@ export function NewTaskSheet({ creatorUid, creatorName, createdBy, createdByName
               </div>
               <RichTextEditor label="Content" value={content} onChange={setContent} placeholder="Add detailed instructions and copy…" compact />
               <div className="grid gap-3 sm:grid-cols-2">
-                <TaskClientCampaignFields
+                <TaskClientJobFields
                   clientId={clientId}
-                  campaignId={campaignId}
+                  jobId={jobId}
                   clients={clients}
-                  campaigns={campaigns}
+                  jobs={jobs}
                   disabled={busy || linksLoading}
                   inlineLabels
-                  onClientChange={(value) => { setClientId(value); setCampaignId(null); }}
-                  onCampaignChange={setCampaignId}
+                  onClientChange={(value) => { setClientId(value); setJobId(null); }}
+                  onJobChange={setJobId}
                 />
                 <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2">
                   <label htmlFor="new-task-due-date" className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Due date</label>
@@ -204,12 +204,12 @@ export function TaskDetailPage({ task, canEdit, canDelete, assignees, onChanged,
   const [status, setStatus] = React.useState<TaskStatus>("todo");
   const [dueDate, setDueDate] = React.useState("");
   const [clientId, setClientId] = React.useState<string | null>(null);
-  const [campaignId, setCampaignId] = React.useState<string | null>(null);
+  const [jobId, setJobId] = React.useState<string | null>(null);
   const [assignedTo, setAssignedTo] = React.useState("");
   const [shareOpen, setShareOpen] = React.useState(false);
   const [shareUrl, setShareUrl] = React.useState("");
   const [shareMessage, setShareMessage] = React.useState<string | null>(null);
-  const { clients, campaigns, loading: linksLoading } = useTaskLinkOptions();
+  const { clients, jobs, loading: linksLoading } = useTaskLinkOptions();
   const assigneeOptions = assignees
     ? [...(task && !assignees.some((item) => item.uid === task.assignedTo) ? [{ uid: task.assignedTo, name: task.assignedToName ?? "Current assignee" }] : []), ...assignees]
     : [];
@@ -222,7 +222,7 @@ export function TaskDetailPage({ task, canEdit, canDelete, assignees, onChanged,
     setStatus(task.status);
     setDueDate(task.dueDate ?? "");
     setClientId(task.clientId ?? null);
-    setCampaignId(task.campaignId ?? null);
+    setJobId(task.jobId ?? null);
     setAssignedTo(task.assignedTo);
     setError(null);
     setShareOpen(false);
@@ -266,7 +266,7 @@ export function TaskDetailPage({ task, canEdit, canDelete, assignees, onChanged,
     setError(null);
     try {
       const client = clients.find((item) => item.slug === clientId);
-      const campaign = campaigns.find((item) => item.slug === campaignId && item.clientId === clientId);
+      const job = jobs.find((item) => item.slug === jobId && item.clientId === clientId);
       const assignee = assignees?.find((item) => item.uid === assignedTo);
       await updateDoc(doc(firebaseDb, TASK_COLLECTION, task.id), {
         title: title.trim(),
@@ -276,8 +276,8 @@ export function TaskDetailPage({ task, canEdit, canDelete, assignees, onChanged,
         dueDate: dueDate || null,
         clientId: client?.slug ?? null,
         clientName: client?.name ?? null,
-        campaignId: campaign?.slug ?? null,
-        campaignName: campaign?.name ?? null,
+        jobId: job?.slug ?? null,
+        jobName: job?.name ?? null,
         ...(assignees ? { assignedTo: assignee?.uid ?? task.assignedTo, assignedToName: assignee?.name ?? task.assignedToName } : {}),
         updatedAt: new Date().toISOString(),
       });
@@ -307,11 +307,11 @@ export function TaskDetailPage({ task, canEdit, canDelete, assignees, onChanged,
 
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-5 pb-16 pt-6 sm:px-8">
-      <Link href={task.campaignId ? jobHref(task.campaignId) : "/dashboard/work"} className="inline-flex min-h-9 items-center text-sm font-medium text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">← Back to {task.campaignId ? "job" : "tasks"}</Link>
+      <Link href={task.jobId ? jobHref(task.jobId) : "/dashboard/work"} className="inline-flex min-h-9 items-center text-sm font-medium text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">← Back to {task.jobId ? "job" : "tasks"}</Link>
       <div className="mt-5 flex flex-wrap items-start justify-between gap-4 border-b border-border pb-6">
         <div className="min-w-0 space-y-3">
           <h1 className="m-0 break-words text-page-title font-bold leading-tight tracking-tight sm:text-page-title-lg">{task.title}</h1>
-          {task.clientName || task.campaignName ? <p className="m-0 text-sm text-muted-foreground">{[task.clientName, task.campaignName].filter(Boolean).join(" · ")}</p> : null}
+          {task.clientName || task.jobName ? <p className="m-0 text-sm text-muted-foreground">{[task.clientName, task.jobName].filter(Boolean).join(" · ")}</p> : null}
           <TaskStatusBadge status={task.status} overdue={isOverdue(task)} />
         </div>
         {canEdit ? <button type="button" onClick={() => void shareTask()} className="inline-flex h-9 items-center gap-2 rounded-md border border-border px-3 text-[13px] font-semibold text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"><Share2 className="h-4 w-4" aria-hidden="true" />Share task</button> : null}
@@ -352,15 +352,15 @@ export function TaskDetailPage({ task, canEdit, canDelete, assignees, onChanged,
                         <SelectContent>{TASK_STATUSES.map((value) => <SelectItem key={value} value={value}>{TASK_STATUS_LABELS[value]}</SelectItem>)}</SelectContent>
                       </Select>
                     </div>
-                    <TaskClientCampaignFields
+                    <TaskClientJobFields
                       clientId={clientId}
-                      campaignId={campaignId}
+                      jobId={jobId}
                       clients={clients}
-                      campaigns={campaigns}
+                      jobs={jobs}
                       disabled={busy || linksLoading}
                       inlineLabels={false}
-                      onClientChange={(value) => { setClientId(value); setCampaignId(null); }}
-                      onCampaignChange={setCampaignId}
+                      onClientChange={(value) => { setClientId(value); setJobId(null); }}
+                      onJobChange={setJobId}
                     />
                   </div>
                   <div className="space-y-1">
@@ -387,7 +387,7 @@ export function TaskDetailPage({ task, canEdit, canDelete, assignees, onChanged,
             <div><span className="block text-xs font-medium text-muted-foreground">Assigned to</span><p className="mt-1 font-medium">{task.assignedToName || "Unassigned"}</p></div>
             {task.createdByName ? <div><span className="block text-xs font-medium text-muted-foreground">Created by</span><p className="mt-1 font-medium">{task.createdByName}</p></div> : null}
             {task.clientName ? <div><span className="block text-xs font-medium text-muted-foreground">Client</span><p className="mt-1 font-medium">{task.clientName}</p></div> : null}
-            {task.campaignId ? <div><span className="block text-xs font-medium text-muted-foreground">Job</span><Link href={jobHref(task.campaignId)} className="mt-1 block font-medium text-primary hover:underline">{task.campaignName || "View job"}</Link></div> : null}
+            {task.jobId ? <div><span className="block text-xs font-medium text-muted-foreground">Job</span><Link href={jobHref(task.jobId)} className="mt-1 block font-medium text-primary hover:underline">{task.jobName || "View job"}</Link></div> : null}
           </section>
           <section className="space-y-4 border-t border-border pt-5">
             <h2 className="m-0 text-base font-semibold">Dates</h2>

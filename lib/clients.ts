@@ -1,4 +1,4 @@
-import type { Campaign } from "@/lib/campaigns";
+import type { Job } from "@/lib/jobs";
 import { makeEmptyWorkspace, type ClientWorkspace } from "@/lib/client-workspaces";
 
 export type Client = {
@@ -34,41 +34,41 @@ export type Client = {
 };
 
 /**
- * Clients are their own Firestore records. A campaign belongs to one client
- * via its `clientId`; a client "has" the campaigns that point at it (see
- * `getClientCampaigns`).
+ * Clients are their own Firestore records. A job belongs to one client
+ * via its `clientId`; a client "has" the jobs that point at it (see
+ * `getClientJobs`).
  */
 export function getClient(slug: string, clients: Client[]): Client | undefined {
   return clients.find((client) => client.slug === slug);
 }
 
-/** The campaigns that belong to this client. */
-export function getClientCampaigns(slug: string, campaigns: Campaign[]): Campaign[] {
-  return campaigns.filter((project) => project.clientId === slug);
+/** The jobs that belong to this client. */
+export function getClientJobs(slug: string, jobs: Job[]): Job[] {
+  return jobs.filter((project) => project.clientId === slug);
 }
 
 /**
- * Campaigns for the clients a creator is rostered on (set from the client
- * workspace's Team tab). There's no per-campaign creator assignment yet, so
+ * Jobs for the clients a creator is rostered on (set from the client
+ * workspace's Team tab). There's no per-job creator assignment yet, so
  * this is the closest real link between a creator and the work they're on.
  */
-export function getCreatorCampaigns(creatorSlug: string, clients: Client[], campaigns: Campaign[]): Campaign[] {
+export function getCreatorJobs(creatorSlug: string, clients: Client[], jobs: Job[]): Job[] {
   const clientSlugs = new Set(clients.filter((client) => client.creatorSlugs?.includes(creatorSlug)).map((client) => client.slug));
-  return campaigns.filter((campaign) => clientSlugs.has(campaign.clientId));
+  return jobs.filter((job) => clientSlugs.has(job.clientId));
 }
 
 /**
  * The workspace content for a client, assembled from the fields that live
- * directly on the client's project; clients/campaigns without curated content
+ * directly on the client's project; clients/jobs without curated content
  * get a blank template so nothing leaks in from another client.
  */
 export function getClientWorkspace(
   clientSlug: string,
   clientName: string,
-  campaignsSource: Campaign[],
+  jobsSource: Job[],
 ): ClientWorkspace {
-  const campaigns = getClientCampaigns(clientSlug, campaignsSource);
-  const project = campaigns.find((item) => item.hasContent) ?? campaigns[0];
+  const jobs = getClientJobs(clientSlug, jobsSource);
+  const project = jobs.find((item) => item.hasContent) ?? jobs[0];
   const website = project?.externalLinks?.find((link) => link.label === "Website")?.href ?? "";
   const empty = makeEmptyWorkspace({ clientName, category: project?.category ?? "", website });
   // Media is added per client from the workspace UI, independent of the
@@ -87,7 +87,7 @@ export function getClientWorkspace(
     primaryColor: project.primaryColor ?? empty.primaryColor,
     brandArchetype: project.brandArchetype ?? empty.brandArchetype,
     moodboardImages,
-    campaignMediaPlans: project.campaignMediaPlans ?? empty.campaignMediaPlans,
+    jobMediaPlans: project.jobMediaPlans ?? empty.jobMediaPlans,
     creativePreviews: project.creativePreviews ?? empty.creativePreviews,
     fontPreview: project.fontPreview ?? empty.fontPreview,
     overviewVideo: project.overviewVideo ?? empty.overviewVideo,

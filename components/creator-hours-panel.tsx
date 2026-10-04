@@ -100,7 +100,7 @@ export function CreatorHoursPanel({ creatorUid, creatorName }: { creatorUid: str
               {recent.map((entry) => (
                 <ClickableTableRow key={entry.id} label={`Open activity ${entry.activity}`} onActivate={() => setSelectedId(entry.id)} className="align-middle">
                   <TableCell className="px-4 py-3">{entry.activity || <span className="text-muted-foreground">—</span>}</TableCell>
-                  <TableCell className="px-4 py-3">{entry.campaignName ?? <span className="text-muted-foreground">—</span>}</TableCell>
+                  <TableCell className="px-4 py-3">{entry.jobName ?? <span className="text-muted-foreground">—</span>}</TableCell>
                   <TableCell className="whitespace-nowrap px-4 py-3">{formatTimestamp(entry.startedAt)}</TableCell>
                   <TableCell className="whitespace-nowrap px-4 py-3">
                     {entry.endedAt ? formatClockFull(elapsedMs(entry, now)) : <span className="font-semibold text-primary">Running…</span>}
@@ -113,7 +113,7 @@ export function CreatorHoursPanel({ creatorUid, creatorName }: { creatorUid: str
       )}
       <Dialog open={Boolean(selected)} onOpenChange={(open) => { if (!open) setSelectedId(null); }}>
         <DialogContent className="sm:max-w-lg">
-          <DialogHeader className="pr-10"><DialogTitle>{selected?.activity || "Activity"}</DialogTitle><DialogDescription>{selected?.campaignName || "No job"}</DialogDescription></DialogHeader>
+          <DialogHeader className="pr-10"><DialogTitle>{selected?.activity || "Activity"}</DialogTitle><DialogDescription>{selected?.jobName || "No job"}</DialogDescription></DialogHeader>
           {selected ? <dl className="grid grid-cols-2 gap-4 text-sm">
             <div><dt className="text-xs text-muted-foreground">Started</dt><dd className="mt-1 font-semibold">{formatTimestamp(selected.startedAt)}</dd></div>
             <div><dt className="text-xs text-muted-foreground">Time</dt><dd className="mt-1 font-semibold tabular-nums">{formatClockFull(elapsedMs(selected, now))}</dd></div>

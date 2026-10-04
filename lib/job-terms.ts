@@ -1,9 +1,9 @@
 import type { PaymentCurrency } from "@/lib/payments";
 
 /**
- * A job is a campaign. The campaign record holds the job details, but it is
+ * The job record holds the job details, but it is
  * public (the homepage reads it), so the assignment and pay terms live here in
- * a private record keyed by the campaign slug. Staff and the assigned person
+ * a private record keyed by the job slug. Staff and the assigned person
  * can read it.
  */
 export type JobTerms = {
@@ -52,7 +52,3 @@ export type ClientContact = {
 };
 
 export const CLIENT_CONTACTS_COLLECTION = "clientContacts";
-
-export function jobHref(slug: string, admin = false): string {
-  return `${admin ? "/admin/jobs" : "/dashboard/jobs"}/${encodeURIComponent(slug)}`;
-}

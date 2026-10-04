@@ -6,11 +6,12 @@ import { useParams, usePathname } from "next/navigation";
 import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { EmptyThumbnail, ImageWithFallback } from "@/components/empty-thumbnail";
 import { Badge as DashboardBadge } from "@/components/dashboard/ui";
-import type { Campaign, CampaignStatus } from "@/lib/campaigns";
+import type { Job, JobStatus } from "@/lib/jobs";
 import { getClient, getClientWorkspace, type Client } from "@/lib/clients";
 import { creatorCategoryOptions as knownCreatorCategories, isCreatorUser, userHref, type User } from "@/lib/users";
 import { readContentFromFirestore } from "@/lib/firebase/client-content";
 import { firebaseDb } from "@/lib/firebase/client";
+import { jobsCollection } from "@/lib/firebase/job-collections";
 import { ClientActions } from "@/components/client-actions";
 import { ClientCreatorAddAction } from "@/components/client-creator-add-action";
 import { ClientMediaAddAction, ClientMediaDeleteAction } from "@/components/client-media-add-action";
@@ -20,42 +21,42 @@ import { FilterBar, type FilterTab, type SortOption, type ViewMode } from "@/com
 import { useAuth } from "@/components/auth-provider";
 import { UserActions } from "@/components/user-actions";
 import { longDate, plural } from "@/lib/format";
-import { campaignWorkspaceStatuses } from "@/lib/client-data";
-import { fontOptions, ctaOptions } from "@/lib/campaign-options";
+import { jobWorkspaceStatuses } from "@/lib/client-data";
+import { fontOptions, ctaOptions } from "@/lib/job-options";
 import { ClientWorkspaceSkeleton } from "@/components/dashboard/loading-skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 import type {
   PhaseContent,
-  CampaignListItem,
-  CampaignWorkspaceStatus,
+  JobListItem,
+  JobWorkspaceStatus,
 } from "@/lib/client-data";
 
-// The public campaign data uses live/pitch/completed; the workspace exposes a
+// The public job data uses live/pitch/completed; the workspace exposes a
 // slightly richer editable set. Map the real status onto that set so the card
-// and overview reflect the actual campaign rather than a flat "Draft".
-function workspaceStatusFromCampaign(status: CampaignStatus): CampaignWorkspaceStatus {
+// and overview reflect the actual job rather than a flat "Draft".
+function workspaceStatusFromJob(status: JobStatus): JobWorkspaceStatus {
   if (status === "live") return "Live";
   if (status === "completed") return "Completed";
   return "Pitch";
 }
 
-function campaignImageFor(campaignId: string, campaigns: Campaign[]): string {
-  return campaigns.find((campaign) => campaign.slug === campaignId)?.image ?? "/images/projects/project-placeholder.svg";
+function jobImageFor(jobId: string, jobs: Job[]): string {
+  return jobs.find((job) => job.slug === jobId)?.image ?? "/images/projects/project-placeholder.svg";
 }
 
-type CaseStudyDraft = Pick<Campaign, "challenge" | "insight" | "strategy" | "execution" | "outcome"> & {
+type CaseStudyDraft = Pick<Job, "challenge" | "insight" | "strategy" | "execution" | "outcome"> & {
   platform: string;
 };
 
-function caseStudyFromCampaign(campaign?: Campaign): CaseStudyDraft {
+function caseStudyFromJob(job?: Job): CaseStudyDraft {
   return {
-    challenge: campaign?.challenge ?? "",
-    insight: campaign?.insight ?? "",
-    strategy: campaign?.strategy ?? "",
-    platform: campaign?.platform.join(", ") ?? "",
-    execution: campaign?.execution ?? "",
-    outcome: campaign?.outcome ?? "",
+    challenge: job?.challenge ?? "",
+    insight: job?.insight ?? "",
+    strategy: job?.strategy ?? "",
+    platform: job?.platform.join(", ") ?? "",
+    execution: job?.execution ?? "",
+    outcome: job?.outcome ?? "",
   };
 }
 
@@ -127,7 +128,7 @@ function ClientWorkspaceHero({
       <div className="relative h-[140px] overflow-hidden rounded-2xl bg-muted sm:h-[180px]">
         <ImageWithFallback
           src={heroImage}
-          alt={`${clientName} campaign`}
+          alt={`${clientName} job`}
           className="h-full w-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/5 to-black/20" aria-hidden="true" />
@@ -236,8 +237,8 @@ export default function ClientPage() {
     };
   }, [authLoading, user]);
 
-  const initialView: OneUtilityWorkspaceView = pathname.endsWith("/campaigns")
-    ? "campaign"
+  const initialView: OneUtilityWorkspaceView = pathname.endsWith("/jobs")
+    ? "job"
     : pathname.endsWith("/brand-dna")
       ? "brand"
       : pathname.endsWith("/moodboard") || pathname.endsWith("/media")
@@ -266,7 +267,7 @@ export default function ClientPage() {
       slug={slug}
       initialView={initialView}
       clients={content.clients}
-      campaigns={content.campaigns}
+      jobs={content.jobs}
       users={content.users}
     />
   );
@@ -493,16 +494,16 @@ function StrategyEditor({ markdown }: { markdown: string }) {
   );
 }
 
-type OneUtilityWorkspaceView = "overview" | "campaign" | "brand" | "moodboard" | "creators";
-type ClientCampaignFilter = "all" | CampaignWorkspaceStatus;
-type ClientCampaignSort = "recent" | "name";
+type OneUtilityWorkspaceView = "overview" | "job" | "brand" | "moodboard" | "creators";
+type ClientJobFilter = "all" | JobWorkspaceStatus;
+type ClientJobSort = "recent" | "name";
 type ClientCreatorSort = "name" | "category" | "availability";
 
-const CLIENT_CAMPAIGN_FILTERS: FilterTab<ClientCampaignFilter>[] = [
+const CLIENT_JOB_FILTERS: FilterTab<ClientJobFilter>[] = [
   { key: "all", label: "All" },
-  ...campaignWorkspaceStatuses.map((status) => ({ key: status, label: status })),
+  ...jobWorkspaceStatuses.map((status) => ({ key: status, label: status })),
 ];
-const CLIENT_CAMPAIGN_SORTS: SortOption<ClientCampaignSort>[] = [
+const CLIENT_JOB_SORTS: SortOption<ClientJobSort>[] = [
   { key: "recent", label: "Most recent" },
   { key: "name", label: "Name (A–Z)" },
 ];
@@ -516,52 +517,52 @@ function OneUtilityClientWorkspace({
   slug,
   initialView = "overview",
   clients,
-  campaigns: availableCampaigns,
+  jobs: availableJobs,
   users: availableUsers,
 }: {
   slug: string;
   initialView?: OneUtilityWorkspaceView;
   clients: Client[];
-  campaigns: Campaign[];
+  jobs: Job[];
   users: User[];
 }) {
   const client = getClient(slug, clients);
   const clientName = client?.name ?? "Client";
-  const workspace = getClientWorkspace(slug, clientName, availableCampaigns);
+  const workspace = getClientWorkspace(slug, clientName, availableJobs);
   const preset = workspace.preset;
   const clientProfileImage = client?.profileImage ?? "/images/projects/project-placeholder.svg";
-  const initialClientCampaigns = availableCampaigns.filter((campaign) => campaign.clientId === slug);
-  const primaryCampaign = initialClientCampaigns[0];
+  const initialClientJobs = availableJobs.filter((job) => job.clientId === slug);
+  const primaryJob = initialClientJobs[0];
   const [projectName, setProjectName] = useState(
-    primaryCampaign?.campaign ?? primaryCampaign?.name ?? preset.name,
+    primaryJob?.title ?? primaryJob?.name ?? preset.name,
   );
   const [activeMainTab, setActiveMainTab] = useState<
     OneUtilityWorkspaceView
   >(initialView);
   const [profileSection, setProfileSection] = useState<"company" | "design">("company");
-  const [campaignView, setCampaignView] = useState<"home" | "editor">("home");
-  const [campaignSubTab, setCampaignSubTab] = useState<"overview" | "case-study" | "strategy" | "creative" | "marketing">("overview");
+  const [jobView, setJobView] = useState<"home" | "editor">("home");
+  const [jobSubTab, setJobSubTab] = useState<"overview" | "case-study" | "strategy" | "creative" | "marketing">("overview");
   const [selectedCreative, setSelectedCreative] = useState<{ src: string; alt: string } | null>(null);
   const [selectedMediaIndex, setSelectedMediaIndex] = useState<number | null>(null);
-  const [campaigns, setCampaigns] = useState<CampaignListItem[]>(() =>
-    initialClientCampaigns.length > 0
-      ? initialClientCampaigns.map((campaign) => ({
-        id: campaign.slug,
-        title: campaign.campaign ?? campaign.name,
-        status: workspaceStatusFromCampaign(campaign.status),
+  const [jobs, setJobs] = useState<JobListItem[]>(() =>
+    initialClientJobs.length > 0
+      ? initialClientJobs.map((job) => ({
+        id: job.slug,
+        title: job.title ?? job.name,
+        status: workspaceStatusFromJob(job.status),
       }))
-      : [{ id: "client-campaign", title: "Campaign to be defined", status: "Draft" }]
+      : [{ id: "client-job", title: "Job to be defined", status: "Draft" }]
   );
-  const [campaignSearch, setCampaignSearch] = useState("");
-  const [campaignFilter, setCampaignFilter] = useState<ClientCampaignFilter>("all");
-  const [campaignSort, setCampaignSort] = useState<ClientCampaignSort>("recent");
-  const [campaignListView, setCampaignListView] = useState<ViewMode>("cards");
-  const [activeCampaignId, setActiveCampaignId] = useState(() => initialClientCampaigns[0]?.slug ?? "client-campaign");
-  const [campaignDescriptions, setCampaignDescriptions] = useState<Record<string, string>>(() =>
-    Object.fromEntries(initialClientCampaigns.map((campaign) => [campaign.slug, campaign.summary])),
+  const [jobSearch, setJobSearch] = useState("");
+  const [jobFilter, setJobFilter] = useState<ClientJobFilter>("all");
+  const [jobSort, setJobSort] = useState<ClientJobSort>("recent");
+  const [jobListView, setJobListView] = useState<ViewMode>("cards");
+  const [activeJobId, setActiveJobId] = useState(() => initialClientJobs[0]?.slug ?? "client-job");
+  const [jobDescriptions, setJobDescriptions] = useState<Record<string, string>>(() =>
+    Object.fromEntries(initialClientJobs.map((job) => [job.slug, job.summary])),
   );
   const [caseStudies, setCaseStudies] = useState<Record<string, CaseStudyDraft>>(() =>
-    Object.fromEntries(initialClientCampaigns.map((campaign) => [campaign.slug, caseStudyFromCampaign(campaign)])),
+    Object.fromEntries(initialClientJobs.map((job) => [job.slug, caseStudyFromJob(job)])),
   );
   type Section =
     | "social"
@@ -596,14 +597,14 @@ function OneUtilityClientWorkspace({
     setDesignDirty(true);
   };
 
-  // Campaign overview state
-  // Campaign lead is stored as the person's slug (leadUserId on the real
-  // campaign record), so the workspace and the public campaign page always
+  // Job overview state
+  // Job lead is stored as the person's slug (leadUserId on the real
+  // job record), so the workspace and the public job page always
   // resolve to the same person.
-  const [campaignLeadSlug, setCampaignLeadSlug] = useState(initialClientCampaigns[0]?.leadUserId ?? "");
-  const [campaignStart, setCampaignStart] = useState("2026-08-01");
-  const [campaignEnd, setCampaignEnd] = useState("2026-10-31");
-  const [campaignDeadline, setCampaignDeadline] = useState("2026-07-25");
+  const [jobLeadSlug, setJobLeadSlug] = useState(initialClientJobs[0]?.leadUserId ?? "");
+  const [jobStart, setJobStart] = useState("2026-08-01");
+  const [jobEnd, setJobEnd] = useState("2026-10-31");
+  const [jobDeadline, setJobDeadline] = useState("2026-07-25");
 
   // Settings state
   const [clientDescription, setClientDescription] = useState(client?.description?.trim() ?? "");
@@ -628,21 +629,21 @@ function OneUtilityClientWorkspace({
     () => availableUsers.filter((user) => selectedCreatorSlugs.includes(user.slug)),
     [availableUsers, selectedCreatorSlugs],
   );
-  const visibleCampaigns = React.useMemo(() => {
-    const query = campaignSearch.trim().toLowerCase();
-    const filtered = campaigns.filter((campaign) => {
-      const matchesStatus = campaignFilter === "all" || campaign.status === campaignFilter;
-      const matchesSearch = !query || [campaign.title, campaign.status].join(" ").toLowerCase().includes(query);
+  const visibleJobs = React.useMemo(() => {
+    const query = jobSearch.trim().toLowerCase();
+    const filtered = jobs.filter((job) => {
+      const matchesStatus = jobFilter === "all" || job.status === jobFilter;
+      const matchesSearch = !query || [job.title, job.status].join(" ").toLowerCase().includes(query);
       return matchesStatus && matchesSearch;
     });
 
     return [...filtered].sort((a, b) => {
-      if (campaignSort === "name") return a.title.localeCompare(b.title);
-      const aDate = availableCampaigns.find((campaign) => campaign.slug === a.id)?.liveAt?.date ?? "";
-      const bDate = availableCampaigns.find((campaign) => campaign.slug === b.id)?.liveAt?.date ?? "";
+      if (jobSort === "name") return a.title.localeCompare(b.title);
+      const aDate = availableJobs.find((job) => job.slug === a.id)?.liveAt?.date ?? "";
+      const bDate = availableJobs.find((job) => job.slug === b.id)?.liveAt?.date ?? "";
       return bDate.localeCompare(aDate);
     });
-  }, [availableCampaigns, campaignFilter, campaignSearch, campaignSort, campaigns]);
+  }, [availableJobs, jobFilter, jobSearch, jobSort, jobs]);
   const creatorCategoryOptions = React.useMemo(
     () => [
       { value: "all", label: "All categories" },
@@ -671,19 +672,19 @@ function OneUtilityClientWorkspace({
       return a.name.localeCompare(b.name);
     });
   }, [creatorCategory, creatorSearch, creatorSort, selectedCreators]);
-  const latestCampaigns = React.useMemo(
-    () => [...campaigns]
+  const latestJobs = React.useMemo(
+    () => [...jobs]
       .sort((a, b) => {
-        const aDate = availableCampaigns.find((campaign) => campaign.slug === a.id)?.liveAt?.date ?? "";
-        const bDate = availableCampaigns.find((campaign) => campaign.slug === b.id)?.liveAt?.date ?? "";
+        const aDate = availableJobs.find((job) => job.slug === a.id)?.liveAt?.date ?? "";
+        const bDate = availableJobs.find((job) => job.slug === b.id)?.liveAt?.date ?? "";
         return bDate.localeCompare(aDate);
       })
       .slice(0, 3),
-    [availableCampaigns, campaigns],
+    [availableJobs, jobs],
   );
   const latestCreators = selectedCreators.slice(0, 4);
 
-  const nextCampaignNumberRef = useRef(2);
+  const nextJobNumberRef = useRef(2);
 
   // Toast state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -705,7 +706,7 @@ function OneUtilityClientWorkspace({
     showToast("Profile saved.");
   };
 
-  const handleShareCampaign = async () => {
+  const handleShareJob = async () => {
     const link = typeof window !== "undefined" ? window.location.href : "";
 
     if (typeof navigator !== "undefined" && navigator.share) {
@@ -719,22 +720,22 @@ function OneUtilityClientWorkspace({
 
     if (typeof navigator !== "undefined" && navigator.clipboard) {
       await navigator.clipboard.writeText(link);
-      showToast(`Campaign link copied.\n\n${link}`);
+      showToast(`Job link copied.\n\n${link}`);
       return;
     }
 
     showToast("Sharing is unavailable in this browser.");
   };
 
-  const handleNewCampaign = () => {
-    const campaignNumber = nextCampaignNumberRef.current;
-    const id = `campaign-${campaignNumber}`;
-    const title = `Untitled campaign ${campaignNumber}`;
-    nextCampaignNumberRef.current += 1;
-    setCampaigns((prev) => [...prev, { id, title, status: "Draft" }]);
-    setActiveCampaignId(id);
+  const handleNewJob = () => {
+    const jobNumber = nextJobNumberRef.current;
+    const id = `job-${jobNumber}`;
+    const title = `Untitled job ${jobNumber}`;
+    nextJobNumberRef.current += 1;
+    setJobs((prev) => [...prev, { id, title, status: "Draft" }]);
+    setActiveJobId(id);
     setProjectName(title);
-    setCampaignDescriptions((previous) => ({ ...previous, [id]: "" }));
+    setJobDescriptions((previous) => ({ ...previous, [id]: "" }));
     setActiveSection("social");
     setMarketAudience(preset.footprintShort);
     setBrandUrl(preset.url);
@@ -742,41 +743,41 @@ function OneUtilityClientWorkspace({
     setAesthetic(preset.aesthetic);
     setToneVal(preset.toneVal);
     setToneLabel(preset.toneText);
-    setCampaignCopy(workspace.phaseContent.launch);
-    setActiveMainTab("campaign");
-    setCampaignView("editor");
-    showToast("New campaign draft created.");
+    setJobCopy(workspace.phaseContent.launch);
+    setActiveMainTab("job");
+    setJobView("editor");
+    showToast("New job draft created.");
   };
 
-  const handleSelectCampaign = (campaignId: string) => {
-    const selectedCampaign = campaigns.find((campaign) => campaign.id === campaignId);
-    if (!selectedCampaign) return;
+  const handleSelectJob = (jobId: string) => {
+    const selectedJob = jobs.find((job) => job.id === jobId);
+    if (!selectedJob) return;
 
-    setActiveCampaignId(selectedCampaign.id);
-    setProjectName(selectedCampaign.title);
-    const realCampaign = availableCampaigns.find((campaign) => campaign.slug === selectedCampaign.id);
-    setCampaignLeadSlug(realCampaign?.leadUserId ?? "");
+    setActiveJobId(selectedJob.id);
+    setProjectName(selectedJob.title);
+    const realJob = availableJobs.find((job) => job.slug === selectedJob.id);
+    setJobLeadSlug(realJob?.leadUserId ?? "");
   };
 
-  const handleOpenCampaign = (campaign: CampaignListItem) => {
-    handleSelectCampaign(campaign.id);
-    setActiveMainTab("campaign");
-    setCampaignView("editor");
+  const handleOpenJob = (job: JobListItem) => {
+    handleSelectJob(job.id);
+    setActiveMainTab("job");
+    setJobView("editor");
   };
 
   const handleProjectNameChange = (title: string) => {
     setProjectName(title);
-    setCampaigns((prev) =>
-      prev.map((campaign) =>
-        campaign.id === activeCampaignId ? { ...campaign, title } : campaign
+    setJobs((prev) =>
+      prev.map((job) =>
+        job.id === activeJobId ? { ...job, title } : job
       )
     );
   };
 
-  const handleCampaignStatusChange = (status: CampaignWorkspaceStatus) => {
-    setCampaigns((prev) =>
-      prev.map((campaign) =>
-        campaign.id === activeCampaignId ? { ...campaign, status } : campaign
+  const handleJobStatusChange = (status: JobWorkspaceStatus) => {
+    setJobs((prev) =>
+      prev.map((job) =>
+        job.id === activeJobId ? { ...job, status } : job
       )
     );
   };
@@ -793,8 +794,8 @@ function OneUtilityClientWorkspace({
     setToneLabel(toneMap[val] || "Conversational");
   };
 
-  const [campaignCopy, setCampaignCopy] = useState<PhaseContent>(workspace.phaseContent.launch);
-  const phase = campaignCopy;
+  const [jobCopy, setJobCopy] = useState<PhaseContent>(workspace.phaseContent.launch);
+  const phase = jobCopy;
   const creativePreview =
     activeSection === "social"
       ? {
@@ -847,36 +848,36 @@ function OneUtilityClientWorkspace({
                 aspect: "aspect-[3/4]",
               }
               : null;
-  const activeCampaign =
-    campaigns.find((campaign) => campaign.id === activeCampaignId) ?? campaigns[0];
-  const campaignDescription = campaignDescriptions[activeCampaignId] ?? "";
-  const activeCampaignRecord = availableCampaigns.find((campaign) => campaign.slug === activeCampaign?.id);
-  const overviewDescription = client?.description?.trim() || campaignDescription.trim() || activeCampaignRecord?.summary || "No description available yet.";
-  const campaignLeadUser = availableUsers.find((user) => user.slug === campaignLeadSlug);
-  const updateCampaignLead = async (nextSlug: string) => {
-    setCampaignLeadSlug(nextSlug);
-    if (!activeCampaignRecord) return;
+  const activeJob =
+    jobs.find((job) => job.id === activeJobId) ?? jobs[0];
+  const jobDescription = jobDescriptions[activeJobId] ?? "";
+  const activeJobRecord = availableJobs.find((job) => job.slug === activeJob?.id);
+  const overviewDescription = client?.description?.trim() || jobDescription.trim() || activeJobRecord?.summary || "No description available yet.";
+  const jobLeadUser = availableUsers.find((user) => user.slug === jobLeadSlug);
+  const updateJobLead = async (nextSlug: string) => {
+    setJobLeadSlug(nextSlug);
+    if (!activeJobRecord) return;
     try {
-      await updateDoc(doc(firebaseDb, "campaigns", activeCampaignRecord.slug), {
+      await updateDoc(doc(firebaseDb, await jobsCollection(), activeJobRecord.slug), {
         leadUserId: nextSlug || null,
         updatedAt: serverTimestamp(),
       });
     } catch (error) {
-      console.error("Unable to update campaign lead", error);
-      showToast("Couldn’t update the campaign lead. Try again.");
+      console.error("Unable to update job lead", error);
+      showToast("Couldn’t update the job lead. Try again.");
     }
   };
-  const updateCampaignDescription = (value: string) =>
-    setCampaignDescriptions((previous) => ({ ...previous, [activeCampaignId]: value }));
-  const activeCampaignMediaPlan = workspace.campaignMediaPlans[activeCampaignId];
-  const activeCaseStudy = caseStudies[activeCampaignId] ?? caseStudyFromCampaign();
+  const updateJobDescription = (value: string) =>
+    setJobDescriptions((previous) => ({ ...previous, [activeJobId]: value }));
+  const activeJobMediaPlan = workspace.jobMediaPlans[activeJobId];
+  const activeCaseStudy = caseStudies[activeJobId] ?? caseStudyFromJob();
   const updateCaseStudy = (field: keyof CaseStudyDraft, value: string) =>
     setCaseStudies((previous) => ({
       ...previous,
-      [activeCampaignId]: { ...activeCaseStudy, [field]: value },
+      [activeJobId]: { ...activeCaseStudy, [field]: value },
     }));
   const updateCopy = (field: keyof PhaseContent, value: string) =>
-    setCampaignCopy((prev) => ({ ...prev, [field]: value }));
+    setJobCopy((prev) => ({ ...prev, [field]: value }));
 
   const getContrastTextColor = (hex: string) => {
     const value = hex.replace("#", "");
@@ -899,11 +900,11 @@ function OneUtilityClientWorkspace({
       onSelect: () => setActiveMainTab("overview"),
     },
     {
-      view: "campaign",
+      view: "job",
       label: "Jobs",
       onSelect: () => {
-        setActiveMainTab("campaign");
-        setCampaignView("home");
+        setActiveMainTab("job");
+        setJobView("home");
       },
     },
     { view: "moodboard", label: "Media", onSelect: () => setActiveMainTab("moodboard") },
@@ -942,7 +943,7 @@ function OneUtilityClientWorkspace({
   );
   const workspaceHeroProps = {
     clientName,
-    heroImage: campaignImageFor(activeCampaignId, availableCampaigns),
+    heroImage: jobImageFor(activeJobId, availableJobs),
     clientProfileImage,
     onHome: () => setActiveMainTab("overview"),
     creators: selectedCreators,
@@ -950,7 +951,7 @@ function OneUtilityClientWorkspace({
     shareAction: (
       <button
         type="button"
-        onClick={handleShareCampaign}
+        onClick={handleShareJob}
         aria-label="Share"
         className="flex h-7 items-center justify-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-xs font-semibold text-foreground transition hover:bg-muted"
       >
@@ -965,7 +966,7 @@ function OneUtilityClientWorkspace({
       ? "Overview"
       : workspaceTabs.find((tab) => tab.view === activeMainTab)?.label ?? "Overview";
 
-  const campaignSubTabs: { id: typeof campaignSubTab; label: string }[] = [
+  const jobSubTabs: { id: typeof jobSubTab; label: string }[] = [
     { id: "overview", label: "Overview" },
     { id: "case-study", label: "Case study" },
     { id: "strategy", label: "Strategy" },
@@ -976,7 +977,7 @@ function OneUtilityClientWorkspace({
   const activeSubTabRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     activeSubTabRef.current?.scrollIntoView({ block: "nearest", inline: "center" });
-  }, [campaignSubTab]);
+  }, [jobSubTab]);
 
   return (
     <div
@@ -1009,9 +1010,9 @@ function OneUtilityClientWorkspace({
             </div>
           </div>
 
-          {/* CAMPAIGN VIEW */}
-          {activeMainTab === "campaign" && (
-            campaignView === "home" ? (
+          {/* JOB VIEW */}
+          {activeMainTab === "job" && (
+            jobView === "home" ? (
               <ClientWorkspaceContent>
                   <ClientWorkspaceHeading
                     title="Jobs"
@@ -1020,7 +1021,7 @@ function OneUtilityClientWorkspace({
                         {contentEditAction}
                         <button
                           type="button"
-                          onClick={handleNewCampaign}
+                          onClick={handleNewJob}
                           className="flex h-9 items-center gap-1.5 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground transition hover:opacity-90"
                         >
                           <Plus className="h-3.5 w-3.5" />
@@ -1030,43 +1031,43 @@ function OneUtilityClientWorkspace({
                     }
                   />
                   <FilterBar
-                    panelId="client-campaign-filter-panel"
-                    tabs={CLIENT_CAMPAIGN_FILTERS}
-                    activeTab={campaignFilter}
-                    onTabChange={setCampaignFilter}
+                    panelId="client-job-filter-panel"
+                    tabs={CLIENT_JOB_FILTERS}
+                    activeTab={jobFilter}
+                    onTabChange={setJobFilter}
                     tabsLabel="Status"
-                    search={campaignSearch}
-                    onSearchChange={setCampaignSearch}
-                    searchPlaceholder="Search campaigns"
-                    sortOptions={CLIENT_CAMPAIGN_SORTS}
-                    activeSort={campaignSort}
-                    onSortChange={setCampaignSort}
-                    resultCount={plural(visibleCampaigns.length, "campaign")}
-                    view={campaignListView}
-                    onViewChange={setCampaignListView}
+                    search={jobSearch}
+                    onSearchChange={setJobSearch}
+                    searchPlaceholder="Search jobs"
+                    sortOptions={CLIENT_JOB_SORTS}
+                    activeSort={jobSort}
+                    onSortChange={setJobSort}
+                    resultCount={plural(visibleJobs.length, "job")}
+                    view={jobListView}
+                    onViewChange={setJobListView}
                     className="my-0"
                   />
-                  <section id="client-campaign-filter-panel" aria-label={`${clientName} campaigns`} className="pt-2">
-                    {visibleCampaigns.length > 0 ? (
-                      campaignListView === "cards" ? (
+                  <section id="client-job-filter-panel" aria-label={`${clientName} jobs`} className="pt-2">
+                    {visibleJobs.length > 0 ? (
+                      jobListView === "cards" ? (
                         <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2 lg:grid-cols-3">
-                          {visibleCampaigns.map((campaign) => {
-                            const record = availableCampaigns.find((item) => item.slug === campaign.id);
+                          {visibleJobs.map((job) => {
+                            const record = availableJobs.find((item) => item.slug === job.id);
                             return (
-                              <li key={campaign.id}>
+                              <li key={job.id}>
                                 <DashboardCard
                                   className="h-full"
-                                  actions={record ? <DashboardCardActions collection="campaigns" slug={record.slug} titleField="campaign" title={record.campaign ?? record.name} copyLabel="Duplicate" /> : undefined}
+                                  actions={record ? <DashboardCardActions collection="jobs" slug={record.slug} titleField="title" title={record.title ?? record.name} copyLabel="Duplicate" /> : undefined}
                                 >
                                   <button
                                     type="button"
-                                    onClick={() => handleOpenCampaign(campaign)}
+                                    onClick={() => handleOpenJob(job)}
                                     className="group flex h-full w-full flex-col text-left text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                                   >
                                     <div className="h-28 shrink-0 overflow-hidden bg-muted">
                                       <ImageWithFallback
-                                        src={campaignImageFor(campaign.id, availableCampaigns)}
-                                        alt={record?.imageAlt ?? campaign.title}
+                                        src={jobImageFor(job.id, availableJobs)}
+                                        alt={record?.imageAlt ?? job.title}
                                         className="h-full w-full object-cover"
                                         iconClassName="h-10 w-10"
                                       />
@@ -1076,13 +1077,13 @@ function OneUtilityClientWorkspace({
                                         {clientName}
                                       </span>
                                       <h3 className="m-0 line-clamp-2 text-[16px] font-semibold leading-tight group-hover:text-primary">
-                                        {campaign.title}
+                                        {job.title}
                                       </h3>
                                       <div className="mt-auto flex items-center justify-between gap-3 text-[12px] text-muted-foreground">
-                                        <DashboardBadge tone={campaign.status === "Live" ? "active" : "neutral"}>
-                                          {campaign.status}
+                                        <DashboardBadge tone={job.status === "Live" ? "active" : "neutral"}>
+                                          {job.status}
                                         </DashboardBadge>
-                                        <span>{record?.category ?? "Campaign"}</span>
+                                        <span>{record?.category ?? "Job"}</span>
                                       </div>
                                     </div>
                                   </button>
@@ -1096,7 +1097,7 @@ function OneUtilityClientWorkspace({
                           <Table className="w-full border-collapse">
                             <TableHeader>
                               <TableRow>
-                                <TableHead>Campaign</TableHead>
+                                <TableHead>Job</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead>Category</TableHead>
                                 <TableHead>Year</TableHead>
@@ -1104,26 +1105,26 @@ function OneUtilityClientWorkspace({
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {visibleCampaigns.map((campaign) => {
-                                const record = availableCampaigns.find((item) => item.slug === campaign.id);
+                              {visibleJobs.map((job) => {
+                                const record = availableJobs.find((item) => item.slug === job.id);
                                 return (
-                                  <ClickableTableRow key={campaign.id} label={`Open campaign ${campaign.title}`} onActivate={() => handleOpenCampaign(campaign)}>
+                                  <ClickableTableRow key={job.id} label={`Open job ${job.title}`} onActivate={() => handleOpenJob(job)}>
                                     <TableCell className="px-4 py-3.5 font-semibold">
-                                      <button type="button" onClick={() => handleOpenCampaign(campaign)} className="text-left text-foreground hover:text-primary focus-visible:text-primary">
-                                        {campaign.title}
+                                      <button type="button" onClick={() => handleOpenJob(job)} className="text-left text-foreground hover:text-primary focus-visible:text-primary">
+                                        {job.title}
                                       </button>
                                     </TableCell>
-                                    <TableCell className="px-4 py-3.5"><DashboardBadge tone={campaign.status === "Live" ? "active" : "neutral"}>{campaign.status}</DashboardBadge></TableCell>
+                                    <TableCell className="px-4 py-3.5"><DashboardBadge tone={job.status === "Live" ? "active" : "neutral"}>{job.status}</DashboardBadge></TableCell>
                                     <TableCell className="px-4 py-3.5 text-muted-foreground">{record?.category ?? "—"}</TableCell>
                                     <TableCell className="whitespace-nowrap px-4 py-3.5 text-muted-foreground">{record?.year ?? "—"}</TableCell>
                                     <TableCell className="px-4 py-3.5 text-right">
                                       {record ? (
                                         <span className="inline-flex">
                                           <DashboardCardActions
-                                            collection="campaigns"
+                                            collection="jobs"
                                             slug={record.slug}
-                                            titleField="campaign"
-                                            title={record.campaign ?? record.name}
+                                            titleField="title"
+                                            title={record.title ?? record.name}
                                             copyLabel="Duplicate"
                                           />
                                         </span>
@@ -1138,7 +1139,7 @@ function OneUtilityClientWorkspace({
                       )
                     ) : (
                       <p className="m-0 py-8 text-center text-sm text-muted-foreground">
-                        No campaigns match this search or filter.
+                        No jobs match this search or filter.
                       </p>
                     )}
                   </section>
@@ -1149,8 +1150,8 @@ function OneUtilityClientWorkspace({
                     <div className="flex flex-wrap items-center justify-between gap-3 shrink-0 border-b border-border pb-3">
                       <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto sm:flex-1">
                         <button
-                          onClick={() => setCampaignView("home")}
-                          aria-label="Back to campaigns"
+                          onClick={() => setJobView("home")}
+                          aria-label="Back to jobs"
                           className="grid h-10 w-10 flex-none place-items-center rounded-md border border-border text-foreground transition hover:bg-muted hover:text-primary sm:h-8 sm:w-8"
                         >
                           <ChevronLeft className="w-4 h-4" />
@@ -1159,19 +1160,19 @@ function OneUtilityClientWorkspace({
                           type="text"
                           value={projectName}
                           onChange={(e) => handleProjectNameChange(e.target.value)}
-                          aria-label="Campaign title"
+                          aria-label="Job title"
                           className="min-w-0 flex-1 bg-transparent border-b border-transparent hover:border-border focus:border-primary px-1 py-0.5 text-sm font-semibold tracking-tight text-foreground outline-none transition placeholder:text-muted-foreground"
                         />
                       </div>
 
-                      {/* CAMPAIGN SUB-TABS */}
+                      {/* JOB SUB-TABS */}
                       <div
                         role="tablist"
-                        aria-label="Campaign sections"
+                        aria-label="Job sections"
                         className="no-scrollbar -mx-4 flex w-full items-center gap-1 overflow-x-auto px-4 text-sm sm:mx-0 sm:w-auto sm:px-0"
                       >
-                        {campaignSubTabs.map((tab, index) => {
-                          const isActive = campaignSubTab === tab.id;
+                        {jobSubTabs.map((tab, index) => {
+                          const isActive = jobSubTab === tab.id;
                           return (
                             <React.Fragment key={tab.id}>
                               {index > 0 && (
@@ -1183,7 +1184,7 @@ function OneUtilityClientWorkspace({
                                 role="tab"
                                 aria-selected={isActive}
                                 ref={isActive ? activeSubTabRef : undefined}
-                                onClick={() => setCampaignSubTab(tab.id)}
+                                onClick={() => setJobSubTab(tab.id)}
                                 className={`shrink-0 whitespace-nowrap rounded-md px-3 py-2 font-medium transition ${isActive
                                   ? "bg-muted font-semibold text-foreground sm:bg-transparent"
                                   : "text-muted-foreground hover:text-foreground"
@@ -1197,35 +1198,35 @@ function OneUtilityClientWorkspace({
                       </div>
                     </div>
 
-                    {/* CAMPAIGN SUB-TAB: OVERVIEW */}
-                    {campaignSubTab === "overview" && (
+                    {/* JOB SUB-TAB: OVERVIEW */}
+                    {jobSubTab === "overview" && (
                       <div className="py-4">
                         <div className="space-y-4 max-w-2xl">
                           <CopyField
-                            label="Campaign name"
+                            label="Job name"
                             value={projectName}
                             onChange={handleProjectNameChange}
                           />
 
                           <CopyField
-                            label="Campaign description"
-                            value={campaignDescription}
-                            onChange={updateCampaignDescription}
+                            label="Job description"
+                            value={jobDescription}
+                            onChange={updateJobDescription}
                             textarea
                             rows={4}
                           />
 
                           <div className="space-y-1.5">
-                            <label htmlFor="campaignStatusOverview" className="text-sm font-medium text-foreground">
+                            <label htmlFor="jobStatusOverview" className="text-sm font-medium text-foreground">
                               Status
                             </label>
                             <select
-                              id="campaignStatusOverview"
-                              value={activeCampaign?.status ?? "Draft"}
-                              onChange={(e) => handleCampaignStatusChange(e.target.value as CampaignWorkspaceStatus)}
+                              id="jobStatusOverview"
+                              value={activeJob?.status ?? "Draft"}
+                              onChange={(e) => handleJobStatusChange(e.target.value as JobWorkspaceStatus)}
                               className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm text-foreground outline-none transition"
                             >
-                              {campaignWorkspaceStatuses.map((status) => (
+                              {jobWorkspaceStatuses.map((status) => (
                                 <option key={status} value={status}>
                                   {status}
                                 </option>
@@ -1234,13 +1235,13 @@ function OneUtilityClientWorkspace({
                           </div>
 
                           <div className="space-y-1.5">
-                            <label htmlFor="campaignLeadOverview" className="text-sm font-medium text-foreground">
-                              Campaign lead
+                            <label htmlFor="jobLeadOverview" className="text-sm font-medium text-foreground">
+                              Job lead
                             </label>
                             <select
-                              id="campaignLeadOverview"
-                              value={campaignLeadSlug}
-                              onChange={(e) => void updateCampaignLead(e.target.value)}
+                              id="jobLeadOverview"
+                              value={jobLeadSlug}
+                              onChange={(e) => void updateJobLead(e.target.value)}
                               className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm text-foreground outline-none transition"
                             >
                               <option value="">Unassigned</option>
@@ -1257,32 +1258,32 @@ function OneUtilityClientWorkspace({
 
                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div className="space-y-1.5">
-                              <label htmlFor="campaignStart" className="text-sm font-medium text-foreground">Campaign start</label>
+                              <label htmlFor="jobStart" className="text-sm font-medium text-foreground">Job start</label>
                               <input
                                 type="date"
-                                id="campaignStart"
-                                value={campaignStart}
-                                onChange={(e) => setCampaignStart(e.target.value)}
+                                id="jobStart"
+                                value={jobStart}
+                                onChange={(e) => setJobStart(e.target.value)}
                                 className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm text-foreground outline-none transition"
                               />
                             </div>
                             <div className="space-y-1.5">
-                              <label htmlFor="campaignEnd" className="text-sm font-medium text-foreground">Campaign end</label>
+                              <label htmlFor="jobEnd" className="text-sm font-medium text-foreground">Job end</label>
                               <input
                                 type="date"
-                                id="campaignEnd"
-                                value={campaignEnd}
-                                onChange={(e) => setCampaignEnd(e.target.value)}
+                                id="jobEnd"
+                                value={jobEnd}
+                                onChange={(e) => setJobEnd(e.target.value)}
                                 className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm text-foreground outline-none transition"
                               />
                             </div>
                             <div className="space-y-1.5">
-                              <label htmlFor="campaignDeadline" className="text-sm font-medium text-foreground">Deadline</label>
+                              <label htmlFor="jobDeadline" className="text-sm font-medium text-foreground">Deadline</label>
                               <input
                                 type="date"
-                                id="campaignDeadline"
-                                value={campaignDeadline}
-                                onChange={(e) => setCampaignDeadline(e.target.value)}
+                                id="jobDeadline"
+                                value={jobDeadline}
+                                onChange={(e) => setJobDeadline(e.target.value)}
                                 className="w-full bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary/40 rounded-lg px-3 py-2 text-sm text-foreground outline-none transition"
                               />
                             </div>
@@ -1291,14 +1292,14 @@ function OneUtilityClientWorkspace({
                       </div>
                     )}
 
-                    {/* CAMPAIGN SUB-TAB: CASE STUDY */}
-                    {campaignSubTab === "case-study" && (
+                    {/* JOB SUB-TAB: CASE STUDY */}
+                    {jobSubTab === "case-study" && (
                       <div className="py-4">
                         <div className="max-w-2xl space-y-5">
                           <div>
-                            <h3 className="m-0 text-base font-semibold text-foreground">Campaign case study</h3>
+                            <h3 className="m-0 text-base font-semibold text-foreground">Job case study</h3>
                             <p className="mb-0 mt-1 text-sm leading-[1.45] text-muted-foreground">
-                              Edit the strategic narrative that appears on the published campaign record.
+                              Edit the strategic narrative that appears on the published job record.
                             </p>
                           </div>
                           <CopyField label="Challenge" value={activeCaseStudy.challenge} onChange={(value) => updateCaseStudy("challenge", value)} textarea rows={4} />
@@ -1311,13 +1312,13 @@ function OneUtilityClientWorkspace({
                       </div>
                     )}
 
-                    {/* CAMPAIGN SUB-TAB: STRATEGY */}
-                    {campaignSubTab === "strategy" && (
+                    {/* JOB SUB-TAB: STRATEGY */}
+                    {jobSubTab === "strategy" && (
                       <StrategyEditor markdown={workspace.strategyMarkdown} />
                     )}
 
-                    {/* CAMPAIGN SUB-TAB: CREATIVES GALLERY */}
-                    {campaignSubTab === "creative" && (
+                    {/* JOB SUB-TAB: CREATIVES GALLERY */}
+                    {jobSubTab === "creative" && (
                       <div className="py-4">
                         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
                           {Object.values(workspace.creativePreviews).map((item, index) => (
@@ -1365,8 +1366,8 @@ function OneUtilityClientWorkspace({
                       </div>
                     )}
 
-                    {/* CAMPAIGN SUB-TAB: MARKETING */}
-                    {campaignSubTab === "marketing" && (
+                    {/* JOB SUB-TAB: MARKETING */}
+                    {jobSubTab === "marketing" && (
                       <div className="space-y-6 py-4">
                         {/* MEDIA BUYING */}
                         <section className="space-y-3">
@@ -1377,7 +1378,7 @@ function OneUtilityClientWorkspace({
                             <h3 className="text-base font-semibold text-foreground">Media buying</h3>
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {activeCampaignMediaPlan?.mediaBuying.map((card, index) => {
+                            {activeJobMediaPlan?.mediaBuying.map((card, index) => {
                               const Icon = [BarChart3, TrendingUp, ScanLine][index] ?? BarChart3;
                               return (
                                 <div key={card.title} className="rounded-2xl p-5 bg-card border border-border shadow-sm space-y-3">
@@ -1404,7 +1405,7 @@ function OneUtilityClientWorkspace({
                             <h3 className="text-base font-semibold text-foreground">Influencer marketing</h3>
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {activeCampaignMediaPlan?.influencerMarketing.map((card, index) => {
+                            {activeJobMediaPlan?.influencerMarketing.map((card, index) => {
                               const Icon = [Users, Film, BarChart3][index] ?? Users;
                               return (
                                 <div key={card.title} className="rounded-2xl p-5 bg-card border border-border shadow-sm space-y-3">
@@ -1440,8 +1441,8 @@ function OneUtilityClientWorkspace({
                             className="h-full w-full object-cover"
                             controls
                             preload="metadata"
-                            poster={campaignImageFor(activeCampaignId, availableCampaigns)}
-                            aria-label={`${clientName} campaign film`}
+                            poster={jobImageFor(activeJobId, availableJobs)}
+                            aria-label={`${clientName} job film`}
                           >
                             <source src={workspace.overviewVideo} type="video/mp4" />
                             Your browser does not support this video.
@@ -1450,7 +1451,7 @@ function OneUtilityClientWorkspace({
                           <EmptyThumbnail
                             className="h-full w-full"
                             iconClassName="h-12 w-12 text-muted-foreground/35"
-                            label="No campaign video available"
+                            label="No job video available"
                           />
                         )}
                       </div>
@@ -1460,43 +1461,43 @@ function OneUtilityClientWorkspace({
                     </div>
 
                     <div className="grid gap-8 lg:grid-cols-2">
-                  <section className="space-y-3" aria-labelledby="latest-campaigns-heading">
+                  <section className="space-y-3" aria-labelledby="latest-jobs-heading">
                     <div className="flex items-center justify-between gap-3">
-                      <h3 id="latest-campaigns-heading" className="m-0 text-base font-semibold text-foreground">Latest campaigns</h3>
+                      <h3 id="latest-jobs-heading" className="m-0 text-base font-semibold text-foreground">Latest jobs</h3>
                       <button
                         type="button"
                         onClick={() => {
-                          setActiveMainTab("campaign");
-                          setCampaignView("home");
+                          setActiveMainTab("job");
+                          setJobView("home");
                         }}
                         className="text-xs font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                       >
                         View all
                       </button>
                     </div>
-                    {latestCampaigns.length ? (
+                    {latestJobs.length ? (
                       <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-                        {latestCampaigns.map((campaign) => {
-                          const record = availableCampaigns.find((item) => item.slug === campaign.id);
+                        {latestJobs.map((job) => {
+                          const record = availableJobs.find((item) => item.slug === job.id);
                           return (
-                            <DashboardCard key={campaign.id}>
+                            <DashboardCard key={job.id}>
                               <button
                                 type="button"
-                                onClick={() => handleOpenCampaign(campaign)}
+                                onClick={() => handleOpenJob(job)}
                                 className="group flex w-full items-center gap-3 p-3 text-left text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                               >
                                 <div className="h-16 w-20 shrink-0 overflow-hidden rounded-md bg-muted">
                                   <ImageWithFallback
-                                    src={campaignImageFor(campaign.id, availableCampaigns)}
-                                    alt={record?.imageAlt ?? campaign.title}
+                                    src={jobImageFor(job.id, availableJobs)}
+                                    alt={record?.imageAlt ?? job.title}
                                     className="h-full w-full object-cover"
                                   />
                                 </div>
                                 <div className="min-w-0 space-y-1">
-                                  <h4 className="m-0 truncate text-sm font-semibold group-hover:text-primary">{campaign.title}</h4>
+                                  <h4 className="m-0 truncate text-sm font-semibold group-hover:text-primary">{job.title}</h4>
                                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                    <DashboardBadge tone={campaign.status === "Live" ? "active" : "neutral"}>{campaign.status}</DashboardBadge>
-                                    <span className="truncate">{record?.category ?? "Campaign"}</span>
+                                    <DashboardBadge tone={job.status === "Live" ? "active" : "neutral"}>{job.status}</DashboardBadge>
+                                    <span className="truncate">{record?.category ?? "Job"}</span>
                                   </div>
                                 </div>
                               </button>
@@ -1505,7 +1506,7 @@ function OneUtilityClientWorkspace({
                         })}
                       </div>
                     ) : (
-                      <p className="m-0 text-sm text-muted-foreground">No campaigns yet.</p>
+                      <p className="m-0 text-sm text-muted-foreground">No jobs yet.</p>
                     )}
                   </section>
 
@@ -1557,14 +1558,14 @@ function OneUtilityClientWorkspace({
                         <dd className="m-0 text-[13px] font-medium text-foreground">{clientName}</dd>
                       </div>
                       <div className="space-y-1">
-                        <dt className="text-[10px] uppercase text-muted-foreground">Campaign lead</dt>
+                        <dt className="text-[10px] uppercase text-muted-foreground">Job lead</dt>
                         <dd className="m-0 text-[13px] font-medium text-foreground">
-                          {campaignLeadUser ? (
+                          {jobLeadUser ? (
                             <Link
-                              href={userHref(campaignLeadUser, isCreatorUser(campaignLeadUser) ? "creator" : "team")}
+                              href={userHref(jobLeadUser, isCreatorUser(jobLeadUser) ? "creator" : "team")}
                               className="text-foreground underline decoration-border underline-offset-4 hover:text-primary"
                             >
-                              {campaignLeadUser.name}
+                              {jobLeadUser.name}
                             </Link>
                           ) : (
                             "To be confirmed"
@@ -1576,22 +1577,22 @@ function OneUtilityClientWorkspace({
                         <dd className="m-0 break-words text-[13px] font-medium leading-relaxed text-foreground">{marketAudience}</dd>
                       </div>
                       <div className="space-y-1">
-                        <dt className="text-[10px] uppercase text-muted-foreground">Number of campaigns</dt>
-                        <dd className="m-0 text-[13px] font-medium text-foreground">{campaigns.length}</dd>
+                        <dt className="text-[10px] uppercase text-muted-foreground">Number of jobs</dt>
+                        <dd className="m-0 text-[13px] font-medium text-foreground">{jobs.length}</dd>
                       </div>
                       <div className="space-y-1">
                         <dt className="text-[10px] uppercase text-muted-foreground">Date created</dt>
-                        <dd className="m-0 text-[13px] font-medium text-foreground">{longDate(dateOnly(activeCampaignRecord?.createdAt))}</dd>
+                        <dd className="m-0 text-[13px] font-medium text-foreground">{longDate(dateOnly(activeJobRecord?.createdAt))}</dd>
                       </div>
                       <div className="space-y-1">
                         <dt className="text-[10px] uppercase text-muted-foreground">Date modified</dt>
-                        <dd className="m-0 text-[13px] font-medium text-foreground">{longDate(dateOnly(activeCampaignRecord?.updatedAt))}</dd>
+                        <dd className="m-0 text-[13px] font-medium text-foreground">{longDate(dateOnly(activeJobRecord?.updatedAt))}</dd>
                       </div>
                       <div className="space-y-1">
                         <dt className="text-[10px] uppercase text-muted-foreground">Status</dt>
                         <dd className="m-0 flex items-center gap-1.5 text-[13px] font-medium text-foreground">
                           <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                          {activeCampaign?.status ?? "Draft"}
+                          {activeJob?.status ?? "Draft"}
                         </dd>
                       </div>
                     </dl>
@@ -1903,7 +1904,7 @@ function OneUtilityClientWorkspace({
                   title="Media"
                   actions={
                     <ClientMediaAddAction
-                      campaignId={primaryCampaign?.slug ?? null}
+                      jobId={primaryJob?.slug ?? null}
                       clientName={clientName}
                       mediaItems={mediaItems}
                       onSaved={setMediaItems}
@@ -1917,7 +1918,7 @@ function OneUtilityClientWorkspace({
                       className="h-full"
                       actions={
                         <ClientMediaDeleteAction
-                          campaignId={primaryCampaign?.slug ?? null}
+                          jobId={primaryJob?.slug ?? null}
                           clientName={clientName}
                           mediaItems={mediaItems}
                           mediaIndex={mediaIndex}

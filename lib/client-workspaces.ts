@@ -1,13 +1,13 @@
 // Client workspace content shown on /dashboard/clients/[slug]
-// (overview, campaigns, strategy, creatives, brand DNA).
+// (overview, jobs, strategy, creatives, brand DNA).
 //
 // The workspace fields live directly on the project (they are spread onto it in
-// lib/campaigns.ts, and persisted through Firestore). This module holds the
+// lib/jobs.ts, and persisted through Firestore). This module holds the
 // workspace field SHAPE and a blank template (makeEmptyWorkspace) used for
 // projects that have no curated content yet, so nothing from another client
 // ever leaks in.
 
-import type { CampaignMediaPlan, PhaseKey, PhaseContent, PresetData } from "./client-data";
+import type { JobMediaPlan, PhaseKey, PhaseContent, PresetData } from "./client-data";
 
 export type CreativePreview = { src: string; alt: string };
 
@@ -30,10 +30,10 @@ export type ClientWorkspace = {
   primaryColor: string;
   brandArchetype: string;
   moodboardImages: CreativePreview[];
-  campaignMediaPlans: Record<string, CampaignMediaPlan>;
+  jobMediaPlans: Record<string, JobMediaPlan>;
   creativePreviews: Record<CreativeChannel, CreativePreview>;
   fontPreview: { heading: string; body: string };
-  // Optional campaign film shown on the client Overview; omitted when there is none.
+  // Optional job film shown on the client Overview; omitted when there is none.
   overviewVideo?: string;
   // true = curated content for this client; false = blank fallback template.
   hasContent: boolean;
@@ -93,7 +93,7 @@ export function makeEmptyWorkspace({
   const preset: PresetData = {
     client: clientName,
     category,
-    name: "Campaign to be defined",
+    name: "Job to be defined",
     url,
     scope: "integrated",
     footprint: "",
@@ -139,7 +139,7 @@ export function makeEmptyWorkspace({
     primaryColor: NEUTRAL_PALETTE[0],
     brandArchetype: "The Everyman",
     moodboardImages: [],
-    campaignMediaPlans: {},
+    jobMediaPlans: {},
     creativePreviews: {
       social: { src: PLACEHOLDER_IMAGE, alt: "" },
       film: { src: PLACEHOLDER_IMAGE, alt: "" },

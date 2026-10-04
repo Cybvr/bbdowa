@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useOptionalAuth } from "@/components/auth-provider";
 import { getAnswer } from "@/lib/njeri-assistant";
-import { readCampaignsFromFirestore, readClientsFromFirestore, readDocumentsForNjeri, readTasksForNjeri, readTimeEntriesForNjeri, readUserForNjeri, readUsersFromFirestore } from "@/lib/firebase/client-content";
+import { readJobsFromFirestore, readClientsFromFirestore, readDocumentsForNjeri, readTasksForNjeri, readTimeEntriesForNjeri, readUserForNjeri, readUsersFromFirestore } from "@/lib/firebase/client-content";
 import { isCreatorUser } from "@/lib/users";
 import { elapsedMs } from "@/lib/time-tracking";
 import type { NjeriActionProposal, NjeriResponse, NjeriWorkspaceContext } from "@/lib/njeri-actions";
@@ -151,7 +151,7 @@ export function useNjeri() {
       let workspaceContextUnavailable = false;
       const canManage = auth?.role === "admin" || auth?.role === "manager";
       const recentUserText = historyPayload.slice(-8).filter((turn) => turn.role === "user").map((turn) => turn.content).join("\n");
-      const asksAboutWorkspaceRecords = /\b(creators?|clients?|campaigns?|tasks?|contracts?|documents?|hours?|time entries|referrals?|availability|clearance)\b/i.test(recentUserText)
+      const asksAboutWorkspaceRecords = /\b(creators?|clients?|jobs?|tasks?|contracts?|documents?|hours?|time entries|referrals?|availability|clearance)\b/i.test(recentUserText)
         || /\b(shortlist|compare|recommend|options for|who should we|who can we work with|candidates?)\b/i.test(recentUserText);
       const asksForDocumentText = /\b(what does|read|summari[sz]e|terms|clause|contents?|text of|say in)\b/i.test(recentUserText);
       const canReadOwnWorkspace = Boolean(auth?.user?.uid);
@@ -162,9 +162,9 @@ export function useNjeri() {
           workspaceContext = cached.value;
         } else {
           try {
-            const [clients, campaigns, users, tasks, entries, ownUser] = await Promise.all([
+            const [clients, jobs, users, tasks, entries, ownUser] = await Promise.all([
               canManage ? readClientsFromFirestore() : Promise.resolve([]),
-              canManage ? readCampaignsFromFirestore() : Promise.resolve([]),
+              canManage ? readJobsFromFirestore() : Promise.resolve([]),
               canManage ? readUsersFromFirestore() : Promise.resolve([]),
               readTasksForNjeri(auth.user.uid, canManage),
               readTimeEntriesForNjeri(auth.user.uid, canManage),
@@ -182,13 +182,13 @@ export function useNjeri() {
                 availability: availability ?? "unconfirmed", referralSource: referralSource ?? "", clearance: clearance ?? "pending", vetted: vetted ?? false,
                 workedOn: workedOn ?? [], workHistory: workHistory ?? [], dayRate: hideRate ? "" : dayRate ?? "", rateMin: hideRate ? null : rateMin ?? null, rateCurrency: rateCurrency ?? "NGN", yearsActive: yearsActive ?? null, craftNote: craftNote ?? "",
               })),
-              campaigns: campaigns.slice(0, 60).map(({ name, slug, clientName, category, status, summary }) => ({
+              jobs: jobs.slice(0, 60).map(({ name, slug, clientName, category, status, summary }) => ({
                 name: name || "", slug, clientName: clientName || "", category: category || "", status: status || "", summary: summary || "",
               })),
               tasks: tasks.slice(0, 80).map((task) => ({
                 id: task.id, title: task.title, description: task.description ?? "", assignedTo: task.assignedTo,
                 assignedToName: task.assignedToName ?? creatorByUid.get(task.assignedTo)?.name ?? "", clientName: task.clientName ?? "",
-                campaignName: task.campaignName ?? "", status: task.status, dueDate: task.dueDate ?? "",
+                jobName: task.jobName ?? "", status: task.status, dueDate: task.dueDate ?? "",
               })),
               documents: documents.sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, asksForDocumentText ? 5 : 40).map((document) => ({
                 id: document.id, title: document.title, status: document.status, assignedTo: document.assignedTo ?? "",
@@ -196,7 +196,7 @@ export function useNjeri() {
                 signedName: document.signedName ?? "", ...(asksForDocumentText ? { body: document.body } : {}),
               })),
               trackedHours: entries.sort((a, b) => b.startedAt.localeCompare(a.startedAt)).slice(0, 160).map((entry) => ({
-                uid: entry.uid, name: entry.name ?? creatorByUid.get(entry.uid)?.name ?? "", campaignName: entry.campaignName ?? "",
+                uid: entry.uid, name: entry.name ?? creatorByUid.get(entry.uid)?.name ?? "", jobName: entry.jobName ?? "",
                 activity: entry.activity, minutes: Math.round(elapsedMs(entry) / 60_000), startedAt: entry.startedAt,
               })),
             };

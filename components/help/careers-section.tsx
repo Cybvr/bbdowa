@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { jobHref } from "@/lib/jobs";
-import { getJobs } from "@/lib/firebase/content";
+import { openingHref } from "@/lib/openings";
+import { getOpenings } from "@/lib/firebase/content";
 import { plural } from "@/lib/format";
 import { Badge } from "@/components/dashboard/ui";
 
@@ -10,7 +10,7 @@ const GRID =
 const MOBILE_LABEL = "hidden mb-1 text-[11px] font-medium text-muted-foreground max-[720px]:block";
 
 export async function CareersSection() {
-  const jobs = await getJobs();
+  const jobs = await getOpenings();
   const openJobs = jobs.filter((job) => job.status === "open");
   const sortedJobs = [...jobs].sort((a, b) => Number(b.status === "open") - Number(a.status === "open"));
 
@@ -61,7 +61,7 @@ export async function CareersSection() {
             }`;
 
             return job.status === "open" ? (
-              <Link key={job.slug} href={jobHref(job.slug)} id={job.slug} className={className}>
+              <Link key={job.slug} href={openingHref(job.slug)} id={job.slug} className={className}>
                 {row}
               </Link>
             ) : (

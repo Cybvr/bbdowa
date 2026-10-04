@@ -5,11 +5,12 @@ import { collection, doc, getDoc, getDocs, limit, orderBy, query, where } from "
 import { firebaseDb } from "@/lib/firebase/client";
 import { useAuth } from "@/components/auth-provider";
 import type { BlogPost } from "@/lib/blog";
-import type { Campaign } from "@/lib/campaigns";
+import { normalizeJob, type Job } from "@/lib/jobs";
 import type { Client } from "@/lib/clients";
 import { DOCUMENT_COLLECTION, sortDocuments, type AgencyDocument } from "@/lib/documents";
 import { TASK_COLLECTION, sortTasks, type Task } from "@/lib/creator-tasks";
-import type { Job } from "@/lib/jobs";
+import type { Opening } from "@/lib/openings";
+import { jobsCollection, openingsCollection } from "@/lib/firebase/job-collections";
 import { ACTIVITY_COLLECTION, type ActivityEntry } from "@/lib/time-tracking";
 import { normalizeUser, type User } from "@/lib/users";
 
@@ -29,8 +30,9 @@ export async function readUserForNjeri(uid: string) {
   return match ? normalizeUser(match.data() as User) : null;
 }
 
-export function readCampaignsFromFirestore() {
-  return readCollection<Campaign>("campaigns");
+export async function readJobsFromFirestore() {
+  const snapshot = await getDocs(collection(firebaseDb, await jobsCollection()));
+  return snapshot.docs.map((document) => normalizeJob(document.data(), document.id));
 }
 
 export function readClientsFromFirestore() {
@@ -230,13 +232,13 @@ export function useFirestoreTasks(): FirestoreTasksState {
 }
 
 export async function readContentFromFirestore() {
-  const [clients, campaigns, users, blogs, jobs] = await Promise.all([
+  const [clients, jobs, users, blogs, openings] = await Promise.all([
     readCollection<Client>("clients"),
-    readCollection<Campaign>("campaigns"),
+    readJobsFromFirestore(),
     readUsersFromFirestore(),
     readCollection<BlogPost>("blogs"),
-    readCollection<Job>("jobs"),
+    openingsCollection().then((name) => readCollection<Opening>(name)),
   ]);
 
-  return { clients, campaigns, users, blogs, jobs };
+  return { clients, jobs, users, blogs, openings };
 }

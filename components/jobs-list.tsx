@@ -7,16 +7,18 @@ import { useAuth } from "@/components/auth-provider";
 import { DashboardListPage } from "@/components/dashboard/list-page";
 import { PageLoadingSkeleton } from "@/components/dashboard/loading-skeleton";
 import { firebaseDb } from "@/lib/firebase/client";
+import { jobsCollection } from "@/lib/firebase/job-collections";
 import { formatDate } from "@/lib/creator-tasks";
-import { JOB_STATUS_LABELS, type Campaign } from "@/lib/campaigns";
-import { JOB_TERMS_COLLECTION, jobHref } from "@/lib/job-terms";
+import { JOB_STATUS_LABELS, type Job } from "@/lib/jobs";
+import { JOB_TERMS_COLLECTION } from "@/lib/job-terms";
+import { jobHref } from "@/lib/jobs";
 
 const filters = ["all", "live", "pitch", "completed"] as const;
 
 /** Jobs assigned to the signed-in person. Staff manage every job from /admin/jobs. */
 export function JobsList() {
   const { user, loading: authLoading } = useAuth();
-  const [jobs, setJobs] = React.useState<Campaign[]>([]);
+  const [jobs, setJobs] = React.useState<Job[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [filter, setFilter] = React.useState<(typeof filters)[number]>("all");
@@ -25,11 +27,11 @@ export function JobsList() {
     if (authLoading) return;
     if (!user) { setLoading(false); return; }
     let active = true;
-    getDocs(query(collection(firebaseDb, JOB_TERMS_COLLECTION), where("assignedTo", "==", user.uid)))
-      .then((snapshot) => Promise.all(snapshot.docs.map((item) => getDoc(doc(firebaseDb, "campaigns", item.id)))))
+    Promise.all([jobsCollection(), getDocs(query(collection(firebaseDb, JOB_TERMS_COLLECTION), where("assignedTo", "==", user.uid)))])
+      .then(([jobsName, snapshot]) => Promise.all(snapshot.docs.map((item) => getDoc(doc(firebaseDb, jobsName, item.id)))))
       .then((snapshots) => {
         if (!active) return;
-        setJobs(snapshots.filter((item) => item.exists()).map((item) => ({ ...(item.data() as Campaign), slug: item.id })).sort((a, b) => (b.startDate ?? b.liveAt?.date ?? "").localeCompare(a.startDate ?? a.liveAt?.date ?? "")));
+        setJobs(snapshots.filter((item) => item.exists()).map((item) => ({ ...(item.data() as Job), slug: item.id })).sort((a, b) => (b.startDate ?? b.liveAt?.date ?? "").localeCompare(a.startDate ?? a.liveAt?.date ?? "")));
       })
       .catch((cause) => { console.error("Unable to load jobs", cause); if (active) setError("Couldn’t load jobs. Try again later."); })
       .finally(() => { if (active) setLoading(false); });
@@ -50,7 +52,7 @@ export function JobsList() {
         <Link href={jobHref(job.slug)} className="flex h-full min-h-44 flex-col p-5 text-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
           <span className="text-xs font-medium text-muted-foreground">{JOB_STATUS_LABELS[job.status] ?? job.status}</span>
           <span className="mt-4 line-clamp-1 text-lg font-semibold">{job.clientName}</span>
-          <span className="mt-1 line-clamp-2 text-sm text-muted-foreground">{job.campaign ?? job.name}</span>
+          <span className="mt-1 line-clamp-2 text-sm text-muted-foreground">{job.title ?? job.name}</span>
           <span className="mt-auto pt-5 text-xs text-muted-foreground">{job.startDate ? `Started ${formatDate(job.startDate)}` : "No start date"}{job.endDate ? ` · Ends ${formatDate(job.endDate)}` : ""}</span>
         </Link>
       </li>)}

@@ -5,6 +5,7 @@ import { addDoc, collection, doc, getDocs, query, updateDoc, where } from "fireb
 import { LuArrowUpRight, LuPause, LuPlay, LuPlus, LuSquare } from "react-icons/lu";
 import { useAuth } from "@/components/auth-provider";
 import { firebaseDb } from "@/lib/firebase/client";
+import { jobsCollection } from "@/lib/firebase/job-collections";
 import { EmptyState, PageHeader } from "@/components/dashboard/ui";
 import { DashboardCard } from "@/components/dashboard-card";
 import { FilterBar, type FilterTab, type SortOption, type ViewMode } from "@/components/dashboard/filter-bar";
@@ -64,7 +65,7 @@ async function stopEntryDoc(entry: ActivityEntry) {
   });
 }
 
-type CampaignOption = { slug: string; name: string };
+type JobOption = { slug: string; name: string };
 
 const TRACKER_STATUS_TABS: FilterTab<"all" | "running" | "paused" | "completed">[] = [
   { key: "all", label: "All" },
@@ -80,7 +81,7 @@ const TRACKER_SORTS: SortOption<"recent" | "oldest" | "activity" | "duration">[]
   { key: "duration", label: "Longest duration" },
 ];
 
-const NO_CAMPAIGN = "none";
+const NO_JOB = "none";
 
 function localDateValue(date: Date = new Date()): string {
   const year = date.getFullYear();
@@ -101,7 +102,7 @@ function localDateTimeToDate(date: string, time: string): Date | null {
 export function TimeTracker({ compact = false }: { compact?: boolean }) {
   const { user, loading: authLoading } = useAuth();
   const [entries, setEntries] = React.useState<ActivityEntry[]>([]);
-  const [campaigns, setCampaigns] = React.useState<CampaignOption[]>([]);
+  const [jobs, setJobs] = React.useState<JobOption[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
@@ -112,12 +113,12 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
   const [addingTimer, setAddingTimer] = React.useState(false);
   const [search, setSearch] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<"all" | "running" | "paused" | "completed">("all");
-  const [campaignFilter, setCampaignFilter] = React.useState("all");
+  const [jobFilter, setJobFilter] = React.useState("all");
   const [sort, setSort] = React.useState<"recent" | "oldest" | "activity" | "duration">("recent");
   const [view, setView] = React.useState<ViewMode>("table");
   const [selectedEntryId, setSelectedEntryId] = React.useState<string | null>(null);
   const [activity, setActivity] = React.useState("");
-  const [campaignSlug, setCampaignSlug] = React.useState<string>(NO_CAMPAIGN);
+  const [jobId, setJobId] = React.useState<string>(NO_JOB);
   const [entryDate, setEntryDate] = React.useState(() => localDateValue());
   const [entryTime, setEntryTime] = React.useState(() => localTimeValue());
   const [duration, setDuration] = React.useState("");
@@ -156,18 +157,18 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
 
   React.useEffect(() => {
     let active = true;
-    getDocs(collection(firebaseDb, "campaigns"))
+    jobsCollection().then((name) => getDocs(collection(firebaseDb, name)))
       .then((snapshot) => {
         if (!active) return;
         const rows = snapshot.docs
           .map((document) => {
-            const data = document.data() as { slug?: string; campaign?: string; name?: string };
-            return { slug: data.slug ?? document.id, name: data.campaign ?? data.name ?? document.id };
+            const data = document.data() as { slug?: string; job?: string; name?: string };
+            return { slug: data.slug ?? document.id, name: data.job ?? data.name ?? document.id };
           })
           .sort((a, b) => a.name.localeCompare(b.name));
-        setCampaigns(rows);
+        setJobs(rows);
       })
-      .catch((cause) => console.error("Unable to load campaigns", cause));
+      .catch((cause) => console.error("Unable to load jobs", cause));
     return () => {
       active = false;
     };
@@ -187,15 +188,15 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
 
   const manualMinutes = parseDurationToMinutes(duration);
   const hasActivity = activity.trim().length > 0;
-  const hasCampaign = campaignSlug !== NO_CAMPAIGN;
-  const canStart = hasActivity && hasCampaign;
-  const canLog = hasActivity && hasCampaign && manualMinutes !== null && Boolean(localDateTimeToDate(entryDate, entryTime));
+  const hasJob = jobId !== NO_JOB;
+  const canStart = hasActivity && hasJob;
+  const canLog = hasActivity && hasJob && manualMinutes !== null && Boolean(localDateTimeToDate(entryDate, entryTime));
 
-  const chosenCampaign = () => campaigns.find((option) => option.slug === campaignSlug);
+  const chosenJob = () => jobs.find((option) => option.slug === jobId);
 
   const resetForm = () => {
     setActivity("");
-    setCampaignSlug(NO_CAMPAIGN);
+    setJobId(NO_JOB);
     setEntryDate(localDateValue());
     setEntryTime(localTimeValue());
     setDuration("");
@@ -210,12 +211,12 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
     try {
       const active = runningEntry(entries);
       if (active) await pauseEntryDoc(active);
-      const chosen = chosenCampaign();
+      const chosen = chosenJob();
       await addDoc(collection(firebaseDb, ACTIVITY_COLLECTION), {
         uid: user.uid,
         name: user.name ?? user.email ?? null,
-        campaignSlug: chosen?.slug ?? null,
-        campaignName: chosen?.name ?? null,
+        jobId: chosen?.slug ?? null,
+        jobName: chosen?.name ?? null,
         activity: activity.trim(),
         startedAt: new Date().toISOString(),
         endedAt: null,
@@ -245,8 +246,8 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
         uid: user.uid,
         name: user.name ?? user.email ?? null,
         taskId: entry.taskId ?? null,
-        campaignSlug: entry.campaignSlug,
-        campaignName: entry.campaignName,
+        jobId: entry.jobId,
+        jobName: entry.jobName,
         activity: entry.activity,
         startedAt: new Date().toISOString(),
         endedAt: null,
@@ -268,15 +269,15 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
     setBusy(true);
     setError(null);
     try {
-      const chosen = chosenCampaign();
+      const chosen = chosenJob();
       const startedAt = localDateTimeToDate(entryDate, entryTime);
       if (!startedAt) return;
       const endedAt = new Date(startedAt.getTime() + manualMinutes * 60000);
       await addDoc(collection(firebaseDb, ACTIVITY_COLLECTION), {
         uid: user.uid,
         name: user.name ?? user.email ?? null,
-        campaignSlug: chosen?.slug ?? null,
-        campaignName: chosen?.name ?? null,
+        jobId: chosen?.slug ?? null,
+        jobName: chosen?.name ?? null,
         activity: activity.trim(),
         startedAt: startedAt.toISOString(),
         endedAt: endedAt.toISOString(),
@@ -352,9 +353,9 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
     if (statusFilter === "running" && (entry.endedAt || isPaused(entry))) return false;
     if (statusFilter === "paused" && (entry.endedAt || !isPaused(entry))) return false;
     if (statusFilter === "completed" && !entry.endedAt) return false;
-    if (campaignFilter !== "all" && entry.campaignSlug !== campaignFilter) return false;
+    if (jobFilter !== "all" && entry.jobId !== jobFilter) return false;
     const needle = search.trim().toLowerCase();
-    return !needle || `${entry.activity} ${entry.campaignName ?? ""}`.toLowerCase().includes(needle);
+    return !needle || `${entry.activity} ${entry.jobName ?? ""}`.toLowerCase().includes(needle);
   }).sort((a, b) => {
     if (sort === "oldest") return a.startedAt.localeCompare(b.startedAt);
     if (sort === "activity") return a.activity.localeCompare(b.activity);
@@ -388,10 +389,10 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
                 <div key={entry.id} className="flex items-center justify-between gap-3 px-4 py-3">
                   <div className="min-w-0">
                     <p className="m-0 truncate text-[14px] font-semibold">{entry.activity}</p>
-                    {entry.campaignName ? (
+                    {entry.jobName ? (
                       <p className="m-0 mt-0.5 flex items-center gap-1 truncate text-[12px] text-muted-foreground">
                         <LuArrowUpRight aria-hidden="true" className="h-3 w-3 shrink-0" />
-                        <span className="truncate">{entry.campaignName}</span>
+                        <span className="truncate">{entry.jobName}</span>
                       </p>
                     ) : null}
                   </div>
@@ -452,9 +453,9 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
                 placeholder="What are you working on?"
                 className="h-10 flex-1 text-sm"
               />
-              <Select value={campaignSlug === NO_CAMPAIGN ? "" : campaignSlug} onValueChange={setCampaignSlug}>
+              <Select value={jobId === NO_JOB ? "" : jobId} onValueChange={setJobId}>
                 <SelectTrigger aria-required className="h-10 w-[38%] text-sm"><SelectValue placeholder="Select a job" /></SelectTrigger>
-                <SelectContent>{campaigns.map((option) => <SelectItem key={option.slug} value={option.slug}>{option.name}</SelectItem>)}</SelectContent>
+                <SelectContent>{jobs.map((option) => <SelectItem key={option.slug} value={option.slug}>{option.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="flex gap-2">
@@ -508,9 +509,9 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
         onTabChange={setStatusFilter}
         filters={[{
           label: "Job",
-          value: campaignFilter,
-          onChange: setCampaignFilter,
-          options: [{ value: "all", label: "All jobs" }, ...campaigns.map((item) => ({ value: item.slug, label: item.name }))],
+          value: jobFilter,
+          onChange: setJobFilter,
+          options: [{ value: "all", label: "All jobs" }, ...jobs.map((item) => ({ value: item.slug, label: item.name }))],
         }]}
         sortOptions={TRACKER_SORTS}
         activeSort={sort}
@@ -533,7 +534,7 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
               return <li key={entry.id}><DashboardCard className="h-full">
                 <button type="button" onClick={() => setSelectedEntryId(entry.id)} className="flex min-h-36 w-full flex-col p-4 text-left text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
                   <span className="line-clamp-2 font-semibold leading-tight">{entry.activity || "Untitled activity"}</span>
-                  <span className="mt-1 truncate text-sm text-muted-foreground">{entry.campaignName ?? "No job"}</span>
+                  <span className="mt-1 truncate text-sm text-muted-foreground">{entry.jobName ?? "No job"}</span>
                   <span className="mt-auto flex items-center justify-between gap-3 pt-5 text-xs text-muted-foreground">
                     <span>{formatTimestamp(entry.startedAt)}</span>
                     <span className={open && !paused ? "text-primary" : ""}>{open ? (paused ? "Paused" : "Running") : "Completed"}</span>
@@ -571,7 +572,7 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
                         <button type="button" onClick={() => setSelectedEntryId(entry.id)} className="font-semibold hover:text-primary">{entry.activity || "—"}</button>
                         <span className={`ml-2 text-xs ${open && !paused ? "text-primary" : "text-muted-foreground"}`}>{open ? (paused ? "Paused" : "Running") : "Completed"}</span>
                       </TableCell>
-                      <TableCell className="px-4 py-3">{entry.campaignName ?? <span className="text-muted-foreground">—</span>}</TableCell>
+                      <TableCell className="px-4 py-3">{entry.jobName ?? <span className="text-muted-foreground">—</span>}</TableCell>
                       <TableCell className="whitespace-nowrap px-4 py-3">{formatTimestamp(entry.startedAt)}</TableCell>
                       <TableCell className="whitespace-nowrap px-4 py-3 font-semibold tabular-nums">{formatClockFull(elapsedMs(entry, now))}</TableCell>
                       <TableCell className="px-4 py-3">
@@ -595,7 +596,7 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader className="pr-10">
             <DialogTitle>{selectedEntry?.activity || "Activity"}</DialogTitle>
-            <DialogDescription>{selectedEntry?.campaignName || "No job"}</DialogDescription>
+            <DialogDescription>{selectedEntry?.jobName || "No job"}</DialogDescription>
           </DialogHeader>
           {selectedEntry ? <dl className="grid grid-cols-2 gap-x-4 gap-y-5 text-sm">
             <div><dt className="text-xs text-muted-foreground">Status</dt><dd className="mt-1 font-semibold">{selectedEntry.endedAt ? "Completed" : isPaused(selectedEntry) ? "Paused" : "Running"}</dd></div>
@@ -618,7 +619,7 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
           </div>
           <form onSubmit={(event) => { event.preventDefault(); void (mode === "timer" ? startActivity() : logActivity()); }} className="space-y-4">
             <div className="space-y-1.5"><label htmlFor="tracker-activity" className="text-xs font-semibold">Activity</label><Input id="tracker-activity" value={activity} onChange={(event) => setActivity(event.target.value)} disabled={busy} placeholder="What are you working on?" required /></div>
-            <div className="space-y-1.5"><span className="text-xs font-semibold">Job</span><Select value={campaignSlug === NO_CAMPAIGN ? "" : campaignSlug} onValueChange={setCampaignSlug}><SelectTrigger aria-label="Job"><SelectValue placeholder="Select a job" /></SelectTrigger><SelectContent>{campaigns.map((option) => <SelectItem key={option.slug} value={option.slug}>{option.name}</SelectItem>)}</SelectContent></Select></div>
+            <div className="space-y-1.5"><span className="text-xs font-semibold">Job</span><Select value={jobId === NO_JOB ? "" : jobId} onValueChange={setJobId}><SelectTrigger aria-label="Job"><SelectValue placeholder="Select a job" /></SelectTrigger><SelectContent>{jobs.map((option) => <SelectItem key={option.slug} value={option.slug}>{option.name}</SelectItem>)}</SelectContent></Select></div>
             {mode === "manual" ? <>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5"><label htmlFor="tracker-date" className="text-xs font-semibold">Date</label><Input id="tracker-date" type="date" value={entryDate} onChange={(event) => setEntryDate(event.target.value)} disabled={busy} /></div>

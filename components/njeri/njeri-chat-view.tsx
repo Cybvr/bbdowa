@@ -223,7 +223,7 @@ export function NjeriChatView({
               onChange={(e) => setInput(e.target.value)}
               onInput={(e) => resizeTextarea(e.currentTarget)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask about creators, campaigns, tasks, contracts, or work..."
+              placeholder="Ask about creators, jobs, tasks, contracts, or work..."
               aria-label="Ask Njeri a question"
               disabled={isTyping}
               className={`w-full resize-none overflow-hidden text-sm text-foreground outline-none transition placeholder:text-muted-foreground disabled:opacity-50 ${isPageMode ? "rounded-lg border-0 bg-transparent px-3 py-2.5 focus:ring-0" : "rounded-xl border border-input bg-background p-3 focus:border-primary focus:ring-1 focus:ring-primary/40"}`}

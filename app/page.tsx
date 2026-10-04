@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { sortCampaignsByLatestLive } from "@/lib/campaigns";
-import { getCampaigns } from "@/lib/firebase/content";
+import { sortJobsByLatestLive } from "@/lib/jobs";
+import { getJobs } from "@/lib/firebase/content";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { ContactForm } from "./contact-form";
@@ -12,9 +12,9 @@ const RECORD = [
 ];
 
 export default async function MarketingHomePage() {
-  const campaigns = await getCampaigns();
-  const work = sortCampaignsByLatestLive(
-    campaigns.filter((campaign) => campaign.status !== "pitch"),
+  const jobs = await getJobs();
+  const work = sortJobsByLatestLive(
+    jobs.filter((job) => job.status !== "pitch"),
   ).slice(0, 8);
 
   return (
@@ -120,9 +120,9 @@ export default async function MarketingHomePage() {
 
                     <div className="flex min-w-0 items-baseline gap-2 pt-3">
                       <h3 className="m-0 min-w-0 flex-1 truncate text-[clamp(20px,2.4vw,34px)] font-semibold uppercase leading-none tracking-[-0.04em] transition-colors duration-200 group-hover:text-primary group-focus-visible:text-primary motion-reduce:transition-none">
-                        {project.campaign ?? project.name}
+                        {project.title ?? project.name}
                       </h3>
-                      {project.campaign ? (
+                      {project.title ? (
                         <>
                           <span aria-hidden="true" className="shrink-0 text-primary">
                             /

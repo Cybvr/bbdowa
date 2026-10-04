@@ -21,15 +21,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ImageUploadField } from "@/components/detail-editor";
 import { firebaseDb } from "@/lib/firebase/client";
+import { jobsCollection } from "@/lib/firebase/job-collections";
 import type { CreativePreview } from "@/lib/client-workspaces";
 
 export function ClientMediaAddAction({
-  campaignId,
+  jobId,
   clientName,
   mediaItems,
   onSaved,
 }: {
-  campaignId: string | null;
+  jobId: string | null;
   clientName: string;
   mediaItems: CreativePreview[];
   onSaved: (mediaItems: CreativePreview[]) => void;
@@ -58,14 +59,14 @@ export function ClientMediaAddAction({
     event.preventDefault();
     const imageUrl = src.trim();
     const imageAlt = alt.trim();
-    if (!campaignId || !imageUrl || !imageAlt || busy) return;
+    if (!jobId || !imageUrl || !imageAlt || busy) return;
 
     setBusy(true);
     setError(null);
     const nextMediaItems = [...mediaItems, { src: imageUrl, alt: imageAlt }];
 
     try {
-      await updateDoc(doc(firebaseDb, "campaigns", campaignId), {
+      await updateDoc(doc(firebaseDb, await jobsCollection(), jobId), {
         moodboardImages: nextMediaItems,
         updatedAt: serverTimestamp(),
       });
@@ -85,8 +86,8 @@ export function ClientMediaAddAction({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        disabled={!campaignId}
-        title={campaignId ? undefined : "Create a campaign before adding media"}
+        disabled={!jobId}
+        title={jobId ? undefined : "Create a job before adding media"}
         className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-3 text-[13px] font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-45"
       >
         <Plus aria-hidden="true" className="h-3.5 w-3.5" />
@@ -109,7 +110,7 @@ export function ClientMediaAddAction({
             {error ? <p className="m-0 text-[13px] font-medium text-destructive">{error}</p> : null}
             <DialogFooter>
               <button type="button" onClick={() => setOpen(false)} disabled={busy} className="h-9 rounded-md border border-border px-4 text-[13px] font-semibold text-foreground transition hover:border-foreground disabled:opacity-50">Cancel</button>
-              <button type="submit" disabled={busy || !src.trim() || !alt.trim() || !campaignId} className="h-9 rounded-md bg-primary px-4 text-[13px] font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50">{busy ? "Saving…" : "Add media"}</button>
+              <button type="submit" disabled={busy || !src.trim() || !alt.trim() || !jobId} className="h-9 rounded-md bg-primary px-4 text-[13px] font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50">{busy ? "Saving…" : "Add media"}</button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -119,14 +120,14 @@ export function ClientMediaAddAction({
 }
 
 export function ClientMediaDeleteAction({
-  campaignId,
+  jobId,
   clientName,
   mediaItems,
   mediaIndex,
   onSaved,
   onError,
 }: {
-  campaignId: string | null;
+  jobId: string | null;
   clientName: string;
   mediaItems: CreativePreview[];
   mediaIndex: number;
@@ -136,7 +137,7 @@ export function ClientMediaDeleteAction({
   const { isAdmin } = useAuth();
   const [busy, setBusy] = React.useState(false);
 
-  if (!isAdmin || !campaignId) return null;
+  if (!isAdmin || !jobId) return null;
 
   const remove = async () => {
     const media = mediaItems[mediaIndex];
@@ -145,7 +146,7 @@ export function ClientMediaDeleteAction({
     setBusy(true);
     try {
       const nextMediaItems = mediaItems.filter((_, index) => index !== mediaIndex);
-      await updateDoc(doc(firebaseDb, "campaigns", campaignId), {
+      await updateDoc(doc(firebaseDb, await jobsCollection(), jobId), {
         moodboardImages: nextMediaItems,
         updatedAt: serverTimestamp(),
       });

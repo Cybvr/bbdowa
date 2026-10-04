@@ -11,11 +11,11 @@ export type Task = {
   description: string;
   /** Rich text instructions and supporting copy. Older tasks may not have this field. */
   content?: string;
-  /** Optional client and campaign context for this task. */
+  /** Optional client and job context for this task. */
   clientId?: string | null;
   clientName?: string | null;
-  campaignId?: string | null;
-  campaignName?: string | null;
+  jobId?: string | null;
+  jobName?: string | null;
   /** Firebase uid of the creator this task is assigned to. */
   assignedTo: string;
   assignedToName: string | null;

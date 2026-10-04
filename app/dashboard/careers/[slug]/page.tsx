@@ -2,21 +2,21 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BackLink } from "@/components/back-link";
-import { getJobBySlug } from "@/lib/firebase/content";
+import { getOpeningBySlug } from "@/lib/firebase/content";
 import { Badge, SectionHeading } from "@/components/dashboard/ui";
-import { JobActions } from "@/components/job-actions";
+import { OpeningActions } from "@/components/opening-actions";
 
 type Params = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
-  const job = await getJobBySlug(slug);
+  const job = await getOpeningBySlug(slug);
   return { title: job?.title ?? "Career role" };
 }
 
 export default async function CareerDetailPage({ params }: Params) {
   const { slug } = await params;
-  const job = await getJobBySlug(slug);
+  const job = await getOpeningBySlug(slug);
   if (!job) notFound();
 
   const isOpen = job.status === "open";
@@ -25,7 +25,7 @@ export default async function CareerDetailPage({ params }: Params) {
     <main className="flex-1 px-5 pb-16 pt-4 sm:px-8">
       <div className="mb-5 flex items-center justify-between gap-4">
         <BackLink href="/dashboard/help?tab=careers">Back to careers</BackLink>
-        <JobActions job={job} />
+        <OpeningActions opening={job} />
       </div>
 
       <div className="max-w-[1050px]">

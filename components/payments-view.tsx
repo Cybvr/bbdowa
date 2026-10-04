@@ -6,6 +6,7 @@ import { addDoc, collection, doc, getDocs, onSnapshot, query, updateDoc, where }
 import { LuPlus } from "react-icons/lu";
 import { useAuth } from "@/components/auth-provider";
 import { firebaseDb } from "@/lib/firebase/client";
+import { jobsCollection } from "@/lib/firebase/job-collections";
 import { Badge, EmptyState, PageHeader, StatItem, StatRow } from "@/components/dashboard/ui";
 import { FilterBar, type FilterTab } from "@/components/dashboard/filter-bar";
 import { LIST_ACTION_CLASS } from "@/components/dashboard/list-page-actions";
@@ -21,7 +22,8 @@ import {
   type PaymentCurrency,
   type PaymentStatus,
 } from "@/lib/payments";
-import { JOB_TERMS_COLLECTION, jobHref, type JobTerms } from "@/lib/job-terms";
+import { JOB_TERMS_COLLECTION, type JobTerms } from "@/lib/job-terms";
+import { jobHref } from "@/lib/jobs";
 
 type JobOption = { slug: string; name: string; assignedTo: string | null };
 
@@ -71,7 +73,7 @@ export function PaymentsView() {
   const visible = payments.filter(
     (payment) =>
       (status === "all" || payment.status === status) &&
-      (!term || [payment.payeeName, payment.description, payment.campaignName ?? ""].join(" ").toLowerCase().includes(term)),
+      (!term || [payment.payeeName, payment.description, payment.jobName ?? ""].join(" ").toLowerCase().includes(term)),
   );
 
   const pending = payments.filter((payment) => payment.status === "pending");
@@ -139,10 +141,10 @@ export function PaymentsView() {
                     {isStaff ? <TableCell className="px-4 py-4 font-semibold">{payment.payeeName}</TableCell> : null}
                     <TableCell className="px-4 py-4">
                       <span className="block">{payment.description}</span>
-                      {payment.campaignName ? (
-                        <span className="text-[12px] text-muted-foreground">{payment.campaignName}</span>
+                      {payment.jobName ? (
+                        <span className="text-[12px] text-muted-foreground">{payment.jobName}</span>
                       ) : null}
-                      {payment.campaignId ? <Link href={jobHref(payment.campaignId)} className="mt-1 block text-xs text-primary hover:underline">View job</Link> : null}
+                      {payment.jobId ? <Link href={jobHref(payment.jobId)} className="mt-1 block text-xs text-primary hover:underline">View job</Link> : null}
                     </TableCell>
                     <TableCell className="whitespace-nowrap px-4 py-4 font-semibold tabular-nums">
                       {formatAmount(payment.amount, payment.currency)}
@@ -226,14 +228,14 @@ function AddPaymentDialog({
   React.useEffect(() => {
     if (!open) return;
     let active = true;
-    Promise.all([getDocs(collection(firebaseDb, "campaigns")), getDocs(collection(firebaseDb, JOB_TERMS_COLLECTION))])
-      .then(([campaignSnapshot, termsSnapshot]) => {
+    Promise.all([jobsCollection().then((name) => getDocs(collection(firebaseDb, name))), getDocs(collection(firebaseDb, JOB_TERMS_COLLECTION))])
+      .then(([jobSnapshot, termsSnapshot]) => {
         if (!active) return;
         const assignees = new Map(termsSnapshot.docs.map((item) => [item.id, (item.data() as JobTerms).assignedTo] as const));
-        setJobs(campaignSnapshot.docs
-          .map((item) => ({ id: item.id, data: item.data() as { campaign?: string; name?: string; status?: string } }))
+        setJobs(jobSnapshot.docs
+          .map((item) => ({ id: item.id, data: item.data() as { job?: string; name?: string; status?: string } }))
           .filter(({ data }) => data.status !== "completed")
-          .map(({ id, data }) => ({ slug: id, name: data.campaign ?? data.name ?? id, assignedTo: assignees.get(id) ?? null }))
+          .map(({ id, data }) => ({ slug: id, name: data.job ?? data.name ?? id, assignedTo: assignees.get(id) ?? null }))
           .sort((a, b) => a.name.localeCompare(b.name)));
       })
       .catch((cause) => console.error("Unable to load jobs for payment", cause));
@@ -264,12 +266,12 @@ function AddPaymentDialog({
     try {
       await addDoc(collection(firebaseDb, PAYMENTS_COLLECTION), {
         payeeUid: payee.uid,
-        campaignId: selectedJob?.slug ?? null,
+        jobId: selectedJob?.slug ?? null,
         payeeName: payee.name,
         amount: value,
         currency,
         description: description.trim(),
-        campaignName: selectedJob?.name ?? null,
+        jobName: selectedJob?.name ?? null,
         status: "pending",
         dueDate: dueDate || null,
         paidAt: null,

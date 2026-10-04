@@ -15,9 +15,10 @@ import { firebaseDb } from "@/lib/firebase/client";
 import { ACTIVITY_COLLECTION, elapsedMs, formatClockFull, type ActivityEntry } from "@/lib/time-tracking";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { ADMIN_NAV_ITEMS, NAV_ITEMS, type NavItem } from "@/lib/nav";
-import { campaignHref, type Campaign } from "@/lib/campaigns";
+import { jobHref, normalizeJob, type Job } from "@/lib/jobs";
 import { clientHref, type Client } from "@/lib/clients";
-import { jobHref, type Job } from "@/lib/jobs";
+import { openingHref, type Opening } from "@/lib/openings";
+import { jobsCollection, openingsCollection } from "@/lib/firebase/job-collections";
 import type { BlogPost } from "@/lib/blog";
 import { isCreatorUser, normalizeUser, type User } from "@/lib/users";
 import {
@@ -59,7 +60,7 @@ function navigationSearchResults(items: NavItem[], canViewAuthLinks: boolean, ro
   });
 }
 
-function contentSearchResults(users: User[], clients: Client[], campaigns: Campaign[], posts: BlogPost[], jobs: Job[]): SearchResult[] {
+function contentSearchResults(users: User[], clients: Client[], jobs: Job[], posts: BlogPost[], openings: Opening[]): SearchResult[] {
   return [
     ...users.flatMap((user) => {
       if (!user.slug) return [];
@@ -79,12 +80,12 @@ function contentSearchResults(users: User[], clients: Client[], campaigns: Campa
       href: clientHref(client.slug),
       keywords: [client.name, client.industry, client.description, client.targetAudience].filter(Boolean).join(" "),
     })),
-    ...campaigns.map((campaign) => ({
-      id: `campaign-${campaign.slug}`,
-      label: campaign.campaign ?? campaign.name,
-      detail: `Campaign${campaign.clientName ? ` · ${campaign.clientName}` : ""}`,
-      href: campaignHref(campaign.slug),
-      keywords: [campaign.name, campaign.campaign, campaign.clientName, campaign.category, campaign.summary].filter(Boolean).join(" "),
+    ...jobs.map((job) => ({
+      id: `job-${job.slug}`,
+      label: job.title ?? job.name,
+      detail: `Job${job.clientName ? ` · ${job.clientName}` : ""}`,
+      href: jobHref(job.slug),
+      keywords: [job.name, job.title, job.clientName, job.category, job.summary].filter(Boolean).join(" "),
     })),
     ...posts.map((post) => ({
       id: `post-${post.slug}`,
@@ -93,12 +94,12 @@ function contentSearchResults(users: User[], clients: Client[], campaigns: Campa
       href: `/blog/${post.slug}`,
       keywords: [post.title, post.excerpt, post.category].filter(Boolean).join(" "),
     })),
-    ...jobs.map((job) => ({
-      id: `job-${job.slug}`,
-      label: job.title,
-      detail: `Career · ${job.department}`,
-      href: jobHref(job.slug),
-      keywords: [job.title, job.department, job.location, job.summary].filter(Boolean).join(" "),
+    ...openings.map((opening) => ({
+      id: `opening-${opening.slug}`,
+      label: opening.title,
+      detail: `Career · ${opening.department}`,
+      href: openingHref(opening.slug),
+      keywords: [opening.title, opening.department, opening.location, opening.summary].filter(Boolean).join(" "),
     })),
   ];
 }
@@ -182,21 +183,22 @@ export function DashboardHeader({
   useEffect(() => {
     if (search.trim().length < 2 || searchIndexLoaded) return;
     let active = true;
-    Promise.all([
+    Promise.all([jobsCollection(), openingsCollection()])
+      .then(([jobsName, openingsName]) => Promise.all([
       getDocs(collection(firebaseDb, "users")),
       getDocs(collection(firebaseDb, "clients")),
-      getDocs(collection(firebaseDb, "campaigns")),
+      getDocs(collection(firebaseDb, jobsName)),
       getDocs(collection(firebaseDb, "blogs")),
-      getDocs(collection(firebaseDb, "jobs")),
-    ])
-      .then(([usersSnapshot, clientsSnapshot, campaignsSnapshot, postsSnapshot, jobsSnapshot]) => {
+      getDocs(collection(firebaseDb, openingsName)),
+    ]))
+      .then(([usersSnapshot, clientsSnapshot, jobsSnapshot, postsSnapshot, openingsSnapshot]) => {
         if (!active) return;
         const users = usersSnapshot.docs.map((document) => normalizeUser(document.data() as User));
         const clients = clientsSnapshot.docs.map((document) => document.data() as Client);
-        const campaigns = campaignsSnapshot.docs.map((document) => document.data() as Campaign);
+        const jobs = jobsSnapshot.docs.map((document) => normalizeJob(document.data(), document.id));
         const posts = postsSnapshot.docs.map((document) => document.data() as BlogPost);
-        const jobs = jobsSnapshot.docs.map((document) => document.data() as Job);
-        setContentResults(contentSearchResults(users, clients, campaigns, posts, jobs));
+        const openings = openingsSnapshot.docs.map((document) => document.data() as Opening);
+        setContentResults(contentSearchResults(users, clients, jobs, posts, openings));
       })
       .catch((error) => console.error("Unable to load dashboard search index", error))
       .finally(() => {

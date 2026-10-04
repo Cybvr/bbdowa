@@ -6,17 +6,17 @@
  */
 export const NJERI_SYSTEM_PROMPT = `You are Njeri, the friendly conversational assistant for BBDO West Africa, the Lagos studio of the global BBDO advertising network.
 
-Have a normal, useful conversation. Answer greetings, follow-up questions, clarifications, general knowledge questions, brainstorming requests, writing requests, and questions about BBDO. Do not reject a question simply because it is not listed in the company facts below. Use the company facts as your source of truth for BBDO-specific claims, and never invent BBDO clients, campaigns, people, results, or numbers. For general questions, answer from your knowledge and be honest when you are uncertain. If a question needs current or specialist research, explain that briefly and offer to research it.
+Have a normal, useful conversation. Answer greetings, follow-up questions, clarifications, general knowledge questions, brainstorming requests, writing requests, and questions about BBDO. Do not reject a question simply because it is not listed in the company facts below. Use the company facts as your source of truth for BBDO-specific claims, and never invent BBDO clients, jobs, people, results, or numbers. For general questions, answer from your knowledge and be honest when you are uncertain. If a question needs current or specialist research, explain that briefly and offer to research it.
 
 WORKSPACE HELP
-You are the conversational way into the BBDO West Africa portal. Help people find and understand live workspace information, and help admins/managers create or update creators, clients, campaigns, and tasks from plain-language requests or pasted details. Prepare one small editable action when a change is requested; don't send users through extra steps or repeat confirmations. The inline action's save button is the confirmation. Only propose task changes against a task in the supplied workspace records. Respect who can read or change each record. Never invent records or claim a change was saved before it is.
+You are the conversational way into the BBDO West Africa portal. Help people find and understand live workspace information, and help admins/managers create or update creators, clients, jobs, and tasks from plain-language requests or pasted details. Prepare one small editable action when a change is requested; don't send users through extra steps or repeat confirmations. The inline action's save button is the confirmation. Only propose task changes against a task in the supplied workspace records. Respect who can read or change each record. Never invent records or claim a change was saved before it is.
 
-For management questions about creators, compare only the supplied evidence: referral source, availability, clearance/vetting, past work, rates, campaign fit, document/signature status, and logged time when available. Separate facts from your assessment, point out missing evidence, and never treat logged hours as future availability.
+For management questions about creators, compare only the supplied evidence: referral source, availability, clearance/vetting, past work, rates, job fit, document/signature status, and logged time when available. Separate facts from your assessment, point out missing evidence, and never treat logged hours as future availability.
 
 COMPANY
 BBDO West Africa is the Lagos studio of the global BBDO network. 10+ years in market, 100+ brands served across West Africa, 30+ specialists in the Lagos studio. Core disciplines: Strategy, Creative, Production, and Social.
 
-CURRENT / LIVE CAMPAIGNS
+CURRENT / LIVE JOBS
 - Jack Daniel's — "That's Naija, That's Jack" (client: Brown-Forman). Insight: Nigerians moving culture forward refuse outdated scripts and trust their own way, matching Jack Daniel's celebration of individuality. Execution: a loud launch across outdoor and radio in Lagos & Abuja, then retail pop-ups, The Rooftop Reserve, and cultural events (Art X Lagos, Felabration).
 - Betano — "Make We Bet" (client: Keizen Games). Insight: friendly sports debates often end with "make we bet" — a familiar challenge to put certainty on the line. Strategy: grounding sports wagering in recognizable West African banter and the pinky-lock gesture, across Nigeria and Ghana.
 - 1 Utility Bank — "Leap of Faith". Positioning: "One Bill. No Leap of Faith", turning everyday utility payments into long-term financial trust.
@@ -52,9 +52,9 @@ export const QUICK_PROMPTS: QuickPrompt[] = [
     question: "What projects have you worked on?",
   },
   {
-    id: "campaigns",
-    label: "Current campaigns",
-    question: "What are your current campaigns?",
+    id: "jobs",
+    label: "Current jobs",
+    question: "What are your current jobs?",
   },
 ];
 
@@ -74,18 +74,18 @@ export const PERSONAL_QUICK_PROMPTS: QuickPrompt[] = [
 export function getAnswer(query: string): string {
   const q = query.toLowerCase().trim();
 
-  // 1. Current campaigns
+  // 1. Current jobs
   if (
-    q.includes("current campaign") ||
-    q.includes("active campaign") ||
-    q.includes("live campaign") ||
-    q.includes("running campaign") ||
-    q.includes("what campaigns are live") ||
+    q.includes("current job") ||
+    q.includes("active job") ||
+    q.includes("live job") ||
+    q.includes("running job") ||
+    q.includes("what jobs are live") ||
     q.includes("current work") ||
-    q === "current campaigns"
+    q === "current jobs"
   ) {
     return [
-      "Here are our current and live campaigns:",
+      "Here are our current and live jobs:",
       "",
       "• **Jack Daniel’s — ‘That’s Naija, That’s Jack’ (Brown-Forman)**: A high-impact cultural rollout celebrating Nigerian individuality across outdoor, radio, retail pop-ups, The Rooftop Reserve, and sponsorships including Felabration and Art X Lagos.",
       "",
@@ -93,7 +93,7 @@ export function getAnswer(query: string): string {
       "",
       "• **1 Utility Bank — ‘Leap of Faith’**: A strategic positioning around 'One Bill. No Leap of Faith', turning everyday utility payments into long-term financial trust.",
       "",
-      "You can also browse our live campaigns directly in the Work section on this page!"
+      "You can also browse our live jobs directly in the Work section on this page!"
     ].join("\n");
   }
 
@@ -145,7 +145,7 @@ export function getAnswer(query: string): string {
     ].join("\n");
   }
 
-  // 4. Specific brand/campaign inquiries
+  // 4. Specific brand/job inquiries
   if (q.includes("jack daniel") || q.includes("naija") || q.includes("brown-forman")) {
     return [
       "**Jack Daniel’s — ‘That’s Naija, That’s Jack’**",
@@ -209,7 +209,7 @@ export function getAnswer(query: string): string {
     "",
     "1. **Our company** (our history, services, and team)",
     "2. **Our projects** (our portfolio and client case studies)",
-    "3. **Current campaigns** (live work like Jack Daniel's and Betano)",
+    "3. **Current jobs** (live work like Jack Daniel's and Betano)",
     "",
     "You can also click any of the suggestion buttons above!"
   ].join("\n");

@@ -74,6 +74,12 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isStaff();
     }
+    // Client jobs. They lived in `campaigns` before the campaigns → jobs
+    // migration; `campaigns` is kept as a backup until it is deleted.
+    match /jobs/{id} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
     match /campaigns/{id} {
       allow read: if true;
       allow write: if isStaff();
@@ -82,7 +88,8 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
-    match /jobs/{id} {
+    // Careers openings (stored in `jobs` before the migration).
+    match /openings/{id} {
       allow read: if true;
       allow write: if isAdmin();
     }
@@ -111,6 +118,13 @@ service cloud.firestore {
       allow delete: if signedIn() && resource.data.ownerId == request.auth.uid;
     }
 
+    // One-off data migrations. `migrations/campaignsToJobs.done` tells the
+    // app which collections to read, so everyone can read it.
+    match /migrations/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // Clock in / clock out. Each shift belongs to the person who created it:
     // they read and write only their own; admins and managers can read everyone's.
     match /timeEntries/{id} {
@@ -118,17 +132,21 @@ service cloud.firestore {
         || (signedIn() && resource.data.uid == request.auth.uid);
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid;
-      allow update: if signedIn()
+      allow update: if (signedIn()
         && resource.data.uid == request.auth.uid
-        && request.resource.data.uid == request.auth.uid;
+        && request.resource.data.uid == request.auth.uid)
+        || (isAdmin()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            "jobId", "jobName", "campaignSlug", "campaignName"
+          ]));
       allow delete: if isAdmin()
         || (signedIn() && resource.data.uid == request.auth.uid);
     }
 
-    // A job is a campaign. Its assignment and pay terms are kept here, keyed
-    // by the campaign slug, because campaigns are public. Staff and the
+    // A job's assignment and pay terms are kept here, keyed by the job slug,
+    // because jobs are public. Staff and the
     // assigned person can read them; only staff can change them.
-    match /jobTerms/{campaignId} {
+    match /jobTerms/{jobId} {
       allow read: if isStaff()
         || (signedIn() && resource.data.assignedTo == request.auth.uid);
       allow write: if isStaff();
@@ -154,14 +172,14 @@ service cloud.firestore {
           && request.resource.data.status in ["todo", "in_progress", "done"]
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
             "title", "description", "content", "status", "dueDate",
-            "clientId", "clientName", "campaignId", "campaignName", "updatedAt"
+            "clientId", "clientName", "jobId", "jobName", "updatedAt"
           ]))
         || (signedIn()
           && resource.data.assignedTo == request.auth.uid
           && request.resource.data.status in ["todo", "in_progress", "done"]
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
             "title", "description", "content", "status", "dueDate",
-            "clientId", "clientName", "campaignId", "campaignName", "updatedAt", "shareEnabled"
+            "clientId", "clientName", "jobId", "jobName", "updatedAt", "shareEnabled"
           ]));
       allow delete: if isStaff()
         || (signedIn() && resource.data.assignedTo == request.auth.uid);

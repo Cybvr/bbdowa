@@ -10,12 +10,12 @@ const TOPICS = [
   {
     title: "Tracker",
     href: "/dashboard/tracker",
-    body: "Start a timer against a campaign when you begin something, and pause or stop it from the sidebar. Your hours roll up into the weekly view.",
+    body: "Start a timer against a job when you begin something, and pause or stop it from the sidebar. Your hours roll up into the weekly view.",
   },
   {
     title: "Njeri",
     href: "/dashboard/njeri",
-    body: "The workspace assistant. Ask about campaigns, people or your tasks, and confirm any change it proposes before it is saved.",
+    body: "The workspace assistant. Ask about jobs, people or your tasks, and confirm any change it proposes before it is saved.",
   },
   {
     title: "Messages",

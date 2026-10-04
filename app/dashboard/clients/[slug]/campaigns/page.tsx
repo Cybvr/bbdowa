@@ -1,5 +1,8 @@
-import ClientPage from "../page";
+import { redirect } from "next/navigation";
 
-export default function ClientCampaignsPage() {
-  return <ClientPage />;
+type Params = { params: Promise<{ slug: string }> };
+
+export default async function ClientCampaignsPage({ params }: Params) {
+  const { slug } = await params;
+  redirect(`/dashboard/clients/${slug}/jobs`);
 }

@@ -35,7 +35,7 @@ export type ClientDraft = {
   targetAudience: string | null;
 };
 
-export type CampaignDraft = {
+export type JobDraft = {
   name: string;
   clientName: string;
   category: string;
@@ -59,22 +59,22 @@ export type TaskDraft = {
   assignedToName: string;
   clientId: string | null;
   clientName: string | null;
-  campaignId: string | null;
-  campaignName: string | null;
+  jobId: string | null;
+  jobName: string | null;
   dueDate: string | null;
   status: "todo" | "in_progress" | "done";
 };
 
-export type ManagedCollection = "users" | "clients" | "campaigns";
+export type ManagedCollection = "users" | "clients" | "jobs";
 
 /** Small, non-sensitive snapshot of live app records supplied to Njeri for staff queries. */
 export type NjeriWorkspaceContext = {
   clients: Array<{ name: string; slug: string; industry: string; description: string; targetAudience: string }>;
   creators: Array<{ name: string; slug: string; uid: string; category: string; title: string; instagram: string; niche: string; followerCount: string; availability: string; referralSource: string; clearance: string; vetted: boolean; workedOn: string[]; workHistory: CreatorWorkHistoryDraft[]; dayRate: string; rateMin: number | null; rateCurrency: string; yearsActive: number | null; craftNote: string }>;
-  campaigns: Array<{ name: string; slug: string; clientName: string; category: string; status: string; summary: string }>;
-  tasks: Array<{ id: string; title: string; description: string; assignedTo: string; assignedToName: string; clientName: string; campaignName: string; status: string; dueDate: string }>;
+  jobs: Array<{ name: string; slug: string; clientName: string; category: string; status: string; summary: string }>;
+  tasks: Array<{ id: string; title: string; description: string; assignedTo: string; assignedToName: string; clientName: string; jobName: string; status: string; dueDate: string }>;
   documents: Array<{ id: string; title: string; status: string; assignedTo: string; assignedToName: string; createdAt: string; signedAt: string; signedName: string; body?: string }>;
-  trackedHours: Array<{ uid: string; name: string; campaignName: string; activity: string; minutes: number; startedAt: string }>;
+  trackedHours: Array<{ uid: string; name: string; jobName: string; activity: string; minutes: number; startedAt: string }>;
 };
 
 export type NjeriRecordChange = string | number | boolean | null | string[];
@@ -95,8 +95,8 @@ export type NjeriActionProposal =
       error?: string;
     }
   | {
-      type: "create_campaign";
-      record: CampaignDraft;
+      type: "create_job";
+      record: JobDraft;
       sources: string[];
       status?: "pending" | "saving" | "saved" | "failed";
       error?: string;

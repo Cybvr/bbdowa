@@ -1,7 +1,7 @@
 // Activity tracker.
 //
 // One document per activity in the `timeEntries` collection. A person starts an
-// activity (what they're doing + which campaign); it runs until they stop it,
+// activity (what they're doing + which job); it runs until they stop it,
 // and the app measures how long it took. Admins can read everyone's; each
 // person reads and writes only their own.
 
@@ -13,10 +13,10 @@ export type ActivityEntry = {
   uid: string;
   /** Display name captured at start, for the admin view. */
   name: string | null;
-  /** Slug of the campaign this is for, or null. */
-  campaignSlug: string | null;
-  /** Campaign name captured at start, for display. */
-  campaignName: string | null;
+  /** Slug of the job this is for, or null. */
+  jobId: string | null;
+  /** Job name captured at start, for display. */
+  jobName: string | null;
   /** What the person is doing. */
   activity: string;
   /** ISO timestamp when the activity was started. */

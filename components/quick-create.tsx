@@ -22,11 +22,12 @@ import {
 } from "@/components/ui/select";
 import { useAuth } from "@/components/auth-provider";
 import { firebaseDb } from "@/lib/firebase/client";
+import { jobsCollection } from "@/lib/firebase/job-collections";
 import { ImageUploadField } from "@/components/detail-editor";
 import { LIST_ACTION_CLASS } from "@/components/dashboard/list-page-actions";
 
-export type CreateType = "update" | "resource" | "client" | "campaign";
-type CampaignStatus = "live" | "pitch" | "completed";
+export type CreateType = "update" | "resource" | "client" | "job";
+type JobStatus = "live" | "pitch" | "completed";
 type ClientOption = { slug: string; name: string };
 
 const CREATE_COPY: Record<CreateType, { button: string; title: string; description: string }> = {
@@ -45,7 +46,7 @@ const CREATE_COPY: Record<CreateType, { button: string; title: string; descripti
     title: "New client",
     description: "Create a client record. You can add more detail from the client workspace.",
   },
-  campaign: {
+  job: {
     button: "New",
     title: "New",
     description: "Create a job for a client, then add its details, pay and assignment.",
@@ -62,7 +63,7 @@ function slugify(value: string): string {
 }
 
 const UPDATE_CATEGORIES = ["News", "People", "Work", "Industry"] as const;
-const CAMPAIGN_STATUSES: { value: CampaignStatus; label: string }[] = [
+const JOB_STATUSES: { value: JobStatus; label: string }[] = [
   { value: "pitch", label: "Pitch" },
   { value: "live", label: "Live" },
   { value: "completed", label: "Completed" },
@@ -100,18 +101,18 @@ export function QuickCreate({ type, iconOnly = false }: { type: CreateType; icon
   const [profileImage, setProfileImage] = React.useState("");
   const [clientDescription, setClientDescription] = React.useState("");
 
-  // Campaign fields.
-  const [campaignTitle, setCampaignTitle] = React.useState("");
-  const [campaignClientId, setCampaignClientId] = React.useState("");
-  const [campaignCategory, setCampaignCategory] = React.useState("");
-  const [campaignStatus, setCampaignStatus] = React.useState<CampaignStatus>("pitch");
-  const [campaignYear, setCampaignYear] = React.useState("");
-  const [campaignLiveDate, setCampaignLiveDate] = React.useState("");
+  // Job fields.
+  const [jobTitle, setJobTitle] = React.useState("");
+  const [jobClientId, setJobClientId] = React.useState("");
+  const [jobCategory, setJobCategory] = React.useState("");
+  const [jobStatus, setJobStatus] = React.useState<JobStatus>("pitch");
+  const [jobYear, setJobYear] = React.useState("");
+  const [jobLiveDate, setJobLiveDate] = React.useState("");
 
   const copy = CREATE_COPY[type];
 
   React.useEffect(() => {
-    if (!open || type !== "campaign") return;
+    if (!open || type !== "job") return;
 
     let active = true;
     setLoadingClients(true);
@@ -125,10 +126,10 @@ export function QuickCreate({ type, iconOnly = false }: { type: CreateType; icon
           })
           .sort((a, b) => a.name.localeCompare(b.name));
         setClients(options);
-        setCampaignClientId((current) => current || options[0]?.slug || "");
+        setJobClientId((current) => current || options[0]?.slug || "");
       })
       .catch((cause) => {
-        console.error("Unable to load clients for campaign creation", cause);
+        console.error("Unable to load clients for job creation", cause);
         if (active) setError("Unable to load clients. Try again.");
       })
       .finally(() => {
@@ -156,12 +157,12 @@ export function QuickCreate({ type, iconOnly = false }: { type: CreateType; icon
     setClientDate("");
     setProfileImage("");
     setClientDescription("");
-    setCampaignTitle("");
-    setCampaignClientId("");
-    setCampaignCategory("");
-    setCampaignStatus("pitch");
-    setCampaignYear("");
-    setCampaignLiveDate("");
+    setJobTitle("");
+    setJobClientId("");
+    setJobCategory("");
+    setJobStatus("pitch");
+    setJobYear("");
+    setJobLiveDate("");
     setError(null);
   };
 
@@ -177,7 +178,7 @@ export function QuickCreate({ type, iconOnly = false }: { type: CreateType; icon
         ? label.trim().length > 0
         : type === "client"
           ? clientName.trim().length > 0 && industry.trim().length > 0
-          : campaignTitle.trim().length > 0 && Boolean(campaignClientId) && !loadingClients;
+          : jobTitle.trim().length > 0 && Boolean(jobClientId) && !loadingClients;
 
   const handleSave = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -234,31 +235,31 @@ export function QuickCreate({ type, iconOnly = false }: { type: CreateType; icon
         reset();
         router.push(`/dashboard/clients/${slug}/overview`);
       } else {
-        const selectedClient = clients.find((client) => client.slug === campaignClientId);
+        const selectedClient = clients.find((client) => client.slug === jobClientId);
         if (!selectedClient) throw new Error("Choose a client before creating the job.");
 
-        const slug = slugify(campaignTitle);
-        const parsedYear = campaignYear.trim() ? Number(campaignYear) : null;
-        const campaignName = campaignTitle.trim();
-        await setDoc(doc(firebaseDb, "campaigns", slug), {
+        const slug = slugify(jobTitle);
+        const parsedYear = jobYear.trim() ? Number(jobYear) : null;
+        const jobName = jobTitle.trim();
+        await setDoc(doc(firebaseDb, await jobsCollection(), slug), {
           slug,
-          name: campaignName,
-          campaign: campaignName,
+          name: jobName,
+          title: jobName,
           clientId: selectedClient.slug,
           clientName: selectedClient.name,
-          category: campaignCategory.trim() || "General",
+          category: jobCategory.trim() || "General",
           year: Number.isFinite(parsedYear as number) ? parsedYear : null,
-          liveAt: campaignLiveDate ? { date: campaignLiveDate } : null,
-          status: campaignStatus,
+          liveAt: jobLiveDate ? { date: jobLiveDate } : null,
+          status: jobStatus,
           leadUserId: null,
           publishedBy: null,
           fee: "To be confirmed",
           target: "To be confirmed",
           result: "To be confirmed",
           image: "/images/projects/project-placeholder.svg",
-          imageAlt: `${campaignName} campaign placeholder`,
+          imageAlt: `${jobName} job placeholder`,
           media: [],
-          summary: "Campaign details will be added.",
+          summary: "Job details will be added.",
           challenge: "Challenge details coming soon.",
           insight: "Insight details coming soon.",
           strategy: "Strategy details coming soon.",
@@ -368,12 +369,12 @@ export function QuickCreate({ type, iconOnly = false }: { type: CreateType; icon
               <>
                 <div className="space-y-1.5">
                   <span className={LABEL}>Job title</span>
-                  <Input autoFocus value={campaignTitle} onChange={(event) => setCampaignTitle(event.target.value)} disabled={busy} placeholder="Job name" />
+                  <Input autoFocus value={jobTitle} onChange={(event) => setJobTitle(event.target.value)} disabled={busy} placeholder="Job name" />
                 </div>
                 <div className="space-y-1.5">
                   <span className={LABEL}>Client</span>
                   {clients.length > 0 ? (
-                    <Select value={campaignClientId} onValueChange={setCampaignClientId} disabled={busy || loadingClients}>
+                    <Select value={jobClientId} onValueChange={setJobClientId} disabled={busy || loadingClients}>
                       <SelectTrigger className="w-full"><SelectValue placeholder={loadingClients ? "Loading clients…" : "Select a client"} /></SelectTrigger>
                       <SelectContent>{clients.map((client) => <SelectItem key={client.slug} value={client.slug}>{client.name}</SelectItem>)}</SelectContent>
                     </Select>
@@ -383,24 +384,24 @@ export function QuickCreate({ type, iconOnly = false }: { type: CreateType; icon
                 </div>
                 <div className="space-y-1.5">
                   <span className={LABEL}>Category</span>
-                  <Input value={campaignCategory} onChange={(event) => setCampaignCategory(event.target.value)} disabled={busy} placeholder="e.g. Finance" />
+                  <Input value={jobCategory} onChange={(event) => setJobCategory(event.target.value)} disabled={busy} placeholder="e.g. Finance" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <span className={LABEL}>Status</span>
-                    <Select value={campaignStatus} onValueChange={(value) => setCampaignStatus(value as CampaignStatus)} disabled={busy}>
+                    <Select value={jobStatus} onValueChange={(value) => setJobStatus(value as JobStatus)} disabled={busy}>
                       <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
-                      <SelectContent>{CAMPAIGN_STATUSES.map((option) => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectContent>
+                      <SelectContent>{JOB_STATUSES.map((option) => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-1.5">
                     <span className={LABEL}>Year</span>
-                    <Input type="number" value={campaignYear} onChange={(event) => setCampaignYear(event.target.value)} disabled={busy} placeholder="2026" />
+                    <Input type="number" value={jobYear} onChange={(event) => setJobYear(event.target.value)} disabled={busy} placeholder="2026" />
                   </div>
                 </div>
                 <div className="space-y-1.5">
                   <span className={LABEL}>Live date</span>
-                  <Input type="date" value={campaignLiveDate} onChange={(event) => setCampaignLiveDate(event.target.value)} disabled={busy} />
+                  <Input type="date" value={jobLiveDate} onChange={(event) => setJobLiveDate(event.target.value)} disabled={busy} />
                 </div>
               </>
             )}
@@ -409,7 +410,7 @@ export function QuickCreate({ type, iconOnly = false }: { type: CreateType; icon
 
             <DialogFooter>
               <button type="button" onClick={() => handleOpenChange(false)} disabled={busy} className="h-9 rounded-md border border-border px-4 text-xs font-semibold text-foreground transition hover:border-foreground disabled:opacity-50">Cancel</button>
-              <button type="submit" disabled={busy || !canSave} className="h-9 rounded-md bg-primary px-4 text-xs font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50">{busy ? "Saving…" : `Create ${type === "campaign" ? "job" : type}`}</button>
+              <button type="submit" disabled={busy || !canSave} className="h-9 rounded-md bg-primary px-4 text-xs font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50">{busy ? "Saving…" : `Create ${type}`}</button>
             </DialogFooter>
           </form>
         </DialogContent>

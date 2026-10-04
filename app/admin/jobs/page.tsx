@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { CampaignsTable } from "@/components/campaigns-table";
-import { getCampaigns, getClients } from "@/lib/firebase/content";
+import { JobsTable } from "@/components/jobs-table";
+import { getJobs, getClients } from "@/lib/firebase/content";
 import { DashboardListPage } from "@/components/dashboard/list-page";
 
 export const metadata: Metadata = {
@@ -9,11 +9,11 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminJobsPage() {
-  const [campaigns, clients] = await Promise.all([getCampaigns(), getClients()]);
+  const [jobs, clients] = await Promise.all([getJobs(), getClients()]);
 
   return (
-    <DashboardListPage title="Jobs" createType="campaign">
-      <CampaignsTable campaigns={campaigns} clients={clients} />
+    <DashboardListPage title="Jobs" createType="job">
+      <JobsTable jobs={jobs} clients={clients} />
     </DashboardListPage>
   );
 }

@@ -8,10 +8,10 @@ import { FaBehance, FaGlobe } from "react-icons/fa";
 import { LayoutGrid, Mail, MapPin, Phone } from "lucide-react";
 import { creatorCategoryOptions, isCreatorNew, isCreatorUser, type Creator } from "@/lib/users";
 import { useAuth } from "@/components/auth-provider";
-import { readCampaignsFromFirestore, readClientsFromFirestore, readDocumentsForAssignee, readTimeEntriesForUser, useFirestoreUsers } from "@/lib/firebase/client-content";
+import { readJobsFromFirestore, readClientsFromFirestore, readDocumentsForAssignee, readTimeEntriesForUser, useFirestoreUsers } from "@/lib/firebase/client-content";
 import { longDate } from "@/lib/format";
-import { campaignHref, type Campaign } from "@/lib/campaigns";
-import { clientHref, getCreatorCampaigns, type Client } from "@/lib/clients";
+import { jobHref, type Job } from "@/lib/jobs";
+import { clientHref, getCreatorJobs, type Client } from "@/lib/clients";
 import {
   DetailBreadcrumb,
   ProfileBanner,
@@ -46,7 +46,7 @@ function platformsFor(creator: Creator): CreatorPlatform[] {
   return platforms;
 }
 
-type CreatorTab = "overview" | "campaigns" | "hours" | "tasks" | "documents";
+type CreatorTab = "overview" | "jobs" | "hours" | "tasks" | "documents";
 
 const SECTIONS = {
   discover: { label: "Discover", listHref: "/dashboard/discover", variant: "creator" },
@@ -69,18 +69,18 @@ export function UserProfile({ section }: { section: keyof typeof SECTIONS }) {
 
   // Public collections — no auth needed, so every viewer can see this.
   const [clients, setClients] = useState<Client[]>([]);
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [jobs, setJobs] = useState<Job[]>([]);
   const [documentCount, setDocumentCount] = useState(0);
   const [hasHours, setHasHours] = useState(false);
   useEffect(() => {
     let active = true;
-    Promise.all([readClientsFromFirestore(), readCampaignsFromFirestore()])
-      .then(([clientsData, campaignsData]) => {
+    Promise.all([readClientsFromFirestore(), readJobsFromFirestore()])
+      .then(([clientsData, jobsData]) => {
         if (!active) return;
         setClients(clientsData);
-        setCampaigns(campaignsData);
+        setJobs(jobsData);
       })
-      .catch((cause) => console.error("Unable to load clients/campaigns", cause));
+      .catch((cause) => console.error("Unable to load clients/jobs", cause));
     return () => {
       active = false;
     };
@@ -122,10 +122,10 @@ export function UserProfile({ section }: { section: keyof typeof SECTIONS }) {
     return <main className="flex-1 px-4 pb-10 pt-4 sm:px-8 sm:pb-16 sm:pt-4">Profile not found.</main>;
   }
   const platforms = platformsFor(creator);
-  const creatorCampaigns = [
-    ...getCreatorCampaigns(creator.slug, clients, campaigns),
-    ...campaigns.filter((campaign) => campaign.leadUserId === creator.slug),
-  ].filter((campaign, index, list) => list.findIndex((entry) => entry.slug === campaign.slug) === index);
+  const creatorJobs = [
+    ...getCreatorJobs(creator.slug, clients, jobs),
+    ...jobs.filter((job) => job.leadUserId === creator.slug),
+  ].filter((job, index, list) => list.findIndex((entry) => entry.slug === job.slug) === index);
   const canSeeTasks = isStaff || Boolean(creator.uid);
 
   type EngagementCell = { label: string; value: ReactNode };
@@ -146,7 +146,7 @@ export function UserProfile({ section }: { section: keyof typeof SECTIONS }) {
 
   const tabs: { id: CreatorTab; label: string }[] = [
     { id: "overview", label: "Overview" },
-    ...(creatorCampaigns.length ? ([{ id: "campaigns", label: "Campaigns" }] as const) : []),
+    ...(creatorJobs.length ? ([{ id: "jobs", label: "Jobs" }] as const) : []),
     ...(hasHours ? ([{ id: "hours", label: "Hours" }] as const) : []),
     ...(canSeeTasks ? ([{ id: "tasks", label: "Tasks" }] as const) : []),
     ...(documentCount > 0 || isStaff ? ([{ id: "documents", label: "Documents" }] as const) : []),
@@ -327,29 +327,29 @@ export function UserProfile({ section }: { section: keyof typeof SECTIONS }) {
           </>
         )}
 
-        {tab === "campaigns" && (
-          <ProfileSection title="Campaigns" variant="plain">
+        {tab === "jobs" && (
+          <ProfileSection title="Jobs" variant="plain">
             <ProfileTable
               columns={[
-                { key: "campaign", label: "Campaign" },
+                { key: "job", label: "Job" },
                 { key: "client", label: "Client" },
                 { key: "status", label: "Status" },
               ]}
-              rows={creatorCampaigns.map((campaign) => ({
-                campaign: (
-                  <Link href={campaignHref(campaign.slug)} className="font-semibold text-foreground hover:text-primary">
-                    {campaign.campaign ?? campaign.name}
+              rows={creatorJobs.map((job) => ({
+                job: (
+                  <Link href={jobHref(job.slug)} className="font-semibold text-foreground hover:text-primary">
+                    {job.title ?? job.name}
                   </Link>
                 ),
                 client: (
-                  <Link href={clientHref(campaign.clientId)} className="text-foreground hover:text-primary">
-                    {campaign.clientName}
+                  <Link href={clientHref(job.clientId)} className="text-foreground hover:text-primary">
+                    {job.clientName}
                   </Link>
                 ),
-                status: <span className="capitalize">{campaign.status}</span>,
+                status: <span className="capitalize">{job.status}</span>,
               }))}
-              emptyTitle="No campaigns yet"
-              emptyDescription={`${creator.name} hasn’t been added to a campaign yet.`}
+              emptyTitle="No jobs yet"
+              emptyDescription={`${creator.name} hasn’t been added to a job yet.`}
             />
           </ProfileSection>
         )}

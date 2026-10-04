@@ -20,7 +20,7 @@ import { Input } from "@/components/ui/input";
 import { RichTextEditor } from "@/components/rich-text-editor";
 import { CreatorPicker } from "@/components/creator-picker";
 import { TaskStatusBadge } from "@/components/tasks-view";
-import { TaskClientCampaignFields, useTaskLinkOptions } from "@/components/task-link-fields";
+import { TaskClientJobFields, useTaskLinkOptions } from "@/components/task-link-fields";
 import { useFirestoreTasks, useFirestoreUsers } from "@/lib/firebase/client-content";
 import { TASK_COLLECTION, TASK_STATUSES, TASK_STATUS_LABELS, formatDate, isOverdue, type Task, type TaskStatus } from "@/lib/creator-tasks";
 import { firebaseDb } from "@/lib/firebase/client";
@@ -54,12 +54,12 @@ function NewTaskDialog({ assignees, createdBy, createdByName, onCreated }: {
   const [content, setContent] = React.useState("");
   const [dueDate, setDueDate] = React.useState("");
   const [clientId, setClientId] = React.useState<string | null>(null);
-  const [campaignId, setCampaignId] = React.useState<string | null>(null);
+  const [jobId, setJobId] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const { clients, campaigns, loading: linksLoading } = useTaskLinkOptions();
+  const { clients, jobs, loading: linksLoading } = useTaskLinkOptions();
 
-  const reset = () => { setAssignedTo(""); setTitle(""); setDescription(""); setContent(""); setDueDate(""); setClientId(null); setCampaignId(null); setError(null); };
+  const reset = () => { setAssignedTo(""); setTitle(""); setDescription(""); setContent(""); setDueDate(""); setClientId(null); setJobId(null); setError(null); };
   const handleOpenChange = (next: boolean) => { setOpen(next); if (!next) reset(); };
   const canSave = title.trim().length > 0 && assignedTo.length > 0 && !busy;
 
@@ -77,8 +77,8 @@ function NewTaskDialog({ assignees, createdBy, createdByName, onCreated }: {
         content,
         clientId,
         clientName: clients.find((client) => client.slug === clientId)?.name ?? null,
-        campaignId,
-        campaignName: campaigns.find((campaign) => campaign.slug === campaignId)?.name ?? null,
+        jobId,
+        jobName: jobs.find((job) => job.slug === jobId)?.name ?? null,
         assignedTo,
         assignedToName: assignee?.name ?? null,
         createdBy,
@@ -134,15 +134,15 @@ function NewTaskDialog({ assignees, createdBy, createdByName, onCreated }: {
             </div>
             <RichTextEditor label="Content" value={content} onChange={setContent} placeholder="Add detailed instructions and copy…" compact />
             <div className="grid gap-3 sm:grid-cols-2">
-              <TaskClientCampaignFields
+              <TaskClientJobFields
                 clientId={clientId}
-                campaignId={campaignId}
+                jobId={jobId}
                 clients={clients}
-                campaigns={campaigns}
+                jobs={jobs}
                 disabled={busy || linksLoading}
                 inlineLabels
-                onClientChange={(value) => { setClientId(value); setCampaignId(null); }}
-                onCampaignChange={setCampaignId}
+                onClientChange={(value) => { setClientId(value); setJobId(null); }}
+                onJobChange={setJobId}
               />
               <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2">
                 <label htmlFor="task-due-date" className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Due date</label>
@@ -169,7 +169,7 @@ export default function TasksPage() {
   const [search, setSearch] = React.useState("");
   const [status, setStatus] = React.useState<TaskStatus | "all">("all");
   const [assigneeId, setAssigneeId] = React.useState("all");
-  const [campaignId, setCampaignId] = React.useState("all");
+  const [jobId, setJobId] = React.useState("all");
   const [sort, setSort] = React.useState<"recent" | "due" | "title" | "updated">("recent");
   const [view, setView] = React.useState<ViewMode>("table");
   const [busyId, setBusyId] = React.useState<string | null>(null);
@@ -195,17 +195,17 @@ export default function TasksPage() {
     assignees.unshift({ uid: user.uid, name: `${user.name ?? user.email ?? "Me"} (you)`, slug: "", isCreator: false, hint: "" });
   }
 
-  const campaignOptions = React.useMemo(() => [
-    { value: "all", label: "All campaigns" },
-    ...[...new Map(tasks.filter((task) => task.campaignId && task.campaignName).map((task) => [task.campaignId!, task.campaignName!] as const))]
+  const jobOptions = React.useMemo(() => [
+    { value: "all", label: "All jobs" },
+    ...[...new Map(tasks.filter((task) => task.jobId && task.jobName).map((task) => [task.jobId!, task.jobName!] as const))]
       .sort((a, b) => a[1].localeCompare(b[1]))
       .map(([value, label]) => ({ value, label })),
   ], [tasks]);
   const visible = tasks.filter((task) => {
     if (status !== "all" && task.status !== status) return false;
     if (assigneeId !== "all" && task.assignedTo !== assigneeId) return false;
-    if (campaignId !== "all" && task.campaignId !== campaignId) return false;
-    return [task.title, task.description, task.content, task.assignedToName, task.clientName, task.campaignName].filter(Boolean).join(" ").toLowerCase().includes(search.trim().toLowerCase());
+    if (jobId !== "all" && task.jobId !== jobId) return false;
+    return [task.title, task.description, task.content, task.assignedToName, task.clientName, task.jobName].filter(Boolean).join(" ").toLowerCase().includes(search.trim().toLowerCase());
   }).sort((a, b) => {
     if (sort === "title") return a.title.localeCompare(b.title);
     if (sort === "due") return (a.dueDate || "9999").localeCompare(b.dueDate || "9999");
@@ -221,7 +221,7 @@ export default function TasksPage() {
       await addDoc(collection(firebaseDb, TASK_COLLECTION), {
         title: `${task.title} (Copy)`, description: task.description, content: task.content ?? "",
         clientId: task.clientId ?? null, clientName: task.clientName ?? null,
-        campaignId: task.campaignId ?? null, campaignName: task.campaignName ?? null,
+        jobId: task.jobId ?? null, jobName: task.jobName ?? null,
         assignedTo: task.assignedTo, assignedToName: task.assignedToName,
         createdBy: user!.uid, createdByName: user!.name ?? user!.email,
         status: "todo", dueDate: task.dueDate, createdAt: now, updatedAt: now,
@@ -263,7 +263,7 @@ export default function TasksPage() {
       searchPlaceholder="Search tasks"
       filters={[
         { label: "Assignee", value: assigneeId, onChange: setAssigneeId, options: [{ value: "all", label: "All assignees" }, ...assignees.map((person) => ({ value: person.uid, label: person.name }))] },
-        { label: "Campaign", value: campaignId, onChange: setCampaignId, options: campaignOptions },
+        { label: "Job", value: jobId, onChange: setJobId, options: jobOptions },
       ]}
       sortOptions={TASK_SORTS}
       activeSort={sort}
@@ -294,7 +294,7 @@ export default function TasksPage() {
             <div className="mt-1 flex min-w-0 items-center gap-2 overflow-hidden whitespace-nowrap text-[13px] text-muted-foreground">
               {assignee?.isCreator ? <Link href={`/dashboard/discover/${assignee.slug}`} className="max-w-[35%] shrink-0 truncate font-semibold text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary">{name}</Link> : <span className="max-w-[35%] shrink-0 truncate">{name}</span>}
               {task.clientName ? <span className="hidden truncate sm:inline">· {task.clientName}</span> : null}
-              {task.campaignName ? <span className="hidden truncate lg:inline">· {task.campaignName}</span> : null}
+              {task.jobName ? <span className="hidden truncate lg:inline">· {task.jobName}</span> : null}
               <span className="ml-auto shrink-0"><TaskStatusBadge status={task.status} overdue={isOverdue(task)} /></span>
             </div>
           </TableCell>

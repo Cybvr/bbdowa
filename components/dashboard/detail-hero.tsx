@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 
 /**
  * Shared banner + breadcrumb + horizontal tabs shell, matching the client
- * workspace's hero pattern, for other detail pages (campaigns, creators) to
+ * workspace's hero pattern, for other detail pages (jobs, creators) to
  * mirror the same layout.
  */
 

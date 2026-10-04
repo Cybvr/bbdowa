@@ -1,4 +1,4 @@
-// Shape of the client workspace's editable campaign content
+// Shape of the client workspace's editable job content
 // (/dashboard/clients/[slug]). The actual content lives in Firestore; this
 // file only holds the types and small fixed enums the workspace UI needs.
 
@@ -65,9 +65,9 @@ export interface PhaseContent {
   prPitchAngle: string;
 }
 
-export type CampaignWorkspaceStatus = "Draft" | "Pitch" | "In progress" | "Live" | "Completed";
+export type JobWorkspaceStatus = "Draft" | "Pitch" | "In progress" | "Live" | "Completed";
 
-export const campaignWorkspaceStatuses: CampaignWorkspaceStatus[] = [
+export const jobWorkspaceStatuses: JobWorkspaceStatus[] = [
   "Draft",
   "Pitch",
   "In progress",
@@ -80,13 +80,13 @@ export type MarketingCard = {
   rows: { label: string; value: string }[];
 };
 
-export type CampaignMediaPlan = {
+export type JobMediaPlan = {
   mediaBuying: MarketingCard[];
   influencerMarketing: MarketingCard[];
 };
 
-export type CampaignListItem = {
+export type JobListItem = {
   id: string;
   title: string;
-  status: CampaignWorkspaceStatus;
+  status: JobWorkspaceStatus;
 };

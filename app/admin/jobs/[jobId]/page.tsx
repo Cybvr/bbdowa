@@ -1,20 +1,20 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { JobDetail } from "@/components/job-detail";
-import { getCampaignBySlug } from "@/lib/firebase/content";
+import { getJobBySlug } from "@/lib/firebase/content";
 
 type Params = { params: Promise<{ jobId: string }> };
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { jobId } = await params;
-  const campaign = await getCampaignBySlug(jobId);
-  if (!campaign) return { title: "Job not found" };
-  return { title: campaign.campaign ?? campaign.name, description: campaign.summary };
+  const job = await getJobBySlug(jobId);
+  if (!job) return { title: "Job not found" };
+  return { title: job.title ?? job.name, description: job.summary };
 }
 
 export default async function AdminJobPage({ params }: Params) {
   const { jobId } = await params;
-  const campaign = await getCampaignBySlug(jobId);
-  if (!campaign) notFound();
-  return <JobDetail campaign={campaign} adminMode />;
+  const job = await getJobBySlug(jobId);
+  if (!job) notFound();
+  return <JobDetail job={job} adminMode />;
 }

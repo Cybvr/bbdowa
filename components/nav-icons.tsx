@@ -290,7 +290,6 @@ export const NAV_ICON_SET: Record<string, NavIconComponent> = {
   Dashboard: DashboardIcon,
   Projects: ProjectsIcon,
   Clients: PeopleIcon,
-  Campaigns: ProjectsIcon,
   Products: ProductsIcon,
   Workflows: WorkflowsIcon,
   Agency: AgencyIcon,
