@@ -139,7 +139,7 @@ export function JobDetail({ job, adminMode = false }: { job: Job; adminMode?: bo
   return <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
     <DetailBreadcrumb
       crumbs={[
-        { label: adminMode ? "All jobs" : "My jobs", href: jobsBase },
+        { label: adminMode ? "All jobs" : "Jobs", href: jobsBase },
         { label: job.clientName, href: `/dashboard/clients/${job.clientId}/overview` },
         { label: title },
       ]}
