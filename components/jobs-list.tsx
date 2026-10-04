@@ -8,9 +8,11 @@ import { DashboardListPage } from "@/components/dashboard/list-page";
 import { PageLoadingSkeleton } from "@/components/dashboard/loading-skeleton";
 import { firebaseDb } from "@/lib/firebase/client";
 import { jobsCollection } from "@/lib/firebase/job-collections";
-import { formatDate } from "@/lib/creator-tasks";
+import { TASK_COLLECTION, formatDate } from "@/lib/creator-tasks";
 import { JOB_STATUS_LABELS, type Job } from "@/lib/jobs";
 import { JOB_TERMS_COLLECTION } from "@/lib/job-terms";
+import { ACTIVITY_COLLECTION } from "@/lib/time-tracking";
+import { PAYMENTS_COLLECTION } from "@/lib/payments";
 import { jobHref } from "@/lib/jobs";
 
 const filters = ["all", "active", "completed", "archive"] as const;
@@ -35,8 +37,20 @@ export function JobsList() {
     if (authLoading) return;
     if (!user) { setLoading(false); return; }
     let active = true;
-    Promise.all([jobsCollection(), getDocs(query(collection(firebaseDb, JOB_TERMS_COLLECTION), where("assignedTo", "==", user.uid)))])
-      .then(([jobsName, snapshot]) => Promise.all(snapshot.docs.map((item) => getDoc(doc(firebaseDb, jobsName, item.id)))))
+    Promise.all([
+      jobsCollection(),
+      getDocs(query(collection(firebaseDb, JOB_TERMS_COLLECTION), where("assignedTo", "==", user.uid))),
+      getDocs(query(collection(firebaseDb, TASK_COLLECTION), where("assignedTo", "==", user.uid))),
+      getDocs(query(collection(firebaseDb, ACTIVITY_COLLECTION), where("uid", "==", user.uid))),
+      getDocs(query(collection(firebaseDb, PAYMENTS_COLLECTION), where("payeeUid", "==", user.uid))),
+    ])
+      .then(([jobsName, termsSnapshot, taskSnapshot, timeSnapshot, paymentSnapshot]) => {
+        const assignedJobIds = new Set<string>(termsSnapshot.docs.map((item) => item.id));
+        taskSnapshot.docs.forEach((item) => { const jobId = item.data().jobId; if (typeof jobId === "string" && jobId) assignedJobIds.add(jobId); });
+        timeSnapshot.docs.forEach((item) => { const jobId = item.data().jobId; if (typeof jobId === "string" && jobId) assignedJobIds.add(jobId); });
+        paymentSnapshot.docs.forEach((item) => { const jobId = item.data().jobId; if (typeof jobId === "string" && jobId) assignedJobIds.add(jobId); });
+        return Promise.all([...assignedJobIds].map((jobId) => getDoc(doc(firebaseDb, jobsName, jobId))));
+      })
       .then((snapshots) => {
         if (!active) return;
         setJobs(snapshots.filter((item) => item.exists()).map((item) => ({ ...(item.data() as Job), slug: item.id })).sort((a, b) => (b.startDate ?? b.liveAt?.date ?? "").localeCompare(a.startDate ?? a.liveAt?.date ?? "")));
