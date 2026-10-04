@@ -525,6 +525,8 @@ function OneUtilityClientWorkspace({
   clients,
   jobs: availableJobs,
   users: availableUsers,
+  createdBy,
+  createdByName,
 }: {
   slug: string;
   initialView?: OneUtilityWorkspaceView;
