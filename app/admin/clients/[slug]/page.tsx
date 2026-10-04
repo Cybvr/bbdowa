@@ -9,7 +9,7 @@ import { Badge as DashboardBadge } from "@/components/dashboard/ui";
 import type { Job, JobStatus } from "@/lib/jobs";
 import { getClient, getClientWorkspace, type Client } from "@/lib/clients";
 import { creatorCategoryOptions as knownCreatorCategories, isCreatorUser, userHref, type User } from "@/lib/users";
-import { readContentFromFirestore } from "@/lib/firebase/client-content";
+import { readContentFromFirestore, useFirestoreTasks } from "@/lib/firebase/client-content";
 import { firebaseDb } from "@/lib/firebase/client";
 import { jobsCollection } from "@/lib/firebase/job-collections";
 import { ClientActions } from "@/components/client-actions";
@@ -26,6 +26,8 @@ import { fontOptions, ctaOptions } from "@/lib/job-options";
 import { ClientWorkspaceSkeleton } from "@/components/dashboard/loading-skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ClickableTableRow } from "@/components/ui/clickable-table-row";
+import { TaskStatusBadge } from "@/components/tasks-view";
+import { formatDate as formatTaskDate, isOverdue } from "@/lib/creator-tasks";
 import type {
   PhaseContent,
   JobListItem,
@@ -239,13 +241,15 @@ export default function ClientPage() {
 
   const initialView: OneUtilityWorkspaceView = pathname.endsWith("/jobs")
     ? "job"
+    : pathname.endsWith("/overview")
+      ? "brand"
     : pathname.endsWith("/brand-dna")
       ? "brand"
       : pathname.endsWith("/moodboard") || pathname.endsWith("/media")
         ? "moodboard"
         : pathname.endsWith("/creators")
           ? "creators"
-          : "overview";
+          : "job";
 
   if (loadError) {
     return (
@@ -494,7 +498,7 @@ function StrategyEditor({ markdown }: { markdown: string }) {
   );
 }
 
-type OneUtilityWorkspaceView = "overview" | "job" | "brand" | "moodboard" | "creators";
+type OneUtilityWorkspaceView = "overview" | "job" | "tasks" | "brand" | "moodboard" | "creators";
 type ClientJobFilter = "all" | JobWorkspaceStatus;
 type ClientJobSort = "recent" | "name";
 type ClientCreatorSort = "name" | "category" | "availability";
@@ -515,7 +519,7 @@ const CLIENT_CREATOR_SORTS: SortOption<ClientCreatorSort>[] = [
 
 function OneUtilityClientWorkspace({
   slug,
-  initialView = "overview",
+  initialView = "job",
   clients,
   jobs: availableJobs,
   users: availableUsers,
@@ -539,6 +543,15 @@ function OneUtilityClientWorkspace({
   const [activeMainTab, setActiveMainTab] = useState<
     OneUtilityWorkspaceView
   >(initialView);
+  const { tasks: allTasks, loading: tasksLoading } = useFirestoreTasks();
+  const clientJobIds = React.useMemo(
+    () => new Set(availableJobs.filter((job) => job.clientId === slug).map((job) => job.slug)),
+    [availableJobs, slug],
+  );
+  const clientTasks = React.useMemo(
+    () => allTasks.filter((task) => task.clientId === slug || (task.jobId ? clientJobIds.has(task.jobId) : false)),
+    [allTasks, clientJobIds, slug],
+  );
   const [profileSection, setProfileSection] = useState<"company" | "design">("company");
   const [jobView, setJobView] = useState<"home" | "editor">("home");
   const [jobSubTab, setJobSubTab] = useState<"overview" | "case-study" | "strategy" | "creative" | "marketing">("overview");
@@ -895,11 +908,6 @@ function OneUtilityClientWorkspace({
     onSelect: () => void;
   }[] = [
     {
-      view: "overview",
-      label: "Home",
-      onSelect: () => setActiveMainTab("overview"),
-    },
-    {
       view: "job",
       label: "Jobs",
       onSelect: () => {
@@ -907,9 +915,10 @@ function OneUtilityClientWorkspace({
         setJobView("home");
       },
     },
+    { view: "tasks", label: "Tasks", onSelect: () => setActiveMainTab("tasks") },
     { view: "moodboard", label: "Media", onSelect: () => setActiveMainTab("moodboard") },
     { view: "creators", label: "Team", onSelect: () => setActiveMainTab("creators") },
-    { view: "brand", label: "Profile", onSelect: () => setActiveMainTab("brand") },
+    { view: "brand", label: "About", onSelect: () => setActiveMainTab("brand") },
   ];
   const activeWorkspaceTabRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
@@ -945,7 +954,7 @@ function OneUtilityClientWorkspace({
     clientName,
     heroImage: jobImageFor(activeJobId, availableJobs),
     clientProfileImage,
-    onHome: () => setActiveMainTab("overview"),
+    onHome: () => setActiveMainTab("job"),
     creators: selectedCreators,
     navigation: workspaceNavigation,
     shareAction: (
@@ -962,9 +971,7 @@ function OneUtilityClientWorkspace({
   };
   const contentEditAction = client ? <ClientActions client={client} /> : null;
   const activeWorkspaceTitle =
-    activeMainTab === "overview"
-      ? "Overview"
-      : workspaceTabs.find((tab) => tab.view === activeMainTab)?.label ?? "Overview";
+    workspaceTabs.find((tab) => tab.view === activeMainTab)?.label ?? "Jobs";
 
   const jobSubTabs: { id: typeof jobSubTab; label: string }[] = [
     { id: "overview", label: "Overview" },
@@ -1428,6 +1435,48 @@ function OneUtilityClientWorkspace({
             )
           )}
 
+          {/* TASKS VIEW */}
+          {activeMainTab === "tasks" && (
+            <ClientWorkspaceContent>
+              <ClientWorkspaceHeading
+                title="Tasks"
+                actions={
+                  <Link
+                    href={`/admin/tasks?client=${encodeURIComponent(slug)}`}
+                    className="inline-flex h-9 items-center rounded-md border border-border px-3 text-sm font-medium text-foreground transition hover:bg-muted"
+                  >
+                    Manage tasks
+                  </Link>
+                }
+              />
+              {tasksLoading ? (
+                <p className="py-10 text-sm text-muted-foreground">Loading tasks…</p>
+              ) : clientTasks.length ? (
+                <ul className="m-0 divide-y divide-border border-y border-border p-0">
+                  {clientTasks.map((task) => (
+                    <li key={task.id}>
+                      <Link
+                        href={`/dashboard/work/${encodeURIComponent(task.id)}`}
+                        className="flex flex-wrap items-center justify-between gap-3 py-4 text-foreground hover:text-primary"
+                      >
+                        <span className="min-w-0">
+                          <span className="block font-semibold">{task.title}</span>
+                          <span className="mt-1 block text-xs text-muted-foreground">
+                            {task.assignedToName ? `${task.assignedToName} · ` : ""}
+                            {task.dueDate ? `Due ${formatTaskDate(task.dueDate)}` : "No due date"}
+                          </span>
+                        </span>
+                        <TaskStatusBadge status={task.status} overdue={isOverdue(task)} />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="py-10 text-sm text-muted-foreground">No tasks have been added for this client yet.</p>
+              )}
+            </ClientWorkspaceContent>
+          )}
+
           {/* OVERVIEW VIEW */}
           {activeMainTab === "overview" && (
             <ClientWorkspaceContent>
@@ -1604,7 +1653,7 @@ function OneUtilityClientWorkspace({
           {/* PROFILE VIEW */}
           {activeMainTab === "brand" && (
             <ClientWorkspaceContent>
-                <ClientWorkspaceHeading title="Profile" actions={contentEditAction} />
+                <ClientWorkspaceHeading title="About" actions={contentEditAction} />
                 <div className="grid w-full max-w-4xl grid-cols-1 items-start gap-6 md:grid-cols-[11rem_minmax(0,1fr)] md:gap-8">
                   <nav aria-label="Profile sections" className="border-b border-border/70 md:border-b-0 md:border-r md:pr-4">
                     <div role="tablist" aria-orientation="vertical" className="flex flex-col gap-1">
