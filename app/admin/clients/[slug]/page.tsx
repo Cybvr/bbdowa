@@ -12,7 +12,6 @@ import { creatorCategoryOptions as knownCreatorCategories, isCreatorUser, userHr
 import { readContentFromFirestore, useFirestoreTasks } from "@/lib/firebase/client-content";
 import { firebaseDb } from "@/lib/firebase/client";
 import { jobsCollection } from "@/lib/firebase/job-collections";
-import { ClientActions } from "@/components/client-actions";
 import { ClientCreatorAddAction } from "@/components/client-creator-add-action";
 import { ClientMediaAddAction, ClientMediaDeleteAction } from "@/components/client-media-add-action";
 import { ClientWorkspaceContent, ClientWorkspaceHeading } from "@/components/client-workspace-heading";
@@ -596,6 +595,7 @@ function OneUtilityClientWorkspace({
   const [palette, setPalette] = useState<string[]>(workspace.palette);
   const [fontPairing, setFontPairing] = useState(fontOptions[0]);
   const [businessProfileDirty, setBusinessProfileDirty] = useState(false);
+  const [businessProfileSaving, setBusinessProfileSaving] = useState(false);
   const [designDirty, setDesignDirty] = useState(false);
   const updatePaletteColor = (index: number, value: string) => {
     setPalette((prev) => prev.map((c, i) => (i === index ? value : c)));
@@ -621,8 +621,18 @@ function OneUtilityClientWorkspace({
 
   // Settings state
   const [clientDescription, setClientDescription] = useState(client?.description?.trim() ?? "");
-  const [brandUrl, setBrandUrl] = useState(preset.url);
-  const [footprint, setFootprint] = useState(preset.footprint);
+  const [brandUrl, setBrandUrl] = useState(client?.website ?? preset.url);
+  const [footprint, setFootprint] = useState(client?.targetAudience ?? preset.footprint);
+  const [clientNameInput, setClientNameInput] = useState(client?.name ?? "");
+  const [clientIndustry, setClientIndustry] = useState(client?.industry ?? "");
+  const [clientDate, setClientDate] = useState(client?.date ?? "");
+  const [clientTeamSize, setClientTeamSize] = useState(client?.teamSize == null ? "" : String(client.teamSize));
+  const [clientYearFounded, setClientYearFounded] = useState(client?.yearFounded == null ? "" : String(client.yearFounded));
+  const [clientLocation, setClientLocation] = useState(client?.location ?? "");
+  const [clientLinkedIn, setClientLinkedIn] = useState(client?.linkedIn ?? "");
+  const [clientTimezone, setClientTimezone] = useState(client?.timezone ?? "");
+  const [clientHours, setClientHours] = useState(client?.hours ?? "");
+  const [clientHoursConverted, setClientHoursConverted] = useState(client?.hoursConverted ?? "");
   const [aesthetic, setAesthetic] = useState(preset.aesthetic);
   const [brandArchetype, setBrandArchetype] = useState(workspace.brandArchetype);
   const [toneVal, setToneVal] = useState(preset.toneVal);
@@ -709,9 +719,44 @@ function OneUtilityClientWorkspace({
     }, 4000);
   };
 
-  const handleSaveBusinessProfile = () => {
-    setBusinessProfileDirty(false);
-    showToast("Business profile saved.");
+  const handleSaveBusinessProfile = async () => {
+    if (businessProfileSaving) return;
+    const teamSize = clientTeamSize.trim() ? Number(clientTeamSize) : null;
+    const yearFounded = clientYearFounded.trim() ? Number(clientYearFounded) : null;
+    if (teamSize !== null && (!Number.isInteger(teamSize) || teamSize < 0)) {
+      showToast("Enter a valid team size.");
+      return;
+    }
+    if (yearFounded !== null && (!Number.isInteger(yearFounded) || yearFounded < 1800 || yearFounded > new Date().getFullYear())) {
+      showToast("Enter a valid founding year.");
+      return;
+    }
+    setBusinessProfileSaving(true);
+    try {
+      await updateDoc(doc(firebaseDb, "clients", slug), {
+        name: clientNameInput.trim() || clientName,
+        industry: clientIndustry.trim(),
+        date: clientDate || null,
+        website: brandUrl.trim() || null,
+        targetAudience: footprint.trim() || null,
+        description: clientDescription.trim() || null,
+        teamSize,
+        yearFounded,
+        location: clientLocation.trim() || null,
+        linkedIn: clientLinkedIn.trim() || null,
+        timezone: clientTimezone.trim() || null,
+        hours: clientHours.trim() || null,
+        hoursConverted: clientHoursConverted.trim() || null,
+        updatedAt: serverTimestamp(),
+      });
+      setBusinessProfileDirty(false);
+      showToast("About saved.");
+    } catch (cause) {
+      console.error("Unable to save client about", cause);
+      showToast("Couldn’t save About. Try again.");
+    } finally {
+      setBusinessProfileSaving(false);
+    }
   };
 
   const handleSaveBrandDna = () => {
@@ -751,8 +796,8 @@ function OneUtilityClientWorkspace({
     setJobDescriptions((previous) => ({ ...previous, [id]: "" }));
     setActiveSection("social");
     setMarketAudience(preset.footprintShort);
-    setBrandUrl(preset.url);
-    setFootprint(preset.footprint);
+    setBrandUrl(client?.website ?? preset.url);
+    setFootprint(client?.targetAudience ?? preset.footprint);
     setAesthetic(preset.aesthetic);
     setToneVal(preset.toneVal);
     setToneLabel(preset.toneText);
@@ -969,7 +1014,6 @@ function OneUtilityClientWorkspace({
       </button>
     ),
   };
-  const contentEditAction = client ? <ClientActions client={client} /> : null;
   const activeWorkspaceTitle =
     workspaceTabs.find((tab) => tab.view === activeMainTab)?.label ?? "Jobs";
 
@@ -1025,7 +1069,6 @@ function OneUtilityClientWorkspace({
                     title="Jobs"
                     actions={
                       <>
-                        {contentEditAction}
                         <button
                           type="button"
                           onClick={handleNewJob}
@@ -1653,13 +1696,12 @@ function OneUtilityClientWorkspace({
           {/* PROFILE VIEW */}
           {activeMainTab === "brand" && (
             <ClientWorkspaceContent>
-                <ClientWorkspaceHeading title="About" actions={contentEditAction} />
+                <ClientWorkspaceHeading title="About" />
                 <div className="grid w-full max-w-4xl grid-cols-1 items-start gap-6 md:grid-cols-[11rem_minmax(0,1fr)] md:gap-8">
                   <nav aria-label="Profile sections" className="border-b border-border/70 md:border-b-0 md:border-r md:pr-4">
                     <div role="tablist" aria-orientation="vertical" className="flex flex-col gap-1">
                       {[
                         { id: "company" as const, label: "About" },
-                        { id: "design" as const, label: "Design" },
                       ].map((section) => {
                         const isActive = profileSection === section.id;
                         return (
@@ -1689,7 +1731,23 @@ function OneUtilityClientWorkspace({
                       <span className="text-xs font-mono uppercase tracking-widest text-primary font-semibold">
                         About
                       </span>
-                      <h2 className="text-base font-semibold text-foreground mt-0.5">Profile</h2>
+                      <h2 className="text-base font-semibold text-foreground mt-0.5">Client information</h2>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label htmlFor="clientNameInput" className="text-sm font-medium text-foreground">Name</label>
+                      <input id="clientNameInput" type="text" value={clientNameInput} onChange={(e) => { setClientNameInput(e.target.value); setBusinessProfileDirty(true); }} className="w-full border-0 border-b border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-0" />
+                    </div>
+
+                    <div className="grid gap-5 sm:grid-cols-2">
+                      <div className="space-y-1.5">
+                        <label htmlFor="clientIndustry" className="text-sm font-medium text-foreground">Industry</label>
+                        <input id="clientIndustry" type="text" value={clientIndustry} onChange={(e) => { setClientIndustry(e.target.value); setBusinessProfileDirty(true); }} className="w-full border-0 border-b border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-0" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label htmlFor="clientDate" className="text-sm font-medium text-foreground">First live date</label>
+                        <input id="clientDate" type="date" value={clientDate} onChange={(e) => { setClientDate(e.target.value); setBusinessProfileDirty(true); }} className="w-full border-0 border-b border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-0" />
+                      </div>
                     </div>
 
                     <div className="space-y-1.5">
@@ -1743,14 +1801,54 @@ function OneUtilityClientWorkspace({
                       />
                     </div>
 
+                    <div className="border-t border-border pt-5">
+                      <h3 className="m-0 text-sm font-semibold text-foreground">Company information</h3>
+                      <div className="mt-4 grid gap-5 sm:grid-cols-2">
+                        <div className="space-y-1.5">
+                          <label htmlFor="clientTeamSize" className="text-sm font-medium text-foreground">Team size</label>
+                          <input id="clientTeamSize" type="number" min="0" value={clientTeamSize} onChange={(e) => { setClientTeamSize(e.target.value); setBusinessProfileDirty(true); }} className="w-full border-0 border-b border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-0" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label htmlFor="clientYearFounded" className="text-sm font-medium text-foreground">Year founded</label>
+                          <input id="clientYearFounded" type="number" min="1800" value={clientYearFounded} onChange={(e) => { setClientYearFounded(e.target.value); setBusinessProfileDirty(true); }} className="w-full border-0 border-b border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-0" />
+                        </div>
+                      </div>
+                      <div className="mt-4 space-y-1.5">
+                        <label htmlFor="clientLocation" className="text-sm font-medium text-foreground">City / Country</label>
+                        <input id="clientLocation" type="text" value={clientLocation} onChange={(e) => { setClientLocation(e.target.value); setBusinessProfileDirty(true); }} className="w-full border-0 border-b border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-0" />
+                      </div>
+                      <div className="mt-4 space-y-1.5">
+                        <label htmlFor="clientLinkedIn" className="text-sm font-medium text-foreground">LinkedIn</label>
+                        <input id="clientLinkedIn" type="url" value={clientLinkedIn} onChange={(e) => { setClientLinkedIn(e.target.value); setBusinessProfileDirty(true); }} className="w-full border-0 border-b border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-0" placeholder="https://linkedin.com/company/" />
+                      </div>
+                    </div>
+
+                    <div className="border-t border-border pt-5">
+                      <h3 className="m-0 text-sm font-semibold text-foreground">Working hours</h3>
+                      <div className="mt-4 space-y-1.5">
+                        <label htmlFor="clientTimezone" className="text-sm font-medium text-foreground">Client time zone</label>
+                        <input id="clientTimezone" type="text" value={clientTimezone} onChange={(e) => { setClientTimezone(e.target.value); setBusinessProfileDirty(true); }} className="w-full border-0 border-b border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-0" placeholder="Los Angeles (8 hrs behind)" />
+                      </div>
+                      <div className="mt-4 grid gap-5 sm:grid-cols-2">
+                        <div className="space-y-1.5">
+                          <label htmlFor="clientHours" className="text-sm font-medium text-foreground">Client hours</label>
+                          <input id="clientHours" type="text" value={clientHours} onChange={(e) => { setClientHours(e.target.value); setBusinessProfileDirty(true); }} className="w-full border-0 border-b border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-0" placeholder="09:00 – 17:00" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label htmlFor="clientHoursConverted" className="text-sm font-medium text-foreground">Client hours in our time</label>
+                          <input id="clientHoursConverted" type="text" value={clientHoursConverted} onChange={(e) => { setClientHoursConverted(e.target.value); setBusinessProfileDirty(true); }} className="w-full border-0 border-b border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-0" placeholder="17:00 – 01:00 Lagos" />
+                        </div>
+                      </div>
+                    </div>
+
                     <div className="flex items-center justify-end border-t border-border pt-4">
                       <button
                         type="button"
-                        onClick={handleSaveBusinessProfile}
-                        disabled={!businessProfileDirty}
+                        onClick={() => void handleSaveBusinessProfile()}
+                        disabled={!businessProfileDirty || businessProfileSaving}
                         className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45"
                       >
-                        <Save className="h-4 w-4" /> Save
+                        <Save className="h-4 w-4" /> {businessProfileSaving ? "Saving…" : "Save changes"}
                       </button>
                     </div>
                   </section>
