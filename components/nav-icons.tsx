@@ -32,6 +32,22 @@ export const HomeIcon: NavIconComponent = ({ className }) => (
   </Glyph>
 );
 
+// Search — magnifying glass for the full jobs directory
+export const SearchIcon: NavIconComponent = ({ className }) => (
+  <Glyph className={className}>
+    <circle cx="10.5" cy="10.5" r="6" />
+    <path d="m15 15 5 5" />
+  </Glyph>
+);
+
+// Briefcase — assigned work for the signed-in person
+export const BriefcaseIcon: NavIconComponent = ({ className }) => (
+  <Glyph className={className}>
+    <rect x="3.5" y="7" width="17" height="12.5" rx="1.8" />
+    <path d="M8 7V5.5A1.5 1.5 0 0 1 9.5 4h5A1.5 1.5 0 0 1 16 5.5V7M3.5 12h17M10 12v2h4v-2" />
+  </Glyph>
+);
+
 // Projects — kanban columns with a lifted card
 export const ProjectsIcon: NavIconComponent = ({ className }) => (
   <Glyph className={className}>
@@ -314,7 +330,8 @@ export const NAV_ICON_SET: Record<string, NavIconComponent> = {
   About: AboutIcon,
   Careers: CareersIcon,
   Work: CareersIcon,
-  Jobs: CareersIcon,
+  Jobs: SearchIcon,
+  "My Jobs": BriefcaseIcon,
   Admin: AdminIcon,
   Settings: SettingsIcon,
   "Log out": LogOutIcon,
