@@ -91,7 +91,7 @@ export function CreatorHoursPanel({ creatorUid, creatorName }: { creatorUid: str
             <TableHeader>
               <TableRow className="text-left font-semibold uppercase text-muted-foreground">
                 <TableHead className="px-4 py-3">Activity</TableHead>
-                <TableHead className="px-4 py-3">Campaign</TableHead>
+                <TableHead className="px-4 py-3">Job</TableHead>
                 <TableHead className="px-4 py-3">When</TableHead>
                 <TableHead className="px-4 py-3">Time</TableHead>
               </TableRow>
@@ -113,7 +113,7 @@ export function CreatorHoursPanel({ creatorUid, creatorName }: { creatorUid: str
       )}
       <Dialog open={Boolean(selected)} onOpenChange={(open) => { if (!open) setSelectedId(null); }}>
         <DialogContent className="sm:max-w-lg">
-          <DialogHeader className="pr-10"><DialogTitle>{selected?.activity || "Activity"}</DialogTitle><DialogDescription>{selected?.campaignName || "No campaign"}</DialogDescription></DialogHeader>
+          <DialogHeader className="pr-10"><DialogTitle>{selected?.activity || "Activity"}</DialogTitle><DialogDescription>{selected?.campaignName || "No job"}</DialogDescription></DialogHeader>
           {selected ? <dl className="grid grid-cols-2 gap-4 text-sm">
             <div><dt className="text-xs text-muted-foreground">Started</dt><dd className="mt-1 font-semibold">{formatTimestamp(selected.startedAt)}</dd></div>
             <div><dt className="text-xs text-muted-foreground">Time</dt><dd className="mt-1 font-semibold tabular-nums">{formatClockFull(elapsedMs(selected, now))}</dd></div>

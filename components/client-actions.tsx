@@ -2,10 +2,18 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { deleteDoc, doc, serverTimestamp, updateDoc } from "firebase/firestore";
+import { deleteDoc, doc, getDoc, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
+import { useAuth } from "@/components/auth-provider";
 import { firebaseDb } from "@/lib/firebase/client";
 import { EditSheet, ImageUploadField, TextField, TextareaField } from "@/components/detail-editor";
 import type { Client } from "@/lib/clients";
+import { CLIENT_CONTACTS_COLLECTION, type ClientContact } from "@/lib/job-terms";
+
+const numberOrNull = (value: string) => (value.trim() ? Number(value) : null);
+
+function SheetSection({ children }: { children: React.ReactNode }) {
+  return <h3 className="m-0 border-t border-border pt-5 text-sm font-semibold">{children}</h3>;
+}
 
 export function ClientActions({ client }: { client: Client }) {
   const router = useRouter();
@@ -16,8 +24,48 @@ export function ClientActions({ client }: { client: Client }) {
   const [profileImage, setProfileImage] = React.useState(client.profileImage ?? "");
   const [description, setDescription] = React.useState(client.description ?? "");
   const [targetAudience, setTargetAudience] = React.useState(client.targetAudience ?? "");
+  const [teamSize, setTeamSize] = React.useState(client.teamSize == null ? "" : String(client.teamSize));
+  const [yearFounded, setYearFounded] = React.useState(client.yearFounded == null ? "" : String(client.yearFounded));
+  const [location, setLocation] = React.useState(client.location ?? "");
+  const [website, setWebsite] = React.useState(client.website ?? "");
+  const [linkedIn, setLinkedIn] = React.useState(client.linkedIn ?? "");
+  const [timezone, setTimezone] = React.useState(client.timezone ?? "");
+  const [hours, setHours] = React.useState(client.hours ?? "");
+  const [hoursConverted, setHoursConverted] = React.useState(client.hoursConverted ?? "");
+
+  // The point of contact is private, so it loads separately from the public client record.
+  const { role } = useAuth();
+  const isStaff = role === "admin" || role === "manager";
+  const [contactLoaded, setContactLoaded] = React.useState(false);
+  const [contactName, setContactName] = React.useState("");
+  const [contactEmail, setContactEmail] = React.useState("");
+  const [contactRole, setContactRole] = React.useState("");
+  const [contactOutOfOfficeUntil, setContactOutOfOfficeUntil] = React.useState("");
+  const [contactNote, setContactNote] = React.useState("");
+
+  React.useEffect(() => {
+    if (!isStaff) return;
+    let active = true;
+    getDoc(doc(firebaseDb, CLIENT_CONTACTS_COLLECTION, client.slug))
+      .then((snapshot) => {
+        if (!active) return;
+        const contact = snapshot.exists() ? (snapshot.data() as Partial<ClientContact>) : {};
+        setContactName(contact.name ?? "");
+        setContactEmail(contact.email ?? "");
+        setContactRole(contact.role ?? "");
+        setContactOutOfOfficeUntil(contact.outOfOfficeUntil ?? "");
+        setContactNote(contact.note ?? "");
+        setContactLoaded(true);
+      })
+      .catch((cause) => console.error("Unable to load client contact", cause));
+    return () => { active = false; };
+  }, [client.slug, isStaff]);
 
   const save = async () => {
+    const size = numberOrNull(teamSize);
+    const founded = numberOrNull(yearFounded);
+    if (size !== null && (!Number.isInteger(size) || size < 0)) throw new Error("Enter a valid team size.");
+    if (founded !== null && (!Number.isInteger(founded) || founded < 1800 || founded > new Date().getFullYear())) throw new Error("Enter a valid founding year.");
     await updateDoc(doc(firebaseDb, "clients", client.slug), {
       name: name.trim(),
       industry: industry.trim(),
@@ -25,13 +73,32 @@ export function ClientActions({ client }: { client: Client }) {
       profileImage: profileImage.trim() || null,
       description: description.trim() || null,
       targetAudience: targetAudience.trim() || null,
+      teamSize: size,
+      yearFounded: founded,
+      location: location.trim() || null,
+      website: website.trim() || null,
+      linkedIn: linkedIn.trim() || null,
+      timezone: timezone.trim() || null,
+      hours: hours.trim() || null,
+      hoursConverted: hoursConverted.trim() || null,
       updatedAt: serverTimestamp(),
     });
+    if (contactLoaded) {
+      await setDoc(doc(firebaseDb, CLIENT_CONTACTS_COLLECTION, client.slug), {
+        name: contactName.trim() || null,
+        email: contactEmail.trim() || null,
+        role: contactRole.trim() || null,
+        outOfOfficeUntil: contactOutOfOfficeUntil || null,
+        note: contactNote.trim() || null,
+        updatedAt: new Date().toISOString(),
+      } satisfies ClientContact);
+    }
     router.refresh();
   };
 
   const remove = async () => {
     await deleteDoc(doc(firebaseDb, "clients", client.slug));
+    await deleteDoc(doc(firebaseDb, CLIENT_CONTACTS_COLLECTION, client.slug));
     router.push("/dashboard/clients");
   };
 
@@ -41,7 +108,7 @@ export function ClientActions({ client }: { client: Client }) {
       description={client.name}
       onSave={save}
       onDelete={remove}
-      deleteConfirm="Delete this client? Its campaigns are not removed. This can’t be undone."
+      deleteConfirm="Delete this client? Its jobs are not removed. This can’t be undone."
     >
       <ImageUploadField label="Avatar" value={profileImage} onChange={setProfileImage} variant="avatar" />
       <TextField label="Name" value={name} onChange={setName} />
@@ -49,6 +116,29 @@ export function ClientActions({ client }: { client: Client }) {
       <TextField label="First live date" value={date} onChange={setDate} type="date" />
       <TextareaField label="Description" value={description} onChange={setDescription} />
       <TextareaField label="Target audience" value={targetAudience} onChange={setTargetAudience} rows={3} placeholder="Who is this client trying to reach?" />
+
+      <SheetSection>Company information</SheetSection>
+      <TextField label="Team size" value={teamSize} onChange={setTeamSize} type="number" placeholder="e.g. 7" />
+      <TextField label="Year founded" value={yearFounded} onChange={setYearFounded} type="number" placeholder="e.g. 2017" />
+      <TextField label="City / Country" value={location} onChange={setLocation} placeholder="Lagos, Nigeria" />
+      <TextField label="Website" value={website} onChange={setWebsite} type="url" placeholder="https://" />
+      <TextField label="LinkedIn" value={linkedIn} onChange={setLinkedIn} type="url" placeholder="https://linkedin.com/company/" />
+
+      <SheetSection>Working hours</SheetSection>
+      <TextField label="Client time zone" value={timezone} onChange={setTimezone} placeholder="Los Angeles (8 hrs behind)" />
+      <TextField label="Client hours" value={hours} onChange={setHours} placeholder="09:00 – 17:00" />
+      <TextField label="Client hours in our time" value={hoursConverted} onChange={setHoursConverted} placeholder="17:00 – 01:00 Lagos" />
+
+      {contactLoaded ? (
+        <>
+          <SheetSection>Point of contact (private)</SheetSection>
+          <TextField label="Name" value={contactName} onChange={setContactName} placeholder="Primary contact" />
+          <TextField label="Email" value={contactEmail} onChange={setContactEmail} type="email" placeholder="Optional" />
+          <TextField label="Role" value={contactRole} onChange={setContactRole} placeholder="Marketing lead" />
+          <TextField label="Out of office until" value={contactOutOfOfficeUntil} onChange={setContactOutOfOfficeUntil} type="date" />
+          <TextareaField label="Contact note" value={contactNote} onChange={setContactNote} rows={2} placeholder="Availability or handoff note" />
+        </>
+      ) : null}
     </EditSheet>
   );
 }

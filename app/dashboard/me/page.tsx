@@ -103,7 +103,7 @@ export default function MyProfilePage() {
   const tabs: { id: ProfileTab; label: string }[] = [
     { id: "overview", label: "Overview" },
     ...(creator && own.workHistory?.length ? ([{ id: "work-history", label: "Work history" }] as const) : []),
-    ...(creator && creatorCampaigns.length ? ([{ id: "campaigns", label: "Campaigns" }] as const) : []),
+    ...(creator && creatorCampaigns.length ? ([{ id: "campaigns", label: "Jobs" }] as const) : []),
     ...(hasHours ? ([{ id: "hours", label: "Hours" }] as const) : []),
     ...(creator && documentCount > 0 ? ([{ id: "documents", label: "Documents" }] as const) : []),
   ];
@@ -232,10 +232,10 @@ export default function MyProfilePage() {
         )}
 
         {tab === "campaigns" && creator && (
-          <ProfileSection title="Campaigns" variant="plain">
+          <ProfileSection title="Jobs" variant="plain">
             <ProfileTable
               columns={[
-                { key: "campaign", label: "Campaign" },
+                { key: "campaign", label: "Job" },
                 { key: "client", label: "Client" },
                 { key: "status", label: "Status" },
               ]}
@@ -252,8 +252,8 @@ export default function MyProfilePage() {
                 ),
                 status: <span className="capitalize">{campaign.status}</span>,
               }))}
-              emptyTitle="No campaigns yet"
-              emptyDescription="You haven’t been added to a campaign yet."
+              emptyTitle="No jobs yet"
+              emptyDescription="You haven’t been added to a job yet."
             />
           </ProfileSection>
         )}

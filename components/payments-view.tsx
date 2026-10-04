@@ -21,7 +21,9 @@ import {
   type PaymentCurrency,
   type PaymentStatus,
 } from "@/lib/payments";
-import { WORK_JOBS_COLLECTION, type WorkJob } from "@/lib/work-jobs";
+import { JOB_TERMS_COLLECTION, jobHref, type JobTerms } from "@/lib/job-terms";
+
+type JobOption = { slug: string; name: string; assignedTo: string | null };
 
 type Payee = { uid: string; name: string };
 
@@ -140,7 +142,7 @@ export function PaymentsView() {
                       {payment.campaignName ? (
                         <span className="text-[12px] text-muted-foreground">{payment.campaignName}</span>
                       ) : null}
-                      {payment.jobId ? <Link href={`/dashboard/jobs/${encodeURIComponent(payment.jobId)}`} className="mt-1 block text-xs text-primary hover:underline">View job</Link> : null}
+                      {payment.campaignId ? <Link href={jobHref(payment.campaignId)} className="mt-1 block text-xs text-primary hover:underline">View job</Link> : null}
                     </TableCell>
                     <TableCell className="whitespace-nowrap px-4 py-4 font-semibold tabular-nums">
                       {formatAmount(payment.amount, payment.currency)}
@@ -196,13 +198,12 @@ function AddPaymentDialog({
   createdBy: string;
 }) {
   const [payees, setPayees] = React.useState<Payee[]>([]);
-  const [jobs, setJobs] = React.useState<WorkJob[]>([]);
+  const [jobs, setJobs] = React.useState<JobOption[]>([]);
   const [jobId, setJobId] = React.useState("");
   const [payeeUid, setPayeeUid] = React.useState("");
   const [amount, setAmount] = React.useState("");
   const [currency, setCurrency] = React.useState<PaymentCurrency>("NGN");
   const [description, setDescription] = React.useState("");
-  const [campaignName, setCampaignName] = React.useState("");
   const [dueDate, setDueDate] = React.useState("");
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -225,8 +226,16 @@ function AddPaymentDialog({
   React.useEffect(() => {
     if (!open) return;
     let active = true;
-    getDocs(collection(firebaseDb, WORK_JOBS_COLLECTION))
-      .then((snapshot) => { if (active) setJobs(snapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<WorkJob, "id">) })).filter((job) => job.status !== "completed")); })
+    Promise.all([getDocs(collection(firebaseDb, "campaigns")), getDocs(collection(firebaseDb, JOB_TERMS_COLLECTION))])
+      .then(([campaignSnapshot, termsSnapshot]) => {
+        if (!active) return;
+        const assignees = new Map(termsSnapshot.docs.map((item) => [item.id, (item.data() as JobTerms).assignedTo] as const));
+        setJobs(campaignSnapshot.docs
+          .map((item) => ({ id: item.id, data: item.data() as { campaign?: string; name?: string; status?: string } }))
+          .filter(({ data }) => data.status !== "completed")
+          .map(({ id, data }) => ({ slug: id, name: data.campaign ?? data.name ?? id, assignedTo: assignees.get(id) ?? null }))
+          .sort((a, b) => a.name.localeCompare(b.name)));
+      })
       .catch((cause) => console.error("Unable to load jobs for payment", cause));
     return () => { active = false; };
   }, [open]);
@@ -237,16 +246,14 @@ function AddPaymentDialog({
     setAmount("");
     setCurrency("NGN");
     setDescription("");
-    setCampaignName("");
     setDueDate("");
     setError(null);
   };
 
   const save = async (event: React.FormEvent) => {
     event.preventDefault();
-    const selectedJob = jobs.find((job) => job.id === jobId);
-    const payee = payees.find((entry) => entry.uid === payeeUid)
-      ?? (selectedJob ? { uid: selectedJob.assignedTo, name: selectedJob.assignedToName } : null);
+    const selectedJob = jobs.find((job) => job.slug === jobId);
+    const payee = payees.find((entry) => entry.uid === payeeUid);
     const value = Number(amount.replace(/,/g, ""));
     if (!payee || !Number.isFinite(value) || value <= 0 || !description.trim()) {
       setError("Choose a payee, then enter an amount and what it is for.");
@@ -257,12 +264,12 @@ function AddPaymentDialog({
     try {
       await addDoc(collection(firebaseDb, PAYMENTS_COLLECTION), {
         payeeUid: payee.uid,
-        jobId: selectedJob?.id ?? null,
+        campaignId: selectedJob?.slug ?? null,
         payeeName: payee.name,
         amount: value,
         currency,
         description: description.trim(),
-        campaignName: selectedJob ? selectedJob.campaignName : campaignName.trim() || null,
+        campaignName: selectedJob?.name ?? null,
         status: "pending",
         dueDate: dueDate || null,
         paidAt: null,
@@ -287,10 +294,10 @@ function AddPaymentDialog({
           <DialogDescription>Record a payment owed to someone, then mark it paid once it has gone out.</DialogDescription>
         </DialogHeader>
         <form onSubmit={save} className="flex flex-col gap-4">
-          {jobs.length ? <label className={FIELD}>Job (optional)<select value={jobId} onChange={(event) => { const selected = jobs.find((job) => job.id === event.target.value); setJobId(event.target.value); if (selected) { setPayeeUid(selected.assignedTo); setCampaignName(selected.campaignName ?? ""); } }} className={SELECT}><option value="">No job</option>{jobs.map((job) => <option key={job.id} value={job.id}>{job.title}</option>)}</select></label> : null}
+          {jobs.length ? <label className={FIELD}>Job (optional)<select value={jobId} onChange={(event) => { const selected = jobs.find((job) => job.slug === event.target.value); setJobId(event.target.value); if (selected?.assignedTo) setPayeeUid(selected.assignedTo); }} className={SELECT}><option value="">No job</option>{jobs.map((job) => <option key={job.slug} value={job.slug}>{job.name}</option>)}</select></label> : null}
           <label className={FIELD}>
             Payee
-            <select value={payeeUid} onChange={(event) => setPayeeUid(event.target.value)} disabled={Boolean(jobId)} className={SELECT}>
+            <select value={payeeUid} onChange={(event) => setPayeeUid(event.target.value)} className={SELECT}>
               <option value="">Choose a person</option>
               {payees.map((payee) => (
                 <option key={payee.uid} value={payee.uid}>
@@ -315,10 +322,6 @@ function AddPaymentDialog({
           <label className={FIELD}>
             What it is for
             <Input value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Illustration for launch key visual" />
-          </label>
-          <label className={FIELD}>
-            Campaign
-            <Input value={campaignName} onChange={(event) => setCampaignName(event.target.value)} disabled={Boolean(jobId)} placeholder="Optional" />
           </label>
           <label className={FIELD}>
             Due date

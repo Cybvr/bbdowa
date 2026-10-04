@@ -4,5 +4,5 @@ type Params = { params: Promise<{ slug: string }> };
 
 export default async function CampaignDetailPage({ params }: Params) {
   const { slug } = await params;
-  redirect(`/admin/campaigns/${slug}`);
+  redirect(`/admin/jobs/${slug}`);
 }

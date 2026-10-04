@@ -48,7 +48,7 @@ const CREATE_COPY: Record<CreateType, { button: string; title: string; descripti
   campaign: {
     button: "New",
     title: "New",
-    description: "Create a campaign record, then complete its case-study details.",
+    description: "Create a job for a client, then add its details, pay and assignment.",
   },
 };
 
@@ -235,7 +235,7 @@ export function QuickCreate({ type, iconOnly = false }: { type: CreateType; icon
         router.push(`/dashboard/clients/${slug}/overview`);
       } else {
         const selectedClient = clients.find((client) => client.slug === campaignClientId);
-        if (!selectedClient) throw new Error("Choose a client before creating the campaign.");
+        if (!selectedClient) throw new Error("Choose a client before creating the job.");
 
         const slug = slugify(campaignTitle);
         const parsedYear = campaignYear.trim() ? Number(campaignYear) : null;
@@ -271,7 +271,7 @@ export function QuickCreate({ type, iconOnly = false }: { type: CreateType; icon
         });
         setOpen(false);
         reset();
-        router.push(`/admin/campaigns/${slug}`);
+        router.push(`/admin/jobs/${slug}`);
       }
       router.refresh();
     } catch (cause) {
@@ -367,8 +367,8 @@ export function QuickCreate({ type, iconOnly = false }: { type: CreateType; icon
             ) : (
               <>
                 <div className="space-y-1.5">
-                  <span className={LABEL}>Campaign title</span>
-                  <Input autoFocus value={campaignTitle} onChange={(event) => setCampaignTitle(event.target.value)} disabled={busy} placeholder="Campaign name" />
+                  <span className={LABEL}>Job title</span>
+                  <Input autoFocus value={campaignTitle} onChange={(event) => setCampaignTitle(event.target.value)} disabled={busy} placeholder="Job name" />
                 </div>
                 <div className="space-y-1.5">
                   <span className={LABEL}>Client</span>
@@ -378,7 +378,7 @@ export function QuickCreate({ type, iconOnly = false }: { type: CreateType; icon
                       <SelectContent>{clients.map((client) => <SelectItem key={client.slug} value={client.slug}>{client.name}</SelectItem>)}</SelectContent>
                     </Select>
                   ) : (
-                    <p className="m-0 rounded-md border border-dashed border-border px-3 py-2 text-xs text-muted-foreground">Create a client first, then add a campaign to it.</p>
+                    <p className="m-0 rounded-md border border-dashed border-border px-3 py-2 text-xs text-muted-foreground">Create a client first, then add a job to it.</p>
                   )}
                 </div>
                 <div className="space-y-1.5">
@@ -409,7 +409,7 @@ export function QuickCreate({ type, iconOnly = false }: { type: CreateType; icon
 
             <DialogFooter>
               <button type="button" onClick={() => handleOpenChange(false)} disabled={busy} className="h-9 rounded-md border border-border px-4 text-xs font-semibold text-foreground transition hover:border-foreground disabled:opacity-50">Cancel</button>
-              <button type="submit" disabled={busy || !canSave} className="h-9 rounded-md bg-primary px-4 text-xs font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50">{busy ? "Saving…" : `Create ${type}`}</button>
+              <button type="submit" disabled={busy || !canSave} className="h-9 rounded-md bg-primary px-4 text-xs font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50">{busy ? "Saving…" : `Create ${type === "campaign" ? "job" : type}`}</button>
             </DialogFooter>
           </form>
         </DialogContent>

@@ -900,7 +900,7 @@ function OneUtilityClientWorkspace({
     },
     {
       view: "campaign",
-      label: "Campaigns",
+      label: "Jobs",
       onSelect: () => {
         setActiveMainTab("campaign");
         setCampaignView("home");
@@ -1014,7 +1014,7 @@ function OneUtilityClientWorkspace({
             campaignView === "home" ? (
               <ClientWorkspaceContent>
                   <ClientWorkspaceHeading
-                    title="Campaigns"
+                    title="Jobs"
                     actions={
                       <>
                         {contentEditAction}

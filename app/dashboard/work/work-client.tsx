@@ -66,7 +66,7 @@ function MyTasksPage() {
     return (b.createdAt ?? "").localeCompare(a.createdAt ?? "");
   });
   const campaignOptions = [
-    { value: "all", label: "All campaigns" },
+    { value: "all", label: "All jobs" },
     ...[...new Map(tasks.filter((task) => task.campaignId && task.campaignName).map((task) => [task.campaignId!, task.campaignName!] as const))]
       .sort((a, b) => a[1].localeCompare(b[1]))
       .map(([value, label]) => ({ value, label })),
@@ -84,7 +84,7 @@ function MyTasksPage() {
       search={search}
       onSearchChange={setSearch}
       searchPlaceholder="Search tasks"
-      filters={[{ label: "Campaign", value: campaignId, onChange: setCampaignId, options: campaignOptions }]}
+      filters={[{ label: "Job", value: campaignId, onChange: setCampaignId, options: campaignOptions }]}
       sortOptions={TASK_SORTS}
       activeSort={sort}
       onSortChange={setSort}

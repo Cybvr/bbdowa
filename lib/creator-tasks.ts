@@ -7,8 +7,6 @@ export type TaskStatus = "todo" | "in_progress" | "done";
 
 export type Task = {
   id: string;
-  /** Paid assignment this task belongs to, when applicable. */
-  jobId?: string | null;
   title: string;
   description: string;
   /** Rich text instructions and supporting copy. Older tasks may not have this field. */

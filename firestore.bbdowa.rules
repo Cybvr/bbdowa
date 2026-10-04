@@ -125,14 +125,20 @@ service cloud.firestore {
         || (signedIn() && resource.data.uid == request.auth.uid);
     }
 
-    // Paid assignments are visible to staff and the person assigned to them.
-    // Only staff may set rates, assignment, and contract details.
-    match /workJobs/{id} {
+    // A job is a campaign. Its assignment and pay terms are kept here, keyed
+    // by the campaign slug, because campaigns are public. Staff and the
+    // assigned person can read them; only staff can change them.
+    match /jobTerms/{campaignId} {
       allow read: if isStaff()
         || (signedIn() && resource.data.assignedTo == request.auth.uid);
-      allow create: if isStaff()
-        && request.resource.data.createdBy == request.auth.uid;
-      allow update, delete: if isStaff();
+      allow write: if isStaff();
+    }
+
+    // A client's point of contact, kept out of the public client record.
+    // Signed-in team members can read it; only staff can change it.
+    match /clientContacts/{clientId} {
+      allow read: if signedIn();
+      allow write: if isStaff();
     }
 
     // Tasks are public to read for creator profiles. Staff manage all task fields;

@@ -219,7 +219,6 @@ export default function TasksPage() {
     try {
       const now = new Date().toISOString();
       await addDoc(collection(firebaseDb, TASK_COLLECTION), {
-        jobId: task.jobId ?? null,
         title: `${task.title} (Copy)`, description: task.description, content: task.content ?? "",
         clientId: task.clientId ?? null, clientName: task.clientName ?? null,
         campaignId: task.campaignId ?? null, campaignName: task.campaignName ?? null,

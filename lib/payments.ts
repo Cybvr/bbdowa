@@ -5,8 +5,8 @@ export type PaymentStatus = "pending" | "paid";
 
 export type Payment = {
   id: string;
-  /** Paid assignment this payment belongs to, when applicable. */
-  jobId?: string | null;
+  /** Slug of the job (campaign) this payment belongs to, when applicable. */
+  campaignId?: string | null;
   /** Firebase uid of the person being paid. */
   payeeUid: string;
   payeeName: string;

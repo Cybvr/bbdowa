@@ -20,6 +20,17 @@ export type Client = {
   updatedAt?: string | null;
   /** ISO timestamp of when this client's record was created; set by Firestore. */
   createdAt?: string | null;
+  /** Company information shown on the client's jobs. */
+  teamSize?: number | null;
+  yearFounded?: number | null;
+  location?: string | null;
+  website?: string | null;
+  linkedIn?: string | null;
+  /** Client working hours, e.g. "09:00 – 17:00", and the same hours in our time zone. */
+  hours?: string | null;
+  hoursConverted?: string | null;
+  timezone?: string | null;
+  /** Point of contact details live in `clientContacts` (not public). */
 };
 
 /**

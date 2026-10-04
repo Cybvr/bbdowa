@@ -49,10 +49,26 @@ export type Campaign = {
   updatedAt?: string | null;
   /** ISO timestamp of when this campaign's record was created; set by Firestore. */
   createdAt?: string | null;
+  /** Job details. A campaign is a job; pay and assignment live in `jobTerms`. */
+  startDate?: string | null;
+  endDate?: string | null;
+  specialization?: string | null;
+  workSetup?: "remote" | "hybrid" | "onsite" | string | null;
+  estimatedLength?: string | null;
+  languages?: string[];
+  desiredStartDate?: string | null;
+  jobPostedAt?: string | null;
+  requiredSkills?: string[];
 } & Partial<ClientWorkspace>;
 
+export const JOB_STATUS_LABELS: Record<CampaignStatus, string> = {
+  pitch: "Pitch",
+  live: "Live",
+  completed: "Completed",
+};
+
 export function campaignHref(slug: string): string {
-  return `/admin/campaigns/${slug}`;
+  return `/admin/jobs/${slug}`;
 }
 
 function liveSortValue(campaign: Campaign): number {

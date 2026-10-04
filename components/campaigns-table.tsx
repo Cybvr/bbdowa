@@ -99,19 +99,19 @@ export function CampaignsTable({ campaigns, clients }: { campaigns: Campaign[]; 
         tabsLabel="Status"
         search={search}
         onSearchChange={setSearch}
-        searchPlaceholder="Search campaigns"
+        searchPlaceholder="Search jobs"
         filters={[
           { label: "Category", value: category, onChange: setCategory, options: categoryOptions },
         ]}
         sortOptions={SORTS}
         activeSort={sort}
         onSortChange={setSort}
-        resultCount={plural(visible.length, "campaign")}
+        resultCount={plural(visible.length, "job")}
         view={view}
         onViewChange={setView}
       />
 
-      <section id="campaign-panel" aria-label="Campaigns">
+      <section id="campaign-panel" aria-label="Jobs">
         {visible.length > 0 ? (
           view === "cards" ? (
             <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2 lg:grid-cols-3">
@@ -153,7 +153,7 @@ export function CampaignsTable({ campaigns, clients }: { campaigns: Campaign[]; 
               <Table className="w-full border-collapse">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Campaign</TableHead>
+                    <TableHead>Job</TableHead>
                     <TableHead>Client</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Category</TableHead>
@@ -163,7 +163,7 @@ export function CampaignsTable({ campaigns, clients }: { campaigns: Campaign[]; 
                 </TableHeader>
                 <TableBody>
                   {visible.map((campaign) => (
-                    <ClickableTableRow key={campaign.slug} href={campaignHref(campaign.slug)} label={`Open campaign ${campaign.campaign ?? campaign.name}`}>
+                    <ClickableTableRow key={campaign.slug} href={campaignHref(campaign.slug)} label={`Open job ${campaign.campaign ?? campaign.name}`}>
                       <TableCell className="px-4 py-4 font-semibold">
                         <Link href={campaignHref(campaign.slug)} className="text-foreground no-underline hover:text-primary focus-visible:text-primary">
                           {campaign.campaign ?? campaign.name}
@@ -182,7 +182,7 @@ export function CampaignsTable({ campaigns, clients }: { campaigns: Campaign[]; 
           )
         ) : (
           <EmptyState
-            title="No campaigns match"
+            title="No jobs match"
             description="Try a different search term, status filter or clear your filters."
           />
         )}

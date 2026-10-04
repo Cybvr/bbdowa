@@ -64,11 +64,11 @@ export function TaskClientCampaignFields({
         </Select>
       </div>
       <div className={inlineLabels ? "grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2" : "space-y-1.5"}>
-        <label className={`${inlineLabels ? "" : "block "}text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground`} htmlFor={`${id}-campaign`}>Campaign</label>
+        <label className={`${inlineLabels ? "" : "block "}text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground`} htmlFor={`${id}-campaign`}>Job</label>
         <Select value={campaignId ?? NO_SELECTION} onValueChange={(value) => onCampaignChange(value === NO_SELECTION ? null : value)} disabled={disabled || !clientId}>
-          <SelectTrigger id={`${id}-campaign`} className="min-w-0 rounded-md border border-input bg-background"><SelectValue placeholder={clientId ? "Choose a campaign" : "Choose a client first"} /></SelectTrigger>
+          <SelectTrigger id={`${id}-campaign`} className="min-w-0 rounded-md border border-input bg-background"><SelectValue placeholder={clientId ? "Choose a job" : "Choose a client first"} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value={NO_SELECTION}>No campaign</SelectItem>
+            <SelectItem value={NO_SELECTION}>No job</SelectItem>
             {linkedCampaigns.map((campaign) => <SelectItem key={campaign.slug} value={campaign.slug}>{campaign.name}</SelectItem>)}
           </SelectContent>
         </Select>

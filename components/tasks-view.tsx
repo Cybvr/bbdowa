@@ -14,6 +14,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ItemCard, ItemCardList } from "@/components/dashboard/item-card";
 import { TaskClientCampaignFields, useTaskLinkOptions } from "@/components/task-link-fields";
+import { jobHref } from "@/lib/job-terms";
 import {
   TASK_COLLECTION,
   TASK_STATUSES,
@@ -306,7 +307,7 @@ export function TaskDetailPage({ task, canEdit, canDelete, assignees, onChanged,
 
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-5 pb-16 pt-6 sm:px-8">
-      <Link href={task.jobId ? `/dashboard/jobs/${encodeURIComponent(task.jobId)}` : "/dashboard/work"} className="inline-flex min-h-9 items-center text-sm font-medium text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">← Back to {task.jobId ? "job" : "tasks"}</Link>
+      <Link href={task.campaignId ? jobHref(task.campaignId) : "/dashboard/work"} className="inline-flex min-h-9 items-center text-sm font-medium text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">← Back to {task.campaignId ? "job" : "tasks"}</Link>
       <div className="mt-5 flex flex-wrap items-start justify-between gap-4 border-b border-border pb-6">
         <div className="min-w-0 space-y-3">
           <h1 className="m-0 break-words text-page-title font-bold leading-tight tracking-tight sm:text-page-title-lg">{task.title}</h1>
@@ -383,11 +384,10 @@ export function TaskDetailPage({ task, canEdit, canDelete, assignees, onChanged,
         <aside aria-label="Task information" className="space-y-7 border-t border-border pt-5 text-sm lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
           <section className="space-y-4">
             <h2 className="m-0 text-base font-semibold">Assignment</h2>
-            {task.jobId ? <div><span className="block text-xs font-medium text-muted-foreground">Job</span><Link href={`/dashboard/jobs/${encodeURIComponent(task.jobId)}`} className="mt-1 block font-medium text-primary hover:underline">View job</Link></div> : null}
             <div><span className="block text-xs font-medium text-muted-foreground">Assigned to</span><p className="mt-1 font-medium">{task.assignedToName || "Unassigned"}</p></div>
             {task.createdByName ? <div><span className="block text-xs font-medium text-muted-foreground">Created by</span><p className="mt-1 font-medium">{task.createdByName}</p></div> : null}
             {task.clientName ? <div><span className="block text-xs font-medium text-muted-foreground">Client</span><p className="mt-1 font-medium">{task.clientName}</p></div> : null}
-            {task.campaignName ? <div><span className="block text-xs font-medium text-muted-foreground">Campaign</span><p className="mt-1 font-medium">{task.campaignName}</p></div> : null}
+            {task.campaignId ? <div><span className="block text-xs font-medium text-muted-foreground">Job</span><Link href={jobHref(task.campaignId)} className="mt-1 block font-medium text-primary hover:underline">{task.campaignName || "View job"}</Link></div> : null}
           </section>
           <section className="space-y-4 border-t border-border pt-5">
             <h2 className="m-0 text-base font-semibold">Dates</h2>
