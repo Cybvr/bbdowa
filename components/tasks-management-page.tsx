@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { addDoc, collection, deleteDoc, doc } from "firebase/firestore";
 import { Copy, MoreHorizontal, Plus, Trash2 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
@@ -18,7 +19,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Input } from "@/components/ui/input";
 import { RichTextEditor } from "@/components/rich-text-editor";
 import { CreatorPicker } from "@/components/creator-picker";
-import { TaskDetailSheet, TaskStatusBadge } from "@/components/tasks-view";
+import { TaskStatusBadge } from "@/components/tasks-view";
 import { TaskClientCampaignFields, useTaskLinkOptions } from "@/components/task-link-fields";
 import { useFirestoreTasks, useFirestoreUsers } from "@/lib/firebase/client-content";
 import { TASK_COLLECTION, TASK_STATUSES, TASK_STATUS_LABELS, formatDate, isOverdue, type Task, type TaskStatus } from "@/lib/creator-tasks";
@@ -161,6 +162,7 @@ function NewTaskDialog({ assignees, createdBy, createdByName, onCreated }: {
 }
 
 export default function TasksPage() {
+  const router = useRouter();
   const { user, role, loading: authLoading } = useAuth();
   const { tasks, loading, error } = useFirestoreTasks();
   const { users, loading: usersLoading } = useFirestoreUsers();
@@ -172,13 +174,7 @@ export default function TasksPage() {
   const [view, setView] = React.useState<ViewMode>("table");
   const [busyId, setBusyId] = React.useState<string | null>(null);
   const [actionError, setActionError] = React.useState<string | null>(null);
-  const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const isStaff = role === "admin" || role === "manager";
-
-  React.useEffect(() => {
-    const taskId = new URLSearchParams(window.location.search).get("task");
-    if (taskId) setSelectedId(taskId);
-  }, []);
 
   // Any signed-in user can be assigned a task (they need an account so the
   // task can reach them). Ordered by name and searchable in the picker.
@@ -223,6 +219,7 @@ export default function TasksPage() {
     try {
       const now = new Date().toISOString();
       await addDoc(collection(firebaseDb, TASK_COLLECTION), {
+        jobId: task.jobId ?? null,
         title: `${task.title} (Copy)`, description: task.description, content: task.content ?? "",
         clientId: task.clientId ?? null, clientName: task.clientName ?? null,
         campaignId: task.campaignId ?? null, campaignName: task.campaignName ?? null,
@@ -253,9 +250,9 @@ export default function TasksPage() {
   };
 
   if (authLoading || loading || usersLoading) return <UsersTableSkeleton />;
-  if (!isStaff) return <main className="mx-auto w-full max-w-6xl flex-1 px-5 pb-16 pt-8 sm:px-8"><PageHeader title="Work" /><p className="mt-8 text-sm text-muted-foreground">A staff account is required to manage tasks.</p></main>;
+  if (!isStaff) return <main className="mx-auto w-full max-w-6xl flex-1 px-5 pb-16 pt-8 sm:px-8"><PageHeader title="Tasks" /><p className="mt-8 text-sm text-muted-foreground">A staff account is required to manage tasks.</p></main>;
 
-  return <DashboardListPage title="Work" actions={<NewTaskDialog assignees={assignees} createdBy={user!.uid} createdByName={user!.name ?? user!.email} onCreated={() => window.location.reload()} />}
+  return <DashboardListPage title="Tasks" actions={<NewTaskDialog assignees={assignees} createdBy={user!.uid} createdByName={user!.name ?? user!.email} onCreated={() => window.location.reload()} />}
     toolbar={<FilterBar
       panelId="admin-tasks-filter"
       tabs={TASK_STATUS_TABS}
@@ -282,27 +279,28 @@ export default function TasksPage() {
       {view === "cards" ? visible.length ? <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2 lg:grid-cols-3">{visible.map((task) => {
         const assignee = assignees.find((candidate) => candidate.uid === task.assignedTo);
         const name = task.assignedToName ?? assignee?.name ?? "—";
-        return <li key={task.id}><DashboardCard className="h-full"><button type="button" onClick={() => setSelectedId(task.id)} className="flex min-h-40 w-full flex-col p-4 pr-14 text-left text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
-          <span className="line-clamp-2 font-semibold leading-tight">{task.title}</span>
-          <span className="mt-2 line-clamp-2 text-sm text-muted-foreground">{task.description || task.content?.replace(/<[^>]*>/g, " ").trim() || "No details added."}</span>
-          <span className="mt-auto flex w-full items-center justify-between gap-2 pt-4 text-xs text-muted-foreground"><span className="truncate">{name}{task.campaignName ? ` · ${task.campaignName}` : ""}</span><TaskStatusBadge status={task.status} overdue={isOverdue(task)} /></span>
-          {task.dueDate ? <span className="mt-1 text-xs text-muted-foreground">Due {formatDate(task.dueDate)}</span> : null}
+        return <li key={task.id}><DashboardCard className="h-full"><button type="button" onClick={() => router.push(`/dashboard/work/${encodeURIComponent(task.id)}`)} className="flex min-h-40 w-full flex-col p-4 pr-14 text-left text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
+          <span className="self-start"><TaskStatusBadge status={task.status} overdue={isOverdue(task)} /></span>
+          <span className="mt-4 line-clamp-1 font-semibold leading-tight">{task.clientName || name}</span>
+          <span className="mt-1 line-clamp-2 text-sm text-muted-foreground">{task.title}</span>
+          <span className="mt-auto pt-4 text-xs text-muted-foreground">{task.createdAt ? `Created ${formatDate(task.createdAt)}` : ""}{task.dueDate ? `${task.createdAt ? " · " : ""}Due ${formatDate(task.dueDate)}` : ""}</span>
         </button><div className="absolute right-2 top-2"><DropdownMenu><DropdownMenuTrigger asChild><button type="button" aria-label={`Actions for ${task.title}`} disabled={busyId === task.id} className="grid h-9 w-9 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-50"><MoreHorizontal className="h-4 w-4" aria-hidden="true" /></button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-40"><DropdownMenuItem onSelect={() => void duplicate(task)}><Copy className="h-4 w-4" />Duplicate</DropdownMenuItem>{role === "admin" ? <DropdownMenuItem variant="destructive" onSelect={() => void remove(task.id, task.title)}><Trash2 className="h-4 w-4" />Delete</DropdownMenuItem> : null}</DropdownMenuContent></DropdownMenu></div></DashboardCard></li>;
       })}</ul> : <div className="px-5 py-12 text-center"><p className="m-0 text-[15px] font-semibold">{tasks.length ? "No tasks match" : "No tasks yet"}</p><p className="mb-0 mt-1 text-sm text-muted-foreground">{tasks.length ? "Try another search or filter." : "Create a task and assign it to a creator."}</p></div> :
-      visible.length ? <Table className="w-full table-fixed border-collapse"><TableHeader><TableRow><TableHead className="px-4 py-3">Task</TableHead><TableHead className="w-20 px-4 py-3 text-right">Actions</TableHead></TableRow></TableHeader><TableBody>{visible.map((task) => {
+      visible.length ? <Table className="w-full min-w-[680px] table-fixed border-collapse"><TableHeader><TableRow><TableHead className="px-4 py-3">Task</TableHead><TableHead className="w-28 px-4 py-3">Created</TableHead><TableHead className="w-28 px-4 py-3">Due</TableHead><TableHead className="w-20 px-4 py-3 text-right">Actions</TableHead></TableRow></TableHeader><TableBody>{visible.map((task) => {
         const assignee = assignees.find((candidate) => candidate.uid === task.assignedTo);
         const name = task.assignedToName ?? assignee?.name ?? "—";
-        return <ClickableTableRow key={task.id} label={`Open task ${task.title}`} onActivate={() => setSelectedId(task.id)} className="align-middle">
+        return <ClickableTableRow key={task.id} label={`Open task ${task.title}`} onActivate={() => router.push(`/dashboard/work/${encodeURIComponent(task.id)}`)} className="align-middle">
           <TableCell className="px-4 py-3">
-            <button type="button" onClick={() => setSelectedId(task.id)} className="m-0 block max-w-full truncate text-left font-semibold text-foreground hover:text-primary">{task.title}</button>
+            <Link href={`/dashboard/work/${encodeURIComponent(task.id)}`} className="m-0 block max-w-full truncate text-left font-semibold text-foreground hover:text-primary">{task.title}</Link>
             <div className="mt-1 flex min-w-0 items-center gap-2 overflow-hidden whitespace-nowrap text-[13px] text-muted-foreground">
               {assignee?.isCreator ? <Link href={`/dashboard/discover/${assignee.slug}`} className="max-w-[35%] shrink-0 truncate font-semibold text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary">{name}</Link> : <span className="max-w-[35%] shrink-0 truncate">{name}</span>}
               {task.clientName ? <span className="hidden truncate sm:inline">· {task.clientName}</span> : null}
               {task.campaignName ? <span className="hidden truncate lg:inline">· {task.campaignName}</span> : null}
-              {task.dueDate ? <span className="hidden shrink-0 sm:inline">· Due {formatDate(task.dueDate)}</span> : null}
               <span className="ml-auto shrink-0"><TaskStatusBadge status={task.status} overdue={isOverdue(task)} /></span>
             </div>
           </TableCell>
+          <TableCell className="whitespace-nowrap px-4 py-3 text-sm text-muted-foreground">{task.createdAt ? <time dateTime={task.createdAt}>{formatDate(task.createdAt)}</time> : "—"}</TableCell>
+          <TableCell className="whitespace-nowrap px-4 py-3 text-sm text-muted-foreground">{task.dueDate ? <time dateTime={task.dueDate}>{formatDate(task.dueDate)}</time> : "—"}</TableCell>
           <TableCell className="px-4 py-3">
             <div className="flex justify-end">
               <DropdownMenu>
@@ -320,23 +318,5 @@ export default function TasksPage() {
       })}</TableBody></Table> : <div className="px-5 py-12 text-center"><p className="m-0 text-[15px] font-semibold">{tasks.length ? "No tasks match" : "No tasks yet"}</p><p className="mb-0 mt-1 text-sm text-muted-foreground">{tasks.length ? "Try another search or filter." : "Create a task and assign it to a creator."}</p></div>}
     </section>
 
-    <TaskDetailSheet
-      task={tasks.find((task) => task.id === selectedId) ?? null}
-      onOpenChange={(open) => {
-        if (!open) {
-          setSelectedId(null);
-          const url = new URL(window.location.href);
-          if (url.searchParams.has("task") || url.searchParams.has("shared")) {
-            url.searchParams.delete("task");
-            url.searchParams.delete("shared");
-            window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
-          }
-        }
-      }}
-      canEdit={isStaff}
-      canDelete={isStaff}
-      assignees={assignees.map(({ uid, name }) => ({ uid, name }))}
-      onChanged={() => window.location.reload()}
-    />
   </DashboardListPage>;
 }

@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/auth-provider";
 import { ItemCard, ItemCardList } from "@/components/dashboard/item-card";
-import { TaskDetailSheet, TaskStatusBadge } from "@/components/tasks-view";
+import { TaskStatusBadge } from "@/components/tasks-view";
 import { TASK_COLLECTION, formatDate as formatTaskDate, isOverdue, sortTasks, type Task } from "@/lib/creator-tasks";
 import { useFirestoreUsers } from "@/lib/firebase/client-content";
 import { firebaseDb } from "@/lib/firebase/client";
@@ -23,14 +23,13 @@ function availabilityLabel(user: User | undefined, loading: boolean): string {
 }
 
 export default function HomePage() {
-  const { user, role } = useAuth();
+  const { user } = useAuth();
   const { users, loading: usersLoading } = useFirestoreUsers();
   const [myTasks, setMyTasks] = useState<Task[]>([]);
   const [tasksLoading, setTasksLoading] = useState(true);
   const [activities, setActivities] = useState<ActivityEntry[]>([]);
   const [hoursLoading, setHoursLoading] = useState(true);
   const [hoursUnavailable, setHoursUnavailable] = useState(false);
-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
 
   const loadMyTasks = useCallback(async () => {
@@ -83,7 +82,6 @@ export default function HomePage() {
     return () => window.clearInterval(interval);
   }, [activities]);
 
-  const selectedTask = myTasks.find((task) => task.id === selectedTaskId) ?? null;
   const profile = users.find((candidate) => candidate.uid === user?.uid);
   const name = user?.name?.trim().split(/\s+/)[0] ?? user?.email?.split("@")[0] ?? "there";
   const weekStart = startOfWeek();
@@ -96,8 +94,6 @@ export default function HomePage() {
     { label: PROFILE_FIELDS[2], value: usersLoading ? "Loading…" : profile?.title || "—" },
     { label: PROFILE_FIELDS[3], value: usersLoading ? "Loading…" : profile?.location || "—" },
   ];
-  const canManageTasks = role === "admin" || role === "manager";
-  const assignees = canManageTasks ? users.flatMap((candidate) => candidate.uid ? [{ uid: candidate.uid, name: candidate.name }] : []) : undefined;
 
   return (
     <main className="flex-1 px-5 pb-16 pt-4 sm:px-8">
@@ -121,7 +117,7 @@ export default function HomePage() {
               {myTasks.map((task) => (
                 <ItemCard
                   key={task.id}
-                  onClick={() => setSelectedTaskId(task.id)}
+                  href={`/dashboard/work/${encodeURIComponent(task.id)}`}
                   title={task.title}
                   subtitle={task.dueDate ? `Due ${formatTaskDate(task.dueDate)}` : undefined}
                   trailing={<TaskStatusBadge status={task.status} overdue={isOverdue(task)} />}
@@ -149,14 +145,6 @@ export default function HomePage() {
         </aside>
       </div>
 
-      <TaskDetailSheet
-        task={selectedTask}
-        onOpenChange={(open) => { if (!open) setSelectedTaskId(null); }}
-        canEdit={Boolean(selectedTask)}
-        canDelete={Boolean(selectedTask && (canManageTasks || selectedTask.assignedTo === user?.uid))}
-        assignees={assignees}
-        onChanged={() => void loadMyTasks()}
-      />
     </main>
   );
 }

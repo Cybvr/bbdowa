@@ -7,6 +7,10 @@
 
 export type ActivityEntry = {
   id: string;
+  /** Paid assignment and optional task this time is recorded against. */
+  jobId?: string | null;
+  jobTitle?: string | null;
+  taskId?: string | null;
   /** Firebase uid of the person the activity belongs to. */
   uid: string;
   /** Display name captured at start, for the admin view. */

@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { addDoc, collection, deleteDoc, doc, getDocs, query, updateDoc, where } from "firebase/firestore";
-import { Check, CheckSquare, Copy, Expand, Minimize2, Plus, Share2, Trash2 } from "lucide-react";
+import { Check, CheckSquare, Copy, Plus, Share2, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { firebaseDb } from "@/lib/firebase/client";
 import { EmptyState } from "@/components/dashboard/ui";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -186,13 +187,13 @@ export function NewTaskSheet({ creatorUid, creatorName, createdBy, createdByName
 }
 
 /** Editable task record. The assignee can edit its work details; staff may also reassign it and delete it. */
-export function TaskDetailSheet({ task, onOpenChange, canEdit, canDelete, assignees, onChanged }: {
-  task: Task | null;
-  onOpenChange: (open: boolean) => void;
+export function TaskDetailPage({ task, canEdit, canDelete, assignees, onChanged, onDeleted }: {
+  task: Task;
   canEdit: boolean;
   canDelete: boolean;
   assignees?: { uid: string; name: string }[];
   onChanged: () => void;
+  onDeleted: () => void;
 }) {
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -204,7 +205,6 @@ export function TaskDetailSheet({ task, onOpenChange, canEdit, canDelete, assign
   const [clientId, setClientId] = React.useState<string | null>(null);
   const [campaignId, setCampaignId] = React.useState<string | null>(null);
   const [assignedTo, setAssignedTo] = React.useState("");
-  const [expanded, setExpanded] = React.useState(false);
   const [shareOpen, setShareOpen] = React.useState(false);
   const [shareUrl, setShareUrl] = React.useState("");
   const [shareMessage, setShareMessage] = React.useState<string | null>(null);
@@ -214,7 +214,6 @@ export function TaskDetailSheet({ task, onOpenChange, canEdit, canDelete, assign
     : [];
 
   React.useEffect(() => {
-    if (!task) return;
     setTitle(task.title);
     const text = taskEditorText(task);
     setDescription(text.description);
@@ -230,15 +229,7 @@ export function TaskDetailSheet({ task, onOpenChange, canEdit, canDelete, assign
     setShareMessage(null);
   }, [task?.id]);
 
-  React.useEffect(() => {
-    if (!task) return;
-    if (new URLSearchParams(window.location.search).get("task") === task.id) {
-      setExpanded(true);
-    }
-  }, [task?.id]);
-
   const shareTask = async () => {
-    if (!task) return;
     setShareUrl("");
     setShareMessage(null);
     try {
@@ -246,8 +237,7 @@ export function TaskDetailSheet({ task, onOpenChange, canEdit, canDelete, assign
         shareEnabled: true,
         updatedAt: new Date().toISOString(),
       });
-      const url = new URL("/dashboard/work", window.location.origin);
-      url.searchParams.set("task", task.id);
+      const url = new URL(`/dashboard/work/${encodeURIComponent(task.id)}`, window.location.origin);
       url.searchParams.set("shared", "1");
       setShareUrl(url.toString());
       setShareOpen(true);
@@ -270,7 +260,7 @@ export function TaskDetailSheet({ task, onOpenChange, canEdit, canDelete, assign
 
   const save = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!task || !title.trim() || busy) return;
+    if (!title.trim() || busy) return;
     setBusy(true);
     setError(null);
     try {
@@ -290,7 +280,6 @@ export function TaskDetailSheet({ task, onOpenChange, canEdit, canDelete, assign
         ...(assignees ? { assignedTo: assignee?.uid ?? task.assignedTo, assignedToName: assignee?.name ?? task.assignedToName } : {}),
         updatedAt: new Date().toISOString(),
       });
-      onOpenChange(false);
       onChanged();
     } catch (cause) {
       console.error("Unable to update task", cause);
@@ -301,13 +290,12 @@ export function TaskDetailSheet({ task, onOpenChange, canEdit, canDelete, assign
   };
 
   const removeTask = async () => {
-    if (!task || !window.confirm("Delete this task? This can’t be undone.")) return;
+    if (!window.confirm("Delete this task? This can’t be undone.")) return;
     setBusy(true);
     setError(null);
     try {
       await deleteDoc(doc(firebaseDb, TASK_COLLECTION, task.id));
-      onOpenChange(false);
-      onChanged();
+      onDeleted();
     } catch (cause) {
       console.error("Unable to delete task", cause);
       setError("Couldn’t delete that task. Try again.");
@@ -317,24 +305,22 @@ export function TaskDetailSheet({ task, onOpenChange, canEdit, canDelete, assign
   };
 
   return (
-    <>
-    <Sheet open={Boolean(task)} onOpenChange={(open) => { if (!open) setExpanded(false); onOpenChange(open); }}>
-      <SheetContent side={expanded ? "center" : "right"} aria-describedby={undefined} className={expanded ? "gap-0 [&>button]:bg-muted [&>button]:text-foreground [&>button]:opacity-100" : "w-[min(520px,calc(100vw-1.5rem))] max-w-none gap-0 [&>button]:bg-muted [&>button]:text-foreground [&>button]:opacity-100"}>
-        {task ? (
-          <>
-            <SheetHeader className="relative border-b border-border pr-36">
-              <SheetTitle>{canEdit ? "Edit task" : task.title}</SheetTitle>
-              {canEdit ? <button type="button" onClick={() => void shareTask()} aria-label="Share task" title="Share task" className="absolute right-[5.5rem] top-2.5 grid h-9 w-9 place-items-center rounded-full text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-                <Share2 className="h-4 w-4" aria-hidden="true" />
-              </button> : null}
-              <button type="button" onClick={() => setExpanded((value) => !value)} aria-label={expanded ? "Return to side panel" : "Expand task to modal"} title={expanded ? "Return to side panel" : "Expand to modal"} className="absolute right-12 top-2.5 grid h-9 w-9 place-items-center rounded-full text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-                {expanded ? <Minimize2 className="h-4 w-4" aria-hidden="true" /> : <Expand className="h-4 w-4" aria-hidden="true" />}
-              </button>
-              <span role="status" className="sr-only">{shareMessage}</span>
-            </SheetHeader>
+    <main className="mx-auto w-full max-w-6xl flex-1 px-5 pb-16 pt-6 sm:px-8">
+      <Link href={task.jobId ? `/dashboard/jobs/${encodeURIComponent(task.jobId)}` : "/dashboard/work"} className="inline-flex min-h-9 items-center text-sm font-medium text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">← Back to {task.jobId ? "job" : "tasks"}</Link>
+      <div className="mt-5 flex flex-wrap items-start justify-between gap-4 border-b border-border pb-6">
+        <div className="min-w-0 space-y-3">
+          <h1 className="m-0 break-words text-page-title font-bold leading-tight tracking-tight sm:text-page-title-lg">{task.title}</h1>
+          {task.clientName || task.campaignName ? <p className="m-0 text-sm text-muted-foreground">{[task.clientName, task.campaignName].filter(Boolean).join(" · ")}</p> : null}
+          <TaskStatusBadge status={task.status} overdue={isOverdue(task)} />
+        </div>
+        {canEdit ? <button type="button" onClick={() => void shareTask()} className="inline-flex h-9 items-center gap-2 rounded-md border border-border px-3 text-[13px] font-semibold text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"><Share2 className="h-4 w-4" aria-hidden="true" />Share task</button> : null}
+      </div>
+      <div className="grid gap-8 pt-7 lg:grid-cols-[minmax(0,1fr)_240px]">
+        <div className="min-w-0">
             {canEdit ? (
-              <form onSubmit={save} className="flex min-h-0 flex-1 flex-col">
-                <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3">
+              <form onSubmit={save} className="space-y-6">
+                <section aria-labelledby="task-work-heading" className="space-y-5">
+                  <h2 id="task-work-heading" className="m-0 text-lg font-semibold">Task details</h2>
                   {error ? <p className="m-0 text-[13px] font-medium text-destructive">{error}</p> : null}
                   <div className="space-y-1">
                     <label htmlFor="edit-task-title" className="block text-[13px] text-muted-foreground">Title</label>
@@ -344,6 +330,10 @@ export function TaskDetailSheet({ task, onOpenChange, canEdit, canDelete, assign
                     <label htmlFor="edit-task-description" className="block text-[13px] text-muted-foreground">Description</label>
                     <Input id="edit-task-description" value={description} onChange={(event) => setDescription(event.target.value)} disabled={busy} placeholder="Short task summary" />
                   </div>
+                  <RichTextEditor label="Content" value={content} onChange={setContent} placeholder="Add detailed instructions and copy…" />
+                </section>
+                <section aria-labelledby="task-assignment-heading" className="space-y-5 border-t border-border pt-6">
+                  <h2 id="task-assignment-heading" className="m-0 text-lg font-semibold">Assignment and schedule</h2>
                   <div className="grid grid-cols-1 items-start gap-x-4 gap-y-2.5 min-[480px]:grid-cols-2">
                     {assignees ? (
                       <div className="min-w-0 space-y-1">
@@ -376,27 +366,38 @@ export function TaskDetailSheet({ task, onOpenChange, canEdit, canDelete, assign
                     <label htmlFor="edit-task-due-date" className="block text-[13px] text-muted-foreground">Due date</label>
                     <Input id="edit-task-due-date" type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} disabled={busy} className="min-w-0" />
                   </div>
-                  <RichTextEditor label="Content" value={content} onChange={setContent} placeholder="Add detailed instructions and copy…" compact />
-                </div>
-                <div className="flex items-center justify-between gap-3 border-t border-border px-4 py-3">
+                </section>
+                <div className="flex items-center justify-between gap-3 border-t border-border pt-5">
                   {canDelete ? <button type="button" onClick={() => void removeTask()} disabled={busy} className="inline-flex h-9 items-center gap-1.5 rounded-md border border-border px-3 text-[13px] font-semibold text-destructive transition hover:border-destructive disabled:opacity-50"><Trash2 className="h-4 w-4" aria-hidden="true" />Delete</button> : <span />}
                   <button type="submit" disabled={busy || !title.trim()} className="h-9 rounded-md bg-primary px-4 text-[13px] font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50">{busy ? "Saving…" : "Save changes"}</button>
                 </div>
               </form>
             ) : (
-              <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-4 py-4">
-                <TaskStatusBadge status={task.status} overdue={isOverdue(task)} />
+              <section aria-labelledby="task-work-heading" className="space-y-6">
+                <h2 id="task-work-heading" className="m-0 text-lg font-semibold">Task details</h2>
                 <div><span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Description</span><p className="m-0 whitespace-pre-wrap text-[14px] leading-[1.55] text-foreground">{task.description || "No description added."}</p></div>
                 {task.content ? <div><span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Content</span><RichTextContent value={task.content} className="text-[14px] leading-[1.55]" /></div> : null}
-                {task.clientName ? <p className="m-0 text-[13px] text-muted-foreground">Client: {task.clientName}</p> : null}
-                {task.campaignName ? <p className="m-0 text-[13px] text-muted-foreground">Campaign: {task.campaignName}</p> : null}
-              </div>
+              </section>
             )}
-          </>
-        ) : null}
-      </SheetContent>
-    </Sheet>
-      <Dialog open={shareOpen && Boolean(task)} onOpenChange={setShareOpen}>
+        </div>
+        <aside aria-label="Task information" className="space-y-7 border-t border-border pt-5 text-sm lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
+          <section className="space-y-4">
+            <h2 className="m-0 text-base font-semibold">Assignment</h2>
+            {task.jobId ? <div><span className="block text-xs font-medium text-muted-foreground">Job</span><Link href={`/dashboard/jobs/${encodeURIComponent(task.jobId)}`} className="mt-1 block font-medium text-primary hover:underline">View job</Link></div> : null}
+            <div><span className="block text-xs font-medium text-muted-foreground">Assigned to</span><p className="mt-1 font-medium">{task.assignedToName || "Unassigned"}</p></div>
+            {task.createdByName ? <div><span className="block text-xs font-medium text-muted-foreground">Created by</span><p className="mt-1 font-medium">{task.createdByName}</p></div> : null}
+            {task.clientName ? <div><span className="block text-xs font-medium text-muted-foreground">Client</span><p className="mt-1 font-medium">{task.clientName}</p></div> : null}
+            {task.campaignName ? <div><span className="block text-xs font-medium text-muted-foreground">Campaign</span><p className="mt-1 font-medium">{task.campaignName}</p></div> : null}
+          </section>
+          <section className="space-y-4 border-t border-border pt-5">
+            <h2 className="m-0 text-base font-semibold">Dates</h2>
+            {task.createdAt ? <div><span className="block text-xs font-medium text-muted-foreground">Created</span><p className="mt-1 font-medium"><time dateTime={task.createdAt}>{formatDate(task.createdAt)}</time></p></div> : null}
+            {task.dueDate ? <div><span className="block text-xs font-medium text-muted-foreground">Due</span><p className="mt-1 font-medium"><time dateTime={task.dueDate}>{formatDate(task.dueDate)}</time></p></div> : null}
+            {task.updatedAt ? <div><span className="block text-xs font-medium text-muted-foreground">Last updated</span><p className="mt-1 font-medium"><time dateTime={task.updatedAt}>{formatDate(task.updatedAt)}</time></p></div> : null}
+          </section>
+        </aside>
+      </div>
+      <Dialog open={shareOpen} onOpenChange={setShareOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Share task</DialogTitle>
@@ -415,19 +416,15 @@ export function TaskDetailSheet({ task, onOpenChange, canEdit, canDelete, assign
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+    </main>
   );
 }
 
 /** Tasks for one creator, shown on their profile page. The assignee and staff can edit task details. */
-export function CreatorTasksPanel({ creatorUid, creatorName, viewer, refreshSignal = 0, assignees }: { creatorUid: string | null | undefined; creatorName: string; viewer: TaskViewer; refreshSignal?: number; assignees?: { uid: string; name: string }[] }) {
+export function CreatorTasksPanel({ creatorUid, creatorName, viewer, refreshSignal = 0 }: { creatorUid: string | null | undefined; creatorName: string; viewer: TaskViewer; refreshSignal?: number; assignees?: { uid: string; name: string }[] }) {
   const [tasks, setTasks] = React.useState<Task[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-  const [selectedId, setSelectedId] = React.useState<string | null>(null);
-  const selected = tasks.find((task) => task.id === selectedId) ?? null;
-  // Only staff or the assigned creator can change a task; unrelated viewers can only read it.
-  const canEdit = viewer.isStaff || (Boolean(viewer.uid) && viewer.uid === creatorUid);
 
   const load = React.useCallback(async (uid: string) => {
     const snapshot = await getDocs(query(collection(firebaseDb, TASK_COLLECTION), where("assignedTo", "==", uid)));
@@ -454,10 +451,6 @@ export function CreatorTasksPanel({ creatorUid, creatorName, viewer, refreshSign
       active = false;
     };
   }, [creatorUid, load, refreshSignal]);
-
-  const reload = () => {
-    if (creatorUid) void load(creatorUid);
-  };
 
   if (!creatorUid) {
     return viewer.isStaff ? (
@@ -488,7 +481,7 @@ export function CreatorTasksPanel({ creatorUid, creatorName, viewer, refreshSign
           {tasks.map((task) => (
             <ItemCard
               key={task.id}
-              onClick={() => setSelectedId(task.id)}
+              href={`/dashboard/work/${encodeURIComponent(task.id)}`}
               icon={<CheckSquare className="h-5 w-5" aria-hidden="true" />}
               title={task.title}
               subtitle={task.dueDate ? `Due ${formatDate(task.dueDate)}` : undefined}
@@ -498,14 +491,6 @@ export function CreatorTasksPanel({ creatorUid, creatorName, viewer, refreshSign
         </ItemCardList>
       )}
 
-      <TaskDetailSheet
-        task={selected}
-        onOpenChange={(open) => { if (!open) setSelectedId(null); }}
-        canEdit={canEdit}
-        canDelete={canEdit}
-        assignees={viewer.isStaff ? assignees : undefined}
-        onChanged={reload}
-      />
     </div>
   );
 }

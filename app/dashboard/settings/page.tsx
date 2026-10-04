@@ -26,6 +26,7 @@ const NAV_ITEMS: ({ key: SectionKey; label: string } | { href: string; label: st
   { key: "account", label: "Account" },
   ...PROFILE_SECTIONS.filter((section) => section.key !== "profile").map((section) => ({ key: section.key, label: section.label })),
   { href: "/dashboard/payments", label: "Payments" },
+  { href: "/onboarding", label: "Onboarding" },
 ];
 
 const SECTION_KEYS: string[] = NAV_ITEMS.flatMap((item) => ("key" in item ? [item.key] : []));

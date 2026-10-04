@@ -14,3 +14,31 @@
  ○ Compiling /dashboard/tasks ...
  ✓ Compiled /dashboard/tasks in 11.3s (1644 modules)
  GET /dashboard/tasks?task=S1U03T5kpdGnC9QEMawn 200 in 13134ms
+ GET /dashboard/tasks 200 in 358ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 5.3s (1292 modules)
+ GET /dashboard/tasks?task=S1U03T5kpdGnC9QEMawn 404 in 5396ms
+ GET /dashboard/tasks 404 in 5431ms
+ GET /dashboard/tasks 404 in 957ms
+ GET /dashboard/tasks?task=S1U03T5kpdGnC9QEMawn 404 in 948ms
+ GET /dashboard/tasks?task=S1U03T5kpdGnC9QEMawn 404 in 2625ms
+ GET /dashboard/tasks 404 in 2636ms
+ ✓ Compiled in 4.2s (1306 modules)
+ ✓ Compiled in 1892ms (591 modules)
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ○ Compiling /dashboard/tasks ...
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ✓ Compiled /dashboard/tasks in 11.4s (1622 modules)
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ GET /dashboard/tasks?task=S1U03T5kpdGnC9QEMawn 200 in 14109ms
+ GET /dashboard/tasks?task=S1U03T5kpdGnC9QEMawn 200 in 15533ms
+ GET /dashboard/tasks?task=S1U03T5kpdGnC9QEMawn&shared=1 200 in 1185ms
+ GET /dashboard/tasks 200 in 162ms
+ GET /dashboard/tasks 200 in 322ms
+ ✓ Compiled in 5s (668 modules)
+ ✓ Compiled in 5s (591 modules)
+ ✓ Compiled in 1596ms (591 modules)
+ ○ Compiling /dashboard/work ...
+ ✓ Compiled /dashboard/work in 11.9s (1621 modules)
+ GET /dashboard/work 200 in 322ms
+ ✓ Compiled in 1212ms (668 modules)

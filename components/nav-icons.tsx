@@ -315,6 +315,7 @@ export const NAV_ICON_SET: Record<string, NavIconComponent> = {
   About: AboutIcon,
   Careers: CareersIcon,
   Work: CareersIcon,
+  Jobs: CareersIcon,
   Admin: AdminIcon,
   Settings: SettingsIcon,
   "Log out": LogOutIcon,

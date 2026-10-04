@@ -110,10 +110,10 @@ export function LoginForm({
 
   const finishClientSession = async (user: User, intent: AuthIntent) => {
     const profileState = await upsertUserProfile(user, intent);
-    const needsOnboarding = intent === "creator" && profileState.needsOnboarding;
-    setSuccessMessage(needsOnboarding ? "Account created. Opening your creator setup..." : "Welcome back. Opening Bantaba...");
+    const needsOnboarding = profileState.needsOnboarding;
+    setSuccessMessage(needsOnboarding ? "Account ready. Opening your onboarding..." : "Welcome back. Opening Bantaba...");
     onSuccess?.();
-    router.replace(needsOnboarding ? "/onboarding/creator" : destination);
+    router.replace(needsOnboarding ? "/onboarding" : destination);
     router.refresh();
   };
 

@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { doc, onSnapshot } from "firebase/firestore";
 import { LuChevronRight } from "react-icons/lu";
 import {
   DropdownMenu,
@@ -13,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useOptionalAuth } from "@/components/auth-provider";
 import { createGlyphAvatarDataUri } from "@/lib/avatar";
+import { firebaseDb } from "@/lib/firebase/client";
 
 export type ProfileNavItem = {
   label: string;
@@ -100,6 +102,7 @@ export function ProfileNav({
   const loading = auth?.loading ?? false;
   const logout = auth?.logout;
   const role = auth?.role ?? null;
+  const profileImage = useProfileImage(user?.uid ?? null);
   const roleLabel = role ? role.charAt(0).toUpperCase() + role.slice(1) : null;
   const isAdmin = auth?.isAdmin ?? false;
   const menuItems: readonly ProfileNavItem[] = [
@@ -110,7 +113,7 @@ export function ProfileNav({
   const displayName = name ?? user?.name ?? user?.email?.split("@")[0] ?? "BBDO User";
   const displayEmail = email ?? user?.email ?? (loading ? "Loading profile..." : "Signed in");
   const handle = (email ?? user?.email)?.split("@")[0]?.toLowerCase() ?? null;
-  const avatarSrc = createGlyphAvatarDataUri(displayName || displayEmail || initials || "BBDO User");
+  const avatarSrc = profileImage || createGlyphAvatarDataUri(displayName || displayEmail || initials || "BBDO User");
   const handleLogout = onLogout ?? (logout ? () => void logout() : undefined);
 
   if (!auth || !user) {
@@ -210,4 +213,26 @@ export function ProfileNav({
       </DropdownMenuContent>
     </DropdownMenu>
   );
+}
+
+/** The signed-in person's uploaded avatar, kept live so a change in Settings shows straight away. */
+function useProfileImage(uid: string | null): string | null {
+  const [image, setImage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!uid) {
+      setImage(null);
+      return;
+    }
+    return onSnapshot(
+      doc(firebaseDb, "users", uid),
+      (snapshot) => {
+        const data = snapshot.data();
+        setImage(data?.profileImage || data?.picture || null);
+      },
+      () => setImage(null),
+    );
+  }, [uid]);
+
+  return image;
 }

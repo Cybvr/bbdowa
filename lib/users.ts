@@ -55,6 +55,8 @@ export type User = {
   /** Firebase Auth uid, present once this person has signed in and holds an account. */
   uid?: string | null;
   name: string;
+  /** What the person likes to be called, if different from their full name. */
+  preferredName?: string | null;
   /** Primary role retained for older records and auth compatibility. */
   role: UserAccountRole;
   /** Every directory role this person holds. */
