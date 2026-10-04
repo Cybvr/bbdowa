@@ -14,7 +14,7 @@ const RECORD = [
 export default async function MarketingHomePage() {
   const jobs = await getJobs();
   const work = sortJobsByLatestLive(
-    jobs.filter((job) => job.status !== "pitch"),
+    jobs.filter((job) => job.status !== "archived"),
   ).slice(0, 8);
 
   return (

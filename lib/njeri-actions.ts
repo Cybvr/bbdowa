@@ -39,7 +39,7 @@ export type JobDraft = {
   name: string;
   clientName: string;
   category: string;
-  status: "live" | "pitch" | "completed";
+  status: "active" | "completed" | "archived";
   year: number | null;
   liveAt: string | null;
   summary: string;

@@ -12,7 +12,7 @@ export default async function WorkPage({ params }: WorkPageProps) {
   const { slug } = await params;
   const job = await getJobBySlug(slug);
 
-  if (!job || job.status === "pitch") {
+  if (!job || job.status === "archived") {
     notFound();
   }
 

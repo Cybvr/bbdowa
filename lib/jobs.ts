@@ -1,6 +1,6 @@
 import type { ClientWorkspace } from "@/lib/client-workspaces";
 
-export type JobStatus = "live" | "pitch" | "completed";
+export type JobStatus = "active" | "completed" | "archived";
 
 export type JobMedia = {
   kind: "image" | "video";
@@ -69,18 +69,21 @@ export const LEGACY_JOB_FIELDS = { title: "campaign", mediaPlans: "campaignMedia
 /** Reads a stored job, mapping old campaign field names across when present. */
 export function normalizeJob(data: Record<string, unknown>, id?: string): Job {
   const { [LEGACY_JOB_FIELDS.title]: legacyTitle, [LEGACY_JOB_FIELDS.mediaPlans]: legacyMediaPlans, ...rest } = data;
+  const rawStatus = rest.status;
+  const status: JobStatus = rawStatus === "live" ? "active" : rawStatus === "pitch" ? "archived" : rawStatus === "completed" ? "completed" : "active";
   return {
     ...rest,
     slug: (rest.slug as string | undefined) ?? id,
     title: (rest.title as string | undefined) ?? (legacyTitle as string | undefined),
+    status,
     ...(rest.jobMediaPlans === undefined && legacyMediaPlans !== undefined ? { jobMediaPlans: legacyMediaPlans } : {}),
   } as Job;
 }
 
 export const JOB_STATUS_LABELS: Record<JobStatus, string> = {
-  pitch: "Pitch",
-  live: "Live",
+  active: "Active",
   completed: "Completed",
+  archived: "Archived",
 };
 
 /** A job's page: the admin page for staff tools, or the dashboard page. */
@@ -94,14 +97,14 @@ function liveSortValue(job: Job): number {
 
 export function sortJobsByLatestLive(jobs: Job[]): Job[] {
   return [...jobs].sort((a, b) => {
-    const liveStatus = Number(b.status === "live") - Number(a.status === "live");
+    const liveStatus = Number(b.status === "active") - Number(a.status === "active");
     if (liveStatus !== 0) return liveStatus;
     return liveSortValue(b) - liveSortValue(a);
   });
 }
 
 export function jobsLiveNow(jobs: Job[]): Job[] {
-  return jobs.filter((job) => job.status === "live");
+  return jobs.filter((job) => job.status === "active");
 }
 
 export function jobsDueFrom(jobs: Job[], from: Date, limit = 3): Job[] {

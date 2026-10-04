@@ -27,7 +27,7 @@ import { ImageUploadField } from "@/components/detail-editor";
 import { LIST_ACTION_CLASS } from "@/components/dashboard/list-page-actions";
 
 export type CreateType = "update" | "resource" | "client" | "job";
-type JobStatus = "live" | "pitch" | "completed";
+type JobStatus = "active" | "completed" | "archived";
 type ClientOption = { slug: string; name: string };
 
 const CREATE_COPY: Record<CreateType, { button: string; title: string; description: string }> = {
@@ -64,9 +64,9 @@ function slugify(value: string): string {
 
 const UPDATE_CATEGORIES = ["News", "People", "Work", "Industry"] as const;
 const JOB_STATUSES: { value: JobStatus; label: string }[] = [
-  { value: "pitch", label: "Pitch" },
-  { value: "live", label: "Live" },
+  { value: "active", label: "Active" },
   { value: "completed", label: "Completed" },
+  { value: "archived", label: "Archived" },
 ];
 
 const LABEL = "block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground";
@@ -105,7 +105,7 @@ export function QuickCreate({ type, iconOnly = false }: { type: CreateType; icon
   const [jobTitle, setJobTitle] = React.useState("");
   const [jobClientId, setJobClientId] = React.useState("");
   const [jobCategory, setJobCategory] = React.useState("");
-  const [jobStatus, setJobStatus] = React.useState<JobStatus>("pitch");
+  const [jobStatus, setJobStatus] = React.useState<JobStatus>("active");
   const [jobYear, setJobYear] = React.useState("");
   const [jobLiveDate, setJobLiveDate] = React.useState("");
 
@@ -160,7 +160,7 @@ export function QuickCreate({ type, iconOnly = false }: { type: CreateType; icon
     setJobTitle("");
     setJobClientId("");
     setJobCategory("");
-    setJobStatus("pitch");
+    setJobStatus("active");
     setJobYear("");
     setJobLiveDate("");
     setError(null);

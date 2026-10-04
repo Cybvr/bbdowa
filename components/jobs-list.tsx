@@ -9,7 +9,7 @@ import { PageLoadingSkeleton } from "@/components/dashboard/loading-skeleton";
 import { firebaseDb } from "@/lib/firebase/client";
 import { jobsCollection } from "@/lib/firebase/job-collections";
 import { TASK_COLLECTION, formatDate } from "@/lib/creator-tasks";
-import { JOB_STATUS_LABELS, type Job } from "@/lib/jobs";
+import { JOB_STATUS_LABELS, normalizeJob, type Job } from "@/lib/jobs";
 import { JOB_TERMS_COLLECTION } from "@/lib/job-terms";
 import { ACTIVITY_COLLECTION } from "@/lib/time-tracking";
 import { PAYMENTS_COLLECTION } from "@/lib/payments";
@@ -20,9 +20,9 @@ type JobFilter = (typeof filters)[number];
 
 function matchesFilter(job: Job, filter: JobFilter) {
   if (filter === "all") return true;
-  if (filter === "active") return job.status === "live";
+  if (filter === "active") return job.status === "active";
   if (filter === "completed") return job.status === "completed";
-  return job.status === "pitch";
+  return job.status === "archived";
 }
 
 /** Jobs assigned to the signed-in person. Staff manage every job from /admin/jobs. */
@@ -53,7 +53,7 @@ export function JobsList() {
       })
       .then((snapshots) => {
         if (!active) return;
-        setJobs(snapshots.filter((item) => item.exists()).map((item) => ({ ...(item.data() as Job), slug: item.id })).sort((a, b) => (b.startDate ?? b.liveAt?.date ?? "").localeCompare(a.startDate ?? a.liveAt?.date ?? "")));
+        setJobs(snapshots.filter((item) => item.exists()).map((item) => normalizeJob(item.data() as Record<string, unknown>, item.id)).sort((a, b) => (b.startDate ?? b.liveAt?.date ?? "").localeCompare(a.startDate ?? a.liveAt?.date ?? "")));
       })
       .catch((cause) => { console.error("Unable to load jobs", cause); if (active) setError("Couldn’t load jobs. Try again later."); })
       .finally(() => { if (active) setLoading(false); });

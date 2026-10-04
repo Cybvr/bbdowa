@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import type { Job } from "@/lib/jobs";
+import { JOB_STATUS_LABELS, type Job } from "@/lib/jobs";
 import { jobHref, jobLiveDateLabel } from "@/lib/jobs";
 import type { Client } from "@/lib/clients";
 import { longDate, plural } from "@/lib/format";
@@ -33,9 +33,9 @@ type StatusKey = (typeof STATUS_TABS)[number]["key"];
 
 function jobMatchesStatus(job: Job, status: StatusKey) {
   if (status === "all") return true;
-  if (status === "active") return job.status === "live";
+  if (status === "active") return job.status === "active";
   if (status === "completed") return job.status === "completed";
-  return job.status === "pitch";
+  return job.status === "archived";
 }
 
 const SORTS: SortOption<"recent" | "name" | "client" | "modified">[] = [
@@ -143,7 +143,7 @@ export function JobsTable({ jobs, clients }: { jobs: Job[]; clients: Client[] })
                       <CreatorAvatarStack creators={jobCreators(job, clients, users)} />
                       <div className="mt-auto flex flex-col gap-1">
                         <div className="flex items-center justify-between gap-3 text-[12px] text-muted-foreground">
-                          <Badge tone={job.status === "live" ? "active" : "neutral"}>{job.status}</Badge>
+                          <Badge tone={job.status === "active" ? "active" : "neutral"}>{JOB_STATUS_LABELS[job.status]}</Badge>
                           <span>{jobLiveDateLabel(job)}</span>
                         </div>
                         {job.updatedAt ? (
@@ -178,7 +178,7 @@ export function JobsTable({ jobs, clients }: { jobs: Job[]; clients: Client[] })
                         </Link>
                       </TableCell>
                       <TableCell className="px-4 py-4 text-muted-foreground">{job.clientName}</TableCell>
-                      <TableCell className="px-4 py-4"><Badge tone={job.status === "live" ? "active" : "neutral"}>{job.status}</Badge></TableCell>
+                      <TableCell className="px-4 py-4"><Badge tone={job.status === "active" ? "active" : "neutral"}>{JOB_STATUS_LABELS[job.status]}</Badge></TableCell>
                       <TableCell className="px-4 py-4 text-muted-foreground">{job.category}</TableCell>
                       <TableCell className="whitespace-nowrap px-4 py-4 text-muted-foreground">{jobLiveDateLabel(job)}</TableCell>
                       <TableCell className="whitespace-nowrap px-4 py-4 text-muted-foreground">{job.updatedAt ? updatedDate(job.updatedAt) : "—"}</TableCell>

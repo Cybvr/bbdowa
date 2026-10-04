@@ -220,7 +220,7 @@ function normalizeAction(value: unknown): NjeriActionProposal | null {
     const clientName = stringValue(record.clientName);
     if (!name || !clientName) return null;
     const rawPlatform = Array.isArray(record.platform) ? record.platform : [];
-    const status = record.status === "live" || record.status === "completed" ? record.status : "pitch";
+    const status = record.status === "completed" || record.status === "archived" ? record.status : "active";
     return {
       type: "create_job",
       record: {

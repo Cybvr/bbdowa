@@ -154,7 +154,7 @@ export function JobDetail({ job, adminMode = false }: { job: Job; adminMode?: bo
         <div>
           <p className="mb-2 text-sm text-muted-foreground">{job.clientName}</p>
           <h1 className="m-0 break-words text-page-title font-bold leading-tight sm:text-page-title-lg">{title}</h1>
-          <div className="mt-3"><Badge tone={job.status === "live" ? "active" : "neutral"}>{JOB_STATUS_LABELS[job.status] ?? job.status}</Badge></div>
+          <div className="mt-3"><Badge tone={job.status === "active" ? "active" : "neutral"}>{JOB_STATUS_LABELS[job.status] ?? job.status}</Badge></div>
           <p className="mb-0 mt-3 max-w-[70ch] whitespace-pre-wrap text-[16px] leading-[1.45] text-muted-foreground">{job.summary || "No description added."}</p>
           {job.externalLinks?.length ? <ul className="m-0 mt-5 flex list-none flex-wrap gap-2 p-0">
             {job.externalLinks.map((link) => <li key={link.href}><a href={link.href} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center gap-1.5 rounded-md border border-border px-3 py-2 text-[13px] font-semibold text-foreground hover:border-primary hover:text-primary">{link.label}<ArrowUpRight aria-hidden="true" className="size-3.5" /></a></li>)}

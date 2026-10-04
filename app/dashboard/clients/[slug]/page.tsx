@@ -32,13 +32,13 @@ import type {
   JobWorkspaceStatus,
 } from "@/lib/client-data";
 
-// The public job data uses live/pitch/completed; the workspace exposes a
+// The public job data uses active/completed/archived; the workspace exposes a
 // slightly richer editable set. Map the real status onto that set so the card
 // and overview reflect the actual job rather than a flat "Draft".
 function workspaceStatusFromJob(status: JobStatus): JobWorkspaceStatus {
-  if (status === "live") return "Live";
+  if (status === "active") return "Live";
   if (status === "completed") return "Completed";
-  return "Pitch";
+  return "Draft";
 }
 
 function jobImageFor(jobId: string, jobs: Job[]): string {

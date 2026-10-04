@@ -39,7 +39,7 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
   const [title, setTitle] = React.useState(job.title ?? "");
   const [clientName, setClientName] = React.useState(job.clientName ?? "");
   const [category, setCategory] = React.useState(job.category ?? "");
-  const [status, setStatus] = React.useState(job.status ?? "pitch");
+  const [status, setStatus] = React.useState(job.status ?? "active");
   const [year, setYear] = React.useState(job.year != null ? String(job.year) : "");
   const [leadUserId, setLeadUserId] = React.useState(job.leadUserId ?? "");
   const [fee, setFee] = React.useState(job.fee ?? "");
@@ -191,9 +191,9 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
         value={status}
         onChange={(value) => setStatus(value as Job["status"])}
         options={[
-          { value: "live", label: "Live" },
-          { value: "pitch", label: "Pitch" },
+          { value: "active", label: "Active" },
           { value: "completed", label: "Completed" },
+          { value: "archived", label: "Archived" },
         ]}
       />
       <TextField label="Year" value={year} onChange={setYear} type="number" />
