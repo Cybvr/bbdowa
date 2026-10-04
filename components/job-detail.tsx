@@ -34,9 +34,10 @@ function Detail({ label, children }: { label: string; children: React.ReactNode 
   return <div className="grid gap-1 text-sm sm:grid-cols-[160px_minmax(0,1fr)] sm:gap-5"><dt className="text-muted-foreground">{label}</dt><dd className="m-0 font-medium">{children}</dd></div>;
 }
 
-export function JobDetail({ jobId }: { jobId: string }) {
+export function JobDetail({ jobId, adminMode = false }: { jobId: string; adminMode?: boolean }) {
   const { user, actualUser, isViewingAs, role, loading: authLoading } = useAuth();
   const isStaff = role === "admin" || role === "manager";
+  const canManage = adminMode && isStaff;
   const [job, setJob] = React.useState<WorkJob | null>(null);
   const [tasks, setTasks] = React.useState<Task[]>([]);
   const [entries, setEntries] = React.useState<ActivityEntry[]>([]);
@@ -58,10 +59,10 @@ export function JobDetail({ jobId }: { jobId: string }) {
 
   const loadRelated = React.useCallback(async () => {
     if (!user) return;
-    const timeSource = isStaff
+    const timeSource = canManage
       ? query(collection(firebaseDb, ACTIVITY_COLLECTION), where("jobId", "==", jobId))
       : query(collection(firebaseDb, ACTIVITY_COLLECTION), where("uid", "==", user.uid));
-    const paymentSource = isStaff
+    const paymentSource = canManage
       ? query(collection(firebaseDb, PAYMENTS_COLLECTION), where("jobId", "==", jobId))
       : query(collection(firebaseDb, PAYMENTS_COLLECTION), where("payeeUid", "==", user.uid));
     const [taskSnapshot, timeSnapshot, paymentSnapshot] = await Promise.all([
@@ -72,7 +73,7 @@ export function JobDetail({ jobId }: { jobId: string }) {
     setTasks(taskSnapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<Task, "id">) })).sort((a, b) => (a.dueDate || "9999").localeCompare(b.dueDate || "9999")));
     setEntries(timeSnapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<ActivityEntry, "id">) })).filter((item) => item.jobId === jobId).sort((a, b) => b.startedAt.localeCompare(a.startedAt)));
     setPayments(paymentSnapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<Payment, "id">) })).filter((item) => item.jobId === jobId).sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
-  }, [isStaff, jobId, user]);
+  }, [canManage, jobId, user]);
 
   React.useEffect(() => {
     if (authLoading) return;
@@ -86,7 +87,8 @@ export function JobDetail({ jobId }: { jobId: string }) {
   }, [authLoading, jobId, loadRelated, user]);
 
   if (authLoading || loading) return <PageLoadingSkeleton titleWidth="w-48" />;
-  if (error || !job) return <main className="mx-auto w-full max-w-6xl flex-1 px-5 py-8 sm:px-8"><Link href="/dashboard/jobs" className="text-sm text-primary hover:underline">← Back to jobs</Link><h1 className="mt-8 text-2xl font-bold">{error || "Job not found"}</h1></main>;
+  const jobsBase = adminMode ? "/admin/jobs" : "/dashboard/jobs";
+  if (error || !job) return <main className="mx-auto w-full max-w-6xl flex-1 px-5 py-8 sm:px-8"><Link href={jobsBase} className="text-sm text-primary hover:underline">← Back to jobs</Link><h1 className="mt-8 text-2xl font-bold">{error || "Job not found"}</h1></main>;
 
   const canLogTime = Boolean(user?.uid && !isViewingAs && user.uid === job.assignedTo && job.status !== "completed");
   const totalMs = entries.reduce((sum, entry) => sum + elapsedMs(entry), 0);
@@ -104,10 +106,10 @@ export function JobDetail({ jobId }: { jobId: string }) {
   };
 
   return <main className="mx-auto w-full max-w-6xl flex-1 px-5 pb-16 pt-6 sm:px-8">
-    <Link href="/dashboard/jobs" className="text-sm font-medium text-muted-foreground hover:text-foreground">← Back to jobs</Link>
+    <Link href={jobsBase} className="text-sm font-medium text-muted-foreground hover:text-foreground">← Back to jobs</Link>
     <header className="mt-5 flex flex-wrap items-start justify-between gap-4 border-b border-border pb-6">
       <div className="min-w-0"><p className="mb-2 text-sm text-muted-foreground">{job.clientName || job.assignedToName}</p><h1 className="m-0 break-words text-page-title font-bold leading-tight sm:text-page-title-lg">{job.title}</h1><p className="mb-0 mt-3 text-sm font-medium">{WORK_JOB_STATUS_LABELS[job.status]}</p></div>
-      {isStaff ? <button type="button" onClick={() => setEditing(true)} className="h-9 rounded-md border border-border px-4 text-sm font-semibold hover:bg-muted">Edit job</button> : null}
+      {canManage ? <button type="button" onClick={() => setEditing(true)} className="h-9 rounded-md border border-border px-4 text-sm font-semibold hover:bg-muted">Edit job</button> : null}
     </header>
     <nav className="flex gap-6 overflow-x-auto border-b border-border" role="tablist" aria-label="Job sections">
       {tabs.map((item) => <button key={item.key} type="button" role="tab" aria-selected={tab === item.key} onClick={() => setTab(item.key)} className={`shrink-0 border-b-2 py-4 text-sm font-medium ${tab === item.key ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>{item.label}</button>)}
@@ -119,17 +121,17 @@ export function JobDetail({ jobId }: { jobId: string }) {
       <aside className="space-y-6"><section className="rounded-xl border border-border p-5"><h2 className="m-0 text-lg font-semibold">Dates</h2><dl className="mt-4 space-y-3"><Detail label="Start">{job.startDate ? formatDate(job.startDate) : "Not set"}</Detail><Detail label="End">{job.endDate ? formatDate(job.endDate) : "Not set"}</Detail></dl></section><section className="rounded-xl border border-border p-5"><h2 className="m-0 text-lg font-semibold">Point of contact</h2><p className="mb-0 mt-4 text-sm font-medium">{job.contactName || "Not set"}</p>{job.contactRole ? <p className="mb-0 mt-1 text-sm text-muted-foreground">{job.contactRole}</p> : null}{job.contactEmail ? <a href={`mailto:${job.contactEmail}`} className="mt-1 block break-all text-sm text-primary hover:underline">{job.contactEmail}</a> : null}{job.contactOutOfOfficeUntil ? <p className="mb-0 mt-3 text-sm text-muted-foreground">Out of office until {formatDate(job.contactOutOfOfficeUntil)}</p> : null}{job.contactNote ? <p className="mb-0 mt-3 text-sm leading-relaxed text-muted-foreground">{job.contactNote}</p> : null}</section></aside>
     </div> : null}
 
-    {tab === "tasks" ? <section className="pt-6"><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="m-0 text-lg font-semibold">Tasks</h2>{isStaff ? <div className="flex gap-2"><button type="button" onClick={() => setAttachingTask(true)} className="h-9 rounded-md border border-border px-3 text-sm font-semibold hover:bg-muted">Attach task</button><button type="button" onClick={() => setAddingTask(true)} className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground"><Plus className="h-4 w-4" />New task</button></div> : null}</div>{tasks.length ? <ul className="mt-5 divide-y divide-border border-y border-border">{tasks.map((task) => <li key={task.id}><Link href={`/dashboard/work/${encodeURIComponent(task.id)}`} className="flex flex-wrap items-center justify-between gap-3 py-4 text-foreground hover:text-primary"><span className="min-w-0"><span className="block font-semibold">{task.title}</span><span className="mt-1 block text-xs text-muted-foreground">{task.dueDate ? `Due ${formatDate(task.dueDate)}` : "No due date"}</span></span><TaskStatusBadge status={task.status} overdue={isOverdue(task)} /></Link></li>)}</ul> : <p className="py-10 text-sm text-muted-foreground">No tasks have been added to this job.</p>}</section> : null}
+    {tab === "tasks" ? <section className="pt-6"><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="m-0 text-lg font-semibold">Tasks</h2>{canManage ? <div className="flex gap-2"><button type="button" onClick={() => setAttachingTask(true)} className="h-9 rounded-md border border-border px-3 text-sm font-semibold hover:bg-muted">Attach task</button><button type="button" onClick={() => setAddingTask(true)} className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground"><Plus className="h-4 w-4" />New task</button></div> : null}</div>{tasks.length ? <ul className="mt-5 divide-y divide-border border-y border-border">{tasks.map((task) => <li key={task.id}><Link href={`/dashboard/work/${encodeURIComponent(task.id)}`} className="flex flex-wrap items-center justify-between gap-3 py-4 text-foreground hover:text-primary"><span className="min-w-0"><span className="block font-semibold">{task.title}</span><span className="mt-1 block text-xs text-muted-foreground">{task.dueDate ? `Due ${formatDate(task.dueDate)}` : "No due date"}</span></span><TaskStatusBadge status={task.status} overdue={isOverdue(task)} /></Link></li>)}</ul> : <p className="py-10 text-sm text-muted-foreground">No tasks have been added to this job.</p>}</section> : null}
 
     {tab === "timesheets" ? <section className="pt-6"><div className="flex items-center justify-between gap-3"><div><h2 className="m-0 text-lg font-semibold">Timesheets</h2><p className="mb-0 mt-1 text-sm text-muted-foreground">{formatDuration(totalMs)} recorded across {entries.length} {entries.length === 1 ? "entry" : "entries"}.</p></div>{canLogTime ? <button type="button" onClick={() => setAddingTime(true)} className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground"><Plus className="h-4 w-4" />Log time</button> : null}</div>{entries.length ? <div className="mt-5 overflow-x-auto"><table className="w-full min-w-[520px] border-collapse text-sm"><thead><tr className="border-b border-border text-left text-muted-foreground"><th className="py-3 font-medium">Activity</th><th className="py-3 font-medium">Date</th><th className="py-3 text-right font-medium">Time</th></tr></thead><tbody>{entries.map((entry) => <tr key={entry.id} className="border-b border-border"><td className="py-4">{entry.activity}{entry.taskId ? <span className="ml-2 text-xs text-muted-foreground">{tasks.find((task) => task.id === entry.taskId)?.title || "Task"}</span> : null}</td><td className="py-4 text-muted-foreground">{formatDate(entry.startedAt)}</td><td className="py-4 text-right font-medium tabular-nums">{formatDuration(elapsedMs(entry))}</td></tr>)}</tbody></table></div> : <p className="py-10 text-sm text-muted-foreground">No time recorded for this job yet.</p>}</section> : null}
 
-    {tab === "payments" ? <section className="pt-6"><div className="flex items-center justify-between gap-3"><h2 className="m-0 text-lg font-semibold">Payments</h2>{isStaff ? <button type="button" onClick={() => setAddingPayment(true)} className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground"><Plus className="h-4 w-4" />Add payment</button> : null}</div>{payments.length ? <div className="mt-5 overflow-x-auto"><table className="w-full min-w-[560px] border-collapse text-sm"><thead><tr className="border-b border-border text-left text-muted-foreground"><th className="py-3 font-medium">For</th><th className="py-3 font-medium">Due</th><th className="py-3 font-medium">Status</th><th className="py-3 text-right font-medium">Amount</th>{isStaff ? <th className="py-3 text-right font-medium">Action</th> : null}</tr></thead><tbody>{payments.map((payment) => <tr key={payment.id} className="border-b border-border"><td className="py-4">{payment.description}</td><td className="py-4 text-muted-foreground">{payment.dueDate ? formatDate(payment.dueDate) : "—"}</td><td className="py-4">{payment.status === "paid" ? "Paid" : "Pending"}</td><td className="py-4 text-right font-semibold tabular-nums">{formatAmount(payment.amount, payment.currency)}</td>{isStaff ? <td className="py-4 text-right"><button type="button" onClick={() => void togglePaymentStatus(payment)} className="text-xs font-semibold text-primary hover:underline">{payment.status === "paid" ? "Mark pending" : "Mark paid"}</button></td> : null}</tr>)}</tbody></table></div> : <p className="py-10 text-sm text-muted-foreground">No payments recorded for this job yet.</p>}</section> : null}
+    {tab === "payments" ? <section className="pt-6"><div className="flex items-center justify-between gap-3"><h2 className="m-0 text-lg font-semibold">Payments</h2>{canManage ? <button type="button" onClick={() => setAddingPayment(true)} className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground"><Plus className="h-4 w-4" />Add payment</button> : null}</div>{payments.length ? <div className="mt-5 overflow-x-auto"><table className="w-full min-w-[560px] border-collapse text-sm"><thead><tr className="border-b border-border text-left text-muted-foreground"><th className="py-3 font-medium">For</th><th className="py-3 font-medium">Due</th><th className="py-3 font-medium">Status</th><th className="py-3 text-right font-medium">Amount</th>{canManage ? <th className="py-3 text-right font-medium">Action</th> : null}</tr></thead><tbody>{payments.map((payment) => <tr key={payment.id} className="border-b border-border"><td className="py-4">{payment.description}</td><td className="py-4 text-muted-foreground">{payment.dueDate ? formatDate(payment.dueDate) : "—"}</td><td className="py-4">{payment.status === "paid" ? "Paid" : "Pending"}</td><td className="py-4 text-right font-semibold tabular-nums">{formatAmount(payment.amount, payment.currency)}</td>{canManage ? <td className="py-4 text-right"><button type="button" onClick={() => void togglePaymentStatus(payment)} className="text-xs font-semibold text-primary hover:underline">{payment.status === "paid" ? "Mark pending" : "Mark paid"}</button></td> : null}</tr>)}</tbody></table></div> : <p className="py-10 text-sm text-muted-foreground">No payments recorded for this job yet.</p>}</section> : null}
 
-    {isStaff ? <WorkJobFormDialog job={job} open={editing} onOpenChange={setEditing} onSaved={() => void loadJob()} /> : null}
-    {isStaff && user ? <NewJobTaskDialog job={job} createdBy={actualUser?.uid ?? user.uid} createdByName={actualUser?.name ?? actualUser?.email ?? user.name ?? user.email} open={addingTask} onOpenChange={setAddingTask} onSaved={() => void loadRelated()} /> : null}
-    {isStaff ? <AttachJobTaskDialog job={job} open={attachingTask} onOpenChange={setAttachingTask} onSaved={() => void loadRelated()} /> : null}
+    {canManage ? <WorkJobFormDialog job={job} open={editing} onOpenChange={setEditing} onSaved={() => void loadJob()} /> : null}
+    {canManage && user ? <NewJobTaskDialog job={job} createdBy={actualUser?.uid ?? user.uid} createdByName={actualUser?.name ?? actualUser?.email ?? user.name ?? user.email} open={addingTask} onOpenChange={setAddingTask} onSaved={() => void loadRelated()} /> : null}
+    {canManage ? <AttachJobTaskDialog job={job} open={attachingTask} onOpenChange={setAttachingTask} onSaved={() => void loadRelated()} /> : null}
     {canLogTime && user ? <LogJobTimeDialog job={job} tasks={tasks} uid={user.uid} name={user.name ?? user.email} open={addingTime} onOpenChange={setAddingTime} onSaved={() => void loadRelated()} /> : null}
-    {isStaff && user ? <NewJobPaymentDialog job={job} createdBy={actualUser?.uid ?? user.uid} open={addingPayment} onOpenChange={setAddingPayment} onSaved={() => void loadRelated()} /> : null}
+    {canManage && user ? <NewJobPaymentDialog job={job} createdBy={actualUser?.uid ?? user.uid} open={addingPayment} onOpenChange={setAddingPayment} onSaved={() => void loadRelated()} /> : null}
   </main>;
 }
 
