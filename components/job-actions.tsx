@@ -45,8 +45,6 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
   const [year, setYear] = React.useState(job.year != null ? String(job.year) : "");
   const [leadUserId, setLeadUserId] = React.useState(job.leadUserId ?? "");
   const [fee, setFee] = React.useState(job.fee ?? "");
-  const [target, setTarget] = React.useState(job.target ?? "");
-  const [result, setResult] = React.useState(job.result ?? "");
   const [image, setImage] = React.useState(job.image ?? "");
   const [imageAlt, setImageAlt] = React.useState(job.imageAlt ?? "");
   const [summary, setSummary] = React.useState(job.summary ?? "");
@@ -105,8 +103,6 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
       year: Number.isFinite(parsedYear as number) ? parsedYear : null,
       leadUserId: leadUserId.trim() || null,
       fee: fee.trim(),
-      target: target.trim(),
-      result: result.trim(),
       image: image.trim(),
       imageAlt: imageAlt.trim(),
       summary: summary.trim(),
@@ -203,8 +199,6 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
         ]}
       />
       <TextField label="Fee" value={fee} onChange={setFee} />
-      <TextField label="Target" value={target} onChange={setTarget} />
-      <TextField label="Result so far" value={result} onChange={setResult} />
       <TextField label="Cover image alt text" value={imageAlt} onChange={setImageAlt} />
       <RichTextEditor label="Description" value={summary} onChange={setSummary} placeholder="Describe the job…" compact />
 
