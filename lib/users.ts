@@ -56,6 +56,9 @@ export type User = {
   onboardingRequired?: boolean | null;
   /** Set when the person finishes onboarding. */
   onboardingCompletedAt?: unknown;
+  /** "complete" or "skipped" once the person has finished or skipped onboarding. */
+  onboardingStatus?: string | null;
+  onboardingSkippedAt?: unknown;
   /** Firebase Auth uid, present once this person has signed in and holds an account. */
   uid?: string | null;
   name: string;

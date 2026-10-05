@@ -26,7 +26,7 @@ function availabilityLabel(user: User | undefined, loading: boolean): string {
 }
 
 export default function HomePage() {
-  const { user } = useAuth();
+  const { user, isViewingAs } = useAuth();
   const { users, loading: usersLoading } = useFirestoreUsers();
   const [myTasks, setMyTasks] = useState<Task[]>([]);
   const [tasksLoading, setTasksLoading] = useState(true);
@@ -135,6 +135,19 @@ export default function HomePage() {
         </h1>
         <p className="mb-0 mt-2 text-body text-muted-foreground">Here’s what’s happening across the agency.</p>
       </header>
+
+      {/* Anyone who skipped or hasn't finished onboarding gets a way back in. */}
+      {profile && !profile.onboardingCompletedAt && !isViewingAs ? (
+        <section aria-label="Finish onboarding" className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted p-4">
+          <div className="min-w-0">
+            <h2 className="m-0 text-item-title font-semibold">Finish setting up your profile</h2>
+            <p className="m-0 mt-1 text-sm text-muted-foreground">{profile.onboardingStatus === "skipped" ? "You skipped onboarding. Pick up where you left off." : "A few quick steps so the team knows who you are."}</p>
+          </div>
+          <Link href="/onboarding" className="inline-flex h-9 shrink-0 items-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground no-underline hover:opacity-90">
+            Complete onboarding
+          </Link>
+        </section>
+      ) : null}
 
       <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.45fr)_minmax(280px,0.75fr)] lg:gap-10">
         <section aria-labelledby="your-tasks-heading" className="min-w-0">

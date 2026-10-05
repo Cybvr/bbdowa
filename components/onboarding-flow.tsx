@@ -196,6 +196,26 @@ export function OnboardingFlow() {
     }
   };
 
+  // Skipping keeps whatever has been saved so far and stops onboarding from coming back.
+  const skip = async () => {
+    if (!uid || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await setDoc(
+        doc(firebaseDb, "users", uid),
+        { onboardingRequired: false, onboardingStatus: "skipped", onboardingSkippedAt: serverTimestamp(), updatedAt: serverTimestamp() },
+        { merge: true },
+      );
+      markOnboarded();
+      router.replace("/dashboard");
+    } catch (cause) {
+      console.error("Unable to skip onboarding", cause);
+      setError("We couldn’t skip onboarding. Try again.");
+      setBusy(false);
+    }
+  };
+
   const complete = async () => {
     const problem = steps.map(validate).find(Boolean);
     if (problem) {
@@ -259,9 +279,14 @@ export function OnboardingFlow() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <p className="m-0 text-[13px] font-semibold text-primary">{track === "staff" ? "Welcome to BBDO West Africa" : "Creator onboarding"}</p>
-        <h1 className="m-0 mt-2 text-[28px] font-bold leading-tight tracking-tight">{STEP_LABELS[step]}</h1>
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className="m-0 text-[13px] font-semibold text-primary">{track === "staff" ? "Welcome to BBDO West Africa" : "Creator onboarding"}</p>
+          <h1 className="m-0 mt-2 text-[28px] font-bold leading-tight tracking-tight">{STEP_LABELS[step]}</h1>
+        </div>
+        <button type="button" disabled={busy} onClick={() => void skip()} className="shrink-0 text-[13px] font-semibold text-muted-foreground underline-offset-4 hover:text-foreground hover:underline disabled:opacity-50">
+          Skip for now
+        </button>
       </div>
 
       <ol className="m-0 flex list-none flex-wrap gap-x-5 gap-y-2 border-b border-border p-0 pb-3" aria-label="Onboarding steps">
