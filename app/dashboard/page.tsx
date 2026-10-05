@@ -3,7 +3,7 @@
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { ExternalLink, MessageCircle } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { ItemCard, ItemCardList } from "@/components/dashboard/item-card";
 import { JobCard } from "@/components/job-card";
@@ -215,8 +215,8 @@ export default function HomePage() {
             rel="noreferrer"
             className="mt-7 flex items-center gap-3 rounded-xl border border-border bg-background p-4 text-foreground no-underline transition hover:border-foreground hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           >
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground">
-              <MessageCircle aria-hidden="true" className="h-4 w-4" />
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary">
+              <img src="/icons/microsoft-teams.svg" alt="" aria-hidden="true" className="h-5 w-5" />
             </span>
             <span className="min-w-0 flex-1">
               <span className="block text-sm font-semibold">Team chat</span>
