@@ -21,12 +21,13 @@ export type Client = {
   /** ISO timestamp of when this client's record was created; set by Firestore. */
   createdAt?: string | null;
   /** Company information shown on the client's jobs. */
-  teamSize?: number | null;
+  /** A range from TEAM_SIZE_RANGES. Older records hold a plain number. */
+  teamSize?: string | number | null;
   yearFounded?: number | null;
   location?: string | null;
   website?: string | null;
   linkedIn?: string | null;
-  /** Client working hours, e.g. "09:00 – 17:00", and the same hours in our time zone. */
+  /** Older records only; no longer edited or shown. */
   hours?: string | null;
   hoursConverted?: string | null;
   timezone?: string | null;
@@ -93,3 +94,37 @@ export function clientHref(slug: string): string {
 export function getCreatorJobs(creatorSlug: string, jobs: Job[]): Job[] {
   return jobs.filter((job) => job.creatorSlugs?.includes(creatorSlug));
 }
+
+export const TEAM_SIZE_RANGES = ["1", "2–5", "6–10", "11–50", "51–100", "101–500", "501–2000", "2000+"] as const;
+
+/** Shows a team size as a range, mapping older plain numbers into the right one. */
+export function teamSizeLabel(value: string | number | null | undefined): string | null {
+  if (value == null || value === "") return null;
+  if (typeof value === "string" && !/^\d+$/.test(value)) return value;
+  const size = Number(value);
+  if (size <= 1) return "1";
+  if (size <= 5) return "2–5";
+  if (size <= 10) return "6–10";
+  if (size <= 50) return "11–50";
+  if (size <= 100) return "51–100";
+  if (size <= 500) return "101–500";
+  if (size <= 2000) return "501–2000";
+  return "2000+";
+}
+
+export const CLIENT_TIMEZONES = [
+  "Africa/Lagos",
+  "Africa/Accra",
+  "Africa/Nairobi",
+  "Africa/Johannesburg",
+  "Europe/London",
+  "Europe/Paris",
+  "Asia/Dubai",
+  "Asia/Kolkata",
+  "Asia/Singapore",
+  "Asia/Tokyo",
+  "Australia/Sydney",
+  "America/Los_Angeles",
+  "America/Chicago",
+  "America/New_York",
+];

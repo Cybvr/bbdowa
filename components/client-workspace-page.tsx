@@ -8,7 +8,7 @@ import { EmptyThumbnail, ImageWithFallback } from "@/components/empty-thumbnail"
 import { ImageUploadField } from "@/components/detail-editor";
 import { Badge as DashboardBadge } from "@/components/dashboard/ui";
 import { jobDisplayTitle, type Job, type JobStatus } from "@/lib/jobs";
-import { getClient, getClientWorkspace, type Client } from "@/lib/clients";
+import { CLIENT_TIMEZONES, TEAM_SIZE_RANGES, getClient, getClientWorkspace, teamSizeLabel, type Client } from "@/lib/clients";
 import { isCreatorUser, userHref, type User } from "@/lib/users";
 import { readClientsFromFirestore, readJobsFromFirestore, readUsersFromFirestore } from "@/lib/firebase/client-content";
 import { firebaseDb } from "@/lib/firebase/client";
@@ -76,26 +76,6 @@ function dateOnly(value: unknown): string | undefined {
   if (typeof timestamp.seconds === "number") return new Date(timestamp.seconds * 1000).toISOString().slice(0, 10);
   return undefined;
 }
-
-function timeRangeParts(value: string | null | undefined): [string, string] {
-  const times = value?.match(/\b\d{1,2}:\d{2}\b/g) ?? [];
-  return [times[0] ?? "", times[1] ?? ""];
-}
-
-const TEAM_SIZE_OPTIONS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "15", "20", "25", "50", "100", "250", "500"];
-const TIMEZONE_OPTIONS = [
-  "Africa/Lagos",
-  "Europe/London",
-  "Europe/Paris",
-  "Asia/Dubai",
-  "Asia/Kolkata",
-  "Asia/Singapore",
-  "Asia/Tokyo",
-  "Australia/Sydney",
-  "America/Los_Angeles",
-  "America/Chicago",
-  "America/New_York",
-];
 
 function ClientWorkspaceHeader({
   navigation,
@@ -554,15 +534,11 @@ function OneUtilityClientWorkspace({
   const [clientNameInput, setClientNameInput] = useState(client?.name ?? "");
   const [clientIndustry, setClientIndustry] = useState(client?.industry ?? "");
   const [clientDate, setClientDate] = useState(client?.date ?? "");
-  const [clientTeamSize, setClientTeamSize] = useState(client?.teamSize == null ? "" : String(client.teamSize));
+  const [clientTeamSize, setClientTeamSize] = useState(teamSizeLabel(client?.teamSize) ?? "");
   const [clientYearFounded, setClientYearFounded] = useState(client?.yearFounded == null ? "" : String(client.yearFounded));
   const [clientLocation, setClientLocation] = useState(client?.location ?? "");
   const [clientLinkedIn, setClientLinkedIn] = useState(client?.linkedIn ?? "");
   const [clientTimezone, setClientTimezone] = useState(client?.timezone ?? "");
-  const [clientHoursStart, setClientHoursStart] = useState(() => timeRangeParts(client?.hours)[0]);
-  const [clientHoursEnd, setClientHoursEnd] = useState(() => timeRangeParts(client?.hours)[1]);
-  const [clientHoursConvertedStart, setClientHoursConvertedStart] = useState(() => timeRangeParts(client?.hoursConverted)[0]);
-  const [clientHoursConvertedEnd, setClientHoursConvertedEnd] = useState(() => timeRangeParts(client?.hoursConverted)[1]);
   const [aesthetic, setAesthetic] = useState(preset.aesthetic);
   const [brandArchetype, setBrandArchetype] = useState(workspace.brandArchetype);
   const [toneVal, setToneVal] = useState(preset.toneVal);
@@ -616,12 +592,7 @@ function OneUtilityClientWorkspace({
 
   const handleSaveBusinessProfile = async () => {
     if (businessProfileSaving) return;
-    const teamSize = clientTeamSize.trim() ? Number(clientTeamSize) : null;
     const yearFounded = clientYearFounded.trim() ? Number(clientYearFounded) : null;
-    if (teamSize !== null && (!Number.isInteger(teamSize) || teamSize < 0)) {
-      showToast("Enter a valid team size.");
-      return;
-    }
     if (yearFounded !== null && (!Number.isInteger(yearFounded) || yearFounded < 1800 || yearFounded > new Date().getFullYear())) {
       showToast("Enter a valid founding year.");
       return;
@@ -636,13 +607,11 @@ function OneUtilityClientWorkspace({
         targetAudience: footprint.trim() || null,
         description: clientDescription.trim() || null,
         profileImage: clientProfileImage.trim() || null,
-        teamSize,
+        teamSize: clientTeamSize || null,
         yearFounded,
         location: clientLocation.trim() || null,
         linkedIn: clientLinkedIn.trim() || null,
         timezone: clientTimezone.trim() || null,
-        hours: clientHoursStart && clientHoursEnd ? `${clientHoursStart} – ${clientHoursEnd}` : null,
-        hoursConverted: clientHoursConvertedStart && clientHoursConvertedEnd ? `${clientHoursConvertedStart} – ${clientHoursConvertedEnd}` : null,
         updatedAt: serverTimestamp(),
       });
       setBusinessProfileDirty(false);
@@ -1550,8 +1519,7 @@ function OneUtilityClientWorkspace({
                           <label htmlFor="clientTeamSize" className="text-sm font-medium text-foreground">Team size</label>
                           <select id="clientTeamSize" value={clientTeamSize} onChange={(e) => { setClientTeamSize(e.target.value); setBusinessProfileDirty(true); }} className="w-full border-0 border-b border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-0">
                             <option value="">Select team size</option>
-                            {clientTeamSize && !TEAM_SIZE_OPTIONS.includes(clientTeamSize) ? <option value={clientTeamSize}>{clientTeamSize}</option> : null}
-                            {TEAM_SIZE_OPTIONS.map((size) => <option key={size} value={size}>{size} {size === "1" ? "person" : "people"}</option>)}
+                            {TEAM_SIZE_RANGES.map((size) => <option key={size} value={size}>{size} {size === "1" ? "person" : "people"}</option>)}
                           </select>
                         </div>
                         <div className="space-y-1.5">
@@ -1570,34 +1538,14 @@ function OneUtilityClientWorkspace({
                     </div>
 
                     <div className="border-t border-border pt-5">
-                      <h3 className="m-0 text-sm font-semibold text-foreground">Working hours</h3>
+                      <h3 className="m-0 text-sm font-semibold text-foreground">Time zone</h3>
                       <div className="mt-4 space-y-1.5">
-                        <label htmlFor="clientTimezone" className="text-sm font-medium text-foreground">Client time zone</label>
+                        <label htmlFor="clientTimezone" className="text-sm font-medium text-foreground">Time zone</label>
                         <select id="clientTimezone" value={clientTimezone} onChange={(e) => { setClientTimezone(e.target.value); setBusinessProfileDirty(true); }} className="w-full border-0 border-b border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-0">
                           <option value="">Select time zone</option>
-                          {clientTimezone && !TIMEZONE_OPTIONS.includes(clientTimezone) ? <option value={clientTimezone}>{clientTimezone}</option> : null}
-                          {TIMEZONE_OPTIONS.map((timezone) => <option key={timezone} value={timezone}>{timezone}</option>)}
+                          {clientTimezone && !CLIENT_TIMEZONES.includes(clientTimezone) ? <option value={clientTimezone}>{clientTimezone}</option> : null}
+                          {CLIENT_TIMEZONES.map((timezone) => <option key={timezone} value={timezone}>{timezone}</option>)}
                         </select>
-                      </div>
-                      <div className="mt-4 grid gap-5 sm:grid-cols-2">
-                        <div className="space-y-1.5">
-                          <span className="text-sm font-medium text-foreground">Client hours</span>
-                          <div className="grid grid-cols-2 gap-2">
-                            <label htmlFor="clientHoursStart" className="sr-only">Client hours start</label>
-                            <input id="clientHoursStart" type="time" value={clientHoursStart} onChange={(e) => { setClientHoursStart(e.target.value); setBusinessProfileDirty(true); }} className="w-full border-0 border-b border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-0" />
-                            <label htmlFor="clientHoursEnd" className="sr-only">Client hours end</label>
-                            <input id="clientHoursEnd" type="time" value={clientHoursEnd} onChange={(e) => { setClientHoursEnd(e.target.value); setBusinessProfileDirty(true); }} className="w-full border-0 border-b border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-0" />
-                          </div>
-                        </div>
-                        <div className="space-y-1.5">
-                          <span className="text-sm font-medium text-foreground">Client hours in our time</span>
-                          <div className="grid grid-cols-2 gap-2">
-                            <label htmlFor="clientHoursConvertedStart" className="sr-only">Client hours in our time start</label>
-                            <input id="clientHoursConvertedStart" type="time" value={clientHoursConvertedStart} onChange={(e) => { setClientHoursConvertedStart(e.target.value); setBusinessProfileDirty(true); }} className="w-full border-0 border-b border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-0" />
-                            <label htmlFor="clientHoursConvertedEnd" className="sr-only">Client hours in our time end</label>
-                            <input id="clientHoursConvertedEnd" type="time" value={clientHoursConvertedEnd} onChange={(e) => { setClientHoursConvertedEnd(e.target.value); setBusinessProfileDirty(true); }} className="w-full border-0 border-b border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-0" />
-                          </div>
-                        </div>
                       </div>
                     </div>
 

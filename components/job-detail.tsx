@@ -26,7 +26,7 @@ import { JobMediaPanel } from "@/components/job-media-panel";
 import { firebaseDb } from "@/lib/firebase/client";
 import { useClientOptions, useFirestoreUsers } from "@/lib/firebase/client-content";
 import { jobHref, jobPostedDate, jobRecentDate, jobTitle, type Job } from "@/lib/jobs";
-import type { Client } from "@/lib/clients";
+import { teamSizeLabel, type Client } from "@/lib/clients";
 import { TASK_COLLECTION, formatDate, isOverdue, type Task } from "@/lib/creator-tasks";
 import { longDate } from "@/lib/format";
 import { BILLING_CYCLE_LABELS, JOB_TERMS_COLLECTION, jobAssignees, type JobTerms } from "@/lib/job-terms";
@@ -421,11 +421,10 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
         <DetailCard title="Client"><dl className={DETAIL_LIST}>
           <Detail label="Name"><Link href={`/admin/clients/${job.clientId}/overview`} className="text-foreground underline decoration-border underline-offset-4 hover:text-primary">{client?.name ?? job.clientName}</Link></Detail>
           <Detail label="Industry">{client?.industry || "—"}</Detail>
-          <Detail label="Team size">{client?.teamSize ?? "—"}</Detail>
+          <Detail label="Team size">{teamSizeLabel(client?.teamSize) ?? "—"}</Detail>
           <Detail label="Year founded">{client?.yearFounded ?? "—"}</Detail>
           <Detail label="City / Country">{client?.location || "—"}</Detail>
           <Detail label="Time zone">{client?.timezone || "—"}</Detail>
-          <Detail label="Client hours">{client?.hours || "—"}</Detail>
         </dl></DetailCard>
       </div>
       </div>

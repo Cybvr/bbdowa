@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { deleteDoc, doc, getDoc, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 import { useAuth } from "@/components/auth-provider";
 import { firebaseDb } from "@/lib/firebase/client";
-import { EditSheet, ImageUploadField, TextField, TextareaField } from "@/components/detail-editor";
-import type { Client } from "@/lib/clients";
+import { EditSheet, ImageUploadField, SelectField, TextField, TextareaField } from "@/components/detail-editor";
+import { CLIENT_TIMEZONES, TEAM_SIZE_RANGES, teamSizeLabel, type Client } from "@/lib/clients";
 import { CLIENT_CONTACTS_COLLECTION, type ClientContact } from "@/lib/job-terms";
 
 const numberOrNull = (value: string) => (value.trim() ? Number(value) : null);
@@ -24,14 +24,12 @@ export function ClientActions({ client }: { client: Client }) {
   const [profileImage, setProfileImage] = React.useState(client.profileImage ?? "");
   const [description, setDescription] = React.useState(client.description ?? "");
   const [targetAudience, setTargetAudience] = React.useState(client.targetAudience ?? "");
-  const [teamSize, setTeamSize] = React.useState(client.teamSize == null ? "" : String(client.teamSize));
+  const [teamSize, setTeamSize] = React.useState(teamSizeLabel(client.teamSize) ?? "");
   const [yearFounded, setYearFounded] = React.useState(client.yearFounded == null ? "" : String(client.yearFounded));
   const [location, setLocation] = React.useState(client.location ?? "");
   const [website, setWebsite] = React.useState(client.website ?? "");
   const [linkedIn, setLinkedIn] = React.useState(client.linkedIn ?? "");
   const [timezone, setTimezone] = React.useState(client.timezone ?? "");
-  const [hours, setHours] = React.useState(client.hours ?? "");
-  const [hoursConverted, setHoursConverted] = React.useState(client.hoursConverted ?? "");
 
   // The point of contact is private, so it loads separately from the public client record.
   const { role } = useAuth();
@@ -62,9 +60,7 @@ export function ClientActions({ client }: { client: Client }) {
   }, [client.slug, isStaff]);
 
   const save = async () => {
-    const size = numberOrNull(teamSize);
     const founded = numberOrNull(yearFounded);
-    if (size !== null && (!Number.isInteger(size) || size < 0)) throw new Error("Enter a valid team size.");
     if (founded !== null && (!Number.isInteger(founded) || founded < 1800 || founded > new Date().getFullYear())) throw new Error("Enter a valid founding year.");
     await updateDoc(doc(firebaseDb, "clients", client.slug), {
       name: name.trim(),
@@ -73,14 +69,12 @@ export function ClientActions({ client }: { client: Client }) {
       profileImage: profileImage.trim() || null,
       description: description.trim() || null,
       targetAudience: targetAudience.trim() || null,
-      teamSize: size,
+      teamSize: teamSize || null,
       yearFounded: founded,
       location: location.trim() || null,
       website: website.trim() || null,
       linkedIn: linkedIn.trim() || null,
       timezone: timezone.trim() || null,
-      hours: hours.trim() || null,
-      hoursConverted: hoursConverted.trim() || null,
       updatedAt: serverTimestamp(),
     });
     if (contactLoaded) {
@@ -118,16 +112,13 @@ export function ClientActions({ client }: { client: Client }) {
       <TextareaField label="Target audience" value={targetAudience} onChange={setTargetAudience} rows={3} placeholder="Who is this client trying to reach?" />
 
       <SheetSection>Company information</SheetSection>
-      <TextField label="Team size" value={teamSize} onChange={setTeamSize} type="number" placeholder="e.g. 7" />
+      <SelectField label="Team size" value={teamSize || undefined} onChange={setTeamSize} options={TEAM_SIZE_RANGES.map((value) => ({ value, label: value === "1" ? "1 person" : `${value} people` }))} />
       <TextField label="Year founded" value={yearFounded} onChange={setYearFounded} type="number" placeholder="e.g. 2017" />
       <TextField label="City / Country" value={location} onChange={setLocation} placeholder="Lagos, Nigeria" />
       <TextField label="Website" value={website} onChange={setWebsite} type="url" placeholder="https://" />
       <TextField label="LinkedIn" value={linkedIn} onChange={setLinkedIn} type="url" placeholder="https://linkedin.com/company/" />
 
-      <SheetSection>Working hours</SheetSection>
-      <TextField label="Client time zone" value={timezone} onChange={setTimezone} placeholder="Los Angeles (8 hrs behind)" />
-      <TextField label="Client hours" value={hours} onChange={setHours} placeholder="09:00 – 17:00" />
-      <TextField label="Client hours in our time" value={hoursConverted} onChange={setHoursConverted} placeholder="17:00 – 01:00 Lagos" />
+      <SelectField label="Time zone" value={timezone || undefined} onChange={setTimezone} options={(timezone && !CLIENT_TIMEZONES.includes(timezone) ? [timezone, ...CLIENT_TIMEZONES] : CLIENT_TIMEZONES).map((value) => ({ value, label: value }))} />
 
       {contactLoaded ? (
         <>
