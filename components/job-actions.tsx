@@ -17,7 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { jobDisplayTitle, type Job } from "@/lib/jobs";
-import { EMPTY_JOB_TERMS, JOB_TERMS_COLLECTION, type JobTerms } from "@/lib/job-terms";
+import { EMPTY_JOB_TERMS, JOB_TERMS_COLLECTION, jobAssignees, type JobTerms } from "@/lib/job-terms";
 
 const listValue = (value?: string[] | null) => (value ?? []).join(", ");
 const parseList = (value: string) => value.split(",").map((item) => item.trim()).filter(Boolean);
@@ -59,7 +59,7 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
 
   // Pay and assignment are private, so they load separately from the public job record.
   const [terms, setTerms] = React.useState<JobTerms | null>(null);
-  const [assignedTo, setAssignedTo] = React.useState("");
+  const [assignedUids, setAssignedUids] = React.useState<string[]>([]);
   const [rateAmount, setRateAmount] = React.useState("");
   const [rateCurrency, setRateCurrency] = React.useState<JobTerms["rateCurrency"]>("NGN");
   const [rateUnit, setRateUnit] = React.useState<JobTerms["rateUnit"]>("hour");
@@ -75,7 +75,7 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
         if (!active) return;
         const loaded = snapshot.exists() ? { ...EMPTY_JOB_TERMS, ...(snapshot.data() as Partial<JobTerms>) } : EMPTY_JOB_TERMS;
         setTerms(loaded);
-        setAssignedTo(loaded.assignedTo ?? "");
+        setAssignedUids(jobAssignees(loaded).map((person) => person.uid));
         setRateAmount(loaded.rateAmount == null ? "" : String(loaded.rateAmount));
         setRateCurrency(loaded.rateCurrency);
         setRateUnit(loaded.rateUnit);
@@ -92,7 +92,8 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
     const amount = rateAmount.trim() ? Number(rateAmount) : null;
     if (amount !== null && (!Number.isFinite(amount) || amount <= 0)) throw new Error("Enter a rate above zero.");
     if (startDate && endDate && endDate < startDate) throw new Error("The end date must be after the start date.");
-    const assignee = users.find((person) => person.uid === assignedTo);
+    const knownAssignees = terms ? jobAssignees(terms) : [];
+    const assignees = assignedUids.map((uid) => ({ uid, name: users.find((person) => person.uid === uid)?.name ?? knownAssignees.find((person) => person.uid === uid)?.name ?? "Assignee" }));
     await updateDoc(doc(firebaseDb, await jobsCollection(), job.slug), {
       name: name.trim(),
       title: title.trim() || name.trim(),
@@ -118,15 +119,18 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
       updatedAt: serverTimestamp(),
     });
     if (terms) {
-      // The assignee is always on the team, so they keep access alongside everyone else on it.
-      const teamUids = [...new Set([...(terms.teamUids ?? []), ...(assignedTo ? [assignedTo] : [])])];
-      if (assignee?.slug && !(job.creatorSlugs ?? []).includes(assignee.slug)) {
-        await updateDoc(doc(firebaseDb, await jobsCollection(), job.slug), { creatorSlugs: [...(job.creatorSlugs ?? []), assignee.slug] });
+      // Assignees are always on the team, so they keep access alongside everyone else on it.
+      const teamUids = [...new Set([...(terms.teamUids ?? []), ...assignedUids])];
+      const assigneeSlugs = assignedUids.map((uid) => users.find((person) => person.uid === uid)?.slug).filter((slug): slug is string => Boolean(slug));
+      const missingSlugs = assigneeSlugs.filter((slug) => !(job.creatorSlugs ?? []).includes(slug));
+      if (missingSlugs.length) {
+        await updateDoc(doc(firebaseDb, await jobsCollection(), job.slug), { creatorSlugs: [...(job.creatorSlugs ?? []), ...missingSlugs] });
       }
       await setDoc(doc(firebaseDb, JOB_TERMS_COLLECTION, job.slug), {
         teamUids,
-        assignedTo: assignedTo || null,
-        assignedToName: assignedTo ? assignee?.name ?? terms.assignedToName : null,
+        assignedTo: assignees[0]?.uid ?? null,
+        assignedToName: assignees[0]?.name ?? null,
+        assignees,
         rateAmount: amount,
         rateCurrency,
         rateUnit,
@@ -224,18 +228,26 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
       {terms ? (
         <>
           <SheetSection>Assignment and pay (private)</SheetSection>
-          <SelectField
-            label="Assigned to"
-            value={assignedTo || "unassigned"}
-            onChange={(value) => setAssignedTo(value === "unassigned" ? "" : value)}
-            options={[
-              { value: "unassigned", label: "Unassigned" },
-              ...(terms.assignedTo && !users.some((person) => person.uid === terms.assignedTo)
-                ? [{ value: terms.assignedTo, label: terms.assignedToName ?? "Current assignee" }]
-                : []),
-              ...leadOptions.filter((person) => person.uid).map((person) => ({ value: person.uid!, label: person.name })),
-            ]}
-          />
+          <fieldset className="m-0 space-y-2 border-0 p-0">
+            <legend className="mb-2 text-sm font-medium">Assigned to</legend>
+            <div className="max-h-56 space-y-1 overflow-y-auto rounded-md border border-input p-2">
+              {[
+                ...jobAssignees(terms).filter((person) => !users.some((user) => user.uid === person.uid)).map((person) => ({ uid: person.uid, name: person.name })),
+                ...leadOptions.filter((person) => person.uid).map((person) => ({ uid: person.uid!, name: person.name })),
+              ].map((person) => (
+                <label key={person.uid} className="flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 text-sm hover:bg-muted">
+                  <input
+                    type="checkbox"
+                    checked={assignedUids.includes(person.uid)}
+                    onChange={(event) => setAssignedUids((current) => event.target.checked ? [...current, person.uid] : current.filter((uid) => uid !== person.uid))}
+                    className="h-4 w-4 accent-primary"
+                  />
+                  {person.name}
+                </label>
+              ))}
+            </div>
+            <p className="m-0 text-xs text-muted-foreground">{assignedUids.length ? `${assignedUids.length} assigned. The first one picked is the default payee.` : "Unassigned"}</p>
+          </fieldset>
           <TextField label="Rate" value={rateAmount} onChange={setRateAmount} type="number" placeholder="Optional" />
           <SelectField
             label="Currency"

@@ -29,7 +29,7 @@ import { jobHref, jobPostedDate, jobRecentDate, jobTitle, type Job } from "@/lib
 import type { Client } from "@/lib/clients";
 import { TASK_COLLECTION, formatDate, isOverdue, type Task } from "@/lib/creator-tasks";
 import { longDate } from "@/lib/format";
-import { BILLING_CYCLE_LABELS, CLIENT_CONTACTS_COLLECTION, JOB_TERMS_COLLECTION, type ClientContact, type JobTerms } from "@/lib/job-terms";
+import { BILLING_CYCLE_LABELS, CLIENT_CONTACTS_COLLECTION, JOB_TERMS_COLLECTION, jobAssignees, type ClientContact, type JobTerms } from "@/lib/job-terms";
 import { PAYMENTS_COLLECTION, formatAmount, type Payment, type PaymentCurrency } from "@/lib/payments";
 import { jobsCollection } from "@/lib/firebase/job-collections";
 import { ACTIVITY_COLLECTION, elapsedMs, formatDuration, type ActivityEntry } from "@/lib/time-tracking";
@@ -298,7 +298,7 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
   const lead = users.find((person) => person.slug === job.leadUserId);
   const onTeam = Boolean(user?.uid && users.some((person) => person.uid === user.uid && person.slug && teamSlugs.includes(person.slug)));
   // Anyone on the job (assigned, on the team, or viewing it from My jobs) can log their own time.
-  const assigned = Boolean(user?.uid && (terms?.assignedTo === user.uid || terms?.teamUids?.includes(user.uid) || onTeam || myJobs));
+  const assigned = Boolean(user?.uid && (terms?.assignedTo === user.uid || (terms ? jobAssignees(terms).some((person) => person.uid === user.uid) : false) || terms?.teamUids?.includes(user.uid) || onTeam || myJobs));
   const canLogTime = Boolean(!isViewingAs && (canManage || (assigned && job.status !== "completed")));
   const peopleOptions = React.useMemo(() => {
     const options = users.filter((person) => person.uid).map((person) => ({ value: person.uid!, label: person.name }));
@@ -413,7 +413,7 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
         </ul> : <p className="mb-0 mt-3 text-body text-muted-foreground">No one is on this job&apos;s team yet.</p>}</DetailCard> : null}
 
         {terms ? <DetailCard title="Assignment and pay"><dl className={DETAIL_LIST}>
-          <Detail label="Assigned to">{terms.assignedToName || "Unassigned"}</Detail>
+          <Detail label="Assigned to">{jobAssignees(terms).map((person) => person.name).join(", ") || "Unassigned"}</Detail>
           <Detail label="Rate">{terms.rateAmount != null ? `${formatAmount(terms.rateAmount, terms.rateCurrency)} / ${terms.rateUnit === "fixed" ? "job" : terms.rateUnit}` : "Not set"}</Detail>
           <Detail label="Billing cycle">{BILLING_CYCLE_LABELS[terms.billingCycle]}</Detail>
           <Detail label="Commitment">{terms.commitment || "Not set"}</Detail>

@@ -7,8 +7,10 @@ import type { PaymentCurrency } from "@/lib/payments";
  * on the job's team can read it.
  */
 export type JobTerms = {
-  /** The lead on the job and the default payee. Also counted as part of the team. */
+  /** The first assignee: the default payee. Also counted as part of the team. */
   assignedTo: string | null;
+  /** Everyone the job is assigned to, in order. `assignedTo` is the first of these. */
+  assignees?: { uid: string; name: string }[];
   /** Firebase uids of everyone on the job's team; gives them access to the job. */
   teamUids?: string[];
   assignedToName: string | null;
@@ -55,3 +57,9 @@ export type ClientContact = {
 };
 
 export const CLIENT_CONTACTS_COLLECTION = "clientContacts";
+
+/** Everyone assigned to a job, falling back to the single assignee on older records. */
+export function jobAssignees(terms: Pick<JobTerms, "assignedTo" | "assignedToName" | "assignees">): { uid: string; name: string }[] {
+  if (terms.assignees?.length) return terms.assignees;
+  return terms.assignedTo ? [{ uid: terms.assignedTo, name: terms.assignedToName ?? "Assignee" }] : [];
+}
