@@ -50,12 +50,6 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
   const [image, setImage] = React.useState(job.image ?? "");
   const [imageAlt, setImageAlt] = React.useState(job.imageAlt ?? "");
   const [summary, setSummary] = React.useState(job.summary ?? "");
-  const [challenge, setChallenge] = React.useState(job.challenge ?? "");
-  const [insight, setInsight] = React.useState(job.insight ?? "");
-  const [strategy, setStrategy] = React.useState(job.strategy ?? "");
-  const [platform, setPlatform] = React.useState((job.platform ?? []).join(", "));
-  const [execution, setExecution] = React.useState(job.execution ?? "");
-  const [outcome, setOutcome] = React.useState(job.outcome ?? "");
   const [startDate, setStartDate] = React.useState(job.startDate ?? "");
   const [endDate, setEndDate] = React.useState(job.endDate ?? "");
   const [specialization, setSpecialization] = React.useState(job.specialization ?? "");
@@ -116,12 +110,6 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
       image: image.trim(),
       imageAlt: imageAlt.trim(),
       summary: summary.trim(),
-      challenge: challenge.trim(),
-      insight: insight.trim(),
-      strategy: strategy.trim(),
-      platform: platform.split(",").map((item) => item.trim()).filter(Boolean),
-      execution: execution.trim(),
-      outcome: outcome.trim(),
       startDate: startDate || null,
       endDate: endDate || null,
       specialization: specialization.trim() || null,
@@ -219,12 +207,6 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
       <TextField label="Result so far" value={result} onChange={setResult} />
       <TextField label="Cover image alt text" value={imageAlt} onChange={setImageAlt} />
       <RichTextEditor label="Description" value={summary} onChange={setSummary} placeholder="Describe the job…" compact />
-      <TextareaField label="Challenge" value={challenge} onChange={setChallenge} />
-      <TextareaField label="Insight" value={insight} onChange={setInsight} />
-      <TextareaField label="Strategy" value={strategy} onChange={setStrategy} />
-      <TextField label="Platform (comma separated)" value={platform} onChange={setPlatform} />
-      <TextareaField label="Execution" value={execution} onChange={setExecution} />
-      <TextareaField label="Outcome" value={outcome} onChange={setOutcome} />
 
       <SheetSection>Job details</SheetSection>
       <TextField label="Start date" value={startDate} onChange={setStartDate} type="date" />
