@@ -20,6 +20,8 @@ export type JobExternalLink = {
 
 export type Job = {
   slug: string;
+  /** Optional human-readable job number from the workspace record. */
+  jobNumber?: string | number | null;
   /** Brand or client-facing name, e.g. "Amstel". */
   name: string;
   /** The job's own title, e.g. "Summer launch". Falls back to `name`. */
