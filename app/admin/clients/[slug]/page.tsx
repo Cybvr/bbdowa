@@ -1789,7 +1789,7 @@ function OneUtilityClientWorkspace({
                         disabled={!businessProfileDirty || businessProfileSaving}
                         className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45"
                       >
-                        {businessProfileSaving ? "Saving…” : "Save"}
+                        {businessProfileSaving ? "Saving…" : "Save"}
                       </button>
                     </div>
                   </section>
