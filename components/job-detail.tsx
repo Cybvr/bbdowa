@@ -338,7 +338,7 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
     {overviewOnly ? null : <DetailTabs tabs={tabs} active={tab} onChange={setTab} />}
     {actionError ? <p role="alert" className="mt-4 text-sm text-destructive">{actionError}</p> : null}
 
-    {tab === "overview" ? <div className={overviewOnly ? "grid gap-6 pt-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:items-start nav:min-h-0 nav:flex-1 nav:grid-rows-[minmax(0,1fr)] nav:items-stretch" : "grid gap-10 pt-6"}>
+    {tab === "overview" ? adminMode ? <InlineJobOverviewEditor job={job} /> : <div className={overviewOnly ? "grid gap-6 pt-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:items-start nav:min-h-0 nav:flex-1 nav:grid-rows-[minmax(0,1fr)] nav:items-stretch" : "grid gap-10 pt-6"}>
       {overviewOnly ? <OtherJobsSidebar jobs={otherJobs} currentSlug={slug} /> : null}
       <div className={overviewOnly ? "grid min-w-0 content-start gap-10 nav:h-full nav:overflow-y-auto nav:overscroll-contain nav:pb-16" : "contents"}>
       <section className="min-w-0 space-y-10">
@@ -347,7 +347,7 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
             <h1 className="m-0 min-w-0 break-words text-lg font-semibold">{title}</h1>
             <div className="flex shrink-0 items-center gap-2">
               <ShareCreatorDialog creatorName={title} path={`${jobsBase}/${encodeURIComponent(slug)}`} kind="job" showLabel />
-              {adminMode ? <JobActions job={job} onSaved={() => void loadTerms()} /> : null}
+              {!adminMode && role === "admin" ? <JobActions job={job} onSaved={() => void loadTerms()} /> : null}
             </div>
           </div>
           {richTextHasContent(job.summary) ? <RichTextContent value={job.summary} className="mt-6 max-w-[70ch] text-[16px] leading-[1.45] text-muted-foreground" /> : <p className="mb-0 mt-6 text-[16px] text-muted-foreground">No description added.</p>}
