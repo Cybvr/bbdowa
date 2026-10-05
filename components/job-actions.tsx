@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Copy, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { deleteDoc, doc, getDoc, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 import { useAuth } from "@/components/auth-provider";
 import { firebaseDb } from "@/lib/firebase/client";
@@ -11,13 +11,14 @@ import { TagInput } from "@/components/tag-input";
 import { useClientOptions, useFirestoreUsers } from "@/lib/firebase/client-content";
 import { EditSheet, ImageUploadField, SelectField, TextField, TextareaField } from "@/components/detail-editor";
 import { RichTextEditor } from "@/components/rich-text-editor";
+import { copyContent } from "@/lib/firebase/content-mutations";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { jobDisplayTitle, type Job } from "@/lib/jobs";
+import { jobDisplayTitle, jobTitle, type Job } from "@/lib/jobs";
 import { EMPTY_JOB_TERMS, JOB_TERMS_COLLECTION, jobAssignees, type JobTerms } from "@/lib/job-terms";
 
 const listValue = (value?: string[] | null) => (value ?? []).join(", ");
@@ -55,6 +56,7 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
   const [languages, setLanguages] = React.useState(listValue(job.languages));
   const [desiredStartDate, setDesiredStartDate] = React.useState(job.desiredStartDate ?? "");
   const [requiredSkills, setRequiredSkills] = React.useState<string[]>(job.requiredSkills ?? []);
+  const [duplicating, setDuplicating] = React.useState(false);
 
   // Pay and assignment are private, so they load separately from the public job record.
   const [terms, setTerms] = React.useState<JobTerms | null>(null);
@@ -147,15 +149,39 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
     router.push("/admin/jobs");
   };
 
+  const duplicate = async () => {
+    if (duplicating) return;
+    setDuplicating(true);
+    try {
+      await copyContent("jobs", job.slug, "title", jobTitle(job));
+      router.refresh();
+    } catch (cause) {
+      console.error("Unable to duplicate job", cause);
+    } finally {
+      setDuplicating(false);
+    }
+  };
+
   return (
-    <EditSheet
-      title="Edit job"
-      description={jobDisplayTitle(job)}
-      onSave={save}
-      onDelete={remove}
-      deleteConfirm="Delete this job? This can’t be undone."
-      canEdit={isStaff}
-      trigger={compactMenu ? (open, removeFromMenu) => (
+    <>
+      {!compactMenu && isStaff ? <button
+        type="button"
+        onClick={() => void duplicate()}
+        disabled={duplicating}
+        aria-label={`Duplicate ${jobTitle(job)}`}
+        title="Duplicate job"
+        className="grid h-10 w-10 place-items-center rounded-lg border border-border bg-background/95 text-muted-foreground shadow-sm backdrop-blur transition hover:border-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-wait disabled:opacity-50"
+      >
+        <Copy className="h-4 w-4" aria-hidden="true" />
+      </button> : null}
+      <EditSheet
+        title="Edit job"
+        description={jobDisplayTitle(job)}
+        onSave={save}
+        onDelete={remove}
+        deleteConfirm="Delete this job? This can’t be undone."
+        canEdit={isStaff}
+        trigger={compactMenu ? (open, removeFromMenu) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
@@ -171,8 +197,8 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
             <DropdownMenuItem variant="destructive" onSelect={removeFromMenu}><Trash2 className="h-4 w-4" />Delete</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      ) : undefined}
-    >
+        ) : undefined}
+      >
       <ImageUploadField label="Cover image" value={image} onChange={setImage} />
       <TextField label="Job title" value={title} onChange={setTitle} />
       <TextField label="Campaign title" value={campaignTitle} onChange={setCampaignTitle} placeholder="Client-facing campaign name" />
@@ -270,6 +296,7 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
           <TextField label="Workday overlap" value={workdayOverlap} onChange={setWorkdayOverlap} placeholder="2 hrs" />
         </>
       ) : null}
-    </EditSheet>
+      </EditSheet>
+    </>
   );
 }

@@ -349,7 +349,7 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
       <div className={overviewOnly ? "grid min-w-0 content-start gap-3 nav:h-full nav:overflow-y-auto nav:overscroll-contain nav:pb-16 nav:pr-4" : "contents"}>
       <div className="grid min-w-0 content-start gap-3">
         <div className={`flex items-center justify-between gap-3${mobileHeader && !embedded ? " max-nav:hidden" : ""}`}>
-          <h1 className="m-0 min-w-0 truncate text-page-title font-semibold lg:whitespace-normal lg:break-words lg:text-page-title-lg">{title}</h1>
+          <h1 className="m-0 min-w-0 truncate text-lg font-semibold leading-tight lg:whitespace-normal lg:break-words lg:text-xl">{title}</h1>
           <div className="flex shrink-0 items-center gap-2">
             <ShareCreatorDialog creatorName={title} path={`${jobsBase}/${encodeURIComponent(slug)}`} kind="job" showLabel />
             {!adminMode && role === "admin" ? <JobActions job={job} onSaved={() => void loadTerms()} /> : null}
