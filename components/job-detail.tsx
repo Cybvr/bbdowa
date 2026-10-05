@@ -12,6 +12,7 @@ import { FilterBar } from "@/components/dashboard/filter-bar";
 import { TaskStatusBadge } from "@/components/tasks-view";
 import { JobActions } from "@/components/job-actions";
 import { JobCard } from "@/components/job-card";
+import { LoginDialog } from "@/components/login-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -227,6 +228,7 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
   const [taskSearch, setTaskSearch] = React.useState("");
   const [timeSearch, setTimeSearch] = React.useState("");
   const [paymentSearch, setPaymentSearch] = React.useState("");
+  const [loginModalOpen, setLoginModalOpen] = React.useState(false);
   const [teamSlugs, setTeamSlugs] = React.useState<string[]>(job.creatorSlugs ?? []);
   const teamMembers = React.useMemo(() => users.filter((person) => person.slug && teamSlugs.includes(person.slug)), [teamSlugs, users]);
 
@@ -283,10 +285,11 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
   const totalMs = entries.reduce((sum, entry) => sum + elapsedMs(entry), 0);
   const provisional = job.placeholder ? "text-muted-foreground" : "";
   const hasMedia = job.media.length > 0;
+  const showSignInGate = !adminMode && !authLoading && !user;
   const jobsBase = adminMode ? "/admin/jobs" : myJobs ? "/dashboard/my-jobs" : "/dashboard/jobs";
   const tabs: { id: JobTab; label: string }[] = [
     { id: "overview", label: "Overview" },
-    ...(overviewOnly || myJobs ? [] : [{ id: "case-study" as const, label: "Case study" }]),
+    ...(overviewOnly || myJobs || showSignInGate ? [] : [{ id: "case-study" as const, label: "Case study" }]),
     ...(hasMedia || canManage ? [{ id: "media" as const, label: "Media" }] : []),
     ...(!overviewOnly && user ? [
       // My jobs shows the team on the overview instead of its own tab.
@@ -359,6 +362,8 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
           </div>
         </div>
 
+        <div className={showSignInGate ? "relative max-h-[560px] overflow-hidden" : undefined}>
+
         {user ? <DetailCard title="Point of contact">
           {lead ? <Link href={userHref(lead, isCreatorUser(lead) ? "creator" : "team")} className="mt-3 flex min-w-0 items-center gap-3 text-foreground no-underline hover:text-primary"><CreatorThumbnail imageSrc={lead.profileImage} avatarSeed={lead.name} className="h-10 w-10 shrink-0" /><div className="min-w-0"><p className="m-0 truncate text-body font-semibold">{lead.name}</p><p className="m-0 truncate text-sm text-muted-foreground">{lead.title || "Team lead"}</p>{lead.email ? <span className="block truncate text-sm text-muted-foreground">{lead.email}</span> : null}</div></Link> : <p className="mb-0 mt-3 text-body text-muted-foreground">To be confirmed</p>}
         </DetailCard> : null}
@@ -404,6 +409,14 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
           <Detail label="City / Country">{client?.location || "—"}</Detail>
           <Detail label="Time zone">{client?.timezone || "—"}</Detail>
         </dl></DetailCard>
+
+        {showSignInGate ? <div className="pointer-events-none absolute inset-x-0 bottom-0 h-64 bg-gradient-to-b from-background/0 via-background/85 to-background" /> : null}
+        </div>
+        {showSignInGate ? <div className="relative z-10 -mt-28 rounded-xl border border-border bg-background/95 p-5 text-center shadow-sm">
+          <h2 className="m-0 text-item-title font-semibold">Sign in to see the full job</h2>
+          <p className="m-0 mt-2 text-sm text-muted-foreground">Continue reading the job details and case study.</p>
+          <Button type="button" className="mt-4" onClick={() => setLoginModalOpen(true)}>Sign in</Button>
+        </div> : null}
       </div>
       </div>
     </div> : null}
@@ -429,6 +442,7 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
     {canManage && terms?.assignedTo ? <AttachJobTaskDialog job={job} terms={terms} open={attachingTask} onOpenChange={setAttachingTask} onSaved={() => void loadRelated()} /> : null}
     {canLogTime && user ? <LogJobTimeDialog job={job} tasks={tasks} uid={user.uid} name={user.name ?? user.email} open={addingTime} onOpenChange={setAddingTime} onSaved={() => void loadRelated()} /> : null}
     {canManage && user ? <NewJobPaymentDialog job={job} defaultPayee={terms?.assignedTo ?? ""} defaultCurrency={terms?.rateCurrency ?? "NGN"} peopleOptions={peopleOptions} createdBy={actualUser?.uid ?? user.uid} open={addingPayment} onOpenChange={setAddingPayment} onSaved={() => void loadRelated()} /> : null}
+    <LoginDialog open={loginModalOpen} onOpenChange={setLoginModalOpen} />
   </div>;
 }
 
