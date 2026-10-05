@@ -52,13 +52,13 @@ export function ShareCreatorDialog({ creatorName, path, className, showLabel = f
 
   const url = absoluteUrl(path);
   const shareText = `${creatorName} — BBDO West Africa ${kind}`;
-  // Jobs are copied as a ready-to-send note rather than a bare link.
   const isJob = kind === "job";
   const message = isJob ? `Hi, Please take a look at ${url}` : url;
+  const copyValue = isJob ? url : message;
 
   const handleCopy = async () => {
     try {
-      await copyText(message);
+      await copyText(copyValue);
       setCopied(true);
     } catch {
       setCopied(false);
@@ -110,9 +110,9 @@ export function ShareCreatorDialog({ creatorName, path, className, showLabel = f
             >
               <span className="flex min-w-0 items-center gap-2">
                 {copied ? <FiCheck aria-hidden="true" className="h-4 w-4 flex-none" /> : <FiCopy aria-hidden="true" className="h-4 w-4 flex-none" />}
-                <span>{copied ? (isJob ? "Message copied" : "Link copied") : isJob ? "Copy message" : "Copy link"}</span>
+                <span>{copied ? "Link copied" : "Copy link"}</span>
               </span>
-              <span className="max-w-[220px] truncate text-[11px] font-normal text-background/65">{message}</span>
+              <span className="min-w-0 break-all text-right text-[11px] font-normal text-background/65" title={copyValue}>{copyValue}</span>
             </button>
 
             {nativeShareAvailable ? (
