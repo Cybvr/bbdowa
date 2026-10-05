@@ -36,6 +36,19 @@ function PendingBadge() {
   return <span className="inline-flex items-center rounded-full bg-amber-500/10 px-2 py-1 font-semibold uppercase tracking-[0.06em] text-amber-700">Pending</span>;
 }
 
+function toMs(value: unknown): number {
+  if (!value) return 0;
+  if (typeof value === "object" && "toMillis" in value) return (value as { toMillis: () => number }).toMillis();
+  const parsed = Date.parse(String(value));
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+/** When someone joined: sign-up or added date, falling back to the last update for older imported records. */
+function userAddedMs(user: User): number {
+  const record = user as User & { createdAt?: unknown; updatedAt?: unknown };
+  return toMs(record.createdAt) || toMs(user.addedAt) || toMs(record.updatedAt);
+}
+
 function UserRow({ user, categoryOptions }: { user: User; categoryOptions: string[] }) {
   const { actualUser, startViewingAs } = useAuth();
   const variant = isCreatorUser(user) && !isTeamUser(user) ? "creator" : "team";
@@ -99,7 +112,7 @@ export default function AdminUsersPage() {
         const searchable = [user.name, user.email, user.title, user.department, user.location].filter(Boolean).join(" ").toLowerCase();
         return matchesRole && (!normalizedQuery || searchable.includes(normalizedQuery));
       })
-      .sort((a, b) => a.name.localeCompare(b.name));
+      .sort((a, b) => userAddedMs(b) - userAddedMs(a) || a.name.localeCompare(b.name));
   }, [roleFilter, search, users]);
 
   const categoryOptions = React.useMemo(() => creatorCategoryOptions(users), [users]);
