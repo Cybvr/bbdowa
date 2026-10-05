@@ -53,7 +53,11 @@ function UserRow({ user, categoryOptions }: { user: User; categoryOptions: strin
         </div>
       </TableCell>
       <TableCell className="px-4 py-3.5 text-right">
-        <div className="flex items-center justify-end gap-2">
+        <div
+          className="flex items-center justify-end gap-2"
+          onClick={(event) => event.stopPropagation()}
+          onKeyDown={(event) => event.stopPropagation()}
+        >
           {targetUid && targetUid !== actualUser?.uid ? (
             <button
               type="button"
