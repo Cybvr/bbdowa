@@ -10,7 +10,7 @@ import { PageHeader } from "@/components/dashboard/ui";
 import { DashboardListPage } from "@/components/dashboard/list-page";
 import { FilterBar, type FilterTab, type SortOption, type ViewMode } from "@/components/dashboard/filter-bar";
 import { DashboardCard } from "@/components/dashboard-card";
-import { LIST_ACTION_CLASS } from "@/components/dashboard/list-page-actions";
+import { PRIMARY_ACTION_CLASS } from "@/components/dashboard/list-page-actions";
 import { UsersTableSkeleton } from "@/components/dashboard/loading-skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ClickableTableRow } from "@/components/ui/clickable-table-row";
@@ -102,8 +102,8 @@ export function NewTaskDialog({ assignees, createdBy, createdByName, initialClie
 
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} className={LIST_ACTION_CLASS}>
-        <Plus aria-hidden="true" className="h-3.5 w-3.5" />New task
+      <button type="button" onClick={() => setOpen(true)} className={PRIMARY_ACTION_CLASS}>
+        <Plus aria-hidden="true" className="h-3.5 w-3.5" />Add
       </button>
 
       <Dialog open={open} onOpenChange={handleOpenChange}>

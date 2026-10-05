@@ -23,6 +23,7 @@ import { ImageUploadField } from "@/components/detail-editor";
 import { firebaseDb } from "@/lib/firebase/client";
 import { jobsCollection } from "@/lib/firebase/job-collections";
 import type { CreativePreview } from "@/lib/client-workspaces";
+import { PRIMARY_ACTION_CLASS } from "@/components/dashboard/list-page-actions";
 
 export function ClientMediaAddAction({
   jobId,
@@ -88,7 +89,7 @@ export function ClientMediaAddAction({
         onClick={() => setOpen(true)}
         disabled={!jobId}
         title={jobId ? undefined : "Create a job before adding media"}
-        className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-3 text-[13px] font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-45"
+        className={PRIMARY_ACTION_CLASS}
       >
         <Plus aria-hidden="true" className="h-3.5 w-3.5" />
         Add

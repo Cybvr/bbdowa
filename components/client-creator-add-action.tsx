@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { firebaseDb } from "@/lib/firebase/client";
 import type { User } from "@/lib/users";
+import { PRIMARY_ACTION_CLASS } from "@/components/dashboard/list-page-actions";
 
 export function ClientCreatorAddAction({
   clientSlug,
@@ -103,7 +104,7 @@ export function ClientCreatorAddAction({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-3 text-[13px] font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-45"
+        className={PRIMARY_ACTION_CLASS}
       >
         <Plus aria-hidden="true" className="h-3.5 w-3.5" />
         Add
