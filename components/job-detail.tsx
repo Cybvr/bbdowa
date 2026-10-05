@@ -19,6 +19,7 @@ import { CreatorPicker } from "@/components/creator-picker";
 import { CreatorThumbnail } from "@/components/creator-thumbnail";
 import { RichTextContent, RichTextEditor, richTextHasContent } from "@/components/rich-text-editor";
 import { ShareCreatorDialog } from "@/components/share-creator-dialog";
+import { MobileHeaderActions, MobileHeaderTitle, useMobileHeader } from "@/components/dashboard/mobile-header";
 import { TeamAddAction } from "@/components/team-add-action";
 import { TeamPanel } from "@/components/team-panel";
 import { JobMediaPanel } from "@/components/job-media-panel";
@@ -215,6 +216,7 @@ function InlineJobCaseStudyEditor({ job }: { job: Job }) {
 /** Reusable job content: details, case study, media, tasks, time and payments. */
 export function JobDetailContent({ job, adminMode = false, embedded = false, myJobs = false, overviewOnly = false, otherJobs = [] }: { job: Job; adminMode?: boolean; embedded?: boolean; myJobs?: boolean; overviewOnly?: boolean; otherJobs?: Job[] }) {
   const { user, actualUser, isViewingAs, role, loading: authLoading } = useAuth();
+  const mobileHeader = useMobileHeader();
   const { users } = useFirestoreUsers();
   const isStaff = role === "admin" || role === "manager";
   const canManage = adminMode && isStaff;
@@ -341,6 +343,14 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
       mobileBack={{ label: myJobs ? "My jobs" : "Jobs", href: jobsBase }}
       actions={null}
     /> : null}
+    {/* On phones the title, share and edit live in the dashboard top bar. */}
+    {!embedded ? <>
+      <MobileHeaderTitle title={title} />
+      <MobileHeaderActions>
+        <ShareCreatorDialog creatorName={title} path={`${jobsBase}/${encodeURIComponent(slug)}`} kind="job" />
+        {!adminMode && role === "admin" ? <JobActions job={job} onSaved={() => void loadTerms()} /> : null}
+      </MobileHeaderActions>
+    </> : null}
     {overviewOnly ? null : <DetailTabs tabs={tabs} active={tab} onChange={setTab} />}
     {actionError ? <p role="alert" className="mt-4 text-sm text-destructive">{actionError}</p> : null}
 
@@ -349,7 +359,7 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
       <div className={overviewOnly ? "grid min-w-0 content-start gap-10 nav:h-full nav:overflow-y-auto nav:overscroll-contain nav:pb-16" : "contents"}>
       <section className="min-w-0 space-y-10">
         <div>
-          <div className="flex items-center justify-between gap-3">
+          <div className={`flex items-center justify-between gap-3${mobileHeader && !embedded ? " max-nav:hidden" : ""}`}>
             <h1 className="m-0 min-w-0 truncate text-lg font-semibold lg:whitespace-normal lg:break-words">{title}</h1>
             <div className="flex shrink-0 items-center gap-2">
               <ShareCreatorDialog creatorName={title} path={`${jobsBase}/${encodeURIComponent(slug)}`} kind="job" showLabel />
