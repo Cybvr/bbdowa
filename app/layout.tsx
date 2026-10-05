@@ -3,6 +3,7 @@ import { Outfit, Roboto_Mono } from "next/font/google";
 import { PwaRegister } from "@/components/pwa-register";
 import Njeri from "@/components/njeri";
 import { AuthProvider } from "@/components/auth-provider";
+import { SITE_DESCRIPTION, SITE_LOGO, SITE_NAME } from "@/lib/metadata";
 import "./globals.css";
 
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit", display: "swap" });
@@ -18,8 +19,7 @@ export const metadata: Metadata = {
     default: "BBDO West Africa",
     template: "%s | BBDO West Africa",
   },
-  description:
-    "BBDO West Africa is the Lagos studio of the BBDO network: strategy, creative, production and social for brands across the region.",
+  description: SITE_DESCRIPTION,
   manifest: "/manifest.webmanifest",
   icons: {
     icon: "/favicon.png",
@@ -28,16 +28,16 @@ export const metadata: Metadata = {
   openGraph: {
     siteName: "BBDO West Africa",
     title: "BBDO West Africa",
-    description:
-      "The Lagos studio of the BBDO network. Strategy, creative, production and social for brands across West Africa.",
+    description: SITE_DESCRIPTION,
     type: "website",
     url: "/",
+    images: [{ url: SITE_LOGO, alt: SITE_NAME }],
   },
   twitter: {
-    card: "summary",
-    title: "BBDO West Africa",
-    description:
-      "The Lagos studio of the BBDO network. Strategy, creative, production and social for brands across West Africa.",
+    card: "summary_large_image",
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+    images: [SITE_LOGO],
   },
 };
 
