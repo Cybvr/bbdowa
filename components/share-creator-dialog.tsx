@@ -52,10 +52,13 @@ export function ShareCreatorDialog({ creatorName, path, className, showLabel = f
 
   const url = absoluteUrl(path);
   const shareText = `${creatorName} — BBDO West Africa ${kind}`;
+  // Jobs are copied as a ready-to-send note rather than a bare link.
+  const isJob = kind === "job";
+  const message = isJob ? `Hi, Please take a look at ${url}` : url;
 
   const handleCopy = async () => {
     try {
-      await copyText(url);
+      await copyText(message);
       setCopied(true);
     } catch {
       setCopied(false);
@@ -65,7 +68,7 @@ export function ShareCreatorDialog({ creatorName, path, className, showLabel = f
   const handleNativeShare = async () => {
     if (!navigator.share) return;
     try {
-      await navigator.share({ title: shareText, text: shareText, url });
+      await navigator.share(isJob ? { title: shareText, text: "Hi, Please take a look at", url } : { title: shareText, text: shareText, url });
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") return;
     }
@@ -107,9 +110,9 @@ export function ShareCreatorDialog({ creatorName, path, className, showLabel = f
             >
               <span className="flex min-w-0 items-center gap-2">
                 {copied ? <FiCheck aria-hidden="true" className="h-4 w-4 flex-none" /> : <FiCopy aria-hidden="true" className="h-4 w-4 flex-none" />}
-                <span>{copied ? "Link copied" : "Copy link"}</span>
+                <span>{copied ? (isJob ? "Message copied" : "Link copied") : isJob ? "Copy message" : "Copy link"}</span>
               </span>
-              <span className="max-w-[220px] truncate text-[11px] font-normal text-background/65">{url}</span>
+              <span className="max-w-[220px] truncate text-[11px] font-normal text-background/65">{message}</span>
             </button>
 
             {nativeShareAvailable ? (
@@ -126,7 +129,7 @@ export function ShareCreatorDialog({ creatorName, path, className, showLabel = f
 
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               <a
-                href={`https://wa.me/?text=${encodeURIComponent(`${shareText} ${url}`)}`}
+                href={`https://wa.me/?text=${encodeURIComponent(isJob ? message : `${shareText} ${url}`)}`}
                 target="_blank"
                 rel="noreferrer"
                 onClick={(event) => event.stopPropagation()}

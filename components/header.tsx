@@ -23,7 +23,7 @@ export function Header() {
       </Link>
 
       <div className="ml-auto hidden items-center gap-2 max-[760px]:flex">
-        <ProfileNav />
+        <ProfileNav linkToDashboard />
         <button
           type="button"
           aria-expanded={open}
@@ -57,7 +57,7 @@ export function Header() {
       </nav>
 
       <div className="shrink-0 max-[760px]:hidden">
-        <ProfileNav />
+        <ProfileNav linkToDashboard />
       </div>
     </header>
   );

@@ -29,7 +29,7 @@ import { jobHref, jobPostedDate, jobRecentDate, jobTitle, type Job } from "@/lib
 import type { Client } from "@/lib/clients";
 import { TASK_COLLECTION, formatDate, isOverdue, type Task } from "@/lib/creator-tasks";
 import { longDate } from "@/lib/format";
-import { BILLING_CYCLE_LABELS, CLIENT_CONTACTS_COLLECTION, JOB_TERMS_COLLECTION, jobAssignees, type ClientContact, type JobTerms } from "@/lib/job-terms";
+import { BILLING_CYCLE_LABELS, JOB_TERMS_COLLECTION, jobAssignees, type JobTerms } from "@/lib/job-terms";
 import { PAYMENTS_COLLECTION, formatAmount, type Payment, type PaymentCurrency } from "@/lib/payments";
 import { jobsCollection } from "@/lib/firebase/job-collections";
 import { ACTIVITY_COLLECTION, elapsedMs, formatDuration, type ActivityEntry } from "@/lib/time-tracking";
@@ -240,7 +240,6 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
   const slug = job.slug;
   const title = jobTitle(job);
   const [client, setClient] = React.useState<Client | null>(null);
-  const [contact, setContact] = React.useState<ClientContact | null>(null);
   const [terms, setTerms] = React.useState<JobTerms | null>(null);
   const [tasks, setTasks] = React.useState<Task[]>([]);
   const [entries, setEntries] = React.useState<ActivityEntry[]>([]);
@@ -291,18 +290,11 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
 
   React.useEffect(() => {
     if (overviewOnly || authLoading || !user) return;
-    let active = true;
-    getDoc(doc(firebaseDb, CLIENT_CONTACTS_COLLECTION, job.clientId))
-      .then((snapshot) => { if (active) setContact(snapshot.exists() ? (snapshot.data() as ClientContact) : null); })
-      .catch(() => { if (active) setContact(null); });
     void loadTerms();
     loadRelated().catch((cause) => console.error("Unable to load job activity", cause));
-    return () => { active = false; };
-  }, [authLoading, job.clientId, loadRelated, loadTerms, overviewOnly, user]);
+  }, [authLoading, loadRelated, loadTerms, overviewOnly, user]);
 
   const lead = users.find((person) => person.slug === job.leadUserId);
-  // A contact set on the job wins over the client's general contact.
-  const pointOfContact = terms?.contact?.name ? terms.contact : contact;
   const onTeam = Boolean(user?.uid && users.some((person) => person.uid === user.uid && person.slug && teamSlugs.includes(person.slug)));
   // Anyone on the job (assigned, on the team, or viewing it from My jobs) can log their own time.
   const assigned = Boolean(user?.uid && (terms?.assignedTo === user.uid || (terms ? jobAssignees(terms).some((person) => person.uid === user.uid) : false) || terms?.teamUids?.includes(user.uid) || onTeam || myJobs));
@@ -388,7 +380,7 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
         </div>
 
         {user ? <DetailCard title="Point of contact">
-          {pointOfContact?.name ? <div className="mt-3 flex min-w-0 items-center gap-3"><CreatorThumbnail avatarSeed={pointOfContact.name} className="h-10 w-10 shrink-0" /><div className="min-w-0"><p className="m-0 truncate text-body font-semibold">{pointOfContact.name}</p><p className="m-0 truncate text-sm text-muted-foreground">{pointOfContact.role || "—"}</p>{pointOfContact.email ? <a href={`mailto:${pointOfContact.email}`} className="block truncate text-sm text-muted-foreground hover:text-primary">{pointOfContact.email}</a> : null}</div></div> : <p className="mb-0 mt-3 text-body text-muted-foreground">Not set</p>}
+          {lead ? <Link href={userHref(lead, isCreatorUser(lead) ? "creator" : "team")} className="mt-3 flex min-w-0 items-center gap-3 text-foreground no-underline hover:text-primary"><CreatorThumbnail imageSrc={lead.profileImage} avatarSeed={lead.name} className="h-10 w-10 shrink-0" /><div className="min-w-0"><p className="m-0 truncate text-body font-semibold">{lead.name}</p><p className="m-0 truncate text-sm text-muted-foreground">{lead.title || "Team lead"}</p>{lead.email ? <span className="block truncate text-sm text-muted-foreground">{lead.email}</span> : null}</div></Link> : <p className="mb-0 mt-3 text-body text-muted-foreground">To be confirmed</p>}
         </DetailCard> : null}
 
         <DetailCard title="About the job">
@@ -399,7 +391,6 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
         </DetailCard>
 
         <DetailCard title="Job details"><dl className={DETAIL_LIST}>
-          <Detail label="Lead">{lead ? <Link href={userHref(lead, isCreatorUser(lead) ? "creator" : "team")} className="text-foreground underline decoration-border underline-offset-4 hover:text-primary">{lead.name}</Link> : "To be confirmed"}</Detail>
           <Detail label="Category">{job.category || "—"}</Detail>
           <Detail label="Specialization">{job.specialization || "—"}</Detail>
           <Detail label="Work setup">{job.workSetup || "—"}</Detail>

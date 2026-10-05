@@ -67,9 +67,6 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
   const [billingCycle, setBillingCycle] = React.useState<JobTerms["billingCycle"]>("monthly");
   const [commitment, setCommitment] = React.useState("");
   const [workdayOverlap, setWorkdayOverlap] = React.useState("");
-  const [contactName, setContactName] = React.useState("");
-  const [contactRole, setContactRole] = React.useState("");
-  const [contactEmail, setContactEmail] = React.useState("");
 
   React.useEffect(() => {
     if (!isStaff) return;
@@ -86,9 +83,6 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
         setBillingCycle(loaded.billingCycle);
         setCommitment(loaded.commitment ?? "");
         setWorkdayOverlap(loaded.workdayOverlap ?? "");
-        setContactName(loaded.contact?.name ?? "");
-        setContactRole(loaded.contact?.role ?? "");
-        setContactEmail(loaded.contact?.email ?? "");
       })
       .catch((cause) => console.error("Unable to load job terms", cause));
     return () => { active = false; };
@@ -145,9 +139,6 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
         billingCycle,
         commitment: commitment.trim() || null,
         workdayOverlap: workdayOverlap.trim() || null,
-        contact: contactName.trim() || contactRole.trim() || contactEmail.trim()
-          ? { name: contactName.trim() || null, role: contactRole.trim() || null, email: contactEmail.trim() || null }
-          : null,
         updatedAt: new Date().toISOString(),
       } satisfies JobTerms);
     }
@@ -205,7 +196,7 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
       />
       <TextField label="Year" value={year} onChange={setYear} type="number" />
       <SelectField
-        label="Lead"
+        label="Point of contact (team lead)"
         value={leadUserId || "unassigned"}
         onChange={(value) => setLeadUserId(value === "unassigned" ? "" : value)}
         options={[
@@ -238,11 +229,6 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
 
       {terms ? (
         <>
-          <SheetSection>Point of contact</SheetSection>
-          <TextField label="Name" value={contactName} onChange={setContactName} placeholder="Leave blank to use the client's contact" />
-          <TextField label="Role" value={contactRole} onChange={setContactRole} placeholder="e.g. Brand manager" />
-          <TextField label="Email" value={contactEmail} onChange={setContactEmail} type="email" />
-
           <SheetSection>Assignment and pay (private)</SheetSection>
           <fieldset className="m-0 space-y-2 border-0 p-0">
             <legend className="mb-2 text-sm font-medium">Assigned to</legend>

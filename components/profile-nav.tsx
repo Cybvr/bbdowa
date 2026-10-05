@@ -38,6 +38,8 @@ export type ProfileNavProps = {
   showAdminForStaff?: boolean;
   menuAlign?: "start" | "center" | "end";
   menuSide?: "top" | "right" | "bottom" | "left";
+  /** Signed-in avatar is a plain link into the dashboard, with no menu. */
+  linkToDashboard?: boolean;
 };
 
 function UserIcon() {
@@ -96,6 +98,7 @@ export function ProfileNav({
   showAdminForStaff = false,
   menuAlign = "end",
   menuSide = "bottom",
+  linkToDashboard = false,
 }: ProfileNavProps) {
   const auth = useOptionalAuth();
   const user = auth?.user ?? null;
@@ -123,6 +126,20 @@ export function ProfileNav({
         className="inline-flex min-h-10 items-center justify-center rounded-full bg-primary-foreground px-4 text-xs font-bold text-primary no-underline transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-foreground"
       >
         Sign in
+      </Link>
+    );
+  }
+
+  if (linkToDashboard) {
+    return (
+      <Link
+        href="/dashboard"
+        aria-label="Open dashboard"
+        title="Open dashboard"
+        className={`inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 ${tone === "background" ? "bg-primary focus-visible:outline-primary" : "bg-primary-foreground focus-visible:outline-primary-foreground"}`}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={avatarSrc} alt={`${displayName} avatar`} className="h-full w-full object-cover" />
       </Link>
     );
   }
