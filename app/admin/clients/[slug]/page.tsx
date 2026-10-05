@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { EmptyThumbnail, ImageWithFallback } from "@/components/empty-thumbnail";
+import { ImageUploadField } from "@/components/detail-editor";
 import { Badge as DashboardBadge } from "@/components/dashboard/ui";
 import type { Job, JobStatus } from "@/lib/jobs";
 import { getClient, getClientWorkspace, type Client } from "@/lib/clients";
@@ -77,6 +78,26 @@ function dateOnly(value: unknown): string | undefined {
   if (typeof timestamp.seconds === "number") return new Date(timestamp.seconds * 1000).toISOString().slice(0, 10);
   return undefined;
 }
+
+function timeRangeParts(value: string | null | undefined): [string, string] {
+  const times = value?.match(/\b\d{1,2}:\d{2}\b/g) ?? [];
+  return [times[0] ?? "", times[1] ?? ""];
+}
+
+const TEAM_SIZE_OPTIONS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "15", "20", "25", "50", "100", "250", "500"];
+const TIMEZONE_OPTIONS = [
+  "Africa/Lagos",
+  "Europe/London",
+  "Europe/Paris",
+  "Asia/Dubai",
+  "Asia/Kolkata",
+  "Asia/Singapore",
+  "Asia/Tokyo",
+  "Australia/Sydney",
+  "America/Los_Angeles",
+  "America/Chicago",
+  "America/New_York",
+];
 
 function ClientWorkspaceHeader({
   navigation,
@@ -459,7 +480,7 @@ function OneUtilityClientWorkspace({
   const clientName = client?.name ?? "Client";
   const workspace = getClientWorkspace(slug, clientName, availableJobs);
   const preset = workspace.preset;
-  const clientProfileImage = client?.profileImage ?? "/images/projects/project-placeholder.svg";
+  const [clientProfileImage, setClientProfileImage] = useState(client?.profileImage ?? "");
   const initialClientJobs = availableJobs.filter((job) => job.clientId === slug);
   const primaryJob = initialClientJobs[0];
   const [projectName, setProjectName] = useState(
@@ -577,8 +598,10 @@ function OneUtilityClientWorkspace({
   const [clientLocation, setClientLocation] = useState(client?.location ?? "");
   const [clientLinkedIn, setClientLinkedIn] = useState(client?.linkedIn ?? "");
   const [clientTimezone, setClientTimezone] = useState(client?.timezone ?? "");
-  const [clientHours, setClientHours] = useState(client?.hours ?? "");
-  const [clientHoursConverted, setClientHoursConverted] = useState(client?.hoursConverted ?? "");
+  const [clientHoursStart, setClientHoursStart] = useState(() => timeRangeParts(client?.hours)[0]);
+  const [clientHoursEnd, setClientHoursEnd] = useState(() => timeRangeParts(client?.hours)[1]);
+  const [clientHoursConvertedStart, setClientHoursConvertedStart] = useState(() => timeRangeParts(client?.hoursConverted)[0]);
+  const [clientHoursConvertedEnd, setClientHoursConvertedEnd] = useState(() => timeRangeParts(client?.hoursConverted)[1]);
   const [aesthetic, setAesthetic] = useState(preset.aesthetic);
   const [brandArchetype, setBrandArchetype] = useState(workspace.brandArchetype);
   const [toneVal, setToneVal] = useState(preset.toneVal);
@@ -698,13 +721,14 @@ function OneUtilityClientWorkspace({
         website: brandUrl.trim() || null,
         targetAudience: footprint.trim() || null,
         description: clientDescription.trim() || null,
+        profileImage: clientProfileImage.trim() || null,
         teamSize,
         yearFounded,
         location: clientLocation.trim() || null,
         linkedIn: clientLinkedIn.trim() || null,
         timezone: clientTimezone.trim() || null,
-        hours: clientHours.trim() || null,
-        hoursConverted: clientHoursConverted.trim() || null,
+        hours: clientHoursStart && clientHoursEnd ? `${clientHoursStart} – ${clientHoursEnd}` : null,
+        hoursConverted: clientHoursConvertedStart && clientHoursConvertedEnd ? `${clientHoursConvertedStart} – ${clientHoursConvertedEnd}` : null,
         updatedAt: serverTimestamp(),
       });
       setBusinessProfileDirty(false);
@@ -1613,24 +1637,19 @@ function OneUtilityClientWorkspace({
           {activeMainTab === "brand" && (
             <ClientWorkspaceContent>
                 <ClientWorkspaceHeading title="About" />
-                <div className="w-full max-w-4xl">
+                <div className="w-full max-w-2xl">
                   <div className="min-w-0">
                   {profileSection === "company" && (
                   <section id="profile-panel-company" role="tabpanel" aria-label="About" className="space-y-5">
-                    <div className="flex items-center gap-4 border-b border-border pb-5">
-                      <div className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-xl border border-border bg-muted p-2 sm:h-24 sm:w-24">
-                        <ImageWithFallback
-                          src={clientProfileImage}
-                          alt={`${clientName} logo`}
-                          className="h-full w-full object-contain"
-                          fallbackClassName="h-full w-full rounded-lg"
-                        />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="m-0 text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">Client logo</p>
-                        <p className="mt-1 truncate text-base font-semibold text-foreground">{clientName}</p>
-                      </div>
-                    </div>
+                    <ImageUploadField
+                      label=""
+                      hideLabel
+                      compact
+                      variant="avatar"
+                      value={clientProfileImage}
+                      onChange={(value) => { setClientProfileImage(value); setBusinessProfileDirty(true); }}
+                      uploadPath={`clients/${slug}/avatar`}
+                    />
                     <div className="border-b border-border pb-3">
                       <span className="text-xs font-mono uppercase tracking-widest text-primary font-semibold">
                         About
@@ -1710,7 +1729,11 @@ function OneUtilityClientWorkspace({
                       <div className="mt-4 grid gap-5 sm:grid-cols-2">
                         <div className="space-y-1.5">
                           <label htmlFor="clientTeamSize" className="text-sm font-medium text-foreground">Team size</label>
-                          <input id="clientTeamSize" type="number" min="0" value={clientTeamSize} onChange={(e) => { setClientTeamSize(e.target.value); setBusinessProfileDirty(true); }} className="w-full border-0 border-b border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-0" />
+                          <select id="clientTeamSize" value={clientTeamSize} onChange={(e) => { setClientTeamSize(e.target.value); setBusinessProfileDirty(true); }} className="w-full border-0 border-b border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-0">
+                            <option value="">Select team size</option>
+                            {clientTeamSize && !TEAM_SIZE_OPTIONS.includes(clientTeamSize) ? <option value={clientTeamSize}>{clientTeamSize}</option> : null}
+                            {TEAM_SIZE_OPTIONS.map((size) => <option key={size} value={size}>{size} {size === "1" ? "person" : "people"}</option>)}
+                          </select>
                         </div>
                         <div className="space-y-1.5">
                           <label htmlFor="clientYearFounded" className="text-sm font-medium text-foreground">Year founded</label>
@@ -1731,16 +1754,30 @@ function OneUtilityClientWorkspace({
                       <h3 className="m-0 text-sm font-semibold text-foreground">Working hours</h3>
                       <div className="mt-4 space-y-1.5">
                         <label htmlFor="clientTimezone" className="text-sm font-medium text-foreground">Client time zone</label>
-                        <input id="clientTimezone" type="text" value={clientTimezone} onChange={(e) => { setClientTimezone(e.target.value); setBusinessProfileDirty(true); }} className="w-full border-0 border-b border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-0" placeholder="Los Angeles (8 hrs behind)" />
+                        <select id="clientTimezone" value={clientTimezone} onChange={(e) => { setClientTimezone(e.target.value); setBusinessProfileDirty(true); }} className="w-full border-0 border-b border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-0">
+                          <option value="">Select time zone</option>
+                          {clientTimezone && !TIMEZONE_OPTIONS.includes(clientTimezone) ? <option value={clientTimezone}>{clientTimezone}</option> : null}
+                          {TIMEZONE_OPTIONS.map((timezone) => <option key={timezone} value={timezone}>{timezone}</option>)}
+                        </select>
                       </div>
                       <div className="mt-4 grid gap-5 sm:grid-cols-2">
                         <div className="space-y-1.5">
-                          <label htmlFor="clientHours" className="text-sm font-medium text-foreground">Client hours</label>
-                          <input id="clientHours" type="text" value={clientHours} onChange={(e) => { setClientHours(e.target.value); setBusinessProfileDirty(true); }} className="w-full border-0 border-b border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-0" placeholder="09:00 – 17:00" />
+                          <span className="text-sm font-medium text-foreground">Client hours</span>
+                          <div className="grid grid-cols-2 gap-2">
+                            <label htmlFor="clientHoursStart" className="sr-only">Client hours start</label>
+                            <input id="clientHoursStart" type="time" value={clientHoursStart} onChange={(e) => { setClientHoursStart(e.target.value); setBusinessProfileDirty(true); }} className="w-full border-0 border-b border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-0" />
+                            <label htmlFor="clientHoursEnd" className="sr-only">Client hours end</label>
+                            <input id="clientHoursEnd" type="time" value={clientHoursEnd} onChange={(e) => { setClientHoursEnd(e.target.value); setBusinessProfileDirty(true); }} className="w-full border-0 border-b border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-0" />
+                          </div>
                         </div>
                         <div className="space-y-1.5">
-                          <label htmlFor="clientHoursConverted" className="text-sm font-medium text-foreground">Client hours in our time</label>
-                          <input id="clientHoursConverted" type="text" value={clientHoursConverted} onChange={(e) => { setClientHoursConverted(e.target.value); setBusinessProfileDirty(true); }} className="w-full border-0 border-b border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-0" placeholder="17:00 – 01:00 Lagos" />
+                          <span className="text-sm font-medium text-foreground">Client hours in our time</span>
+                          <div className="grid grid-cols-2 gap-2">
+                            <label htmlFor="clientHoursConvertedStart" className="sr-only">Client hours in our time start</label>
+                            <input id="clientHoursConvertedStart" type="time" value={clientHoursConvertedStart} onChange={(e) => { setClientHoursConvertedStart(e.target.value); setBusinessProfileDirty(true); }} className="w-full border-0 border-b border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-0" />
+                            <label htmlFor="clientHoursConvertedEnd" className="sr-only">Client hours in our time end</label>
+                            <input id="clientHoursConvertedEnd" type="time" value={clientHoursConvertedEnd} onChange={(e) => { setClientHoursConvertedEnd(e.target.value); setBusinessProfileDirty(true); }} className="w-full border-0 border-b border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-0" />
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1752,7 +1789,7 @@ function OneUtilityClientWorkspace({
                         disabled={!businessProfileDirty || businessProfileSaving}
                         className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45"
                       >
-                        <Save className="h-4 w-4" /> {businessProfileSaving ? "Saving…" : "Save changes"}
+                        {businessProfileSaving ? "Saving…” : "Save"}
                       </button>
                     </div>
                   </section>

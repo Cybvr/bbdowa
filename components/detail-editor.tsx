@@ -50,6 +50,8 @@ export function ImageUploadField({
   value,
   onChange,
   variant = "cover",
+  hideLabel = false,
+  compact = false,
   disabled = false,
   accept = "image/*",
   uploadPath = "dashboard/images",
@@ -58,6 +60,8 @@ export function ImageUploadField({
   value: string;
   onChange: (value: string) => void;
   variant?: "avatar" | "cover";
+  hideLabel?: boolean;
+  compact?: boolean;
   disabled?: boolean;
   accept?: string;
   /** Storage prefix for the uploaded file. Pass null to keep a local data URI. */
@@ -141,12 +145,12 @@ export function ImageUploadField({
 
   const isDisabled = disabled || uploading;
   const displayedImage = preview || value;
-
-  return (
-    <Field label={label}>
+  const uploadControl = (
+    <>
       <div
         role="button"
         tabIndex={isDisabled ? -1 : 0}
+        aria-label={compact ? "Change avatar" : undefined}
         aria-disabled={isDisabled}
         aria-busy={uploading}
         onClick={() => {
@@ -168,7 +172,7 @@ export function ImageUploadField({
           setDragging(false);
           if (!isDisabled) void readImage(event.dataTransfer.files[0]);
         }}
-        className={`relative cursor-pointer overflow-hidden border border-dashed p-3 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${variant === "avatar" ? "rounded-xl" : "rounded-lg"} ${dragging ? "border-primary bg-primary/5" : "border-border hover:border-foreground/50"} ${isDisabled ? "cursor-not-allowed opacity-50" : ""}`}
+        className={`relative cursor-pointer overflow-hidden border border-dashed transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${compact ? "h-24 w-24 rounded-full p-0" : variant === "avatar" ? "rounded-xl p-3" : "rounded-lg p-3"} ${dragging ? "border-primary bg-primary/5" : "border-border hover:border-foreground/50"} ${isDisabled ? "cursor-not-allowed opacity-50" : ""}`}
       >
         <input
           ref={inputRef}
@@ -182,17 +186,26 @@ export function ImageUploadField({
           className="sr-only"
         />
         {displayedImage ? (
-          <div className={`flex items-center gap-3 ${variant === "avatar" ? "" : "min-h-28"}`}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={displayedImage}
-              alt=""
-              className={variant === "avatar" ? "h-20 w-20 rounded-full object-cover" : "h-28 w-40 rounded-md object-cover"}
-            />
-            <div className="min-w-0">
-              <p className="m-0 text-[13px] font-semibold text-foreground">{uploading ? "Uploading image…" : "Replace image"}</p>
-              <p className="m-0 mt-1 text-xs text-muted-foreground">{uploading ? "Saving to Firebase Storage." : "Select a new image or drop one here."}</p>
+          compact ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img src={displayedImage} alt="" className="h-full w-full rounded-full object-cover" />
+          ) : (
+            <div className={`flex items-center gap-3 ${variant === "avatar" ? "" : "min-h-28"}`}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={displayedImage}
+                alt=""
+                className={variant === "avatar" ? "h-20 w-20 rounded-full object-cover" : "h-28 w-40 rounded-md object-cover"}
+              />
+              <div className="min-w-0">
+                <p className="m-0 text-[13px] font-semibold text-foreground">{uploading ? "Uploading image…" : "Replace image"}</p>
+                <p className="m-0 mt-1 text-xs text-muted-foreground">{uploading ? "Saving to Firebase Storage." : "Select a new image or drop one here."}</p>
+              </div>
             </div>
+          )
+        ) : compact ? (
+          <div className="grid h-full w-full place-items-center bg-muted text-primary">
+            <Upload aria-hidden="true" className="h-5 w-5" />
           </div>
         ) : (
           <div className="flex min-h-24 flex-col items-center justify-center gap-2 text-center">
@@ -203,8 +216,10 @@ export function ImageUploadField({
         )}
       </div>
       {error ? <p className="m-0 text-xs font-medium text-destructive">{error}</p> : null}
-    </Field>
+    </>
   );
+
+  return hideLabel ? uploadControl : <Field label={label}>{uploadControl}</Field>;
 }
 
 export function TextField({
