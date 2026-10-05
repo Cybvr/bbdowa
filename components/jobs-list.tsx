@@ -16,11 +16,10 @@ import { readMyJobIds } from "@/lib/firebase/job-team";
 import { ACTIVITY_COLLECTION } from "@/lib/time-tracking";
 import { PAYMENTS_COLLECTION } from "@/lib/payments";
 
-const filters = ["all", "active", "completed", "archive"] as const;
+const filters = ["active", "completed", "archive"] as const;
 type JobFilter = (typeof filters)[number];
 
 function matchesFilter(job: Job, filter: JobFilter) {
-  if (filter === "all") return true;
   if (filter === "active") return job.status === "active";
   if (filter === "completed") return job.status === "completed";
   return job.status === "archived";
@@ -32,7 +31,7 @@ export function JobsList({ assignedOnly = false }: { assignedOnly?: boolean }) {
   const [jobs, setJobs] = React.useState<Job[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-  const [filter, setFilter] = React.useState<JobFilter>("all");
+  const [filter, setFilter] = React.useState<JobFilter>("active");
   const [search, setSearch] = React.useState("");
 
   React.useEffect(() => {
