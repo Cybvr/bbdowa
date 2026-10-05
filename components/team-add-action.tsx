@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { saveJobTeam } from "@/lib/firebase/job-team";
-import type { User } from "@/lib/users";
+import { jobTeamKey, matchesJobTeamKey, type User } from "@/lib/users";
 
 export function TeamAddAction({
   jobSlug,
@@ -38,16 +38,19 @@ export function TeamAddAction({
 
   // Every user in the directory is eligible — a job's team can be a mix
   // of creators, managers and admins, not just people tagged "Creator".
-  // Records without a slug (e.g. pending signups) can't be selected: there's
-  // nothing stable to key the list or save into creatorSlugs.
+  // Accounts without a directory slug use their UID as a stable team key.
+  // Pending records without either identifier cannot be selected.
   const availableCreators = React.useMemo(
-    () => creators.filter((creator) => creator.slug).sort((a, b) => a.name.localeCompare(b.name)),
+    () => creators.flatMap((creator) => {
+      const key = jobTeamKey(creator);
+      return key ? [{ creator, key }] : [];
+    }).sort((a, b) => a.creator.name.localeCompare(b.creator.name)),
     [creators],
   );
   const visibleCreators = React.useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     if (!normalizedQuery) return availableCreators;
-    return availableCreators.filter((creator) =>
+    return availableCreators.filter(({ creator }) =>
       [creator.name, creator.category, creator.title]
         .filter(Boolean)
         .some((value) => value.toLowerCase().includes(normalizedQuery)),
@@ -65,11 +68,11 @@ export function TeamAddAction({
     }
   };
 
-  const toggleCreator = (creatorSlug: string) => {
+  const toggleCreator = (creator: User, teamKey: string) => {
     setDraftSlugs((current) =>
-      current.includes(creatorSlug)
-        ? current.filter((slug) => slug !== creatorSlug)
-        : [...current, creatorSlug],
+      current.some((key) => matchesJobTeamKey(creator, key))
+        ? current.filter((key) => !matchesJobTeamKey(creator, key))
+        : [...current, teamKey],
     );
   };
 
@@ -121,17 +124,17 @@ export function TeamAddAction({
             />
             <div className="max-h-[min(50vh,420px)] overflow-y-auto rounded-lg border border-border">
               {visibleCreators.length ? (
-                visibleCreators.map((creator) => {
-                  const checked = draftSlugs.includes(creator.slug);
+                visibleCreators.map(({ creator, key }) => {
+                  const checked = draftSlugs.some((selectedKey) => matchesJobTeamKey(creator, selectedKey));
                   return (
                     <label
-                      key={creator.slug}
+                      key={key}
                       className="flex cursor-pointer items-center gap-3 border-b border-border px-3 py-2.5 last:border-b-0 hover:bg-muted/60"
                     >
                       <input
                         type="checkbox"
                         checked={checked}
-                        onChange={() => toggleCreator(creator.slug)}
+                        onChange={() => toggleCreator(creator, key)}
                         className="h-4 w-4 accent-primary"
                       />
                       <span className="min-w-0">

@@ -37,7 +37,7 @@ import { BILLING_CYCLE_LABELS, JOB_TERMS_COLLECTION, jobAssignees, type JobTerms
 import { PAYMENTS_COLLECTION, formatAmount, type Payment, type PaymentCurrency } from "@/lib/payments";
 import { jobsCollection } from "@/lib/firebase/job-collections";
 import { ACTIVITY_COLLECTION, elapsedMs, formatDuration, type ActivityEntry } from "@/lib/time-tracking";
-import { isCreatorUser, userHref } from "@/lib/users";
+import { isCreatorUser, jobTeamKey, matchesJobTeamKey, userHref } from "@/lib/users";
 
 type JobTab = "overview" | "case-study" | "media" | "team" | "tasks" | "timesheets" | "payments";
 const fieldClass = "block space-y-1.5 text-sm font-medium";
@@ -235,7 +235,9 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
   const [paymentSearch, setPaymentSearch] = React.useState("");
   const [loginModalOpen, setLoginModalOpen] = React.useState(false);
   const [teamSlugs, setTeamSlugs] = React.useState<string[]>(job.creatorSlugs ?? []);
-  const teamMembers = React.useMemo(() => users.filter((person) => person.slug && teamSlugs.includes(person.slug)), [teamSlugs, users]);
+  const teamMembers = React.useMemo(() => users.filter((person) => {
+    return teamSlugs.some((key) => matchesJobTeamKey(person, key));
+  }), [teamSlugs, users]);
 
   // Each read can be refused for people outside the job, so each fails on its own.
   const loadTerms = React.useCallback(async () => {
@@ -275,8 +277,10 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
     loadRelated().catch((cause) => console.error("Unable to load job activity", cause));
   }, [authLoading, loadRelated, loadTerms, overviewOnly, user]);
 
-  const lead = users.find((person) => person.slug === job.leadUserId);
-  const onTeam = Boolean(user?.uid && users.some((person) => person.uid === user.uid && person.slug && teamSlugs.includes(person.slug)));
+  const lead = users.find((person) => job.leadUserId && matchesJobTeamKey(person, job.leadUserId));
+  const onTeam = Boolean(user?.uid && users.some((person) => {
+    return person.uid === user.uid && teamSlugs.some((key) => matchesJobTeamKey(person, key));
+  }));
   // Anyone on the job (assigned, on the team, or viewing it from My jobs) can log their own time.
   const assigned = Boolean(user?.uid && (terms?.assignedTo === user.uid || (terms ? jobAssignees(terms).some((person) => person.uid === user.uid) : false) || terms?.teamUids?.includes(user.uid) || onTeam || myJobs));
   const canLogTime = Boolean(!isViewingAs && (canManage || (assigned && job.status !== "completed")));
@@ -400,7 +404,7 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
         </DetailCard> : null}
 
         {user ? <DetailCard title="Assigned team">{teamMembers.length ? <ul className="m-0 mt-3 grid list-none gap-2 p-0">
-          {teamMembers.map((member) => <li key={member.slug}><Link href={userHref(member, isCreatorUser(member) ? "creator" : "team")} className="flex min-w-0 items-center gap-3 text-body font-medium text-foreground hover:text-primary"><CreatorThumbnail imageSrc={member.profileImage} avatarSeed={member.name} className="h-8 w-8 shrink-0" /><span className="truncate">{member.name}</span></Link></li>)}
+          {teamMembers.map((member) => <li key={jobTeamKey(member)}><Link href={userHref(member, isCreatorUser(member) ? "creator" : "team")} className="flex min-w-0 items-center gap-3 text-body font-medium text-foreground hover:text-primary"><CreatorThumbnail imageSrc={member.profileImage} avatarSeed={member.name} className="h-8 w-8 shrink-0" /><span className="truncate">{member.name}</span></Link></li>)}
         </ul> : <p className="mb-0 mt-3 text-body text-muted-foreground">No one is on this job&apos;s team yet.</p>}</DetailCard> : null}
 
         {terms ? <DetailCard title="Pay"><dl className={DETAIL_LIST}>

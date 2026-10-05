@@ -193,10 +193,24 @@ export function creatorHref(slug: string): string {
   return `/dashboard/discover/${slug}`;
 }
 
+/** Job teams use directory slugs where available, or a namespaced account UID. */
+export function jobTeamKey(user: Pick<User, "slug" | "uid">): string | null {
+  const slug = user.slug?.trim();
+  if (slug) return slug;
+  const uid = user.uid?.trim();
+  return uid ? `uid:${uid}` : null;
+}
+
+/** Match either identity so an existing UID assignment survives a later slug edit. */
+export function matchesJobTeamKey(user: Pick<User, "slug" | "uid">, key: string): boolean {
+  return Boolean(key && ((user.slug && user.slug === key) || (user.uid && `uid:${user.uid}` === key)));
+}
+
 export function userHref(user: User, surface: "team" | "creator" = "creator"): string {
+  const identifier = encodeURIComponent(user.slug || user.uid || "");
   return surface === "creator"
-    ? `/dashboard/discover/${user.slug}`
-    : `/dashboard/people/${user.slug}`;
+    ? `/dashboard/discover/${identifier}`
+    : `/dashboard/people/${identifier}`;
 }
 
 export function userInitials(user: User): string {

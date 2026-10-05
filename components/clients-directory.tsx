@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import type { Client } from "@/lib/clients";
 import type { Job } from "@/lib/jobs";
 import { longDate, plural } from "@/lib/format";
-import type { Creator, User } from "@/lib/users";
+import { matchesJobTeamKey, type Creator, type User } from "@/lib/users";
 import { useFirestoreUsers } from "@/lib/firebase/client-content";
 import { Badge, EmptyState, ImageWithFallback } from "@/components/dashboard/ui";
 import { DashboardCard, DashboardCardActions } from "@/components/dashboard-card";
@@ -31,7 +31,7 @@ type SortKey = (typeof SORTS)[number]["key"];
 // A client's people are everyone on the team of one of its jobs.
 function clientCreators(client: Client, jobs: Job[], users: User[]): Creator[] {
   return [...new Set(jobs.filter((job) => job.clientId === client.slug).flatMap((job) => job.creatorSlugs ?? []))]
-    .map((slug) => users.find((user) => user.slug === slug))
+    .map((key) => users.find((user) => matchesJobTeamKey(user, key)))
     .filter((creator): creator is Creator => Boolean(creator));
 }
 

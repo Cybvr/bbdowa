@@ -6,13 +6,13 @@ import { useEffect, useState, type ReactNode } from "react";
 import type { IconType } from "react-icons";
 import { FaBehance, FaGlobe } from "react-icons/fa";
 import { LayoutGrid, Mail, MapPin, Phone } from "lucide-react";
-import { creatorCategoryOptions, isCreatorNew, isCreatorUser, type Creator } from "@/lib/users";
+import { creatorCategoryOptions, isCreatorNew, isCreatorUser, matchesJobTeamKey, userHref, type Creator } from "@/lib/users";
 import { useAuth } from "@/components/auth-provider";
 import { readJobsFromFirestore, readClientsFromFirestore, readDocumentsForAssignee, readTimeEntriesForUser, useFirestoreUsers } from "@/lib/firebase/client-content";
 import { longDate } from "@/lib/format";
 import { byLastModified, type Job } from "@/lib/jobs";
 import { JobCard } from "@/components/job-card";
-import { getCreatorJobs, type Client } from "@/lib/clients";
+import type { Client } from "@/lib/clients";
 import {
   DetailBreadcrumb,
   ProfileBanner,
@@ -90,7 +90,7 @@ export function UserProfile({ section }: { section: keyof typeof SECTIONS }) {
   // every viewer. Staff status still controls the actions and staff-only tabs.
   const loading = directory.loading;
   const error = directory.error;
-  const creator = directory.users.find((user) => user.slug === slug);
+  const creator = directory.users.find((user) => user.slug === slug || user.uid === slug);
   const categorySource = directory.users;
 
   useEffect(() => {
@@ -123,8 +123,8 @@ export function UserProfile({ section }: { section: keyof typeof SECTIONS }) {
   }
   const platforms = platformsFor(creator);
   const creatorJobs = [
-    ...getCreatorJobs(creator.slug, jobs),
-    ...jobs.filter((job) => job.leadUserId === creator.slug),
+    ...jobs.filter((job) => job.creatorSlugs?.some((key) => matchesJobTeamKey(creator, key))),
+    ...jobs.filter((job) => job.leadUserId && matchesJobTeamKey(creator, job.leadUserId)),
   ].filter((job, index, list) => list.findIndex((entry) => entry.slug === job.slug) === index);
   const canSeeTasks = isStaff || Boolean(creator.uid);
 
@@ -170,12 +170,12 @@ export function UserProfile({ section }: { section: keyof typeof SECTIONS }) {
              * edit and share as its CTAs. */}
             <div className="hidden items-center gap-2 nav:flex">
               <UserActions user={creator} variant={variant} listHref={listHref} categoryOptions={creatorCategoryOptions(categorySource)} iconOnly />
-              <ShareCreatorDialog creatorName={creator.name} path={`${listHref}/${creator.slug}`} />
+              <ShareCreatorDialog creatorName={creator.name} path={userHref(creator, variant)} />
             </div>
             <MobileHeaderTitle title={creator.name} />
             <MobileHeaderActions>
               <UserActions user={creator} variant={variant} listHref={listHref} categoryOptions={creatorCategoryOptions(categorySource)} iconOnly />
-              <ShareCreatorDialog creatorName={creator.name} path={`${listHref}/${creator.slug}`} />
+              <ShareCreatorDialog creatorName={creator.name} path={userHref(creator, variant)} />
             </MobileHeaderActions>
           </>
         }
@@ -376,7 +376,7 @@ export function UserProfile({ section }: { section: keyof typeof SECTIONS }) {
           <ProfileSection title="Documents" variant="plain" action={isStaff ? <CreatorDocumentAddAction creatorUid={creator.uid} /> : undefined}>
             <CreatorDocumentsPanel
               creatorUid={creator.uid}
-              creatorSlug={creator.slug}
+              creatorSlug={creator.slug || ""}
               creatorName={creator.name}
               viewer={{
                 uid: authUser?.uid ?? null,

@@ -9,7 +9,7 @@ import { ImageUploadField } from "@/components/detail-editor";
 import { Badge as DashboardBadge } from "@/components/dashboard/ui";
 import { jobDisplayTitle, type Job, type JobStatus } from "@/lib/jobs";
 import { CLIENT_TIMEZONES, TEAM_SIZE_RANGES, getClient, getClientWorkspace, teamSizeLabel, type Client } from "@/lib/clients";
-import { isCreatorUser, userHref, type User } from "@/lib/users";
+import { isCreatorUser, jobTeamKey, matchesJobTeamKey, userHref, type User } from "@/lib/users";
 import { readClientsFromFirestore, readJobsFromFirestore, readUsersFromFirestore } from "@/lib/firebase/client-content";
 import { firebaseDb } from "@/lib/firebase/client";
 import { jobsCollection } from "@/lib/firebase/job-collections";
@@ -519,9 +519,7 @@ function OneUtilityClientWorkspace({
   };
 
   // Job overview state
-  // Job lead is stored as the person's slug (leadUserId on the real
-  // job record), so the workspace and the public job page always
-  // resolve to the same person.
+  // Job lead uses the same stable team key as the job detail page.
   const [jobLeadSlug, setJobLeadSlug] = useState(initialClientJobs[0]?.leadUserId ?? "");
   const [jobStart, setJobStart] = useState("2026-08-01");
   const [jobEnd, setJobEnd] = useState("2026-10-31");
@@ -551,7 +549,9 @@ function OneUtilityClientWorkspace({
   // The client's people are everyone on the team of one of its jobs.
   const selectedCreators = React.useMemo(() => {
     const slugs = new Set(availableJobs.filter((job) => job.clientId === slug).flatMap((job) => job.creatorSlugs ?? []));
-    return availableUsers.filter((user) => slugs.has(user.slug));
+    return availableUsers.filter((user) => {
+      return [...slugs].some((key) => matchesJobTeamKey(user, key));
+    });
   }, [availableJobs, availableUsers, slug]);
   const visibleJobs = React.useMemo(() => {
     const query = jobSearch.trim().toLowerCase();
@@ -723,7 +723,7 @@ function OneUtilityClientWorkspace({
   const jobDescription = jobDescriptions[activeJobId] ?? "";
   const activeJobRecord = availableJobs.find((job) => job.slug === activeJob?.id);
   const overviewDescription = client?.description?.trim() || jobDescription.trim() || richTextToPlainText(activeJobRecord?.summary ?? "") || "No description available yet.";
-  const jobLeadUser = availableUsers.find((user) => user.slug === jobLeadSlug);
+  const jobLeadUser = availableUsers.find((user) => matchesJobTeamKey(user, jobLeadSlug));
   const updateJobLead = async (nextSlug: string) => {
     setJobLeadSlug(nextSlug);
     if (!activeJobRecord) return;
@@ -1073,7 +1073,7 @@ function OneUtilityClientWorkspace({
                             >
                               <option value="">Unassigned</option>
                               {selectedCreators.map((person) => (
-                                <option key={person.slug} value={person.slug}>
+                                <option key={jobTeamKey(person)} value={jobTeamKey(person) ?? ""}>
                                   {person.name}
                                 </option>
                               ))}

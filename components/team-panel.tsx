@@ -10,7 +10,7 @@ import { UserActions } from "@/components/user-actions";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 import { plural } from "@/lib/format";
-import { creatorCategoryOptions as knownCreatorCategories, type User } from "@/lib/users";
+import { creatorCategoryOptions as knownCreatorCategories, isCreatorUser, jobTeamKey, userHref, type User } from "@/lib/users";
 
 type TeamSort = "name" | "category" | "availability";
 
@@ -93,13 +93,13 @@ export function TeamPanel({
             view === "cards" ? (
               <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2 lg:grid-cols-4">
                 {visible.map((member) => (
-                  <li key={member.slug}>
+                  <li key={jobTeamKey(member)}>
                     <DashboardCard
                       className="h-full"
-                      actions={<UserActions user={member} variant="creator" listHref={listHref} compactMenu categoryOptions={knownCreatorCategories(allUsers)} />}
+                      actions={<UserActions user={member} variant={isCreatorUser(member) ? "creator" : "team"} listHref={listHref} compactMenu categoryOptions={knownCreatorCategories(allUsers)} />}
                     >
                       <Link
-                        href={`/dashboard/discover/${member.slug}`}
+                        href={userHref(member, isCreatorUser(member) ? "creator" : "team")}
                         className="group flex h-full flex-col text-foreground no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                       >
                         <div className="h-28 shrink-0 overflow-hidden bg-muted">
@@ -137,9 +137,9 @@ export function TeamPanel({
                   </TableHeader>
                   <TableBody>
                     {visible.map((member) => (
-                      <ClickableTableRow key={member.slug} href={`/dashboard/discover/${member.slug}`} label={`Open creator ${member.name}`}>
+                      <ClickableTableRow key={jobTeamKey(member)} href={userHref(member, isCreatorUser(member) ? "creator" : "team")} label={`Open ${member.name}`}>
                         <TableCell className="px-3 py-2 font-semibold">
-                          <Link href={`/dashboard/discover/${member.slug}`} className="inline-flex items-center gap-3 text-foreground no-underline hover:text-primary focus-visible:text-primary">
+                          <Link href={userHref(member, isCreatorUser(member) ? "creator" : "team")} className="inline-flex items-center gap-3 text-foreground no-underline hover:text-primary focus-visible:text-primary">
                             <ImageWithFallback
                               src={member.profileImage ?? member.featuredImage}
                               alt=""

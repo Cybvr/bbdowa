@@ -19,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { jobDisplayTitle, jobTitle, type Job } from "@/lib/jobs";
+import { jobTeamKey } from "@/lib/users";
 import { EMPTY_JOB_TERMS, JOB_TERMS_COLLECTION, jobAssignees, type JobTerms } from "@/lib/job-terms";
 
 const listValue = (value?: string[] | null) => (value ?? []).join(", ");
@@ -120,7 +121,10 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
     if (terms) {
       // Assignees are always on the team, so they keep access alongside everyone else on it.
       const teamUids = [...new Set([...(terms.teamUids ?? []), ...assignedUids])];
-      const assigneeSlugs = assignedUids.map((uid) => users.find((person) => person.uid === uid)?.slug).filter((slug): slug is string => Boolean(slug));
+      const assigneeSlugs = assignedUids.map((uid) => {
+        const person = users.find((candidate) => candidate.uid === uid);
+        return person ? jobTeamKey(person) : null;
+      }).filter((key): key is string => Boolean(key));
       const missingSlugs = assigneeSlugs.filter((slug) => !(job.creatorSlugs ?? []).includes(slug));
       if (missingSlugs.length) {
         await updateDoc(doc(firebaseDb, await jobsCollection(), job.slug), { creatorSlugs: [...(job.creatorSlugs ?? []), ...missingSlugs] });
@@ -221,7 +225,10 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
         onChange={(value) => setLeadUserId(value === "unassigned" ? "" : value)}
         options={[
           { value: "unassigned", label: "Unassigned" },
-          ...leadOptions.map((person) => ({ value: person.slug, label: person.name })),
+          ...leadOptions.flatMap((person) => {
+            const key = jobTeamKey(person);
+            return key ? [{ value: key, label: person.name }] : [];
+          }),
         ]}
       />
       <TextField label="Fee" value={fee} onChange={setFee} />

@@ -1,7 +1,7 @@
 "use client";
 
 import { CreatorThumbnail } from "@/components/creator-thumbnail";
-import type { Creator } from "@/lib/users";
+import { jobTeamKey, type Creator } from "@/lib/users";
 
 /**
  * Overlapping row of creator photos, capped at `max` with a "+N" overflow
@@ -27,7 +27,7 @@ export function CreatorAvatarStack({
       aria-label={`${creators.length} creator${creators.length === 1 ? "" : "s"} assigned`}
     >
       {visible.map((creator) => (
-        <span key={creator.slug} title={creator.name}>
+        <span key={jobTeamKey(creator)} title={creator.name}>
           <CreatorThumbnail imageSrc={creator.profileImage} avatarSeed={creator.name} className={`${size} border-2 border-background`} />
         </span>
       ))}

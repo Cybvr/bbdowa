@@ -4,16 +4,16 @@ import { collection, doc, getDoc, getDocs, query, serverTimestamp, setDoc, updat
 import { firebaseDb } from "@/lib/firebase/client";
 import { jobsCollection } from "@/lib/firebase/job-collections";
 import { JOB_TERMS_COLLECTION } from "@/lib/job-terms";
-import type { User } from "@/lib/users";
+import { matchesJobTeamKey, type User } from "@/lib/users";
 
-/** Firebase uids for a list of user slugs; people without an account are skipped. */
+/** Firebase UIDs for saved job-team keys; people without an account are skipped. */
 export function teamUidsFor(slugs: string[], users: Pick<User, "slug" | "uid">[]): string[] {
-  return [...new Set(slugs.map((slug) => users.find((user) => user.slug === slug)?.uid).filter((uid): uid is string => Boolean(uid)))];
+  return [...new Set(users.filter((user) => slugs.some((key) => matchesJobTeamKey(user, key))).map((user) => user.uid).filter((uid): uid is string => Boolean(uid)))];
 }
 
 /**
- * Saves a job's team. The slugs go on the public job record (for profiles and
- * avatars); the matching uids go on the private terms record, which is what
+ * Saves a job's team. Team keys go on the public job record (for profiles and
+ * avatars); the matching UIDs go on the private terms record, which is what
  * gives team members access to the job, its time logging and their dashboards.
  */
 export async function saveJobTeam(jobSlug: string, slugs: string[], users: Pick<User, "slug" | "uid">[]) {

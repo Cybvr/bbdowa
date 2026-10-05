@@ -18,7 +18,12 @@ async function readCollection<T>(name: string): Promise<T[]> {
 }
 
 export function readUsersFromFirestore() {
-  return readCollection<User>("users").then((users) => users.map(normalizeUser));
+  return getDocs(collection(firebaseDb, "users")).then((snapshot) => snapshot.docs.map((document) => {
+    const user = document.data() as User;
+    // Signed-in accounts are keyed by UID; older directory entries are keyed by slug.
+    const uid = user.uid || (document.id !== user.slug ? document.id : null);
+    return normalizeUser({ ...user, uid });
+  }));
 }
 
 export async function readUserForNjeri(uid: string) {

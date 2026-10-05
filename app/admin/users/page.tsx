@@ -41,7 +41,7 @@ function UserRow({ user, categoryOptions }: { user: User; categoryOptions: strin
   const variant = isCreatorUser(user) && !isTeamUser(user) ? "creator" : "team";
   const targetUid = user.uid;
   return (
-    <ClickableTableRow href={user.slug ? userHref(user, variant) : undefined} label={`Open user ${user.name}`} className="align-middle">
+    <ClickableTableRow href={user.slug || user.uid ? userHref(user, variant) : undefined} label={`Open user ${user.name}`} className="align-middle">
       <TableCell className="px-4 py-3.5 sm:px-5">
         <div className="min-w-0">
           <strong className="block truncate font-semibold text-foreground">{user.name}</strong>
