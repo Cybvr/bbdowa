@@ -124,9 +124,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     stopViewingAs();
     setActualUser(null);
     setActualRole(null);
-    router.replace("/auth/login");
-    router.refresh();
-  }, [router, stopViewingAs]);
+    window.location.replace("/auth/login");
+  }, [stopViewingAs]);
 
   const markOnboarded = React.useCallback(() => setOnboardingDue(false), []);
   const activeViewAs = viewAsLoaded && actualRole === "admin" ? viewAs : null;
