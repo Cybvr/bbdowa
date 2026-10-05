@@ -367,7 +367,6 @@ export function OnboardingFlow() {
               { value: "unconfirmed", label: "Not sure yet" },
             ]}
           />
-          <TextareaField label="Short bio" value={answers.craftNote} onChange={set("craftNote")} placeholder="What do you make and what work do you want to do?" />
           <p className="m-0 text-[12px] text-muted-foreground">Everything here is optional. Your manager and start date are only visible to you and the people team.</p>
         </div>
       ) : null}
