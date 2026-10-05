@@ -28,7 +28,7 @@ export const EQUIPMENT_ITEMS = [
   { key: "laptop", label: "Laptop or workstation is set up" },
   { key: "email", label: "Company email works" },
   { key: "chat", label: "Added to the team chat" },
-  { key: "drive", label: "Can open the shared drive" },
+  { key: "drive", label: "Can open one drive" },
   { key: "building", label: "Building access card received" },
   { key: "payroll", label: "Payroll details sent to finance" },
 ] as const;
