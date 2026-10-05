@@ -27,7 +27,7 @@ import { TeamPanel } from "@/components/team-panel";
 import { JobMediaPanel } from "@/components/job-media-panel";
 import { firebaseDb } from "@/lib/firebase/client";
 import { useClientOptions, useFirestoreUsers } from "@/lib/firebase/client-content";
-import { byLastModified, jobPostedDate, jobTitle, type Job } from "@/lib/jobs";
+import { byLastModified, jobId, jobPostedDate, jobTitle, type Job } from "@/lib/jobs";
 import { teamSizeLabel, type Client } from "@/lib/clients";
 import { TASK_COLLECTION, formatDate, isOverdue, type Task } from "@/lib/creator-tasks";
 import { longDate } from "@/lib/format";
@@ -351,7 +351,7 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
         <div className={`flex items-center justify-between gap-3${mobileHeader && !embedded ? " max-nav:hidden" : ""}`}>
           <div className="min-w-0">
             <h1 className="m-0 min-w-0 truncate text-lg font-semibold leading-tight lg:whitespace-normal lg:break-words lg:text-xl">{title}</h1>
-            <p className="m-0 mt-1 truncate text-xs text-muted-foreground">{job.jobNumber ?? job.slug}</p>
+            <p className="m-0 mt-1 truncate text-xs text-muted-foreground">JobId: {jobId(job)}</p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <ShareCreatorDialog creatorName={title} path={`${jobsBase}/${encodeURIComponent(slug)}`} kind="job" showLabel />

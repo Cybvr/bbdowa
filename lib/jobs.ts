@@ -127,6 +127,16 @@ export function jobTitle(job: Pick<Job, "title" | "name">): string {
   return job.title?.trim() || job.name;
 }
 
+/** A compact numeric identifier for the job detail header. */
+export function jobId(job: Pick<Job, "jobNumber" | "slug">): string {
+  const configured = String(job.jobNumber ?? "").trim();
+  if (/^\d+$/.test(configured)) return configured;
+
+  let hash = 0;
+  for (const character of job.slug) hash = (Math.imul(hash, 31) + character.charCodeAt(0)) >>> 0;
+  return String(hash % 100000000).padStart(8, "0");
+}
+
 export const JOB_STATUS_LABELS: Record<JobStatus, string> = {
   active: "Active",
   completed: "Completed",
