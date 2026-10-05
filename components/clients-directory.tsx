@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { Client } from "@/lib/clients";
+import type { Job } from "@/lib/jobs";
 import { longDate, plural } from "@/lib/format";
 import type { Creator, User } from "@/lib/users";
 import { useFirestoreUsers } from "@/lib/firebase/client-content";
@@ -27,13 +28,14 @@ function updatedDate(iso: string | null | undefined): string {
 
 type SortKey = (typeof SORTS)[number]["key"];
 
-function clientCreators(client: Client, users: User[]): Creator[] {
-  return (client.creatorSlugs ?? [])
+// A client's people are everyone on the team of one of its jobs.
+function clientCreators(client: Client, jobs: Job[], users: User[]): Creator[] {
+  return [...new Set(jobs.filter((job) => job.clientId === client.slug).flatMap((job) => job.creatorSlugs ?? []))]
     .map((slug) => users.find((user) => user.slug === slug))
     .filter((creator): creator is Creator => Boolean(creator));
 }
 
-export function ClientsDirectory({ clients }: { clients: Client[] }) {
+export function ClientsDirectory({ clients, jobs }: { clients: Client[]; jobs: Job[] }) {
   const { users } = useFirestoreUsers();
   const [industry, setIndustry] = useState("all");
   const [search, setSearch] = useState("");
@@ -107,7 +109,7 @@ export function ClientsDirectory({ clients }: { clients: Client[] }) {
                     <div className="flex min-h-[170px] flex-col gap-3 p-4">
                       <h3 className="m-0 text-[16px] font-semibold leading-tight group-hover:text-primary">{client.name}</h3>
                       <Badge>{client.industry}</Badge>
-                      <CreatorAvatarStack creators={clientCreators(client, users)} />
+                      <CreatorAvatarStack creators={clientCreators(client, jobs, users)} />
                       <div className="mt-auto text-[12px] text-muted-foreground">
                         {client.date ? (
                           <time dateTime={client.date}>{longDate(client.date)}</time>

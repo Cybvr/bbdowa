@@ -4,6 +4,7 @@ import * as React from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { Bold, Heading2, Italic, List, ListOrdered, Redo2, Undo2 } from "lucide-react";
+export { richTextToPlainText } from "@/lib/rich-text";
 
 function escapeHtml(value: string): string {
   return value
@@ -29,21 +30,6 @@ export function richTextHasContent(value: string): boolean {
     .replace(/&nbsp;/g, " ")
     .trim()
     .length > 0;
-}
-
-export function richTextToPlainText(value: string): string {
-  return value
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<\/p>/gi, "\n")
-    .replace(/<[^>]*>/g, "")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#039;/g, "'")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
 }
 
 function ToolbarButton({
@@ -82,6 +68,7 @@ export function RichTextEditor({
   placeholder = "Write the document text…",
   hideLabel = false,
   compact = false,
+  tall = false,
 }: {
   label: string;
   hideLabel?: boolean;
@@ -89,6 +76,8 @@ export function RichTextEditor({
   onChange: (value: string) => void;
   placeholder?: string;
   compact?: boolean;
+  /** A much taller writing area, for long-form copy like a job description. */
+  tall?: boolean;
 }) {
   const editor = useEditor({
     extensions: [StarterKit],
@@ -97,7 +86,7 @@ export function RichTextEditor({
     editorProps: {
       attributes: {
         "aria-label": label,
-        class: `${compact ? "min-h-36" : "min-h-56"} px-4 py-3 text-[14px] leading-[1.65] outline-none`,
+        class: `${tall ? "min-h-[32rem]" : compact ? "min-h-36" : "min-h-56"} px-4 py-3 text-[14px] leading-[1.65] outline-none [&_h2]:mb-3 [&_h2]:mt-5 [&_h2]:text-[16px] [&_h2]:font-semibold [&_h2:first-child]:mt-0 [&_li]:ml-5 [&_li]:pl-1 [&_ol]:list-decimal [&_p]:mb-3 [&_p:last-child]:mb-0 [&_ul]:list-disc`,
       },
     },
     onUpdate: ({ editor: currentEditor }) => onChange(currentEditor.getHTML()),

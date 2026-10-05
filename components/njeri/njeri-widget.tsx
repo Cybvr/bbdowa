@@ -20,8 +20,8 @@ export function NjeriWidget() {
     newChat,
   } = useNjeri();
 
-  // Hide the floating widget if user is currently on the dedicated Njeri page
-  const isDedicatedPage = pathname === "/dashboard/njeri" || pathname === "/njeri";
+  // Hidden on the dedicated Njeri page and across the admin section.
+  const isHidden = pathname === "/dashboard/njeri" || pathname === "/njeri" || pathname.startsWith("/admin");
 
   useEffect(() => {
     if (!open) return;
@@ -32,7 +32,7 @@ export function NjeriWidget() {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [open]);
 
-  if (isDedicatedPage) {
+  if (isHidden) {
     return null;
   }
 
@@ -43,7 +43,7 @@ export function NjeriWidget() {
         onClick={() => setOpen(true)}
         aria-label="Open Njeri assistant"
         title="Open Njeri Assistant"
-        className="fixed bottom-3 right-3 z-50 hidden h-[132px] w-[80px] cursor-pointer place-items-center border-0 bg-transparent p-0 transition-transform duration-200 hover:scale-105 active:scale-95 focus-visible:rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 md:grid"
+        className="fixed bottom-3 right-3 z-50 hidden h-[88px] w-[54px] cursor-pointer place-items-center border-0 bg-transparent p-0 transition-transform duration-200 hover:scale-105 active:scale-95 focus-visible:rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 md:grid"
       >
         <NjeriMark className="h-full w-full object-contain drop-shadow-[0_2px_5px_rgba(0,0,0,0.18)]" />
       </button>

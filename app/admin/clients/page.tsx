@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { ClientsDirectory } from "@/components/clients-directory";
 import { DashboardListPage } from "@/components/dashboard/list-page";
-import { getClients } from "@/lib/firebase/content";
+import { getClients, getJobs } from "@/lib/firebase/content";
 
 export const metadata: Metadata = {
   title: "Clients",
@@ -9,11 +9,11 @@ export const metadata: Metadata = {
 };
 
 export default async function ClientsPage() {
-  const clients = await getClients();
+  const [clients, jobs] = await Promise.all([getClients(), getJobs()]);
 
   return (
     <DashboardListPage title="Clients" createType="client">
-      <ClientsDirectory clients={clients} />
+      <ClientsDirectory clients={clients} jobs={jobs} />
     </DashboardListPage>
   );
 }

@@ -4,13 +4,11 @@ import { useEffect, useState } from "react";
 import { collection, doc, getDoc, getDocs, limit, orderBy, query, where } from "firebase/firestore";
 import { firebaseDb } from "@/lib/firebase/client";
 import { useAuth } from "@/components/auth-provider";
-import type { BlogPost } from "@/lib/blog";
 import { normalizeJob, type Job } from "@/lib/jobs";
 import type { Client } from "@/lib/clients";
 import { DOCUMENT_COLLECTION, sortDocuments, type AgencyDocument } from "@/lib/documents";
 import { TASK_COLLECTION, sortTasks, type Task } from "@/lib/creator-tasks";
-import type { Opening } from "@/lib/openings";
-import { jobsCollection, openingsCollection } from "@/lib/firebase/job-collections";
+import { jobsCollection } from "@/lib/firebase/job-collections";
 import { ACTIVITY_COLLECTION, type ActivityEntry } from "@/lib/time-tracking";
 import { normalizeUser, type User } from "@/lib/users";
 
@@ -229,16 +227,4 @@ export function useFirestoreTasks(refreshToken = 0): FirestoreTasksState {
   }, [authLoading, isStaff, refreshToken, user]);
 
   return state;
-}
-
-export async function readContentFromFirestore() {
-  const [clients, jobs, users, blogs, openings] = await Promise.all([
-    readCollection<Client>("clients"),
-    readJobsFromFirestore(),
-    readUsersFromFirestore(),
-    readCollection<BlogPost>("blogs"),
-    openingsCollection().then((name) => readCollection<Opening>(name)),
-  ]);
-
-  return { clients, jobs, users, blogs, openings };
 }

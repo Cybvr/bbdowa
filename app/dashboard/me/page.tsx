@@ -9,7 +9,7 @@ import { isCreatorNew, isCreatorUser, type User } from "@/lib/users";
 import { useAuth } from "@/components/auth-provider";
 import { useOwnUser, readJobsFromFirestore, readClientsFromFirestore, readDocumentsForAssignee, readTimeEntriesForUser } from "@/lib/firebase/client-content";
 import { longDate } from "@/lib/format";
-import { jobHref, type Job } from "@/lib/jobs";
+import { jobHref, jobTitle, type Job } from "@/lib/jobs";
 import { clientHref, getCreatorJobs, type Client } from "@/lib/clients";
 import {
   DetailBreadcrumb,
@@ -98,7 +98,7 @@ export default function MyProfilePage() {
   }
 
   const platforms = platformsFor(own);
-  const creatorJobs = creator ? getCreatorJobs(own.slug, clients, jobs) : [];
+  const creatorJobs = creator ? getCreatorJobs(own.slug, jobs) : [];
 
   const tabs: { id: ProfileTab; label: string }[] = [
     { id: "overview", label: "Overview" },
@@ -242,7 +242,7 @@ export default function MyProfilePage() {
               rows={creatorJobs.map((job) => ({
                 job: (
                   <Link href={jobHref(job.slug)} className="font-semibold text-foreground hover:text-primary">
-                    {job.title ?? job.name}
+                    {jobTitle(job)}
                   </Link>
                 ),
                 client: (

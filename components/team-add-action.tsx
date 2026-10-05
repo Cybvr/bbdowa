@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { Plus } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import {
@@ -13,19 +12,19 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { firebaseDb } from "@/lib/firebase/client";
+import { Button } from "@/components/ui/button";
+import { saveJobTeam } from "@/lib/firebase/job-team";
 import type { User } from "@/lib/users";
-import { PRIMARY_ACTION_CLASS } from "@/components/dashboard/list-page-actions";
 
-export function ClientCreatorAddAction({
-  clientSlug,
-  clientName,
+export function TeamAddAction({
+  jobSlug,
+  jobName,
   creators,
   selectedSlugs,
   onSaved,
 }: {
-  clientSlug: string;
-  clientName: string;
+  jobSlug: string;
+  jobName: string;
   creators: User[];
   selectedSlugs: string[];
   onSaved: (creatorSlugs: string[]) => void;
@@ -37,7 +36,7 @@ export function ClientCreatorAddAction({
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
-  // Every user in the directory is eligible — a client's team can be a mix
+  // Every user in the directory is eligible — a job's team can be a mix
   // of creators, managers and admins, not just people tagged "Creator".
   // Records without a slug (e.g. pending signups) can't be selected: there's
   // nothing stable to key the list or save into creatorSlugs.
@@ -85,15 +84,12 @@ export function ClientCreatorAddAction({
     const cleanSlugs = draftSlugs.filter((slug): slug is string => Boolean(slug));
 
     try {
-      await updateDoc(doc(firebaseDb, "clients", clientSlug), {
-        creatorSlugs: cleanSlugs,
-        updatedAt: serverTimestamp(),
-      });
-      onSaved(cleanSlugs);
+      const savedSlugs = await saveJobTeam(jobSlug, cleanSlugs, creators);
+      onSaved(savedSlugs);
       setOpen(false);
     } catch (cause) {
-      console.error("Unable to update client creators", cause);
-      setError("Couldn’t update the creators. Try again.");
+      console.error("Unable to update job team", cause);
+      setError("Couldn’t update the team. Try again.");
     } finally {
       setBusy(false);
     }
@@ -101,20 +97,19 @@ export function ClientCreatorAddAction({
 
   return (
     <>
-      <button
+      <Button
         type="button"
         onClick={() => setOpen(true)}
-        className={PRIMARY_ACTION_CLASS}
       >
         <Plus aria-hidden="true" className="h-3.5 w-3.5" />
         Add
-      </button>
+      </Button>
 
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Add team</DialogTitle>
-            <DialogDescription>Select the people assigned to {clientName}.</DialogDescription>
+            <DialogDescription>Select the people working on {jobName}.</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3">

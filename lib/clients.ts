@@ -14,7 +14,7 @@ export type Client = {
   targetAudience?: string | null;
   /** Client logo/headshot; null/absent falls back to the placeholder. */
   profileImage?: string | null;
-  /** Creators assigned to this client, set from the client workspace's Team tab. */
+  /** Legacy client-level team. Teams now live on jobs; the admin migration copies this onto each of the client's jobs. */
   creatorSlugs?: string[];
   /** ISO timestamp of the last write to this client's record; set by Firestore. */
   updatedAt?: string | null;
@@ -45,16 +45,6 @@ export function getClient(slug: string, clients: Client[]): Client | undefined {
 /** The jobs that belong to this client. */
 export function getClientJobs(slug: string, jobs: Job[]): Job[] {
   return jobs.filter((project) => project.clientId === slug);
-}
-
-/**
- * Jobs for the clients a creator is rostered on (set from the client
- * workspace's Team tab). There's no per-job creator assignment yet, so
- * this is the closest real link between a creator and the work they're on.
- */
-export function getCreatorJobs(creatorSlug: string, clients: Client[], jobs: Job[]): Job[] {
-  const clientSlugs = new Set(clients.filter((client) => client.creatorSlugs?.includes(creatorSlug)).map((client) => client.slug));
-  return jobs.filter((job) => clientSlugs.has(job.clientId));
 }
 
 /**
@@ -97,4 +87,9 @@ export function getClientWorkspace(
 
 export function clientHref(slug: string): string {
   return `/admin/clients/${slug}/overview`;
+}
+
+/** The jobs whose team includes this creator (set from each job's Team tab). */
+export function getCreatorJobs(creatorSlug: string, jobs: Job[]): Job[] {
+  return jobs.filter((job) => job.creatorSlugs?.includes(creatorSlug));
 }

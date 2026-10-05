@@ -24,6 +24,8 @@ export type Job = {
   name: string;
   /** The job's own title, e.g. "Summer launch". Falls back to `name`. */
   title?: string;
+  /** Optional campaign title shown as the client-facing project title. */
+  campaignTitle?: string;
   clientId: string;
   clientName: string;
   category: string;
@@ -31,6 +33,8 @@ export type Job = {
   liveAt?: JobLiveDate;
   status: JobStatus;
   leadUserId: string | null;
+  /** People working on this job, set from the job's Team tab. */
+  creatorSlugs?: string[];
   publishedBy?: string | null;
   fee: string;
   target: string;
@@ -66,6 +70,14 @@ export type Job = {
 /** Field names used by records saved before the campaigns → jobs migration. */
 export const LEGACY_JOB_FIELDS = { title: "campaign", mediaPlans: "campaignMediaPlans" } as const;
 
+function timestampAsIso(value: unknown): string | null {
+  if (typeof value === "string") return value;
+  if (value && typeof value === "object" && "toDate" in value && typeof value.toDate === "function") {
+    return (value.toDate() as Date).toISOString();
+  }
+  return null;
+}
+
 /** Reads a stored job, mapping old campaign field names across when present. */
 export function normalizeJob(data: Record<string, unknown>, id?: string): Job {
   const { [LEGACY_JOB_FIELDS.title]: legacyTitle, [LEGACY_JOB_FIELDS.mediaPlans]: legacyMediaPlans, ...rest } = data;
@@ -75,9 +87,31 @@ export function normalizeJob(data: Record<string, unknown>, id?: string): Job {
     ...rest,
     slug: (rest.slug as string | undefined) ?? id,
     title: (rest.title as string | undefined) ?? (legacyTitle as string | undefined),
+    campaignTitle: rest.campaignTitle as string | undefined,
     status,
+    createdAt: timestampAsIso(rest.createdAt),
+    updatedAt: timestampAsIso(rest.updatedAt),
     ...(rest.jobMediaPlans === undefined && legacyMediaPlans !== undefined ? { jobMediaPlans: legacyMediaPlans } : {}),
   } as Job;
+}
+
+/** Record creation date, with the legacy posted date as a fallback. */
+export function jobPostedDate(job: Pick<Job, "createdAt" | "jobPostedAt">): string | null {
+  return job.createdAt?.slice(0, 10) || job.jobPostedAt?.slice(0, 10) || null;
+}
+
+/** The latest date available for compact job cards. */
+export function jobRecentDate(job: Pick<Job, "updatedAt" | "createdAt" | "jobPostedAt" | "liveAt">): string | null {
+  return job.updatedAt?.slice(0, 10) || job.createdAt?.slice(0, 10) || job.jobPostedAt || job.liveAt?.date || null;
+}
+
+export function jobDisplayTitle(job: Pick<Job, "campaignTitle" | "title" | "name">): string {
+  return job.campaignTitle?.trim() || job.title?.trim() || job.name;
+}
+
+/** The internal job title used by the Jobs and My jobs workspaces. */
+export function jobTitle(job: Pick<Job, "title" | "name">): string {
+  return job.title?.trim() || job.name;
 }
 
 export const JOB_STATUS_LABELS: Record<JobStatus, string> = {
@@ -86,9 +120,10 @@ export const JOB_STATUS_LABELS: Record<JobStatus, string> = {
   archived: "Archived",
 };
 
-/** A job's page: the admin page for staff tools, or the dashboard page. */
-export function jobHref(slug: string, admin = false): string {
-  return `${admin ? "/admin/jobs" : "/dashboard/jobs"}/${encodeURIComponent(slug)}`;
+/** A job's page: the admin page, shared jobs overview, or assigned-job workspace. */
+export function jobHref(slug: string, admin = false, myJobs = false): string {
+  const base = admin ? "/admin/jobs" : myJobs ? "/dashboard/my-jobs" : "/dashboard/jobs";
+  return `${base}/${encodeURIComponent(slug)}`;
 }
 
 function liveSortValue(job: Job): number {

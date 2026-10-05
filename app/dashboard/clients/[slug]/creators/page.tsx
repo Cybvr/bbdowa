@@ -2,5 +2,5 @@ import { redirect } from "next/navigation";
 
 export default async function DashboardClientCreatorsRedirect({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  redirect(`/admin/clients/${encodeURIComponent(slug)}/creators`);
+  redirect(`/admin/clients/${encodeURIComponent(slug)}/jobs`);
 }

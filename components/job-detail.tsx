@@ -2,31 +2,42 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { addDoc, collection, doc, getDoc, getDocs, query, updateDoc, where } from "firebase/firestore";
-import { ArrowUpRight, Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { addDoc, collection, doc, getDoc, getDocs, query, serverTimestamp, updateDoc, where } from "firebase/firestore";
+import { ArrowUpRight, CalendarDays, MapPin, Plus } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
-import { JobActions } from "@/components/job-actions";
-import { Badge, ImageWithFallback, SectionHeading } from "@/components/dashboard/ui";
-import { DetailBreadcrumb, DetailHeroBanner, DetailTabs } from "@/components/dashboard/detail-hero";
+import { SectionHeading } from "@/components/dashboard/ui";
+import { DetailBreadcrumb, DetailTabs } from "@/components/dashboard/detail-hero";
+import { FilterBar } from "@/components/dashboard/filter-bar";
 import { TaskStatusBadge } from "@/components/tasks-view";
+import { JobActions } from "@/components/job-actions";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { ClientWorkspaceHeading } from "@/components/client-workspace-heading";
+import { CreatorPicker } from "@/components/creator-picker";
+import { RichTextContent, RichTextEditor, richTextHasContent } from "@/components/rich-text-editor";
+import { ShareCreatorDialog } from "@/components/share-creator-dialog";
+import { TeamAddAction } from "@/components/team-add-action";
+import { TeamPanel } from "@/components/team-panel";
+import { JobMediaPanel } from "@/components/job-media-panel";
 import { firebaseDb } from "@/lib/firebase/client";
 import { useFirestoreUsers } from "@/lib/firebase/client-content";
-import { JOB_STATUS_LABELS, type Job } from "@/lib/jobs";
+import { jobHref, jobPostedDate, jobRecentDate, jobTitle, type Job } from "@/lib/jobs";
 import type { Client } from "@/lib/clients";
 import { TASK_COLLECTION, formatDate, isOverdue, type Task } from "@/lib/creator-tasks";
 import { longDate } from "@/lib/format";
 import { BILLING_CYCLE_LABELS, CLIENT_CONTACTS_COLLECTION, JOB_TERMS_COLLECTION, type ClientContact, type JobTerms } from "@/lib/job-terms";
 import { PAYMENTS_COLLECTION, formatAmount, type Payment, type PaymentCurrency } from "@/lib/payments";
+import { jobsCollection } from "@/lib/firebase/job-collections";
 import { ACTIVITY_COLLECTION, elapsedMs, formatDuration, type ActivityEntry } from "@/lib/time-tracking";
 import { isCreatorUser, userHref } from "@/lib/users";
 
-type JobTab = "overview" | "case-study" | "media" | "tasks" | "timesheets" | "payments";
+type JobTab = "overview" | "case-study" | "media" | "team" | "tasks" | "timesheets" | "payments";
 const fieldClass = "block space-y-1.5 text-sm font-medium";
-const CARD = "rounded-xl border border-border p-5 sm:p-6";
 const SECTION = "border-b border-border py-6";
 const BODY = "m-0 max-w-[70ch] text-[15px] leading-[1.55]";
+const parseList = (value: string) => value.split(",").map((item) => item.trim()).filter(Boolean);
 
 function localDateValue() {
   const date = new Date();
@@ -34,21 +45,178 @@ function localDateValue() {
 }
 
 function Detail({ label, children }: { label: string; children: React.ReactNode }) {
-  return <div className="grid gap-1 text-sm sm:grid-cols-[160px_minmax(0,1fr)] sm:gap-5"><dt className="text-muted-foreground">{label}</dt><dd className="m-0 font-medium">{children}</dd></div>;
+  return <div className="min-w-0 space-y-2 break-words text-sm"><dt className="text-muted-foreground">{label}</dt><dd className="m-0 font-medium">{children}</dd></div>;
 }
 
-function ExternalLink({ href }: { href: string }) {
-  return <a href={href} target="_blank" rel="noreferrer" className="break-all text-primary hover:underline">{href}</a>;
+function OtherJobsSidebar({ jobs, currentSlug }: { jobs: Job[]; currentSlug: string }) {
+  const otherJobs = jobs
+    .filter((job) => job.slug !== currentSlug)
+    .sort((a, b) => {
+      const aDate = Date.parse(jobRecentDate(a) ?? "") || 0;
+      const bDate = Date.parse(jobRecentDate(b) ?? "") || 0;
+      return bDate - aDate || jobTitle(a).localeCompare(jobTitle(b));
+    });
+
+  return (
+    <aside className="space-y-3 lg:sticky lg:top-6 nav:static nav:h-full nav:overflow-y-auto nav:overscroll-contain nav:pb-16">
+      {otherJobs.length ? (
+        <nav aria-label="Other jobs">
+          <ul className="m-0 list-none p-0">
+            {otherJobs.map((otherJob) => (
+              <li key={otherJob.slug} className="border-b border-border last:border-b-0">
+                <Link href={jobHref(otherJob.slug)} className="block py-3 text-sm transition hover:text-primary">
+                  <span className="block min-w-0 truncate text-xs font-medium text-muted-foreground">{otherJob.clientName}</span>
+                  <span className="mt-1 block truncate font-semibold">{jobTitle(otherJob)}</span>
+                  {otherJob.specialization || otherJob.category || otherJob.workSetup || otherJob.estimatedLength ? (
+                    <span className="mt-1 flex min-w-0 items-center gap-1 truncate text-xs text-muted-foreground">
+                      {otherJob.workSetup ? <MapPin aria-hidden="true" className="h-3.5 w-3.5 shrink-0" /> : null}
+                      {[otherJob.specialization || otherJob.category, otherJob.workSetup, otherJob.estimatedLength].filter(Boolean).join(" · ")}
+                    </span>
+                  ) : null}
+                  <span className="mt-1 inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                    <CalendarDays aria-hidden="true" className="h-3.5 w-3.5" />
+                    {longDate(jobRecentDate(otherJob))}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      ) : <p className="border-b border-border py-3 text-sm text-muted-foreground">No other jobs yet.</p>}
+    </aside>
+  );
 }
 
-/** A job: its details, the client's info, and its tasks, time and payments. */
-export function JobDetail({ job, adminMode = false }: { job: Job; adminMode?: boolean }) {
+const INLINE_FIELD = "w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-1 focus:ring-primary/40";
+
+function InlineJobOverviewEditor({ job }: { job: Job }) {
+  const router = useRouter();
+  const [title, setTitle] = React.useState(job.title ?? job.name);
+  const [campaignTitle, setCampaignTitle] = React.useState(job.campaignTitle ?? job.title ?? job.name ?? "");
+  const [category, setCategory] = React.useState(job.category ?? "");
+  const [status, setStatus] = React.useState(job.status);
+  const [description, setDescription] = React.useState(job.summary ?? "");
+  const [specialization, setSpecialization] = React.useState(job.specialization ?? "");
+  const [workSetup, setWorkSetup] = React.useState(job.workSetup ?? "remote");
+  const [estimatedLength, setEstimatedLength] = React.useState(job.estimatedLength ?? "");
+  const [languages, setLanguages] = React.useState((job.languages ?? []).join(", "));
+  const [desiredStartDate, setDesiredStartDate] = React.useState(job.desiredStartDate ?? "");
+  const [requiredSkills, setRequiredSkills] = React.useState((job.requiredSkills ?? []).join(", "));
+  const [startDate, setStartDate] = React.useState(job.startDate ?? "");
+  const [endDate, setEndDate] = React.useState(job.endDate ?? "");
+  const [fee, setFee] = React.useState(job.fee ?? "");
+  const [target, setTarget] = React.useState(job.target ?? "");
+  const [result, setResult] = React.useState(job.result ?? "");
+  const [saving, setSaving] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const save = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (saving) return;
+    if (startDate && endDate && endDate < startDate) {
+      setError("The end date must be after the start date.");
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      await updateDoc(doc(firebaseDb, await jobsCollection(), job.slug), {
+        title: title.trim() || job.name,
+        campaignTitle: campaignTitle.trim() || title.trim() || job.name,
+        category: category.trim(),
+        status,
+        summary: description.trim(),
+        specialization: specialization.trim() || null,
+        workSetup: workSetup || null,
+        estimatedLength: estimatedLength.trim() || null,
+        languages: parseList(languages),
+        desiredStartDate: desiredStartDate || null,
+        requiredSkills: parseList(requiredSkills),
+        startDate: startDate || null,
+        endDate: endDate || null,
+        fee: fee.trim(),
+        target: target.trim(),
+        result: result.trim(),
+        updatedAt: serverTimestamp(),
+      });
+      router.refresh();
+    } catch (cause) {
+      console.error("Unable to save job overview", cause);
+      setError("Couldn’t save the job overview.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return <form onSubmit={save} className="space-y-6 pt-6">
+    {error ? <p role="alert" className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">{error}</p> : null}
+    <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
+      <div className="min-w-0">
+        <RichTextEditor label="Description" value={description} onChange={setDescription} placeholder="Describe the job…" tall />
+      </div>
+      <div className="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+        <label className="space-y-1.5 text-sm font-medium">Job title<input value={title} onChange={(event) => setTitle(event.target.value)} className={INLINE_FIELD} /></label>
+        <label className="space-y-1.5 text-sm font-medium">Campaign title<input value={campaignTitle} onChange={(event) => setCampaignTitle(event.target.value)} className={INLINE_FIELD} placeholder="Client-facing campaign name" /></label>
+        <label className="space-y-1.5 text-sm font-medium">Category<input value={category} onChange={(event) => setCategory(event.target.value)} className={INLINE_FIELD} /></label>
+        <label className="space-y-1.5 text-sm font-medium">Status<select value={status} onChange={(event) => setStatus(event.target.value as Job["status"])} className={INLINE_FIELD}><option value="active">Active</option><option value="completed">Completed</option><option value="archived">Archived</option></select></label>
+        <label className="space-y-1.5 text-sm font-medium">Specialization<input value={specialization} onChange={(event) => setSpecialization(event.target.value)} className={INLINE_FIELD} /></label>
+        <label className="space-y-1.5 text-sm font-medium">Work setup<select value={workSetup} onChange={(event) => setWorkSetup(event.target.value)} className={INLINE_FIELD}><option value="remote">Remote</option><option value="hybrid">Hybrid</option><option value="onsite">On-site</option></select></label>
+        <label className="space-y-1.5 text-sm font-medium">Estimated length<input value={estimatedLength} onChange={(event) => setEstimatedLength(event.target.value)} className={INLINE_FIELD} /></label>
+        <label className="space-y-1.5 text-sm font-medium">Languages<input value={languages} onChange={(event) => setLanguages(event.target.value)} className={INLINE_FIELD} placeholder="English, French" /></label>
+        <label className="space-y-1.5 text-sm font-medium">Start date<input type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} className={INLINE_FIELD} /></label>
+        <label className="space-y-1.5 text-sm font-medium">End date<input type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} className={INLINE_FIELD} /></label>
+        <label className="space-y-1.5 text-sm font-medium">Desired start<input type="date" value={desiredStartDate} onChange={(event) => setDesiredStartDate(event.target.value)} className={INLINE_FIELD} /></label>
+        <label className="space-y-1.5 text-sm font-medium">Fee<input value={fee} onChange={(event) => setFee(event.target.value)} className={INLINE_FIELD} /></label>
+        <label className="space-y-1.5 text-sm font-medium">Target<input value={target} onChange={(event) => setTarget(event.target.value)} className={INLINE_FIELD} /></label>
+        <label className="space-y-1.5 text-sm font-medium">Result so far<input value={result} onChange={(event) => setResult(event.target.value)} className={INLINE_FIELD} /></label>
+        <label className="space-y-1.5 text-sm font-medium sm:col-span-2 lg:col-span-1 xl:col-span-2">Required skills<input value={requiredSkills} onChange={(event) => setRequiredSkills(event.target.value)} className={INLINE_FIELD} placeholder="Framer, UI Design" /></label>
+        <div className="flex items-center justify-between gap-3 border-t border-border pt-4 text-sm sm:col-span-2 lg:col-span-1 xl:col-span-2">
+          <span className="text-muted-foreground">Created</span>
+          <time dateTime={jobPostedDate(job) ?? undefined} className="font-medium">{longDate(jobPostedDate(job))}</time>
+        </div>
+      </div>
+    </div>
+    <div className="flex justify-end border-t border-border pt-5"><button type="submit" disabled={saving} className="h-10 rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50">{saving ? "Saving…" : "Save"}</button></div>
+  </form>;
+}
+
+function InlineJobCaseStudyEditor({ job }: { job: Job }) {
+  const router = useRouter();
+  const [fields, setFields] = React.useState({ challenge: job.challenge ?? "", insight: job.insight ?? "", strategy: job.strategy ?? "", platform: (job.platform ?? []).join(", "), execution: job.execution ?? "", outcome: job.outcome ?? "" });
+  const [saving, setSaving] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const update = (key: keyof typeof fields, value: string) => setFields((current) => ({ ...current, [key]: value }));
+  const save = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (saving) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await updateDoc(doc(firebaseDb, await jobsCollection(), job.slug), { ...fields, platform: parseList(fields.platform), updatedAt: serverTimestamp() });
+      router.refresh();
+    } catch (cause) {
+      console.error("Unable to save job case study", cause);
+      setError("Couldn’t save the case study.");
+    } finally {
+      setSaving(false);
+    }
+  };
+  return <form onSubmit={save} className="space-y-5 pt-6">
+    {error ? <p role="alert" className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">{error}</p> : null}
+    {(["challenge", "insight", "strategy", "execution", "outcome"] as const).map((field) => <label key={field} className="block space-y-1.5 text-sm font-medium">{field[0].toUpperCase() + field.slice(1)}<textarea value={fields[field]} onChange={(event) => update(field, event.target.value)} className={`${INLINE_FIELD} min-h-28 resize-y`} /></label>)}
+    <label className="block space-y-1.5 text-sm font-medium">Platform<textarea value={fields.platform} onChange={(event) => update("platform", event.target.value)} className={`${INLINE_FIELD} min-h-20 resize-y`} placeholder="Separate channels with commas" /></label>
+    <div className="flex justify-end border-t border-border pt-5"><button type="submit" disabled={saving} className="h-10 rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50">{saving ? "Saving…" : "Save"}</button></div>
+  </form>;
+}
+
+/** Reusable job content: details, case study, media, tasks, time and payments. */
+export function JobDetailContent({ job, adminMode = false, embedded = false, myJobs = false, overviewOnly = false, otherJobs = [] }: { job: Job; adminMode?: boolean; embedded?: boolean; myJobs?: boolean; overviewOnly?: boolean; otherJobs?: Job[] }) {
   const { user, actualUser, isViewingAs, role, loading: authLoading } = useAuth();
   const { users } = useFirestoreUsers();
   const isStaff = role === "admin" || role === "manager";
   const canManage = adminMode && isStaff;
   const slug = job.slug;
-  const title = job.title ?? job.name;
+  const title = jobTitle(job);
   const [client, setClient] = React.useState<Client | null>(null);
   const [contact, setContact] = React.useState<ClientContact | null>(null);
   const [terms, setTerms] = React.useState<JobTerms | null>(null);
@@ -61,6 +229,11 @@ export function JobDetail({ job, adminMode = false }: { job: Job; adminMode?: bo
   const [attachingTask, setAttachingTask] = React.useState(false);
   const [addingTime, setAddingTime] = React.useState(false);
   const [addingPayment, setAddingPayment] = React.useState(false);
+  const [taskSearch, setTaskSearch] = React.useState("");
+  const [timeSearch, setTimeSearch] = React.useState("");
+  const [paymentSearch, setPaymentSearch] = React.useState("");
+  const [teamSlugs, setTeamSlugs] = React.useState<string[]>(job.creatorSlugs ?? []);
+  const teamMembers = React.useMemo(() => users.filter((person) => person.slug && teamSlugs.includes(person.slug)), [teamSlugs, users]);
 
   // Each read can be refused for people outside the job, so each fails on its own.
   const loadTerms = React.useCallback(async () => {
@@ -95,7 +268,7 @@ export function JobDetail({ job, adminMode = false }: { job: Job; adminMode?: bo
   }, [job.clientId]);
 
   React.useEffect(() => {
-    if (authLoading || !user) return;
+    if (overviewOnly || authLoading || !user) return;
     let active = true;
     getDoc(doc(firebaseDb, CLIENT_CONTACTS_COLLECTION, job.clientId))
       .then((snapshot) => { if (active) setContact(snapshot.exists() ? (snapshot.data() as ClientContact) : null); })
@@ -103,25 +276,40 @@ export function JobDetail({ job, adminMode = false }: { job: Job; adminMode?: bo
     void loadTerms();
     loadRelated().catch((cause) => console.error("Unable to load job activity", cause));
     return () => { active = false; };
-  }, [authLoading, job.clientId, loadRelated, loadTerms, user]);
+  }, [authLoading, job.clientId, loadRelated, loadTerms, overviewOnly, user]);
 
   const lead = users.find((person) => person.slug === job.leadUserId);
-  const assigned = Boolean(user?.uid && terms?.assignedTo === user.uid);
-  const canLogTime = Boolean(assigned && !isViewingAs && job.status !== "completed");
+  const assigned = Boolean(user?.uid && (terms?.assignedTo === user.uid || terms?.teamUids?.includes(user.uid)));
+  const canLogTime = Boolean(!isViewingAs && (canManage || (assigned && job.status !== "completed")));
+  const peopleOptions = React.useMemo(() => {
+    const options = users.filter((person) => person.uid).map((person) => ({ value: person.uid!, label: person.name }));
+    if (terms?.assignedTo && !options.some((person) => person.value === terms.assignedTo)) {
+      options.push({ value: terms.assignedTo, label: terms.assignedToName ?? "Current assignee" });
+    }
+    return options.sort((a, b) => a.label.localeCompare(b.label));
+  }, [terms?.assignedTo, terms?.assignedToName, users]);
   const totalMs = entries.reduce((sum, entry) => sum + elapsedMs(entry), 0);
   const provisional = job.placeholder ? "text-muted-foreground" : "";
   const hasMedia = job.media.length > 0;
-  const jobsBase = adminMode ? "/admin/jobs" : "/dashboard/jobs";
+  const jobsBase = adminMode ? "/admin/jobs" : myJobs ? "/dashboard/my-jobs" : "/dashboard/jobs";
   const tabs: { id: JobTab; label: string }[] = [
     { id: "overview", label: "Overview" },
-    { id: "case-study", label: "Case study" },
-    ...(hasMedia ? [{ id: "media" as const, label: "Media" }] : []),
-    ...(user ? [
+    ...(overviewOnly ? [] : [{ id: "case-study" as const, label: "Case study" }]),
+    ...(hasMedia || canManage ? [{ id: "media" as const, label: "Media" }] : []),
+    ...(!overviewOnly && user ? [
+      { id: "team" as const, label: "Team" },
       { id: "tasks" as const, label: "Tasks" },
       { id: "timesheets" as const, label: "Timesheets" },
       { id: "payments" as const, label: "Payments" },
     ] : []),
   ];
+
+  const taskQuery = taskSearch.trim().toLowerCase();
+  const visibleTasks = tasks.filter((task) => !taskQuery || [task.title, task.description, task.assignedToName].filter(Boolean).join(" ").toLowerCase().includes(taskQuery));
+  const timeQuery = timeSearch.trim().toLowerCase();
+  const visibleEntries = entries.filter((entry) => !timeQuery || [entry.activity, entry.name, entry.taskId ? tasks.find((task) => task.id === entry.taskId)?.title : ""].filter(Boolean).join(" ").toLowerCase().includes(timeQuery));
+  const paymentQuery = paymentSearch.trim().toLowerCase();
+  const visiblePayments = payments.filter((payment) => !paymentQuery || [payment.description, payment.payeeName, payment.status].filter(Boolean).join(" ").toLowerCase().includes(paymentQuery));
 
   const togglePaymentStatus = async (payment: Payment) => {
     setActionError(null);
@@ -136,112 +324,109 @@ export function JobDetail({ job, adminMode = false }: { job: Job; adminMode?: bo
     }
   };
 
-  return <main className="flex-1 px-5 pb-16 pt-8 sm:px-8">
-    <DetailBreadcrumb
+  // The dashboard job page fits the screen on desktop: the other-jobs list and
+  // the job each scroll on their own instead of the whole page scrolling.
+  return <div className={embedded ? "w-full" : overviewOnly ? "flex flex-1 flex-col px-5 pb-16 pt-8 sm:px-8 nav:h-[calc(100dvh-60px)] nav:overflow-hidden nav:pb-0 nav:pt-6" : "flex-1 px-5 pb-16 pt-8 sm:px-8"}>
+    {!embedded ? <DetailBreadcrumb
       crumbs={[
-        { label: adminMode ? "All jobs" : "Jobs", href: jobsBase },
+        { label: adminMode ? "All jobs" : myJobs ? "My jobs" : "Jobs", href: jobsBase },
         { label: job.clientName, href: `/admin/clients/${job.clientId}/overview` },
         { label: title },
       ]}
-      actions={canManage ? <JobActions job={job} onSaved={() => void loadTerms()} /> : null}
-    />
-    <DetailHeroBanner image={job.image} alt={job.imageAlt} />
-    <DetailTabs tabs={tabs} active={tab} onChange={setTab} />
+      actions={null}
+    /> : null}
+    {overviewOnly ? null : <DetailTabs tabs={tabs} active={tab} onChange={setTab} />}
     {actionError ? <p role="alert" className="mt-4 text-sm text-destructive">{actionError}</p> : null}
 
-    {tab === "overview" ? <div className="grid gap-6 pt-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-      <section className="min-w-0 space-y-6">
+    {tab === "overview" ? <div className={overviewOnly ? "grid gap-6 pt-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:items-start nav:min-h-0 nav:flex-1 nav:grid-rows-[minmax(0,1fr)] nav:items-stretch" : "grid gap-10 pt-6"}>
+      {overviewOnly ? <OtherJobsSidebar jobs={otherJobs} currentSlug={slug} /> : null}
+      <div className={overviewOnly ? "grid min-w-0 content-start gap-10 nav:h-full nav:overflow-y-auto nav:overscroll-contain nav:pb-16" : "contents"}>
+      <section className="min-w-0 space-y-10">
         <div>
-          <p className="mb-2 text-sm text-muted-foreground">{job.clientName}</p>
-          <h1 className="m-0 break-words text-page-title font-bold leading-tight sm:text-page-title-lg">{title}</h1>
-          <div className="mt-3"><Badge tone={job.status === "active" ? "active" : "neutral"}>{JOB_STATUS_LABELS[job.status] ?? job.status}</Badge></div>
-          <p className="mb-0 mt-3 max-w-[70ch] whitespace-pre-wrap text-[16px] leading-[1.45] text-muted-foreground">{job.summary || "No description added."}</p>
+          <div className="flex items-center justify-between gap-3">
+            <h1 className="m-0 min-w-0 break-words text-lg font-semibold">{title}</h1>
+            <div className="flex shrink-0 items-center gap-2">
+              <ShareCreatorDialog creatorName={title} path={`${jobsBase}/${encodeURIComponent(slug)}`} kind="job" showLabel />
+              {adminMode ? <JobActions job={job} onSaved={() => void loadTerms()} /> : null}
+            </div>
+          </div>
+          {richTextHasContent(job.summary) ? <RichTextContent value={job.summary} className="mt-6 max-w-[70ch] text-[16px] leading-[1.45] text-muted-foreground" /> : <p className="mb-0 mt-6 text-[16px] text-muted-foreground">No description added.</p>}
+          {user ? <section className="mt-6"><h2 className="m-0 text-lg font-semibold">Point of contact</h2><dl className="mt-4 grid grid-cols-2 gap-x-8 gap-y-3">
+            <Detail label="Name">{contact?.name || "Not set"}</Detail>
+            <Detail label="Role">{contact?.role || "—"}</Detail>
+          </dl></section> : null}
+          <section className="mt-10"><h2 className="m-0 text-lg font-semibold">Job details</h2><dl className="mt-5 grid grid-cols-2 gap-x-8 gap-y-6">
+            <Detail label="Lead">{lead ? <Link href={userHref(lead, isCreatorUser(lead) ? "creator" : "team")} className="text-foreground underline decoration-border underline-offset-4 hover:text-primary">{lead.name}</Link> : "To be confirmed"}</Detail>
+            <Detail label="Category">{job.category || "—"}</Detail>
+            <Detail label="Specialization">{job.specialization || "—"}</Detail>
+            <Detail label="Work setup">{job.workSetup || "—"}</Detail>
+            <Detail label="Estimated length">{job.estimatedLength || "—"}</Detail>
+            <Detail label="Desired start date">{job.desiredStartDate ? formatDate(job.desiredStartDate) : "—"}</Detail>
+            <Detail label="Job posted">{job.jobPostedAt ? formatDate(job.jobPostedAt) : "—"}</Detail>
+            <Detail label="Required skills">{job.requiredSkills?.length ? <span className="flex flex-wrap gap-2">{job.requiredSkills.map((skill) => <span key={skill} className="rounded-full bg-muted px-2.5 py-1 text-xs">{skill}</span>)}</span> : "—"}</Detail>
+            <Detail label="Fee">{job.fee || "—"}</Detail>
+            <Detail label="Start">{job.startDate ? formatDate(job.startDate) : "—"}</Detail>
+            <Detail label="End">{job.endDate ? formatDate(job.endDate) : "—"}</Detail>
+          </dl></section>
           {job.externalLinks?.length ? <ul className="m-0 mt-5 flex list-none flex-wrap gap-2 p-0">
             {job.externalLinks.map((link) => <li key={link.href}><a href={link.href} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center gap-1.5 rounded-md border border-border px-3 py-2 text-[13px] font-semibold text-foreground hover:border-primary hover:text-primary">{link.label}<ArrowUpRight aria-hidden="true" className="size-3.5" /></a></li>)}
           </ul> : null}
         </div>
 
-        <div className={CARD}><h2 className="m-0 text-lg font-semibold">Job details</h2><dl className="mt-5 space-y-4">
-          <Detail label="Lead">{lead ? <Link href={userHref(lead, isCreatorUser(lead) ? "creator" : "team")} className="text-foreground underline decoration-border underline-offset-4 hover:text-primary">{lead.name}</Link> : "To be confirmed"}</Detail>
-          <Detail label="Category">{job.category || "—"}</Detail>
-          <Detail label="Specialization">{job.specialization || "—"}</Detail>
-          <Detail label="Work setup">{job.workSetup || "—"}</Detail>
-          <Detail label="Estimated length">{job.estimatedLength || "—"}</Detail>
-          <Detail label="Languages">{job.languages?.join(", ") || "—"}</Detail>
-          <Detail label="Desired start date">{job.desiredStartDate ? formatDate(job.desiredStartDate) : "—"}</Detail>
-          <Detail label="Job posted">{job.jobPostedAt ? formatDate(job.jobPostedAt) : "—"}</Detail>
-          <Detail label="Required skills">{job.requiredSkills?.length ? <span className="flex flex-wrap gap-2">{job.requiredSkills.map((skill) => <span key={skill} className="rounded-full bg-muted px-2.5 py-1 text-xs">{skill}</span>)}</span> : "—"}</Detail>
-          <Detail label="Fee">{job.fee || "—"}</Detail>
-          <Detail label="Target">{job.target || "—"}</Detail>
-          <Detail label="Result so far">{job.result || "—"}</Detail>
-        </dl></div>
-
-        {terms ? <div className={CARD}><h2 className="m-0 text-lg font-semibold">Assignment and pay</h2><dl className="mt-5 space-y-4">
+        {terms ? <section><h2 className="m-0 text-lg font-semibold">Assignment and pay</h2><dl className="mt-4 grid grid-cols-2 gap-x-8 gap-y-3">
           <Detail label="Assigned to">{terms.assignedToName || "Unassigned"}</Detail>
           <Detail label="Rate">{terms.rateAmount != null ? `${formatAmount(terms.rateAmount, terms.rateCurrency)} / ${terms.rateUnit === "fixed" ? "job" : terms.rateUnit}` : "Not set"}</Detail>
           <Detail label="Billing cycle">{BILLING_CYCLE_LABELS[terms.billingCycle]}</Detail>
           <Detail label="Commitment">{terms.commitment || "Not set"}</Detail>
           <Detail label="Workday overlap">{terms.workdayOverlap || "Not set"}</Detail>
-        </dl></div> : null}
+        </dl></section> : null}
       </section>
 
-      <aside className="space-y-6">
-        <section className={CARD}><h2 className="m-0 text-lg font-semibold">Dates</h2><dl className="mt-4 space-y-3">
-          <Detail label="Start">{job.startDate ? formatDate(job.startDate) : "Not set"}</Detail>
-          <Detail label="End">{job.endDate ? formatDate(job.endDate) : "Not set"}</Detail>
-          <Detail label="Created">{longDate(job.createdAt?.slice(0, 10))}</Detail>
-          <Detail label="Updated">{longDate(job.updatedAt?.slice(0, 10))}</Detail>
-        </dl></section>
-        <section className={CARD}><h2 className="m-0 text-lg font-semibold">Client</h2><dl className="mt-4 space-y-3">
+      <aside className="space-y-10">
+        <section><h2 className="m-0 text-lg font-semibold">Client</h2><dl className="mt-4 grid grid-cols-2 gap-x-8 gap-y-3">
           <Detail label="Name"><Link href={`/admin/clients/${job.clientId}/overview`} className="text-foreground underline decoration-border underline-offset-4 hover:text-primary">{client?.name ?? job.clientName}</Link></Detail>
           <Detail label="Industry">{client?.industry || "—"}</Detail>
           <Detail label="Team size">{client?.teamSize ?? "—"}</Detail>
           <Detail label="Year founded">{client?.yearFounded ?? "—"}</Detail>
           <Detail label="City / Country">{client?.location || "—"}</Detail>
-          <Detail label="Website">{client?.website ? <ExternalLink href={client.website} /> : "—"}</Detail>
-          <Detail label="LinkedIn">{client?.linkedIn ? <ExternalLink href={client.linkedIn} /> : "—"}</Detail>
           <Detail label="Time zone">{client?.timezone || "—"}</Detail>
           <Detail label="Client hours">{client?.hours || "—"}</Detail>
-          <Detail label="In our time">{client?.hoursConverted || "—"}</Detail>
-        </dl>{isStaff ? <p className="mb-0 mt-4 text-xs text-muted-foreground">Edit these on the client page.</p> : null}</section>
-        {user ? <section className={CARD}><h2 className="m-0 text-lg font-semibold">Point of contact</h2>
-          <p className="mb-0 mt-4 text-sm font-medium">{contact?.name || "Not set"}</p>
-          {contact?.role ? <p className="mb-0 mt-1 text-sm text-muted-foreground">{contact.role}</p> : null}
-          {contact?.email ? <a href={`mailto:${contact.email}`} className="mt-1 block break-all text-sm text-primary hover:underline">{contact.email}</a> : null}
-          {contact?.outOfOfficeUntil ? <p className="mb-0 mt-3 text-sm text-muted-foreground">Out of office until {formatDate(contact.outOfOfficeUntil)}</p> : null}
-          {contact?.note ? <p className="mb-0 mt-3 text-sm leading-relaxed text-muted-foreground">{contact.note}</p> : null}
-        </section> : null}
+        </dl></section>
       </aside>
+      </div>
     </div> : null}
 
-    {tab === "case-study" ? <div className="pt-2">
+    {tab === "case-study" ? adminMode ? <InlineJobCaseStudyEditor job={job} /> : <div className="pt-2">
       {([["Challenge", job.challenge], ["Insight", job.insight], ["Strategy", job.strategy]] as const).map(([heading, text]) => <article key={heading} className={SECTION}><SectionHeading>{heading}</SectionHeading><p className={`${BODY} ${provisional}`}>{text}</p></article>)}
       <article className={SECTION}><SectionHeading>Platform</SectionHeading><ul className="m-0 flex list-none flex-wrap gap-2 p-0">{job.platform.map((channel) => <li key={channel} className="rounded-md border border-border px-2.5 py-1 text-[13px] font-medium">{channel}</li>)}</ul></article>
       <article className={SECTION}><SectionHeading>Execution</SectionHeading><p className={`${BODY} ${provisional}`}>{job.execution}</p></article>
       <article className={`${SECTION} border-b-0`}><SectionHeading>Outcome</SectionHeading><p className={`${BODY} ${provisional}`}>{job.outcome}</p></article>
     </div> : null}
 
-    {tab === "media" && hasMedia ? <div className="grid grid-cols-2 gap-4 pt-6 max-[760px]:grid-cols-1">
-      {job.media.map((media) => media.kind === "video"
-        ? <video key={media.src} className="block aspect-video h-full w-full rounded-xl bg-muted object-cover" controls preload="metadata" poster={media.poster} aria-label={media.alt}><source src={media.src} type="video/mp4" />Your browser does not support this video.</video>
-        : <ImageWithFallback key={media.src} src={media.src} alt={media.alt} className="block aspect-video h-full w-full rounded-xl bg-muted object-cover" />)}
-    </div> : null}
+    {tab === "media" && (hasMedia || canManage) ? <JobMediaPanel jobSlug={slug} jobName={title} initialMedia={job.media} canManage={canManage} /> : null}
 
-    {tab === "tasks" ? <section className="pt-6"><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="m-0 text-lg font-semibold">Tasks</h2>{canManage && terms?.assignedTo ? <div className="flex gap-2"><button type="button" onClick={() => setAttachingTask(true)} className="h-9 rounded-md border border-border px-3 text-sm font-semibold hover:bg-muted">Attach task</button><button type="button" onClick={() => setAddingTask(true)} className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground"><Plus className="h-4 w-4" />New task</button></div> : null}</div>{canManage && !terms?.assignedTo ? <p className="mb-0 mt-2 text-sm text-muted-foreground">Assign someone to this job to add tasks.</p> : null}{tasks.length ? <ul className="mt-5 divide-y divide-border border-y border-border">{tasks.map((task) => <li key={task.id}><Link href={`/dashboard/work/${encodeURIComponent(task.id)}`} className="flex flex-wrap items-center justify-between gap-3 py-4 text-foreground hover:text-primary"><span className="min-w-0"><span className="block font-semibold">{task.title}</span><span className="mt-1 block text-xs text-muted-foreground">{task.assignedToName ? `${task.assignedToName} · ` : ""}{task.dueDate ? `Due ${formatDate(task.dueDate)}` : "No due date"}</span></span><TaskStatusBadge status={task.status} overdue={isOverdue(task)} /></Link></li>)}</ul> : <p className="py-10 text-sm text-muted-foreground">No tasks have been added to this job.</p>}</section> : null}
+    {tab === "team" ? <section className="pt-6"><ClientWorkspaceHeading title="Team" actions={canManage ? <TeamAddAction jobSlug={slug} jobName={title} creators={users} selectedSlugs={teamSlugs} onSaved={(slugs) => { setTeamSlugs(slugs); void loadTerms(); }} /> : null} /><TeamPanel panelId={`job-${slug}-team-filter`} label={`${title} team`} members={teamMembers} allUsers={users} listHref={`${jobsBase}/${encodeURIComponent(slug)}`} emptyText="No one is on this job's team yet." /></section> : null}
 
-    {tab === "timesheets" ? <section className="pt-6"><div className="flex items-center justify-between gap-3"><div><h2 className="m-0 text-lg font-semibold">Timesheets</h2><p className="mb-0 mt-1 text-sm text-muted-foreground">{formatDuration(totalMs)} recorded across {entries.length} {entries.length === 1 ? "entry" : "entries"}.</p></div>{canLogTime ? <button type="button" onClick={() => setAddingTime(true)} className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground"><Plus className="h-4 w-4" />Log time</button> : null}</div>{entries.length ? <div className="mt-5 overflow-x-auto"><table className="w-full min-w-[520px] border-collapse text-sm"><thead><tr className="border-b border-border text-left text-muted-foreground"><th className="py-3 font-medium">Activity</th>{canManage ? <th className="py-3 font-medium">Person</th> : null}<th className="py-3 font-medium">Date</th><th className="py-3 text-right font-medium">Time</th></tr></thead><tbody>{entries.map((entry) => <tr key={entry.id} className="border-b border-border"><td className="py-4">{entry.activity}{entry.taskId ? <span className="ml-2 text-xs text-muted-foreground">{tasks.find((task) => task.id === entry.taskId)?.title || "Task"}</span> : null}</td>{canManage ? <td className="py-4 text-muted-foreground">{entry.name || "—"}</td> : null}<td className="py-4 text-muted-foreground">{formatDate(entry.startedAt)}</td><td className="py-4 text-right font-medium tabular-nums">{formatDuration(elapsedMs(entry))}</td></tr>)}</tbody></table></div> : <p className="py-10 text-sm text-muted-foreground">No time recorded for this job yet.</p>}</section> : null}
+    {tab === "tasks" ? <section className="pt-6"><ClientWorkspaceHeading title="Tasks" actions={canManage ? <>{terms?.assignedTo ? <Button type="button" variant="outline" onClick={() => setAttachingTask(true)}>Attach task</Button> : null}<Button type="button" onClick={() => setAddingTask(true)}><Plus aria-hidden="true" className="h-3.5 w-3.5" />Add</Button></> : null} /><FilterBar panelId={`job-${slug}-tasks-filter`} search={taskSearch} onSearchChange={setTaskSearch} searchPlaceholder="Search tasks" resultCount={`${visibleTasks.length} ${visibleTasks.length === 1 ? "task" : "tasks"}`} className="my-4" />{visibleTasks.length ? <ul className="mt-5 divide-y divide-border border-y border-border">{visibleTasks.map((task) => <li key={task.id}><Link href={`/dashboard/work/${encodeURIComponent(task.id)}`} className="flex flex-wrap items-center justify-between gap-3 py-2.5 text-foreground hover:text-primary"><span className="min-w-0"><span className="block font-semibold">{task.title}</span><span className="mt-1 block text-xs text-muted-foreground">{task.assignedToName ? `${task.assignedToName} · ` : ""}{task.dueDate ? `Due ${formatDate(task.dueDate)}` : "No due date"}</span></span><TaskStatusBadge status={task.status} overdue={isOverdue(task)} /></Link></li>)}</ul> : <p className="py-10 text-sm text-muted-foreground">{tasks.length ? "No tasks match your search." : "No tasks have been added to this job."}</p>}</section> : null}
 
-    {tab === "payments" ? <section className="pt-6"><div className="flex items-center justify-between gap-3"><h2 className="m-0 text-lg font-semibold">Payments</h2>{canManage && terms?.assignedTo ? <button type="button" onClick={() => setAddingPayment(true)} className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground"><Plus className="h-4 w-4" />Add payment</button> : null}</div>{payments.length ? <div className="mt-5 overflow-x-auto"><table className="w-full min-w-[560px] border-collapse text-sm"><thead><tr className="border-b border-border text-left text-muted-foreground"><th className="py-3 font-medium">For</th><th className="py-3 font-medium">Due</th><th className="py-3 font-medium">Status</th><th className="py-3 text-right font-medium">Amount</th>{canManage ? <th className="py-3 text-right font-medium">Action</th> : null}</tr></thead><tbody>{payments.map((payment) => <tr key={payment.id} className="border-b border-border"><td className="py-4">{payment.description}</td><td className="py-4 text-muted-foreground">{payment.dueDate ? formatDate(payment.dueDate) : "—"}</td><td className="py-4">{payment.status === "paid" ? "Paid" : "Pending"}</td><td className="py-4 text-right font-semibold tabular-nums">{formatAmount(payment.amount, payment.currency)}</td>{canManage ? <td className="py-4 text-right"><button type="button" onClick={() => void togglePaymentStatus(payment)} className="text-xs font-semibold text-primary hover:underline">{payment.status === "paid" ? "Mark pending" : "Mark paid"}</button></td> : null}</tr>)}</tbody></table></div> : <p className="py-10 text-sm text-muted-foreground">No payments recorded for this job yet.</p>}</section> : null}
+    {tab === "timesheets" ? <section className="pt-6"><ClientWorkspaceHeading title="Timesheets" actions={canLogTime ? <Button type="button" onClick={() => setAddingTime(true)}><Plus aria-hidden="true" className="h-3.5 w-3.5" />Add</Button> : null} /><FilterBar panelId={`job-${slug}-timesheets-filter`} search={timeSearch} onSearchChange={setTimeSearch} searchPlaceholder="Search timesheets" resultCount={`${visibleEntries.length} ${visibleEntries.length === 1 ? "entry" : "entries"} · ${formatDuration(totalMs)}`} className="my-4" />{visibleEntries.length ? <div className="mt-5 overflow-x-auto"><table className="w-full min-w-[520px] border-collapse text-sm"><thead><tr className="border-b border-border text-left text-muted-foreground"><th className="py-2 font-medium">Activity</th>{canManage ? <th className="py-2 font-medium">Person</th> : null}<th className="py-2 font-medium">Date</th><th className="py-2 text-right font-medium">Time</th></tr></thead><tbody>{visibleEntries.map((entry) => <tr key={entry.id} className="border-b border-border"><td className="py-2">{entry.activity}{entry.taskId ? <span className="ml-2 text-xs text-muted-foreground">{tasks.find((task) => task.id === entry.taskId)?.title || "Task"}</span> : null}</td>{canManage ? <td className="py-2 text-muted-foreground">{entry.name || "—"}</td> : null}<td className="py-2 text-muted-foreground">{formatDate(entry.startedAt)}</td><td className="py-2 text-right font-medium tabular-nums">{formatDuration(elapsedMs(entry))}</td></tr>)}</tbody></table></div> : <p className="py-10 text-sm text-muted-foreground">{entries.length ? "No timesheets match your search." : "No time recorded for this job yet."}</p>}</section> : null}
 
-    {canManage && user && terms?.assignedTo ? <NewJobTaskDialog job={job} terms={terms} createdBy={actualUser?.uid ?? user.uid} createdByName={actualUser?.name ?? actualUser?.email ?? user.name ?? user.email} open={addingTask} onOpenChange={setAddingTask} onSaved={() => void loadRelated()} /> : null}
+    {tab === "payments" ? <section className="pt-6"><ClientWorkspaceHeading title="Payments" actions={canManage ? <Button type="button" onClick={() => setAddingPayment(true)}><Plus aria-hidden="true" className="h-3.5 w-3.5" />Add</Button> : null} /><FilterBar panelId={`job-${slug}-payments-filter`} search={paymentSearch} onSearchChange={setPaymentSearch} searchPlaceholder="Search payments" resultCount={`${visiblePayments.length} ${visiblePayments.length === 1 ? "payment" : "payments"}`} className="my-4" />{visiblePayments.length ? <div className="mt-5 overflow-x-auto"><table className="w-full min-w-[560px] border-collapse text-sm"><thead><tr className="border-b border-border text-left text-muted-foreground"><th className="py-2 font-medium">For</th><th className="py-2 font-medium">Due</th><th className="py-2 font-medium">Status</th><th className="py-2 text-right font-medium">Amount</th>{canManage ? <th className="py-2 text-right font-medium">Action</th> : null}</tr></thead><tbody>{visiblePayments.map((payment) => <tr key={payment.id} className="border-b border-border"><td className="py-2">{payment.description}</td><td className="py-2 text-muted-foreground">{payment.dueDate ? formatDate(payment.dueDate) : "—"}</td><td className="py-2">{payment.status === "paid" ? "Paid" : "Pending"}</td><td className="py-2 text-right font-semibold tabular-nums">{formatAmount(payment.amount, payment.currency)}</td>{canManage ? <td className="py-2 text-right"><button type="button" onClick={() => void togglePaymentStatus(payment)} className="text-xs font-semibold text-primary hover:underline">{payment.status === "paid" ? "Mark pending" : "Mark paid"}</button></td> : null}</tr>)}</tbody></table></div> : <p className="py-10 text-sm text-muted-foreground">{payments.length ? "No payments match your search." : "No payments recorded for this job yet."}</p>}</section> : null}
+
+    {canManage && user ? <NewJobTaskDialog job={job} defaultAssignee={terms?.assignedTo ?? ""} peopleOptions={peopleOptions} createdBy={actualUser?.uid ?? user.uid} createdByName={actualUser?.name ?? actualUser?.email ?? user.name ?? user.email} open={addingTask} onOpenChange={setAddingTask} onSaved={() => void loadRelated()} /> : null}
     {canManage && terms?.assignedTo ? <AttachJobTaskDialog job={job} terms={terms} open={attachingTask} onOpenChange={setAttachingTask} onSaved={() => void loadRelated()} /> : null}
     {canLogTime && user ? <LogJobTimeDialog job={job} tasks={tasks} uid={user.uid} name={user.name ?? user.email} open={addingTime} onOpenChange={setAddingTime} onSaved={() => void loadRelated()} /> : null}
-    {canManage && user && terms?.assignedTo ? <NewJobPaymentDialog job={job} terms={terms} createdBy={actualUser?.uid ?? user.uid} open={addingPayment} onOpenChange={setAddingPayment} onSaved={() => void loadRelated()} /> : null}
-  </main>;
+    {canManage && user ? <NewJobPaymentDialog job={job} defaultPayee={terms?.assignedTo ?? ""} defaultCurrency={terms?.rateCurrency ?? "NGN"} peopleOptions={peopleOptions} createdBy={actualUser?.uid ?? user.uid} open={addingPayment} onOpenChange={setAddingPayment} onSaved={() => void loadRelated()} /> : null}
+  </div>;
+}
+
+/** Full page wrapper for the reusable job content. */
+export function JobDetail({ job, adminMode = false, myJobs = false, overviewOnly = false, otherJobs = [] }: { job: Job; adminMode?: boolean; myJobs?: boolean; overviewOnly?: boolean; otherJobs?: Job[] }) {
+  return <JobDetailContent job={job} adminMode={adminMode} myJobs={myJobs} overviewOnly={overviewOnly} otherJobs={otherJobs} />;
 }
 
 function jobLink(job: Job) {
-  return { clientId: job.clientId, clientName: job.clientName, jobId: job.slug, jobName: job.title ?? job.name };
+  return { clientId: job.clientId, clientName: job.clientName, jobId: job.slug, jobName: jobTitle(job) };
 }
 
 function AttachJobTaskDialog({ job, terms, open, onOpenChange, onSaved }: { job: Job; terms: JobTerms; open: boolean; onOpenChange: (open: boolean) => void; onSaved: () => void }) {
@@ -267,14 +452,16 @@ function AttachJobTaskDialog({ job, terms, open, onOpenChange, onSaved }: { job:
   return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>Attach an existing task</DialogTitle><DialogDescription>Choose a task already assigned to {terms.assignedToName} that isn’t linked to a job yet.</DialogDescription></DialogHeader>{error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}{available.length ? <ul className="max-h-72 divide-y divide-border overflow-y-auto">{available.map((task) => <li key={task.id}><button type="button" onClick={() => void attach(task.id)} disabled={busy} className="w-full py-3 text-left text-sm font-medium hover:text-primary disabled:opacity-50">{task.title}</button></li>)}</ul> : <p className="text-sm text-muted-foreground">No unlinked tasks for this person.</p>}</DialogContent></Dialog>;
 }
 
-function NewJobTaskDialog({ job, terms, createdBy, createdByName, open, onOpenChange, onSaved }: { job: Job; terms: JobTerms; createdBy: string; createdByName: string | null; open: boolean; onOpenChange: (open: boolean) => void; onSaved: () => void }) {
+function NewJobTaskDialog({ job, defaultAssignee, peopleOptions, createdBy, createdByName, open, onOpenChange, onSaved }: { job: Job; defaultAssignee: string; peopleOptions: { value: string; label: string }[]; createdBy: string; createdByName: string | null; open: boolean; onOpenChange: (open: boolean) => void; onSaved: () => void }) {
+  const [assignedTo, setAssignedTo] = React.useState(defaultAssignee);
   const [title, setTitle] = React.useState("");
   const [description, setDescription] = React.useState("");
   const [dueDate, setDueDate] = React.useState("");
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const save = async (event: React.FormEvent<HTMLFormElement>) => { event.preventDefault(); if (!title.trim() || saving || !terms.assignedTo) return; setSaving(true); setError(null); try { const now = new Date().toISOString(); await addDoc(collection(firebaseDb, TASK_COLLECTION), { ...jobLink(job), title: title.trim(), description: description.trim(), content: "", assignedTo: terms.assignedTo, assignedToName: terms.assignedToName, createdBy, createdByName, status: "todo", dueDate: dueDate || null, createdAt: now, updatedAt: now }); setTitle(""); setDescription(""); setDueDate(""); onOpenChange(false); onSaved(); } catch (cause) { console.error("Unable to add job task", cause); setError("Couldn’t add this task."); } finally { setSaving(false); } };
-  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>New task</DialogTitle><DialogDescription>Assign a task to {terms.assignedToName} within {job.title ?? job.name}.</DialogDescription></DialogHeader><form onSubmit={save} className="space-y-4"><label className={fieldClass}>Title<Input value={title} onChange={(event) => setTitle(event.target.value)} required /></label><label className={fieldClass}>Description<Input value={description} onChange={(event) => setDescription(event.target.value)} /></label><label className={fieldClass}>Due date<Input type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} /></label>{error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}<div className="flex justify-end"><button type="submit" disabled={saving} className="h-9 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-50">{saving ? "Saving…" : "Add task"}</button></div></form></DialogContent></Dialog>;
+  React.useEffect(() => { if (open) setAssignedTo(defaultAssignee); }, [defaultAssignee, open]);
+  const save = async (event: React.FormEvent<HTMLFormElement>) => { event.preventDefault(); if (!title.trim() || saving || !assignedTo) return; setSaving(true); setError(null); try { const now = new Date().toISOString(); await addDoc(collection(firebaseDb, TASK_COLLECTION), { ...jobLink(job), title: title.trim(), description: description.trim(), content: "", assignedTo, assignedToName: peopleOptions.find((person) => person.value === assignedTo)?.label ?? null, createdBy, createdByName, status: "todo", dueDate: dueDate || null, createdAt: now, updatedAt: now }); setTitle(""); setDescription(""); setDueDate(""); onOpenChange(false); onSaved(); } catch (cause) { console.error("Unable to add job task", cause); setError("Couldn’t add this task."); } finally { setSaving(false); } };
+  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>New task</DialogTitle><DialogDescription>Assign a task within {jobTitle(job)}.</DialogDescription></DialogHeader><form onSubmit={save} className="space-y-4"><div className={fieldClass}><span>Assign to</span><CreatorPicker options={peopleOptions} value={assignedTo} onChange={setAssignedTo} placeholder="Search people" emptyText="No people found." autoFocus={false} /></div><label className={fieldClass}>Title<Input value={title} onChange={(event) => setTitle(event.target.value)} required /></label><label className={fieldClass}>Description<Input value={description} onChange={(event) => setDescription(event.target.value)} /></label><label className={fieldClass}>Due date<Input type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} /></label>{error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}<div className="flex justify-end"><button type="submit" disabled={saving || !assignedTo || !title.trim()} className="h-9 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-50">{saving ? "Saving…" : "Add task"}</button></div></form></DialogContent></Dialog>;
 }
 
 function LogJobTimeDialog({ job, tasks, uid, name, open, onOpenChange, onSaved }: { job: Job; tasks: Task[]; uid: string; name: string | null; open: boolean; onOpenChange: (open: boolean) => void; onSaved: () => void }) {
@@ -284,17 +471,19 @@ function LogJobTimeDialog({ job, tasks, uid, name, open, onOpenChange, onSaved }
   const [taskId, setTaskId] = React.useState("");
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const save = async (event: React.FormEvent<HTMLFormElement>) => { event.preventDefault(); const amount = Number(hours); const start = new Date(`${date}T09:00:00`); if (!activity.trim() || !Number.isFinite(amount) || amount <= 0 || amount > 24 || Number.isNaN(start.getTime())) { setError("Enter an activity, date and up to 24 hours."); return; } setSaving(true); setError(null); try { await addDoc(collection(firebaseDb, ACTIVITY_COLLECTION), { taskId: taskId || null, uid, name, jobId: job.slug, jobName: job.title ?? job.name, activity: activity.trim(), startedAt: start.toISOString(), endedAt: new Date(start.getTime() + Math.round(amount * 3600000)).toISOString(), pausedAt: null, pausedMs: 0 }); setActivity(""); setHours(""); setTaskId(""); onOpenChange(false); onSaved(); } catch (cause) { console.error("Unable to log job time", cause); setError("Couldn’t log this time."); } finally { setSaving(false); } };
-  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>Log time</DialogTitle><DialogDescription>Add time worked on {job.title ?? job.name}.</DialogDescription></DialogHeader><form onSubmit={save} className="space-y-4"><label className={fieldClass}>Activity<Input value={activity} onChange={(event) => setActivity(event.target.value)} required placeholder="What did you work on?" /></label><label className={fieldClass}>Task (optional)<select value={taskId} onChange={(event) => setTaskId(event.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="">No specific task</option>{tasks.map((task) => <option key={task.id} value={task.id}>{task.title}</option>)}</select></label><div className="grid grid-cols-2 gap-3"><label className={fieldClass}>Date<Input type="date" value={date} onChange={(event) => setDate(event.target.value)} required /></label><label className={fieldClass}>Hours<Input type="number" min="0.01" max="24" step="0.01" value={hours} onChange={(event) => setHours(event.target.value)} required /></label></div>{error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}<div className="flex justify-end"><button type="submit" disabled={saving} className="h-9 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-50">{saving ? "Saving…" : "Log time"}</button></div></form></DialogContent></Dialog>;
+  const save = async (event: React.FormEvent<HTMLFormElement>) => { event.preventDefault(); const amount = Number(hours); const start = new Date(`${date}T09:00:00`); if (!activity.trim() || !Number.isFinite(amount) || amount <= 0 || amount > 24 || Number.isNaN(start.getTime())) { setError("Enter an activity, date and up to 24 hours."); return; } setSaving(true); setError(null); try { await addDoc(collection(firebaseDb, ACTIVITY_COLLECTION), { taskId: taskId || null, uid, name, jobId: job.slug, jobName: jobTitle(job), activity: activity.trim(), startedAt: start.toISOString(), endedAt: new Date(start.getTime() + Math.round(amount * 3600000)).toISOString(), pausedAt: null, pausedMs: 0 }); setActivity(""); setHours(""); setTaskId(""); onOpenChange(false); onSaved(); } catch (cause) { console.error("Unable to log job time", cause); setError("Couldn’t log this time."); } finally { setSaving(false); } };
+  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>Log time</DialogTitle><DialogDescription>Record your time worked on {jobTitle(job)}.</DialogDescription></DialogHeader><form onSubmit={save} className="space-y-4"><label className={fieldClass}>Activity<Input value={activity} onChange={(event) => setActivity(event.target.value)} required placeholder="What did you work on?" /></label><label className={fieldClass}>Task (optional)<select value={taskId} onChange={(event) => setTaskId(event.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="">No specific task</option>{tasks.map((task) => <option key={task.id} value={task.id}>{task.title}</option>)}</select></label><div className="grid grid-cols-2 gap-3"><label className={fieldClass}>Date<Input type="date" value={date} onChange={(event) => setDate(event.target.value)} required /></label><label className={fieldClass}>Hours<Input type="number" min="0.01" max="24" step="0.01" value={hours} onChange={(event) => setHours(event.target.value)} required /></label></div>{error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}<div className="flex justify-end"><button type="submit" disabled={saving} className="h-9 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-50">{saving ? "Saving…" : "Log time"}</button></div></form></DialogContent></Dialog>;
 }
 
-function NewJobPaymentDialog({ job, terms, createdBy, open, onOpenChange, onSaved }: { job: Job; terms: JobTerms; createdBy: string; open: boolean; onOpenChange: (open: boolean) => void; onSaved: () => void }) {
+function NewJobPaymentDialog({ job, defaultPayee, defaultCurrency, peopleOptions, createdBy, open, onOpenChange, onSaved }: { job: Job; defaultPayee: string; defaultCurrency: PaymentCurrency; peopleOptions: { value: string; label: string }[]; createdBy: string; open: boolean; onOpenChange: (open: boolean) => void; onSaved: () => void }) {
+  const [payeeUid, setPayeeUid] = React.useState(defaultPayee);
   const [amount, setAmount] = React.useState("");
-  const [currency, setCurrency] = React.useState<PaymentCurrency>(terms.rateCurrency);
+  const [currency, setCurrency] = React.useState<PaymentCurrency>(defaultCurrency);
   const [description, setDescription] = React.useState("");
   const [dueDate, setDueDate] = React.useState("");
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const save = async (event: React.FormEvent<HTMLFormElement>) => { event.preventDefault(); const value = Number(amount); if (!Number.isFinite(value) || value <= 0 || !description.trim() || !terms.assignedTo) { setError("Enter an amount and description."); return; } setSaving(true); setError(null); try { await addDoc(collection(firebaseDb, PAYMENTS_COLLECTION), { jobId: job.slug, jobName: job.title ?? job.name, payeeUid: terms.assignedTo, payeeName: terms.assignedToName ?? "", amount: value, currency, description: description.trim(), status: "pending", dueDate: dueDate || null, paidAt: null, createdBy, createdAt: new Date().toISOString() }); setAmount(""); setDescription(""); setDueDate(""); onOpenChange(false); onSaved(); } catch (cause) { console.error("Unable to add job payment", cause); setError("Couldn’t add this payment."); } finally { setSaving(false); } };
-  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>Add payment</DialogTitle><DialogDescription>Record a payment to {terms.assignedToName} for {job.title ?? job.name}.</DialogDescription></DialogHeader><form onSubmit={save} className="space-y-4"><div className="grid grid-cols-[minmax(0,1fr)_110px] gap-3"><label className={fieldClass}>Amount<Input type="number" min="0.01" step="0.01" value={amount} onChange={(event) => setAmount(event.target.value)} required /></label><label className={fieldClass}>Currency<select value={currency} onChange={(event) => setCurrency(event.target.value as PaymentCurrency)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="NGN">NGN</option><option value="USD">USD</option></select></label></div><label className={fieldClass}>What it is for<Input value={description} onChange={(event) => setDescription(event.target.value)} required /></label><label className={fieldClass}>Due date<Input type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} /></label>{error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}<div className="flex justify-end"><button type="submit" disabled={saving} className="h-9 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-50">{saving ? "Saving…" : "Add payment"}</button></div></form></DialogContent></Dialog>;
+  React.useEffect(() => { if (open) { setPayeeUid(defaultPayee); setCurrency(defaultCurrency); } }, [defaultPayee, defaultCurrency, open]);
+  const save = async (event: React.FormEvent<HTMLFormElement>) => { event.preventDefault(); const value = Number(amount); if (!Number.isFinite(value) || value <= 0 || !description.trim() || !payeeUid) { setError("Choose a payee, then enter an amount and description."); return; } setSaving(true); setError(null); try { await addDoc(collection(firebaseDb, PAYMENTS_COLLECTION), { jobId: job.slug, jobName: jobTitle(job), payeeUid, payeeName: peopleOptions.find((person) => person.value === payeeUid)?.label ?? "", amount: value, currency, description: description.trim(), status: "pending", dueDate: dueDate || null, paidAt: null, createdBy, createdAt: new Date().toISOString() }); setAmount(""); setDescription(""); setDueDate(""); onOpenChange(false); onSaved(); } catch (cause) { console.error("Unable to add job payment", cause); setError("Couldn’t add this payment."); } finally { setSaving(false); } };
+  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>Add payment</DialogTitle><DialogDescription>Record a payment for {jobTitle(job)}.</DialogDescription></DialogHeader><form onSubmit={save} className="space-y-4"><div className={fieldClass}><span>Payee</span><CreatorPicker options={peopleOptions} value={payeeUid} onChange={setPayeeUid} placeholder="Search people" emptyText="No people found." autoFocus={false} /></div><div className="grid grid-cols-[minmax(0,1fr)_110px] gap-3"><label className={fieldClass}>Amount<Input type="number" min="0.01" step="0.01" value={amount} onChange={(event) => setAmount(event.target.value)} required /></label><label className={fieldClass}>Currency<select value={currency} onChange={(event) => setCurrency(event.target.value as PaymentCurrency)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="NGN">NGN</option><option value="USD">USD</option></select></label></div><label className={fieldClass}>What it is for<Input value={description} onChange={(event) => setDescription(event.target.value)} required /></label><label className={fieldClass}>Due date<Input type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} /></label>{error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}<div className="flex justify-end"><button type="submit" disabled={saving || !payeeUid || !description.trim() || !(Number(amount) > 0)} className="h-9 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-50">{saving ? "Saving…" : "Add payment"}</button></div></form></DialogContent></Dialog>;
 }

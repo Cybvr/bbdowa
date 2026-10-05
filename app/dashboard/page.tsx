@@ -5,10 +5,13 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/auth-provider";
 import { ItemCard, ItemCardList } from "@/components/dashboard/item-card";
+import { JobCard } from "@/components/job-card";
 import { TaskStatusBadge } from "@/components/tasks-view";
 import { TASK_COLLECTION, formatDate as formatTaskDate, isOverdue, sortTasks, type Task } from "@/lib/creator-tasks";
-import { useFirestoreUsers } from "@/lib/firebase/client-content";
+import { readJobsFromFirestore, useFirestoreUsers } from "@/lib/firebase/client-content";
 import { firebaseDb } from "@/lib/firebase/client";
+import { readMyJobIds } from "@/lib/firebase/job-team";
+import { jobRecentDate, type Job } from "@/lib/jobs";
 import { ACTIVITY_COLLECTION, elapsedMs, formatClockFull, startOfWeek, type ActivityEntry } from "@/lib/time-tracking";
 import type { User } from "@/lib/users";
 
@@ -27,6 +30,8 @@ export default function HomePage() {
   const { users, loading: usersLoading } = useFirestoreUsers();
   const [myTasks, setMyTasks] = useState<Task[]>([]);
   const [tasksLoading, setTasksLoading] = useState(true);
+  const [myJobs, setMyJobs] = useState<Job[]>([]);
+  const [jobsLoading, setJobsLoading] = useState(true);
   const [activities, setActivities] = useState<ActivityEntry[]>([]);
   const [hoursLoading, setHoursLoading] = useState(true);
   const [hoursUnavailable, setHoursUnavailable] = useState(false);
@@ -51,6 +56,33 @@ export default function HomePage() {
       .finally(() => { if (active) setTasksLoading(false); });
     return () => { active = false; };
   }, [loadMyTasks]);
+
+  useEffect(() => {
+    let active = true;
+    const uid = user?.uid;
+    setJobsLoading(true);
+    if (!uid) {
+      setMyJobs([]);
+      setJobsLoading(false);
+      return () => { active = false; };
+    }
+
+    Promise.all([
+      readMyJobIds(uid),
+      readJobsFromFirestore(),
+    ])
+      .then(([myJobIds, jobs]) => {
+        if (!active) return;
+        setMyJobs(jobs.filter((job) => myJobIds.has(job.slug)).sort((a, b) => (jobRecentDate(b) ?? "").localeCompare(jobRecentDate(a) ?? "")).slice(0, 4));
+      })
+      .catch((cause) => {
+        console.error("Unable to load your jobs", cause);
+        if (active) setMyJobs([]);
+      })
+      .finally(() => { if (active) setJobsLoading(false); });
+
+    return () => { active = false; };
+  }, [user?.uid]);
 
   useEffect(() => {
     let active = true;
@@ -129,7 +161,25 @@ export default function HomePage() {
           )}
         </section>
 
-        <aside aria-labelledby="profile-overview-heading" className="min-w-0 lg:border-l lg:border-border lg:pl-7">
+        <section aria-labelledby="your-jobs-heading" className="min-w-0 lg:col-start-1">
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <h2 id="your-jobs-heading" className="m-0 text-item-title font-semibold">Your jobs</h2>
+            <Link href="/dashboard/my-jobs" className="shrink-0 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">View all</Link>
+          </div>
+          {jobsLoading ? (
+            <p className="py-5 text-sm text-muted-foreground">Loading your jobs…</p>
+          ) : myJobs.length ? (
+            <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2">
+              {myJobs.map((job) => (
+                <li key={job.slug}><JobCard job={job} myJobs /></li>
+              ))}
+            </ul>
+          ) : (
+            <p className="py-5 text-sm text-muted-foreground">No jobs assigned yet.</p>
+          )}
+        </section>
+
+        <aside aria-labelledby="profile-overview-heading" className="min-w-0 lg:col-start-2 lg:row-start-1 lg:border-l lg:border-border lg:pl-7">
           <div className="mb-2 flex items-center justify-between gap-3">
             <h2 id="profile-overview-heading" className="m-0 text-item-title font-semibold">Your profile</h2>
             <Link href="/dashboard/me" className="shrink-0 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">Edit profile</Link>

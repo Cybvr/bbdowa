@@ -10,13 +10,13 @@ import { PageHeader } from "@/components/dashboard/ui";
 import { DashboardListPage } from "@/components/dashboard/list-page";
 import { FilterBar, type FilterTab, type SortOption, type ViewMode } from "@/components/dashboard/filter-bar";
 import { DashboardCard } from "@/components/dashboard-card";
-import { PRIMARY_ACTION_CLASS } from "@/components/dashboard/list-page-actions";
 import { UsersTableSkeleton } from "@/components/dashboard/loading-skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { RichTextEditor } from "@/components/rich-text-editor";
 import { CreatorPicker } from "@/components/creator-picker";
 import { TaskStatusBadge } from "@/components/tasks-view";
@@ -62,7 +62,8 @@ export function NewTaskDialog({ assignees, createdBy, createdByName, initialClie
 
   const reset = () => { setAssignedTo(""); setTitle(""); setDescription(""); setContent(""); setDueDate(""); setClientId(initialClientId); setJobId(null); setError(null); };
   const handleOpenChange = (next: boolean) => { setOpen(next); if (!next) reset(); };
-  const canSave = title.trim().length > 0 && assignedTo.length > 0 && !busy;
+  // Tasks belong to jobs, so picking a client means picking one of its jobs too.
+  const canSave = title.trim().length > 0 && assignedTo.length > 0 && (!clientId || Boolean(jobId)) && !busy;
 
   const save = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -102,9 +103,9 @@ export function NewTaskDialog({ assignees, createdBy, createdByName, initialClie
 
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} className={PRIMARY_ACTION_CLASS}>
+      <Button type="button" onClick={() => setOpen(true)}>
         <Plus aria-hidden="true" className="h-3.5 w-3.5" />Add
-      </button>
+      </Button>
 
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent className="sm:max-w-2xl">

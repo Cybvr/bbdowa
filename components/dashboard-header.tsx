@@ -1,26 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { collection, getDocs, query, where } from "firebase/firestore";
-import { Search } from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/auth-provider";
-import { DashboardNotifications } from "@/components/dashboard-notifications";
 import { DashboardSidebarContent, DashboardSidebarSheet } from "@/components/dashboard-sidebar";
 import { TrackerIcon } from "@/components/nav-icons";
 import { createGlyphAvatarDataUri } from "@/lib/avatar";
 import { TimeTracker } from "@/components/time-tracker";
 import { useMobileHeader } from "@/components/dashboard/mobile-header";
-import { firebaseDb } from "@/lib/firebase/client";
-import { ACTIVITY_COLLECTION, elapsedMs, formatClockFull, type ActivityEntry } from "@/lib/time-tracking";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { ADMIN_NAV_ITEMS, NAV_ITEMS, type NavItem } from "@/lib/nav";
-import { jobHref, normalizeJob, type Job } from "@/lib/jobs";
-import { clientHref, type Client } from "@/lib/clients";
-import { openingHref, type Opening } from "@/lib/openings";
-import { jobsCollection, openingsCollection } from "@/lib/firebase/job-collections";
-import type { BlogPost } from "@/lib/blog";
-import { isCreatorUser, normalizeUser, type User } from "@/lib/users";
+import { NAV_ITEMS, type NavItem } from "@/lib/nav";
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -29,127 +17,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-
-type SearchResult = {
-  id: string;
-  label: string;
-  detail: string;
-  href: string;
-  keywords: string;
-};
-
-function navigationSearchResults(items: NavItem[], canViewAuthLinks: boolean, role: string | null): SearchResult[] {
-  return items.flatMap((item) => {
-    if (item.kind === "link") {
-      if (item.requiresAdmin && role !== "admin") return [];
-      if (item.requiresStaff && role !== "admin" && role !== "manager") return [];
-      return !item.requiresAuth || canViewAuthLinks
-        ? [{ id: `nav-${item.href}`, label: item.label, detail: "Dashboard", href: item.href, keywords: item.label }]
-        : [];
-    }
-
-    const results: SearchResult[] = [
-      ...((!item.requiresAuth || canViewAuthLinks)
-        ? [{ id: `nav-${item.label}`, label: item.label, detail: "Dashboard", href: Array.isArray(item.match) ? item.match[0] : item.match, keywords: item.label }]
-        : []),
-      ...item.items
-        .filter((entry) => !entry.requiresAuth || canViewAuthLinks)
-        .map((entry) => ({ id: `nav-${entry.href}`, label: entry.label, detail: item.label, href: entry.href, keywords: `${entry.label} ${item.label}` })),
-    ];
-    return results;
-  });
-}
-
-function contentSearchResults(users: User[], clients: Client[], jobs: Job[], posts: BlogPost[], openings: Opening[]): SearchResult[] {
-  return [
-    ...users.flatMap((user) => {
-      if (!user.slug) return [];
-      const creator = isCreatorUser(user);
-      return [{
-        id: `user-${user.uid ?? user.slug}`,
-        label: user.name,
-        detail: creator ? `Creator${user.category ? ` · ${user.category}` : ""}` : user.title || "Team",
-        href: creator ? `/dashboard/discover/${user.slug}` : `/dashboard/people/${user.slug}`,
-        keywords: [user.name, user.title, user.department, user.category, ...user.tags].filter(Boolean).join(" "),
-      }];
-    }),
-    ...clients.map((client) => ({
-      id: `client-${client.slug}`,
-      label: client.name,
-      detail: `Client${client.industry ? ` · ${client.industry}` : ""}`,
-      href: clientHref(client.slug),
-      keywords: [client.name, client.industry, client.description, client.targetAudience].filter(Boolean).join(" "),
-    })),
-    ...jobs.map((job) => ({
-      id: `job-${job.slug}`,
-      label: job.title ?? job.name,
-      detail: `Job${job.clientName ? ` · ${job.clientName}` : ""}`,
-      href: jobHref(job.slug),
-      keywords: [job.name, job.title, job.clientName, job.category, job.summary].filter(Boolean).join(" "),
-    })),
-    ...posts.map((post) => ({
-      id: `post-${post.slug}`,
-      label: post.title,
-      detail: `Update · ${post.category}`,
-      href: `/blog/${post.slug}`,
-      keywords: [post.title, post.excerpt, post.category].filter(Boolean).join(" "),
-    })),
-    ...openings.map((opening) => ({
-      id: `opening-${opening.slug}`,
-      label: opening.title,
-      detail: `Career · ${opening.department}`,
-      href: openingHref(opening.slug),
-      keywords: [opening.title, opening.department, opening.location, opening.summary].filter(Boolean).join(" "),
-    })),
-  ];
-}
-
-function startOfWeek(): number {
-  const now = new Date();
-  const mondayOffset = (now.getDay() + 6) % 7;
-  return new Date(now.getFullYear(), now.getMonth(), now.getDate() - mondayOffset).getTime();
-}
-
-function WeeklyHours() {
-  const { user, loading: authLoading } = useAuth();
-  const [entries, setEntries] = useState<ActivityEntry[]>([]);
-  const [now, setNow] = useState(() => Date.now());
-
-  useEffect(() => {
-    if (authLoading || !user) {
-      setEntries([]);
-      return;
-    }
-
-    let active = true;
-    getDocs(query(collection(firebaseDb, ACTIVITY_COLLECTION), where("uid", "==", user.uid)))
-      .then((snapshot) => {
-        if (!active) return;
-        setEntries(snapshot.docs.map((document) => ({ id: document.id, ...(document.data() as Omit<ActivityEntry, "id">) })));
-      })
-      .catch((error) => console.error("Unable to load weekly tracked hours", error));
-
-    return () => {
-      active = false;
-    };
-  }, [authLoading, user]);
-
-  useEffect(() => {
-    const interval = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(interval);
-  }, []);
-
-  const weekStart = startOfWeek();
-  const weeklyMs = entries
-    .filter((entry) => Date.parse(entry.startedAt) >= weekStart)
-    .reduce((total, entry) => total + elapsedMs(entry, now), 0);
-
-  return (
-    <span aria-label="Hours logged this week" className="font-mono text-[12px] font-semibold tabular-nums text-foreground">
-      {authLoading ? "--:--:--" : formatClockFull(weeklyMs)}
-    </span>
-  );
-}
 
 export function DashboardHeader({
   hideMobile = false,
@@ -160,78 +27,14 @@ export function DashboardHeader({
   sidebarCollapsed?: boolean;
   onToggleSidebar?: () => void;
 }) {
-  const { user, role, isViewingAs, viewAsUser, stopViewingAs } = useAuth();
+  const { user, isViewingAs, viewAsUser, stopViewingAs } = useAuth();
   const pathname = usePathname();
-  const router = useRouter();
   const [trackerOpen, setTrackerOpen] = useState(false);
-  const [desktopTrackerOpen, setDesktopTrackerOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const [contentResults, setContentResults] = useState<SearchResult[]>([]);
-  const [searchIndexLoaded, setSearchIndexLoaded] = useState(false);
-  const searchRef = useRef<HTMLDivElement>(null);
   const mobileHeader = useMobileHeader();
   const mobileTitle =
     mobileHeader?.title ??
     NAV_ITEMS.find((item): item is Extract<NavItem, { kind: "link" }> => item.kind === "link" && item.href === pathname)?.label ??
     null;
-
-  const staticResults = useMemo(
-    () => navigationSearchResults(pathname.startsWith("/admin") ? ADMIN_NAV_ITEMS : NAV_ITEMS, Boolean(user), role),
-    [pathname, role, user],
-  );
-
-  useEffect(() => {
-    if (search.trim().length < 2 || searchIndexLoaded) return;
-    let active = true;
-    Promise.all([jobsCollection(), openingsCollection()])
-      .then(([jobsName, openingsName]) => Promise.all([
-      getDocs(collection(firebaseDb, "users")),
-      getDocs(collection(firebaseDb, "clients")),
-      getDocs(collection(firebaseDb, jobsName)),
-      getDocs(collection(firebaseDb, "blogs")),
-      getDocs(collection(firebaseDb, openingsName)),
-    ]))
-      .then(([usersSnapshot, clientsSnapshot, jobsSnapshot, postsSnapshot, openingsSnapshot]) => {
-        if (!active) return;
-        const users = usersSnapshot.docs.map((document) => normalizeUser(document.data() as User));
-        const clients = clientsSnapshot.docs.map((document) => document.data() as Client);
-        const jobs = jobsSnapshot.docs.map((document) => normalizeJob(document.data(), document.id));
-        const posts = postsSnapshot.docs.map((document) => document.data() as BlogPost);
-        const openings = openingsSnapshot.docs.map((document) => document.data() as Opening);
-        setContentResults(contentSearchResults(users, clients, jobs, posts, openings));
-      })
-      .catch((error) => console.error("Unable to load dashboard search index", error))
-      .finally(() => {
-        if (active) setSearchIndexLoaded(true);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [search, searchIndexLoaded]);
-
-  useEffect(() => {
-    if (!search) return;
-    const closeOnOutsideClick = (event: MouseEvent) => {
-      if (!searchRef.current?.contains(event.target as Node)) setSearch("");
-    };
-    document.addEventListener("mousedown", closeOnOutsideClick);
-    return () => document.removeEventListener("mousedown", closeOnOutsideClick);
-  }, [search]);
-
-  const searchResults = useMemo(() => {
-    const queryText = search.trim().toLowerCase();
-    if (!queryText) return [];
-    return [...staticResults, ...contentResults]
-      .filter((result) => `${result.label} ${result.detail} ${result.keywords}`.toLowerCase().includes(queryText))
-      .filter((result, index, results) => results.findIndex((candidate) => candidate.id === result.id) === index)
-      .slice(0, 12);
-  }, [contentResults, search, staticResults]);
-
-  const goToSearchResult = (href: string) => {
-    setSearch("");
-    router.push(href);
-  };
 
   return (
     <>
@@ -246,71 +49,6 @@ export function DashboardHeader({
           showCollapseToggle
         />
       </nav>
-
-      {/* Desktop dashboard header */}
-      <header
-        className={`fixed right-0 top-0 z-30 hidden h-[60px] items-center gap-4 bg-background/95 px-6 backdrop-blur nav:flex ${
-          sidebarCollapsed ? "nav:left-[80px]" : "nav:left-[272px]"
-        }`}
-      >
-        <form role="search" className="flex min-w-0 items-center" onSubmit={(event) => { event.preventDefault(); if (searchResults[0]) goToSearchResult(searchResults[0].href); }}>
-          <div ref={searchRef} className="relative w-[min(280px,30vw)]">
-            <Command shouldFilter={false} className="overflow-visible bg-transparent" onKeyDown={(event) => { if (event.key === "Escape") setSearch(""); }}>
-              <CommandInput value={search} onValueChange={setSearch} placeholder="Search" aria-label="Search dashboard" />
-              {search.trim() ? (
-                <CommandList className="absolute left-0 top-11 z-50 w-full rounded-xl border border-border bg-background p-1 shadow-xl">
-                  {searchResults.length ? (
-                    <CommandGroup heading="Results">
-                      {searchResults.map((result) => (
-                        <CommandItem key={result.id} value={result.id} onSelect={() => goToSearchResult(result.href)}>
-                          <Search aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                          <span className="min-w-0 flex-1 truncate">{result.label}</span>
-                          <span className="max-w-[42%] truncate text-xs text-muted-foreground">{result.detail}</span>
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  ) : (
-                    <CommandEmpty>{searchIndexLoaded ? "No dashboard results." : "Searching…"}</CommandEmpty>
-                  )}
-                </CommandList>
-              ) : null}
-            </Command>
-          </div>
-        </form>
-        <div className="ml-auto flex min-w-0 items-center gap-3">
-          {isViewingAs ? (
-            <button
-              type="button"
-              onClick={stopViewingAs}
-              className="hidden max-w-[220px] truncate rounded-lg border border-primary/30 bg-primary/5 px-2.5 py-1.5 text-xs font-semibold text-primary transition hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 nav:inline-flex"
-              title="Exit view as mode"
-            >
-              Viewing as {viewAsUser?.name ?? viewAsUser?.email ?? "user"} · Exit
-            </button>
-          ) : null}
-          <DashboardNotifications posts={[]} />
-          <Dialog open={desktopTrackerOpen} onOpenChange={setDesktopTrackerOpen}>
-            <DialogTrigger asChild>
-              <button
-                type="button"
-                aria-label="Open tracker"
-                title="Hours logged this week — open tracker"
-                className="inline-flex h-9 items-center gap-1.5 rounded-lg border-0 bg-transparent px-1.5 text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-              >
-                <WeeklyHours />
-                <TrackerIcon aria-hidden="true" className="h-4 w-4" />
-              </button>
-            </DialogTrigger>
-            <DialogContent className="max-h-[calc(100dvh-2rem)] max-w-xl overflow-x-hidden overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Tracker</DialogTitle>
-                <DialogDescription>Start a timer or log time from your phone.</DialogDescription>
-              </DialogHeader>
-              <TimeTracker compact />
-            </DialogContent>
-          </Dialog>
-        </div>
-      </header>
 
       {/* Mobile top bar */}
       <div

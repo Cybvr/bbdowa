@@ -3,11 +3,14 @@ import type { PaymentCurrency } from "@/lib/payments";
 /**
  * The job record holds the job details, but it is
  * public (the homepage reads it), so the assignment and pay terms live here in
- * a private record keyed by the job slug. Staff and the assigned person
- * can read it.
+ * a private record keyed by the job slug. Staff, the assignee and everyone
+ * on the job's team can read it.
  */
 export type JobTerms = {
+  /** The lead on the job and the default payee. Also counted as part of the team. */
   assignedTo: string | null;
+  /** Firebase uids of everyone on the job's team; gives them access to the job. */
+  teamUids?: string[];
   assignedToName: string | null;
   billingCycle: "weekly" | "biweekly" | "monthly" | "milestone";
   rateAmount: number | null;

@@ -142,7 +142,7 @@ export function DashboardNavList({ onNavigate, collapsed = false }: { onNavigate
         if (item.kind === "link") {
           const current =
             pathname === item.href ||
-            (item.href !== "/dashboard" && pathname.startsWith(`${item.href}/`));
+            (item.href !== "/dashboard" && item.href !== "/admin" && pathname.startsWith(`${item.href}/`));
 
           if (item.label === "Tracker" && !collapsed && running) {
             return (

@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 
 type ShareCreatorDialogProps = {
   creatorName: string;
+  /** What is being shared, e.g. "job". Defaults to a creator profile. */
+  kind?: string;
   path: string;
   className?: string;
   showLabel?: boolean;
@@ -35,7 +37,7 @@ async function copyText(value: string) {
   textarea.remove();
 }
 
-export function ShareCreatorDialog({ creatorName, path, className, showLabel = false }: ShareCreatorDialogProps) {
+export function ShareCreatorDialog({ creatorName, path, className, showLabel = false, kind = "creator profile" }: ShareCreatorDialogProps) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [nativeShareAvailable, setNativeShareAvailable] = useState(false);
@@ -49,7 +51,7 @@ export function ShareCreatorDialog({ creatorName, path, className, showLabel = f
   }, [open]);
 
   const url = absoluteUrl(path);
-  const shareText = `${creatorName} — BBDO West Africa creator profile`;
+  const shareText = `${creatorName} — BBDO West Africa ${kind}`;
 
   const handleCopy = async () => {
     try {
@@ -86,14 +88,14 @@ export function ShareCreatorDialog({ creatorName, path, className, showLabel = f
         className={className}
       >
         <FiShare2 aria-hidden="true" className="h-4 w-4" />
-        {showLabel ? <span className="hidden nav:inline">Share</span> : null}
+        {showLabel ? <span>Share</span> : null}
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent aria-describedby={undefined} className="max-w-[420px]">
           <DialogHeader>
             <DialogTitle className="pr-8 text-lg sm:text-xl">Share {creatorName}</DialogTitle>
-            <DialogDescription>Send this creator profile to your team or share it externally.</DialogDescription>
+            <DialogDescription>Send this {kind} to your team or share it externally.</DialogDescription>
           </DialogHeader>
 
           <div className="flex flex-col gap-3">

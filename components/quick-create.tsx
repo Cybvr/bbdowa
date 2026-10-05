@@ -23,6 +23,7 @@ import {
 import { useAuth } from "@/components/auth-provider";
 import { firebaseDb } from "@/lib/firebase/client";
 import { jobsCollection } from "@/lib/firebase/job-collections";
+import { newJobRecord, slugify } from "@/lib/job-records";
 import { ImageUploadField } from "@/components/detail-editor";
 import { LIST_ACTION_CLASS } from "@/components/dashboard/list-page-actions";
 
@@ -52,15 +53,6 @@ const CREATE_COPY: Record<CreateType, { button: string; title: string; descripti
     description: "Create a job for a client, then add its details, pay and assignment.",
   },
 };
-
-function slugify(value: string): string {
-  const base = value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60);
-  return `${base || "item"}-${Date.now().toString(36)}`;
-}
 
 const UPDATE_CATEGORIES = ["News", "People", "Work", "Industry"] as const;
 const JOB_STATUSES: { value: JobStatus; label: string }[] = [
@@ -103,6 +95,7 @@ export function QuickCreate({ type, iconOnly = false }: { type: CreateType; icon
 
   // Job fields.
   const [jobTitle, setJobTitle] = React.useState("");
+  const [jobCampaignTitle, setJobCampaignTitle] = React.useState("");
   const [jobClientId, setJobClientId] = React.useState("");
   const [jobCategory, setJobCategory] = React.useState("");
   const [jobStatus, setJobStatus] = React.useState<JobStatus>("active");
@@ -158,6 +151,7 @@ export function QuickCreate({ type, iconOnly = false }: { type: CreateType; icon
     setProfileImage("");
     setClientDescription("");
     setJobTitle("");
+    setJobCampaignTitle("");
     setJobClientId("");
     setJobCategory("");
     setJobStatus("active");
@@ -241,35 +235,16 @@ export function QuickCreate({ type, iconOnly = false }: { type: CreateType; icon
         const slug = slugify(jobTitle);
         const parsedYear = jobYear.trim() ? Number(jobYear) : null;
         const jobName = jobTitle.trim();
-        await setDoc(doc(firebaseDb, await jobsCollection(), slug), {
+        await setDoc(doc(firebaseDb, await jobsCollection(), slug), newJobRecord({
           slug,
-          name: jobName,
           title: jobName,
-          clientId: selectedClient.slug,
-          clientName: selectedClient.name,
+          campaignTitle: jobCampaignTitle.trim() || jobName,
+          client: selectedClient,
           category: jobCategory.trim() || "General",
           year: Number.isFinite(parsedYear as number) ? parsedYear : null,
-          liveAt: jobLiveDate ? { date: jobLiveDate } : null,
+          liveDate: jobLiveDate || null,
           status: jobStatus,
-          leadUserId: null,
-          publishedBy: null,
-          fee: "To be confirmed",
-          target: "To be confirmed",
-          result: "To be confirmed",
-          image: "/images/projects/project-placeholder.svg",
-          imageAlt: `${jobName} job placeholder`,
-          media: [],
-          summary: "Job details will be added.",
-          challenge: "Challenge details coming soon.",
-          insight: "Insight details coming soon.",
-          strategy: "Strategy details coming soon.",
-          platform: ["Channels to be confirmed"],
-          execution: "Execution details coming soon.",
-          outcome: "Outcome details coming soon.",
-          placeholder: true,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        });
+        }));
         setOpen(false);
         reset();
         router.push(`/admin/jobs/${slug}`);
@@ -370,6 +345,10 @@ export function QuickCreate({ type, iconOnly = false }: { type: CreateType; icon
                 <div className="space-y-1.5">
                   <span className={LABEL}>Job title</span>
                   <Input autoFocus value={jobTitle} onChange={(event) => setJobTitle(event.target.value)} disabled={busy} placeholder="Job name" />
+                </div>
+                <div className="space-y-1.5">
+                  <span className={LABEL}>Campaign title</span>
+                  <Input value={jobCampaignTitle} onChange={(event) => setJobCampaignTitle(event.target.value)} disabled={busy} placeholder="Client-facing campaign name" />
                 </div>
                 <div className="space-y-1.5">
                   <span className={LABEL}>Client</span>

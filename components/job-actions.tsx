@@ -9,13 +9,14 @@ import { firebaseDb } from "@/lib/firebase/client";
 import { jobsCollection } from "@/lib/firebase/job-collections";
 import { useFirestoreUsers } from "@/lib/firebase/client-content";
 import { EditSheet, ImageUploadField, SelectField, TextField, TextareaField } from "@/components/detail-editor";
+import { RichTextEditor } from "@/components/rich-text-editor";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { Job } from "@/lib/jobs";
+import { jobDisplayTitle, type Job } from "@/lib/jobs";
 import { EMPTY_JOB_TERMS, JOB_TERMS_COLLECTION, type JobTerms } from "@/lib/job-terms";
 
 const listValue = (value?: string[] | null) => (value ?? []).join(", ");
@@ -37,6 +38,7 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
 
   const [name, setName] = React.useState(job.name ?? "");
   const [title, setTitle] = React.useState(job.title ?? "");
+  const [campaignTitle, setCampaignTitle] = React.useState(job.campaignTitle ?? job.title ?? job.name ?? "");
   const [clientName, setClientName] = React.useState(job.clientName ?? "");
   const [category, setCategory] = React.useState(job.category ?? "");
   const [status, setStatus] = React.useState(job.status ?? "active");
@@ -61,7 +63,6 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
   const [estimatedLength, setEstimatedLength] = React.useState(job.estimatedLength ?? "");
   const [languages, setLanguages] = React.useState(listValue(job.languages));
   const [desiredStartDate, setDesiredStartDate] = React.useState(job.desiredStartDate ?? "");
-  const [jobPostedAt, setJobPostedAt] = React.useState(job.jobPostedAt ?? "");
   const [requiredSkills, setRequiredSkills] = React.useState(listValue(job.requiredSkills));
 
   // Pay and assignment are private, so they load separately from the public job record.
@@ -103,6 +104,7 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
     await updateDoc(doc(firebaseDb, await jobsCollection(), job.slug), {
       name: name.trim(),
       title: title.trim() || name.trim(),
+      campaignTitle: campaignTitle.trim() || title.trim() || name.trim(),
       clientName: clientName.trim(),
       category: category.trim(),
       status,
@@ -127,13 +129,18 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
       estimatedLength: estimatedLength.trim() || null,
       languages: parseList(languages),
       desiredStartDate: desiredStartDate || null,
-      jobPostedAt: jobPostedAt || null,
       requiredSkills: parseList(requiredSkills),
       placeholder: false,
       updatedAt: serverTimestamp(),
     });
     if (terms) {
+      // The assignee is always on the team, so they keep access alongside everyone else on it.
+      const teamUids = [...new Set([...(terms.teamUids ?? []), ...(assignedTo ? [assignedTo] : [])])];
+      if (assignee?.slug && !(job.creatorSlugs ?? []).includes(assignee.slug)) {
+        await updateDoc(doc(firebaseDb, await jobsCollection(), job.slug), { creatorSlugs: [...(job.creatorSlugs ?? []), assignee.slug] });
+      }
       await setDoc(doc(firebaseDb, JOB_TERMS_COLLECTION, job.slug), {
+        teamUids,
         assignedTo: assignedTo || null,
         assignedToName: assignedTo ? assignee?.name ?? terms.assignedToName : null,
         rateAmount: amount,
@@ -158,7 +165,7 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
   return (
     <EditSheet
       title="Edit job"
-      description={job.title ?? job.name}
+      description={jobDisplayTitle(job)}
       onSave={save}
       onDelete={remove}
       deleteConfirm="Delete this job? This can’t be undone."
@@ -168,7 +175,7 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              aria-label={`Actions for ${job.title ?? job.name}`}
+              aria-label={`Actions for ${jobDisplayTitle(job)}`}
               className="grid h-10 w-10 place-items-center rounded-lg border border-border bg-background/95 text-muted-foreground shadow-sm backdrop-blur transition hover:border-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
             >
               <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
@@ -184,6 +191,7 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
       <ImageUploadField label="Cover image" value={image} onChange={setImage} />
       <TextField label="Client (brand)" value={name} onChange={setName} />
       <TextField label="Job title" value={title} onChange={setTitle} />
+      <TextField label="Campaign title" value={campaignTitle} onChange={setCampaignTitle} placeholder="Client-facing campaign name" />
       <TextField label="Client name" value={clientName} onChange={setClientName} />
       <TextField label="Category" value={category} onChange={setCategory} />
       <SelectField
@@ -210,7 +218,7 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
       <TextField label="Target" value={target} onChange={setTarget} />
       <TextField label="Result so far" value={result} onChange={setResult} />
       <TextField label="Cover image alt text" value={imageAlt} onChange={setImageAlt} />
-      <TextareaField label="Summary" value={summary} onChange={setSummary} />
+      <RichTextEditor label="Description" value={summary} onChange={setSummary} placeholder="Describe the job…" compact />
       <TextareaField label="Challenge" value={challenge} onChange={setChallenge} />
       <TextareaField label="Insight" value={insight} onChange={setInsight} />
       <TextareaField label="Strategy" value={strategy} onChange={setStrategy} />
@@ -235,7 +243,6 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
       <TextField label="Estimated length" value={estimatedLength} onChange={setEstimatedLength} placeholder="1–2 weeks" />
       <TextField label="Languages (comma separated)" value={languages} onChange={setLanguages} placeholder="English, French" />
       <TextField label="Desired start date" value={desiredStartDate} onChange={setDesiredStartDate} type="date" />
-      <TextField label="Job posted" value={jobPostedAt} onChange={setJobPostedAt} type="date" />
       <TextField label="Required skills (comma separated)" value={requiredSkills} onChange={setRequiredSkills} placeholder="Framer, UI Design" />
 
       {terms ? (

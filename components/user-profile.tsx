@@ -10,7 +10,7 @@ import { creatorCategoryOptions, isCreatorNew, isCreatorUser, type Creator } fro
 import { useAuth } from "@/components/auth-provider";
 import { readJobsFromFirestore, readClientsFromFirestore, readDocumentsForAssignee, readTimeEntriesForUser, useFirestoreUsers } from "@/lib/firebase/client-content";
 import { longDate } from "@/lib/format";
-import { jobHref, type Job } from "@/lib/jobs";
+import { jobHref, jobTitle, type Job } from "@/lib/jobs";
 import { clientHref, getCreatorJobs, type Client } from "@/lib/clients";
 import {
   DetailBreadcrumb,
@@ -123,7 +123,7 @@ export function UserProfile({ section }: { section: keyof typeof SECTIONS }) {
   }
   const platforms = platformsFor(creator);
   const creatorJobs = [
-    ...getCreatorJobs(creator.slug, clients, jobs),
+    ...getCreatorJobs(creator.slug, jobs),
     ...jobs.filter((job) => job.leadUserId === creator.slug),
   ].filter((job, index, list) => list.findIndex((entry) => entry.slug === job.slug) === index);
   const canSeeTasks = isStaff || Boolean(creator.uid);
@@ -338,7 +338,7 @@ export function UserProfile({ section }: { section: keyof typeof SECTIONS }) {
               rows={creatorJobs.map((job) => ({
                 job: (
                   <Link href={jobHref(job.slug)} className="font-semibold text-foreground hover:text-primary">
-                    {job.title ?? job.name}
+                    {jobTitle(job)}
                   </Link>
                 ),
                 client: (

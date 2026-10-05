@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,19 +23,18 @@ import {
 import { ImageUploadField } from "@/components/detail-editor";
 import { firebaseDb } from "@/lib/firebase/client";
 import { jobsCollection } from "@/lib/firebase/job-collections";
-import type { CreativePreview } from "@/lib/client-workspaces";
-import { PRIMARY_ACTION_CLASS } from "@/components/dashboard/list-page-actions";
+import type { JobMedia } from "@/lib/jobs";
 
-export function ClientMediaAddAction({
-  jobId,
-  clientName,
+export function JobMediaAddAction({
+  jobSlug,
+  jobName,
   mediaItems,
   onSaved,
 }: {
-  jobId: string | null;
-  clientName: string;
-  mediaItems: CreativePreview[];
-  onSaved: (mediaItems: CreativePreview[]) => void;
+  jobSlug: string;
+  jobName: string;
+  mediaItems: JobMedia[];
+  onSaved: (mediaItems: JobMedia[]) => void;
 }) {
   const { isAdmin } = useAuth();
   const [open, setOpen] = React.useState(false);
@@ -60,22 +60,22 @@ export function ClientMediaAddAction({
     event.preventDefault();
     const imageUrl = src.trim();
     const imageAlt = alt.trim();
-    if (!jobId || !imageUrl || !imageAlt || busy) return;
+    if (!imageUrl || !imageAlt || busy) return;
 
     setBusy(true);
     setError(null);
-    const nextMediaItems = [...mediaItems, { src: imageUrl, alt: imageAlt }];
+    const nextMediaItems: JobMedia[] = [...mediaItems, { kind: "image", src: imageUrl, alt: imageAlt }];
 
     try {
-      await updateDoc(doc(firebaseDb, await jobsCollection(), jobId), {
-        moodboardImages: nextMediaItems,
+      await updateDoc(doc(firebaseDb, await jobsCollection(), jobSlug), {
+        media: nextMediaItems,
         updatedAt: serverTimestamp(),
       });
       onSaved(nextMediaItems);
       setOpen(false);
       reset();
     } catch (cause) {
-      console.error("Unable to add client media", cause);
+      console.error("Unable to add job media", cause);
       setError("Couldn’t add this media. Try again.");
     } finally {
       setBusy(false);
@@ -84,34 +84,31 @@ export function ClientMediaAddAction({
 
   return (
     <>
-      <button
+      <Button
         type="button"
         onClick={() => setOpen(true)}
-        disabled={!jobId}
-        title={jobId ? undefined : "Create a job before adding media"}
-        className={PRIMARY_ACTION_CLASS}
       >
         <Plus aria-hidden="true" className="h-3.5 w-3.5" />
         Add
-      </button>
+      </Button>
 
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add media</DialogTitle>
-            <DialogDescription>Add an image to {clientName}’s media collection.</DialogDescription>
+            <DialogDescription>Add an image to {jobName}.</DialogDescription>
           </DialogHeader>
 
           <form onSubmit={save} className="space-y-4">
             <ImageUploadField label="Image" value={src} onChange={setSrc} disabled={busy} />
             <div className="space-y-1.5">
-              <label htmlFor="client-media-alt" className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Description</label>
-              <Input id="client-media-alt" value={alt} onChange={(event) => setAlt(event.target.value)} disabled={busy} placeholder="Describe the image" required />
+              <label htmlFor="job-media-alt" className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Description</label>
+              <Input id="job-media-alt" value={alt} onChange={(event) => setAlt(event.target.value)} disabled={busy} placeholder="Describe the image" required />
             </div>
             {error ? <p className="m-0 text-[13px] font-medium text-destructive">{error}</p> : null}
             <DialogFooter>
-              <button type="button" onClick={() => setOpen(false)} disabled={busy} className="h-9 rounded-md border border-border px-4 text-[13px] font-semibold text-foreground transition hover:border-foreground disabled:opacity-50">Cancel</button>
-              <button type="submit" disabled={busy || !src.trim() || !alt.trim() || !jobId} className="h-9 rounded-md bg-primary px-4 text-[13px] font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50">{busy ? "Saving…" : "Add media"}</button>
+              <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={busy}>Cancel</Button>
+              <Button type="submit" disabled={busy || !src.trim() || !alt.trim()}>{busy ? "Saving…" : "Add media"}</Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -120,40 +117,40 @@ export function ClientMediaAddAction({
   );
 }
 
-export function ClientMediaDeleteAction({
-  jobId,
-  clientName,
+export function JobMediaDeleteAction({
+  jobSlug,
+  jobName,
   mediaItems,
   mediaIndex,
   onSaved,
   onError,
 }: {
-  jobId: string | null;
-  clientName: string;
-  mediaItems: CreativePreview[];
+  jobSlug: string;
+  jobName: string;
+  mediaItems: JobMedia[];
   mediaIndex: number;
-  onSaved: (mediaItems: CreativePreview[]) => void;
+  onSaved: (mediaItems: JobMedia[]) => void;
   onError?: (message: string) => void;
 }) {
   const { isAdmin } = useAuth();
   const [busy, setBusy] = React.useState(false);
 
-  if (!isAdmin || !jobId) return null;
+  if (!isAdmin) return null;
 
   const remove = async () => {
     const media = mediaItems[mediaIndex];
-    if (!media || busy || !window.confirm(`Delete this media from ${clientName}? This can’t be undone.`)) return;
+    if (!media || busy || !window.confirm(`Delete this media from ${jobName}? This can’t be undone.`)) return;
 
     setBusy(true);
     try {
       const nextMediaItems = mediaItems.filter((_, index) => index !== mediaIndex);
-      await updateDoc(doc(firebaseDb, await jobsCollection(), jobId), {
-        moodboardImages: nextMediaItems,
+      await updateDoc(doc(firebaseDb, await jobsCollection(), jobSlug), {
+        media: nextMediaItems,
         updatedAt: serverTimestamp(),
       });
       onSaved(nextMediaItems);
     } catch (cause) {
-      console.error("Unable to delete client media", cause);
+      console.error("Unable to delete job media", cause);
       onError?.("Couldn’t delete this media. Try again.");
     } finally {
       setBusy(false);

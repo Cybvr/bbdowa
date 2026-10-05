@@ -144,11 +144,12 @@ service cloud.firestore {
     }
 
     // A job's assignment and pay terms are kept here, keyed by the job slug,
-    // because jobs are public. Staff and the
-    // assigned person can read them; only staff can change them.
+    // because jobs are public. Staff, the assignee and everyone on the
+    // job's team (teamUids) can read them; only staff can change them.
     match /jobTerms/{jobId} {
       allow read: if isStaff()
-        || (signedIn() && resource.data.assignedTo == request.auth.uid);
+        || (signedIn() && resource.data.assignedTo == request.auth.uid)
+        || (signedIn() && request.auth.uid in resource.data.get("teamUids", []));
       allow write: if isStaff();
     }
 
