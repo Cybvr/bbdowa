@@ -110,7 +110,7 @@ export function ProfileNav({
   const isAdmin = auth?.isAdmin ?? false;
   const menuItems: readonly ProfileNavItem[] = [
     ...(auth?.isViewingAs ? [{ label: "Exit view as", onSelect: auth.stopViewingAs }] : []),
-    ...(isAdmin || (showAdminForStaff && role === "manager") ? [{ label: "Admin", href: "/admin", icon: <AdminIcon /> }] : []),
+    ...(isAdmin ? [{ label: "Admin", href: "/admin", icon: <AdminIcon /> }] : []),
     ...items,
   ];
   const displayName = name ?? user?.name ?? user?.email?.split("@")[0] ?? "BBDO User";

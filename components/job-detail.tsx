@@ -403,7 +403,8 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
         </dl></DetailCard> : null}
 
         <DetailCard title="Client"><dl className={DETAIL_LIST}>
-          <Detail label="Name"><Link href={`/admin/clients/${job.clientId}/overview`} className="text-foreground underline decoration-border underline-offset-4 hover:text-primary">{client?.name ?? job.clientName}</Link></Detail>
+          {/* Client pages live in admin, so only admins get a link. */}
+          <Detail label="Name">{role === "admin" ? <Link href={`/admin/clients/${job.clientId}/overview`} className="text-foreground underline decoration-border underline-offset-4 hover:text-primary">{client?.name ?? job.clientName}</Link> : client?.name ?? job.clientName}</Detail>
           <Detail label="Industry">{client?.industry || "—"}</Detail>
           <Detail label="Team size">{teamSizeLabel(client?.teamSize) ?? "—"}</Detail>
           <Detail label="Year founded">{client?.yearFounded ?? "—"}</Detail>

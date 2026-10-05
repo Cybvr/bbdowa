@@ -51,7 +51,7 @@ export const NAV_ITEMS: NavItem[] = [
       { label: "Team", href: "/dashboard/people" },
     ],
   },
-  { kind: "link", label: "Admin", href: "/admin", requiresAuth: true, requiresStaff: true, hideInSidebar: true },
+  { kind: "link", label: "Admin", href: "/admin", requiresAuth: true, requiresAdmin: true, hideInSidebar: true },
 ];
 
 export const ADMIN_NAV_ITEMS: NavItem[] = [
