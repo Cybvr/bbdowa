@@ -357,9 +357,6 @@ export function OnboardingFlow() {
             onChange={set("category")}
             options={withCurrent(fieldOptions, answers.category).map((value) => ({ value, label: value }))}
           />
-          <TextField label="Portfolio or website" value={answers.portfolio} onChange={set("portfolio")} type="url" placeholder="https://" />
-          <TextField label="LinkedIn" value={answers.linkedin} onChange={set("linkedin")} placeholder="https://linkedin.com/in/" />
-          <TextField label="Instagram" value={answers.instagram} onChange={set("instagram")} placeholder="https://instagram.com/" />
           <SelectField
             label="Availability"
             value={answers.availability}
