@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NAV_ICON_SET } from "@/components/nav-icons";
+import { useProfileImage } from "@/components/profile-nav";
 import { useOptionalAuth } from "@/components/auth-provider";
 import { createGlyphAvatarDataUri } from "@/lib/avatar";
 import { NAV_ITEMS } from "@/lib/nav";
@@ -13,6 +14,8 @@ const FOOTER_LABEL_OVERRIDES: Record<string, string> = { "My profile": "Profile"
 export function DashboardFooter({ hidden = false }: { hidden?: boolean }) {
   const pathname = usePathname();
   const auth = useOptionalAuth();
+
+  const profileImage = useProfileImage(auth?.user?.uid ?? null);
 
   if (hidden) return null;
 
@@ -59,7 +62,7 @@ export function DashboardFooter({ hidden = false }: { hidden?: boolean }) {
             {item.label === "My profile" ? (
               <span className="h-6 w-6 overflow-hidden rounded-full bg-primary">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={createGlyphAvatarDataUri(avatarName)} alt="" className="h-full w-full object-cover" />
+                <img src={profileImage || createGlyphAvatarDataUri(avatarName)} alt="" className="h-full w-full object-cover" />
               </span>
             ) : Icon ? <Icon className="h-6 w-6" /> : null}
             <span className="truncate">{FOOTER_LABEL_OVERRIDES[item.label] ?? item.label}</span>

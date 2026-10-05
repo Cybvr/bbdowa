@@ -7,6 +7,7 @@ import { TrackerIcon } from "@/components/nav-icons";
 import { createGlyphAvatarDataUri } from "@/lib/avatar";
 import { TimeTracker } from "@/components/time-tracker";
 import { useMobileHeader } from "@/components/dashboard/mobile-header";
+import { useProfileImage } from "@/components/profile-nav";
 import { NAV_ITEMS, type NavItem } from "@/lib/nav";
 import { useState } from "react";
 import {
@@ -31,6 +32,7 @@ export function DashboardHeader({
   const pathname = usePathname();
   const [trackerOpen, setTrackerOpen] = useState(false);
   const mobileHeader = useMobileHeader();
+  const profileImage = useProfileImage(user?.uid ?? null);
   const mobileTitle =
     mobileHeader?.title ??
     NAV_ITEMS.find((item): item is Extract<NavItem, { kind: "link" }> => item.kind === "link" && item.href === pathname)?.label ??
@@ -64,7 +66,7 @@ export function DashboardHeader({
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={createGlyphAvatarDataUri(user?.name ?? user?.email?.split("@")[0] ?? "BBDO User")}
+                  src={profileImage || createGlyphAvatarDataUri(user?.name ?? user?.email?.split("@")[0] ?? "BBDO User")}
                   alt=""
                   className="h-full w-full object-cover"
                 />

@@ -233,7 +233,8 @@ export function ProfileNav({
 }
 
 /** The signed-in person's uploaded avatar, kept live so a change in Settings shows straight away. */
-function useProfileImage(uid: string | null): string | null {
+/** Live profile photo for a user, so every avatar updates when it changes. */
+export function useProfileImage(uid: string | null): string | null {
   const [image, setImage] = useState<string | null>(null);
 
   useEffect(() => {
