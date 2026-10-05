@@ -398,7 +398,6 @@ export function OnboardingFlow() {
               ))}
             </ul>
           </div>
-          <p className="m-0 text-[12px] text-muted-foreground">This section is only visible to you and the people team.</p>
         </div>
       ) : null}
 
