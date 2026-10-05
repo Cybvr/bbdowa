@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { ClientWorkspaceHeading } from "@/components/client-workspace-heading";
 import { CreatorPicker } from "@/components/creator-picker";
 import { CreatorThumbnail } from "@/components/creator-thumbnail";
+import { TagInput } from "@/components/tag-input";
 import { RichTextContent, RichTextEditor, richTextHasContent } from "@/components/rich-text-editor";
 import { ShareCreatorDialog } from "@/components/share-creator-dialog";
 import { MobileHeaderActions, MobileHeaderTitle, useMobileHeader } from "@/components/dashboard/mobile-header";
@@ -79,10 +80,10 @@ function OtherJobsSidebar({ jobs, currentSlug }: { jobs: Job[]; currentSlug: str
                 <Link href={jobHref(otherJob.slug)} className="block py-3 text-sm transition hover:text-primary">
                   <span className="block min-w-0 truncate text-xs font-medium text-muted-foreground">{otherJob.clientName}</span>
                   <span className="mt-1 block truncate font-semibold">{jobTitle(otherJob)}</span>
-                  {otherJob.specialization || otherJob.category || otherJob.workSetup || otherJob.estimatedLength ? (
+                  {otherJob.category || otherJob.workSetup || otherJob.estimatedLength ? (
                     <span className="mt-1 flex min-w-0 items-center gap-1 truncate text-xs text-muted-foreground">
                       {otherJob.workSetup ? <MapPin aria-hidden="true" className="h-3.5 w-3.5 shrink-0" /> : null}
-                      {[otherJob.specialization || otherJob.category, otherJob.workSetup, otherJob.estimatedLength].filter(Boolean).join(" · ")}
+                      {[otherJob.category, otherJob.workSetup, otherJob.estimatedLength].filter(Boolean).join(" · ")}
                     </span>
                   ) : null}
                   <span className="mt-1 inline-flex items-center gap-1 text-[11px] text-muted-foreground">
@@ -110,12 +111,11 @@ function InlineJobOverviewEditor({ job }: { job: Job }) {
   const [category, setCategory] = React.useState(job.category ?? "");
   const [status, setStatus] = React.useState(job.status);
   const [description, setDescription] = React.useState(job.summary ?? "");
-  const [specialization, setSpecialization] = React.useState(job.specialization ?? "");
   const [workSetup, setWorkSetup] = React.useState(job.workSetup ?? "remote");
   const [estimatedLength, setEstimatedLength] = React.useState(job.estimatedLength ?? "");
   const [languages, setLanguages] = React.useState((job.languages ?? []).join(", "));
   const [desiredStartDate, setDesiredStartDate] = React.useState(job.desiredStartDate ?? "");
-  const [requiredSkills, setRequiredSkills] = React.useState((job.requiredSkills ?? []).join(", "));
+  const [requiredSkills, setRequiredSkills] = React.useState<string[]>(job.requiredSkills ?? []);
   const [startDate, setStartDate] = React.useState(job.startDate ?? "");
   const [endDate, setEndDate] = React.useState(job.endDate ?? "");
   const [fee, setFee] = React.useState(job.fee ?? "");
@@ -140,12 +140,11 @@ function InlineJobOverviewEditor({ job }: { job: Job }) {
         category: category.trim(),
         status,
         summary: description.trim(),
-        specialization: specialization.trim() || null,
         workSetup: workSetup || null,
         estimatedLength: estimatedLength.trim() || null,
         languages: parseList(languages),
         desiredStartDate: desiredStartDate || null,
-        requiredSkills: parseList(requiredSkills),
+        requiredSkills,
         startDate: startDate || null,
         endDate: endDate || null,
         fee: fee.trim(),
@@ -172,7 +171,6 @@ function InlineJobOverviewEditor({ job }: { job: Job }) {
         <label className="space-y-1.5 text-sm font-medium">Client<select value={clientId} onChange={(event) => setClientId(event.target.value)} className={INLINE_FIELD}>{clientOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
         <label className="space-y-1.5 text-sm font-medium">Category<input value={category} onChange={(event) => setCategory(event.target.value)} className={INLINE_FIELD} /></label>
         <label className="space-y-1.5 text-sm font-medium">Status<select value={status} onChange={(event) => setStatus(event.target.value as Job["status"])} className={INLINE_FIELD}><option value="active">Active</option><option value="completed">Completed</option><option value="archived">Archived</option></select></label>
-        <label className="space-y-1.5 text-sm font-medium">Specialization<input value={specialization} onChange={(event) => setSpecialization(event.target.value)} className={INLINE_FIELD} /></label>
         <label className="space-y-1.5 text-sm font-medium">Work setup<select value={workSetup} onChange={(event) => setWorkSetup(event.target.value)} className={INLINE_FIELD}><option value="remote">Remote</option><option value="hybrid">Hybrid</option><option value="onsite">On-site</option></select></label>
         <label className="space-y-1.5 text-sm font-medium">Estimated length<input value={estimatedLength} onChange={(event) => setEstimatedLength(event.target.value)} className={INLINE_FIELD} /></label>
         <label className="space-y-1.5 text-sm font-medium">Languages<input value={languages} onChange={(event) => setLanguages(event.target.value)} className={INLINE_FIELD} placeholder="English, French" /></label>
@@ -180,7 +178,7 @@ function InlineJobOverviewEditor({ job }: { job: Job }) {
         <label className="space-y-1.5 text-sm font-medium">End date<input type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} className={INLINE_FIELD} /></label>
         <label className="space-y-1.5 text-sm font-medium">Desired start<input type="date" value={desiredStartDate} onChange={(event) => setDesiredStartDate(event.target.value)} className={INLINE_FIELD} /></label>
         <label className="space-y-1.5 text-sm font-medium">Fee<input value={fee} onChange={(event) => setFee(event.target.value)} className={INLINE_FIELD} /></label>
-        <label className="space-y-1.5 text-sm font-medium sm:col-span-2 lg:col-span-1 xl:col-span-2">Required skills<input value={requiredSkills} onChange={(event) => setRequiredSkills(event.target.value)} className={INLINE_FIELD} placeholder="Framer, UI Design" /></label>
+        <div className="sm:col-span-2 lg:col-span-1 xl:col-span-2"><TagInput label="Tags" value={requiredSkills} onChange={setRequiredSkills} placeholder="e.g. Framer, then press Enter" /></div>
         <div className="flex items-center justify-between gap-3 border-t border-border pt-4 text-sm sm:col-span-2 lg:col-span-1 xl:col-span-2">
           <span className="text-muted-foreground">Created</span>
           <time dateTime={jobPostedDate(job) ?? undefined} className="font-medium">{longDate(jobPostedDate(job))}</time>
@@ -382,7 +380,6 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
 
         <DetailCard title="Job details"><dl className={DETAIL_LIST}>
           <Detail label="Category">{job.category || "—"}</Detail>
-          <Detail label="Specialization">{job.specialization || "—"}</Detail>
           <Detail label="Work setup">{job.workSetup || "—"}</Detail>
           <Detail label="Est. length">{job.estimatedLength || "—"}</Detail>
           <Detail label="Desired start">{job.desiredStartDate ? formatDate(job.desiredStartDate) : "—"}</Detail>
@@ -392,7 +389,7 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
           <Detail label="End">{job.endDate ? formatDate(job.endDate) : "—"}</Detail>
         </dl></DetailCard>
 
-        {job.requiredSkills?.length ? <DetailCard title="Required skills">
+        {job.requiredSkills?.length ? <DetailCard title="Tags">
           <ul className="m-0 mt-3 flex list-none flex-wrap gap-2 p-0">{job.requiredSkills.map((skill) => <li key={skill} className="rounded-full bg-muted px-3 py-1 text-sm font-medium">{skill}</li>)}</ul>
         </DetailCard> : null}
 
@@ -401,7 +398,11 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
         </ul> : <p className="mb-0 mt-3 text-body text-muted-foreground">No one is on this job&apos;s team yet.</p>}</DetailCard> : null}
 
         {terms ? <DetailCard title="Assignment and pay"><dl className={DETAIL_LIST}>
-          <Detail label="Assigned to">{jobAssignees(terms).map((person) => person.name).join(", ") || "Unassigned"}</Detail>
+          <Detail label="Assigned to">{jobAssignees(terms).length ? <ul className="m-0 grid list-none gap-1.5 p-0">{jobAssignees(terms).map((person) => {
+            const profile = users.find((candidate) => candidate.uid === person.uid);
+            const inner = <><CreatorThumbnail imageSrc={profile?.profileImage} avatarSeed={profile?.name ?? person.name} className="h-6 w-6 shrink-0" /><span className="truncate">{profile?.name ?? person.name}</span></>;
+            return <li key={person.uid}>{profile?.slug ? <Link href={userHref(profile, isCreatorUser(profile) ? "creator" : "team")} className="flex min-w-0 items-center gap-2 text-foreground no-underline hover:text-primary">{inner}</Link> : <span className="flex min-w-0 items-center gap-2">{inner}</span>}</li>;
+          })}</ul> : "Unassigned"}</Detail>
           <Detail label="Rate">{terms.rateAmount != null ? `${formatAmount(terms.rateAmount, terms.rateCurrency)} / ${terms.rateUnit === "fixed" ? "job" : terms.rateUnit}` : "Not set"}</Detail>
           <Detail label="Billing cycle">{BILLING_CYCLE_LABELS[terms.billingCycle]}</Detail>
           <Detail label="Commitment">{terms.commitment || "Not set"}</Detail>

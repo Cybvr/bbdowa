@@ -7,6 +7,7 @@ import { deleteDoc, doc, getDoc, serverTimestamp, setDoc, updateDoc } from "fire
 import { useAuth } from "@/components/auth-provider";
 import { firebaseDb } from "@/lib/firebase/client";
 import { jobsCollection } from "@/lib/firebase/job-collections";
+import { TagInput } from "@/components/tag-input";
 import { useClientOptions, useFirestoreUsers } from "@/lib/firebase/client-content";
 import { EditSheet, ImageUploadField, SelectField, TextField, TextareaField } from "@/components/detail-editor";
 import { RichTextEditor } from "@/components/rich-text-editor";
@@ -46,16 +47,14 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
   const [leadUserId, setLeadUserId] = React.useState(job.leadUserId ?? "");
   const [fee, setFee] = React.useState(job.fee ?? "");
   const [image, setImage] = React.useState(job.image ?? "");
-  const [imageAlt, setImageAlt] = React.useState(job.imageAlt ?? "");
   const [summary, setSummary] = React.useState(job.summary ?? "");
   const [startDate, setStartDate] = React.useState(job.startDate ?? "");
   const [endDate, setEndDate] = React.useState(job.endDate ?? "");
-  const [specialization, setSpecialization] = React.useState(job.specialization ?? "");
   const [workSetup, setWorkSetup] = React.useState(job.workSetup ?? "remote");
   const [estimatedLength, setEstimatedLength] = React.useState(job.estimatedLength ?? "");
   const [languages, setLanguages] = React.useState(listValue(job.languages));
   const [desiredStartDate, setDesiredStartDate] = React.useState(job.desiredStartDate ?? "");
-  const [requiredSkills, setRequiredSkills] = React.useState(listValue(job.requiredSkills));
+  const [requiredSkills, setRequiredSkills] = React.useState<string[]>(job.requiredSkills ?? []);
 
   // Pay and assignment are private, so they load separately from the public job record.
   const [terms, setTerms] = React.useState<JobTerms | null>(null);
@@ -105,16 +104,14 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
       leadUserId: leadUserId.trim() || null,
       fee: fee.trim(),
       image: image.trim(),
-      imageAlt: imageAlt.trim(),
       summary: summary.trim(),
       startDate: startDate || null,
       endDate: endDate || null,
-      specialization: specialization.trim() || null,
       workSetup: workSetup || null,
       estimatedLength: estimatedLength.trim() || null,
       languages: parseList(languages),
       desiredStartDate: desiredStartDate || null,
-      requiredSkills: parseList(requiredSkills),
+      requiredSkills,
       placeholder: false,
       updatedAt: serverTimestamp(),
     });
@@ -202,13 +199,11 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
         ]}
       />
       <TextField label="Fee" value={fee} onChange={setFee} />
-      <TextField label="Cover image alt text" value={imageAlt} onChange={setImageAlt} />
       <RichTextEditor label="Description" value={summary} onChange={setSummary} placeholder="Describe the job…" compact />
 
       <SheetSection>Job details</SheetSection>
       <TextField label="Start date" value={startDate} onChange={setStartDate} type="date" />
       <TextField label="End date" value={endDate} onChange={setEndDate} type="date" />
-      <TextField label="Specialization" value={specialization} onChange={setSpecialization} placeholder="Digital design" />
       <SelectField
         label="Work setup"
         value={workSetup}
@@ -222,7 +217,7 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
       <TextField label="Estimated length" value={estimatedLength} onChange={setEstimatedLength} placeholder="1–2 weeks" />
       <TextField label="Languages (comma separated)" value={languages} onChange={setLanguages} placeholder="English, French" />
       <TextField label="Desired start date" value={desiredStartDate} onChange={setDesiredStartDate} type="date" />
-      <TextField label="Required skills (comma separated)" value={requiredSkills} onChange={setRequiredSkills} placeholder="Framer, UI Design" />
+      <TagInput label="Tags" value={requiredSkills} onChange={setRequiredSkills} placeholder="e.g. Framer, then press Enter" />
 
       {terms ? (
         <>
