@@ -45,8 +45,10 @@ function localDateValue() {
 }
 
 function Detail({ label, children }: { label: string; children: React.ReactNode }) {
-  return <div className="min-w-0 space-y-2 break-words text-sm"><dt className="text-muted-foreground">{label}</dt><dd className="m-0 font-medium">{children}</dd></div>;
+  return <div className="grid min-w-0 grid-cols-[minmax(0,9rem)_minmax(0,1fr)] gap-3 py-2 text-sm"><dt className="text-muted-foreground">{label}</dt><dd className="m-0 min-w-0 break-words font-medium">{children}</dd></div>;
 }
+
+const DETAIL_LIST = "m-0 mt-3 divide-y divide-border border-y border-border";
 
 function OtherJobsSidebar({ jobs, currentSlug }: { jobs: Job[]; currentSlug: string }) {
   const otherJobs = jobs
@@ -58,7 +60,7 @@ function OtherJobsSidebar({ jobs, currentSlug }: { jobs: Job[]; currentSlug: str
     });
 
   return (
-    <aside className="space-y-3 lg:sticky lg:top-6 nav:static nav:h-full nav:overflow-y-auto nav:overscroll-contain nav:pb-16">
+    <aside className="hidden space-y-3 lg:block lg:sticky lg:top-6 nav:static nav:h-full nav:overflow-y-auto nav:overscroll-contain nav:pb-16">
       {otherJobs.length ? (
         <nav aria-label="Other jobs">
           <ul className="m-0 list-none p-0">
@@ -334,6 +336,7 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
         { label: title },
       ]}
       back={adminMode ? { label: "All jobs (admin)", href: jobsBase } : undefined}
+      mobileBack={{ label: myJobs ? "My jobs" : "Jobs", href: jobsBase }}
       actions={null}
     /> : null}
     {overviewOnly ? null : <DetailTabs tabs={tabs} active={tab} onChange={setTab} />}
@@ -345,18 +348,18 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
       <section className="min-w-0 space-y-10">
         <div>
           <div className="flex items-center justify-between gap-3">
-            <h1 className="m-0 min-w-0 break-words text-lg font-semibold">{title}</h1>
+            <h1 className="m-0 min-w-0 truncate text-lg font-semibold lg:whitespace-normal lg:break-words">{title}</h1>
             <div className="flex shrink-0 items-center gap-2">
               <ShareCreatorDialog creatorName={title} path={`${jobsBase}/${encodeURIComponent(slug)}`} kind="job" showLabel />
               {!adminMode && role === "admin" ? <JobActions job={job} onSaved={() => void loadTerms()} /> : null}
             </div>
           </div>
           {richTextHasContent(job.summary) ? <RichTextContent value={job.summary} className="mt-6 max-w-[70ch] text-[16px] leading-[1.45] text-muted-foreground" /> : <p className="mb-0 mt-6 text-[16px] text-muted-foreground">No description added.</p>}
-          {user ? <section className="mt-6"><h2 className="m-0 text-lg font-semibold">Point of contact</h2><dl className="mt-4 grid grid-cols-2 gap-x-8 gap-y-3">
+          {user ? <section className="mt-6"><h2 className="m-0 text-lg font-semibold">Point of contact</h2><dl className={DETAIL_LIST}>
             <Detail label="Name">{contact?.name || "Not set"}</Detail>
             <Detail label="Role">{contact?.role || "—"}</Detail>
           </dl></section> : null}
-          <section className="mt-10"><h2 className="m-0 text-lg font-semibold">Job details</h2><dl className="mt-5 grid grid-cols-2 gap-x-8 gap-y-6">
+          <section className="mt-10"><h2 className="m-0 text-lg font-semibold">Job details</h2><dl className={DETAIL_LIST}>
             <Detail label="Lead">{lead ? <Link href={userHref(lead, isCreatorUser(lead) ? "creator" : "team")} className="text-foreground underline decoration-border underline-offset-4 hover:text-primary">{lead.name}</Link> : "To be confirmed"}</Detail>
             <Detail label="Category">{job.category || "—"}</Detail>
             <Detail label="Specialization">{job.specialization || "—"}</Detail>
@@ -374,7 +377,7 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
           </ul> : null}
         </div>
 
-        {terms ? <section><h2 className="m-0 text-lg font-semibold">Assignment and pay</h2><dl className="mt-4 grid grid-cols-2 gap-x-8 gap-y-3">
+        {terms ? <section><h2 className="m-0 text-lg font-semibold">Assignment and pay</h2><dl className={DETAIL_LIST}>
           <Detail label="Assigned to">{terms.assignedToName || "Unassigned"}</Detail>
           <Detail label="Rate">{terms.rateAmount != null ? `${formatAmount(terms.rateAmount, terms.rateCurrency)} / ${terms.rateUnit === "fixed" ? "job" : terms.rateUnit}` : "Not set"}</Detail>
           <Detail label="Billing cycle">{BILLING_CYCLE_LABELS[terms.billingCycle]}</Detail>
@@ -384,7 +387,7 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
       </section>
 
       <aside className="space-y-10">
-        <section><h2 className="m-0 text-lg font-semibold">Client</h2><dl className="mt-4 grid grid-cols-2 gap-x-8 gap-y-3">
+        <section><h2 className="m-0 text-lg font-semibold">Client</h2><dl className={DETAIL_LIST}>
           <Detail label="Name"><Link href={`/admin/clients/${job.clientId}/overview`} className="text-foreground underline decoration-border underline-offset-4 hover:text-primary">{client?.name ?? job.clientName}</Link></Detail>
           <Detail label="Industry">{client?.industry || "—"}</Detail>
           <Detail label="Team size">{client?.teamSize ?? "—"}</Detail>

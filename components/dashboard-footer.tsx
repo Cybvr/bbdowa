@@ -7,7 +7,7 @@ import { useOptionalAuth } from "@/components/auth-provider";
 import { createGlyphAvatarDataUri } from "@/lib/avatar";
 import { NAV_ITEMS } from "@/lib/nav";
 
-const FOOTER_LABELS = ["Home", "Tasks", "Tracker", "Njeri", "My profile"];
+const FOOTER_LABELS = ["Home", "Jobs", "Tasks", "Tracker", "Njeri", "My profile"];
 const FOOTER_LABEL_OVERRIDES: Record<string, string> = { "My profile": "Profile" };
 
 export function DashboardFooter({ hidden = false }: { hidden?: boolean }) {

@@ -16,7 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 
 export type DetailCrumb = { label: string; href?: string };
 
-export function DetailBreadcrumb({ crumbs, actions, back }: { crumbs: DetailCrumb[]; actions?: ReactNode; back?: DetailCrumb }) {
+export function DetailBreadcrumb({ crumbs, actions, back, mobileBack }: { crumbs: DetailCrumb[]; actions?: ReactNode; back?: DetailCrumb; mobileBack?: DetailCrumb }) {
   const mobileHeader = useMobileHeader();
   return (
     <div className="mb-2 flex items-center justify-between gap-4 px-1">
@@ -35,7 +35,15 @@ export function DetailBreadcrumb({ crumbs, actions, back }: { crumbs: DetailCrum
             {back.label}
           </Link>
         ) : (
-          <nav aria-label="Breadcrumb" className="min-w-0">
+          <>
+          {/* Below lg a single back link replaces the breadcrumb trail. */}
+          {mobileBack ? (
+            <Link href={mobileBack.href ?? "#"} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition hover:text-foreground lg:hidden">
+              <ArrowLeft aria-hidden="true" className="h-4 w-4" />
+              {mobileBack.label}
+            </Link>
+          ) : null}
+          <nav aria-label="Breadcrumb" className={mobileBack ? "hidden min-w-0 lg:block" : "min-w-0"}>
             <ol className="m-0 flex list-none flex-wrap items-center gap-x-2 gap-y-1 p-0 text-xs text-muted-foreground sm:text-sm">
               {crumbs.map((crumb, index) => (
                 <li key={crumb.label} className="flex items-center gap-2">
@@ -53,6 +61,7 @@ export function DetailBreadcrumb({ crumbs, actions, back }: { crumbs: DetailCrum
               ))}
             </ol>
           </nav>
+          </>
         )}
       </div>
       {actions ? <div className="shrink-0">{actions}</div> : null}
