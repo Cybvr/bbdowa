@@ -55,6 +55,7 @@ export function ShareCreatorDialog({ creatorName, path, className, showLabel = f
   const isJob = kind === "job";
   const message = isJob ? `Hi, Please take a look at ${url}` : url;
   const copyValue = isJob ? url : message;
+  const emailHref = `mailto:?subject=${encodeURIComponent(shareText)}&body=${encodeURIComponent(`${shareText}\n\n${url}`)}`;
 
   const handleCopy = async () => {
     try {
@@ -169,8 +170,12 @@ export function ShareCreatorDialog({ creatorName, path, className, showLabel = f
                 Facebook
               </a>
               <a
-                href={`mailto:?subject=${encodeURIComponent(shareText)}&body=${encodeURIComponent(`${shareText}\n\n${url}`)}`}
-                onClick={(event) => event.stopPropagation()}
+                href={emailHref}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  event.preventDefault();
+                  window.location.href = emailHref;
+                }}
                 className="flex min-h-11 items-center gap-2 rounded-lg bg-muted px-3 py-2 text-[13px] font-medium text-foreground no-underline transition hover:bg-muted/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               >
                 <FiMail aria-hidden="true" className="h-4 w-4" />
