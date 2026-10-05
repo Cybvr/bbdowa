@@ -411,12 +411,12 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
         </dl></DetailCard>
 
         {showSignInGate ? <div className="pointer-events-none absolute inset-x-0 bottom-0 h-64 bg-gradient-to-b from-background/0 via-background/85 to-background" /> : null}
-        </div>
-        {showSignInGate ? <div className="relative z-10 -mt-28 rounded-xl border border-border bg-background/95 p-5 text-center shadow-sm">
+        {showSignInGate ? <div className="pointer-events-auto absolute inset-x-4 bottom-5 z-10 rounded-xl border border-border bg-background/95 p-5 text-center shadow-sm">
           <h2 className="m-0 text-item-title font-semibold">Sign in to see the full job</h2>
           <p className="m-0 mt-2 text-sm text-muted-foreground">Continue reading the job details and case study.</p>
           <Button type="button" className="mt-4" onClick={() => setLoginModalOpen(true)}>Sign in</Button>
         </div> : null}
+        </div>
       </div>
       </div>
     </div> : null}

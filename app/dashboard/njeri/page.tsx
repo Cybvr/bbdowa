@@ -1,11 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
+import { useOptionalAuth } from "@/components/auth-provider";
 import { NjeriChatView } from "@/components/njeri/njeri-chat-view";
 import { NjeriHistorySidebar } from "@/components/njeri/njeri-history-sidebar";
 import { useNjeri } from "@/components/njeri/use-njeri";
 
 export default function NjeriPage() {
+  const auth = useOptionalAuth();
   const {
     conversations,
     activeConversation,
@@ -21,6 +23,8 @@ export default function NjeriPage() {
   } = useNjeri();
 
   const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
+
+  if (!auth?.user) return null;
 
   return (
     <div className="relative flex h-[calc(100dvh-124px)] nav:h-[calc(100dvh-60px)] w-full overflow-hidden bg-background">

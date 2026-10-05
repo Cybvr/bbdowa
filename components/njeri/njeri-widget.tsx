@@ -7,9 +7,11 @@ import { Maximize2, X, Plus } from "lucide-react";
 import { NjeriMark } from "./njeri-mark";
 import { NjeriChatView } from "./njeri-chat-view";
 import { useNjeri } from "./use-njeri";
+import { useOptionalAuth } from "@/components/auth-provider";
 
 export function NjeriWidget() {
   const pathname = usePathname();
+  const auth = useOptionalAuth();
   const [open, setOpen] = useState(false);
   const {
     activeConversation,
@@ -33,6 +35,10 @@ export function NjeriWidget() {
   }, [open]);
 
   if (isHidden) {
+    return null;
+  }
+
+  if (!auth?.user) {
     return null;
   }
 
