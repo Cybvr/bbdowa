@@ -82,7 +82,8 @@ function timestampAsIso(value: unknown): string | null {
 export function normalizeJob(data: Record<string, unknown>, id?: string): Job {
   const { [LEGACY_JOB_FIELDS.title]: legacyTitle, [LEGACY_JOB_FIELDS.mediaPlans]: legacyMediaPlans, ...rest } = data;
   const rawStatus = rest.status;
-  const status: JobStatus = rawStatus === "live" ? "active" : rawStatus === "pitch" ? "archived" : rawStatus === "completed" ? "completed" : "active";
+  // Current values pass through; "live" and "pitch" are older names for active and archived.
+  const status: JobStatus = rawStatus === "completed" || rawStatus === "archived" ? rawStatus : rawStatus === "pitch" ? "archived" : "active";
   return {
     ...rest,
     slug: (rest.slug as string | undefined) ?? id,
