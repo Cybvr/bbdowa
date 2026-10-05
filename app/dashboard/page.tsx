@@ -70,7 +70,7 @@ export default function HomePage() {
     }
 
     Promise.all([
-      readMyJobIds(uid),
+      readMyJobIds(uid, user?.email),
       readJobsFromFirestore(),
     ])
       .then(([myJobIds, jobs]) => {
@@ -84,7 +84,7 @@ export default function HomePage() {
       .finally(() => { if (active) setJobsLoading(false); });
 
     return () => { active = false; };
-  }, [user?.uid]);
+  }, [user?.email, user?.uid]);
 
   useEffect(() => {
     let active = true;

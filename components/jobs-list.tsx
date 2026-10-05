@@ -48,7 +48,7 @@ export function JobsList({ assignedOnly = false }: { assignedOnly?: boolean }) {
 
         const [jobsName, myJobIds, taskSnapshot, timeSnapshot, paymentSnapshot] = await Promise.all([
           jobsCollection(),
-          readMyJobIds(user.uid),
+          readMyJobIds(user.uid, user.email),
           getDocs(query(collection(firebaseDb, TASK_COLLECTION), where("assignedTo", "==", user.uid))),
           getDocs(query(collection(firebaseDb, ACTIVITY_COLLECTION), where("uid", "==", user.uid))),
           getDocs(query(collection(firebaseDb, PAYMENTS_COLLECTION), where("payeeUid", "==", user.uid))),

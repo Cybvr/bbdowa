@@ -1,6 +1,6 @@
 "use client";
 
-import { collection, doc, getDocs, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore";
 import { firebaseDb } from "@/lib/firebase/client";
 import { jobsCollection } from "@/lib/firebase/job-collections";
 import { JOB_TERMS_COLLECTION } from "@/lib/job-terms";
@@ -29,12 +29,52 @@ export async function saveJobTeam(jobSlug: string, slugs: string[], users: Pick<
   return cleanSlugs;
 }
 
-/** Slugs of the jobs this person is on: as the assignee or as a team member. */
-export async function readMyJobIds(uid: string): Promise<Set<string>> {
+/**
+ * Job ids this person is on, either as the assignee or as a team member.
+ *
+ * `jobTerms.teamUids` is the fast private lookup. Older team assignments can
+ * predate that field, though, so also resolve the person's directory slug and
+ * use the public job team list as a compatibility fallback.
+ */
+export async function readMyJobIds(uid: string, email?: string | null): Promise<Set<string>> {
   const terms = collection(firebaseDb, JOB_TERMS_COLLECTION);
-  const [assigned, team] = await Promise.all([
+  const [assigned, team] = await Promise.allSettled([
     getDocs(query(terms, where("assignedTo", "==", uid))),
     getDocs(query(terms, where("teamUids", "array-contains", uid))),
   ]);
-  return new Set([...assigned.docs, ...team.docs].map((item) => item.id));
+  const ids = new Set<string>();
+  for (const result of [assigned, team]) {
+    if (result.status === "fulfilled") result.value.docs.forEach((item) => ids.add(item.id));
+  }
+
+  const slugs = new Set<string>();
+  const identityReads = [
+    getDoc(doc(firebaseDb, "users", uid)),
+    ...(email ? [getDocs(query(collection(firebaseDb, "users"), where("email", "==", email)))] : []),
+  ];
+  const identities = await Promise.allSettled(identityReads);
+  for (const result of identities) {
+    if (result.status !== "fulfilled") continue;
+    if ("docs" in result.value) {
+      result.value.docs.forEach((item) => {
+        const slug = item.data().slug;
+        if (typeof slug === "string" && slug) slugs.add(slug);
+      });
+    } else if (result.value.exists()) {
+      const slug = result.value.data()?.slug;
+      if (typeof slug === "string" && slug) slugs.add(slug);
+    }
+  }
+
+  if (slugs.size) {
+    const jobs = collection(firebaseDb, await jobsCollection());
+    const jobReads = await Promise.allSettled(
+      [...slugs].map((slug) => getDocs(query(jobs, where("creatorSlugs", "array-contains", slug)))),
+    );
+    for (const result of jobReads) {
+      if (result.status === "fulfilled") result.value.docs.forEach((item) => ids.add(item.id));
+    }
+  }
+
+  return ids;
 }
