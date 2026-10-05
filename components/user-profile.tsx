@@ -10,8 +10,9 @@ import { creatorCategoryOptions, isCreatorNew, isCreatorUser, type Creator } fro
 import { useAuth } from "@/components/auth-provider";
 import { readJobsFromFirestore, readClientsFromFirestore, readDocumentsForAssignee, readTimeEntriesForUser, useFirestoreUsers } from "@/lib/firebase/client-content";
 import { longDate } from "@/lib/format";
-import { jobHref, jobTitle, type Job } from "@/lib/jobs";
-import { clientHref, getCreatorJobs, type Client } from "@/lib/clients";
+import { byLastModified, type Job } from "@/lib/jobs";
+import { JobCard } from "@/components/job-card";
+import { getCreatorJobs, type Client } from "@/lib/clients";
 import {
   DetailBreadcrumb,
   ProfileBanner,
@@ -20,7 +21,6 @@ import {
   ProfileIconLink,
   ProfileLayout,
   ProfileSection,
-  ProfileTable,
 } from "@/components/dashboard/detail-hero";
 import { SocialIcon, type SocialIconName } from "@/components/social-icon";
 import { ShareCreatorDialog } from "@/components/share-creator-dialog";
@@ -329,28 +329,16 @@ export function UserProfile({ section }: { section: keyof typeof SECTIONS }) {
 
         {tab === "jobs" && (
           <ProfileSection title="Jobs" variant="plain">
-            <ProfileTable
-              columns={[
-                { key: "job", label: "Job" },
-                { key: "client", label: "Client" },
-                { key: "status", label: "Status" },
-              ]}
-              rows={creatorJobs.map((job) => ({
-                job: (
-                  <Link href={jobHref(job.slug)} className="font-semibold text-foreground hover:text-primary">
-                    {jobTitle(job)}
-                  </Link>
-                ),
-                client: (
-                  <Link href={clientHref(job.clientId)} className="text-foreground hover:text-primary">
-                    {job.clientName}
-                  </Link>
-                ),
-                status: <span className="capitalize">{job.status}</span>,
-              }))}
-              emptyTitle="No jobs yet"
-              emptyDescription={`${creator.name} hasn’t been added to a job yet.`}
-            />
+            {creatorJobs.length ? (
+              <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2 lg:grid-cols-3">
+                {[...creatorJobs].sort(byLastModified).map((job) => <li key={job.slug}><JobCard job={job} /></li>)}
+              </ul>
+            ) : (
+              <div className="py-10 text-center">
+                <p className="m-0 font-semibold">No jobs yet</p>
+                <p className="mb-0 mt-1 text-sm text-muted-foreground">{creator.name} hasn’t been added to a job yet.</p>
+              </div>
+            )}
           </ProfileSection>
         )}
 
