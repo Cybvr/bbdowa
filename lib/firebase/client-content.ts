@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { collection, doc, getDoc, getDocs, limit, orderBy, query, where } from "firebase/firestore";
 import { firebaseDb } from "@/lib/firebase/client";
 import { useAuth } from "@/components/auth-provider";
@@ -35,6 +35,23 @@ export async function readJobsFromFirestore() {
 
 export function readClientsFromFirestore() {
   return readCollection<Client>("clients");
+}
+
+/** Clients sorted by name, for pickers. Keeps the job's current client listed even if it was removed. */
+export function useClientOptions(current?: { clientId: string; clientName: string }) {
+  const [clients, setClients] = useState<Client[]>([]);
+  useEffect(() => {
+    let active = true;
+    readClientsFromFirestore()
+      .then((items) => { if (active) setClients(items); })
+      .catch((cause) => console.error("Unable to load clients", cause));
+    return () => { active = false; };
+  }, []);
+  return useMemo(() => {
+    const options = clients.map((client) => ({ value: client.slug, label: client.name })).sort((a, b) => a.label.localeCompare(b.label));
+    if (current?.clientId && !options.some((option) => option.value === current.clientId)) options.unshift({ value: current.clientId, label: current.clientName || current.clientId });
+    return options;
+  }, [clients, current?.clientId, current?.clientName]);
 }
 
 export async function readDocumentsForAssignee(uid: string | null | undefined, slug?: string | null) {

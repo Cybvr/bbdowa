@@ -24,7 +24,7 @@ import { TeamAddAction } from "@/components/team-add-action";
 import { TeamPanel } from "@/components/team-panel";
 import { JobMediaPanel } from "@/components/job-media-panel";
 import { firebaseDb } from "@/lib/firebase/client";
-import { useFirestoreUsers } from "@/lib/firebase/client-content";
+import { useClientOptions, useFirestoreUsers } from "@/lib/firebase/client-content";
 import { jobHref, jobPostedDate, jobRecentDate, jobTitle, type Job } from "@/lib/jobs";
 import type { Client } from "@/lib/clients";
 import { TASK_COLLECTION, formatDate, isOverdue, type Task } from "@/lib/creator-tasks";
@@ -109,6 +109,8 @@ function InlineJobOverviewEditor({ job }: { job: Job }) {
   const router = useRouter();
   const [title, setTitle] = React.useState(job.title ?? job.name);
   const [campaignTitle, setCampaignTitle] = React.useState(job.campaignTitle ?? job.title ?? job.name ?? "");
+  const [clientId, setClientId] = React.useState(job.clientId ?? "");
+  const clientOptions = useClientOptions({ clientId: job.clientId, clientName: job.clientName });
   const [category, setCategory] = React.useState(job.category ?? "");
   const [status, setStatus] = React.useState(job.status);
   const [description, setDescription] = React.useState(job.summary ?? "");
@@ -139,6 +141,8 @@ function InlineJobOverviewEditor({ job }: { job: Job }) {
       await updateDoc(doc(firebaseDb, await jobsCollection(), job.slug), {
         title: title.trim() || job.name,
         campaignTitle: campaignTitle.trim() || title.trim() || job.name,
+        clientId,
+        clientName: clientOptions.find((option) => option.value === clientId)?.label ?? job.clientName,
         category: category.trim(),
         status,
         summary: description.trim(),
@@ -173,6 +177,7 @@ function InlineJobOverviewEditor({ job }: { job: Job }) {
       <div className="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
         <label className="space-y-1.5 text-sm font-medium">Job title<input value={title} onChange={(event) => setTitle(event.target.value)} className={INLINE_FIELD} /></label>
         <label className="space-y-1.5 text-sm font-medium">Campaign title<input value={campaignTitle} onChange={(event) => setCampaignTitle(event.target.value)} className={INLINE_FIELD} placeholder="Client-facing campaign name" /></label>
+        <label className="space-y-1.5 text-sm font-medium">Client<select value={clientId} onChange={(event) => setClientId(event.target.value)} className={INLINE_FIELD}>{clientOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
         <label className="space-y-1.5 text-sm font-medium">Category<input value={category} onChange={(event) => setCategory(event.target.value)} className={INLINE_FIELD} /></label>
         <label className="space-y-1.5 text-sm font-medium">Status<select value={status} onChange={(event) => setStatus(event.target.value as Job["status"])} className={INLINE_FIELD}><option value="active">Active</option><option value="completed">Completed</option><option value="archived">Archived</option></select></label>
         <label className="space-y-1.5 text-sm font-medium">Specialization<input value={specialization} onChange={(event) => setSpecialization(event.target.value)} className={INLINE_FIELD} /></label>

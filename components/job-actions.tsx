@@ -7,7 +7,7 @@ import { deleteDoc, doc, getDoc, serverTimestamp, setDoc, updateDoc } from "fire
 import { useAuth } from "@/components/auth-provider";
 import { firebaseDb } from "@/lib/firebase/client";
 import { jobsCollection } from "@/lib/firebase/job-collections";
-import { useFirestoreUsers } from "@/lib/firebase/client-content";
+import { useClientOptions, useFirestoreUsers } from "@/lib/firebase/client-content";
 import { EditSheet, ImageUploadField, SelectField, TextField, TextareaField } from "@/components/detail-editor";
 import { RichTextEditor } from "@/components/rich-text-editor";
 import {
@@ -39,7 +39,8 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
   const [name, setName] = React.useState(job.name ?? "");
   const [title, setTitle] = React.useState(job.title ?? "");
   const [campaignTitle, setCampaignTitle] = React.useState(job.campaignTitle ?? job.title ?? job.name ?? "");
-  const [clientName, setClientName] = React.useState(job.clientName ?? "");
+  const [clientId, setClientId] = React.useState(job.clientId ?? "");
+  const clientOptions = useClientOptions({ clientId: job.clientId, clientName: job.clientName });
   const [category, setCategory] = React.useState(job.category ?? "");
   const [status, setStatus] = React.useState(job.status ?? "active");
   const [year, setYear] = React.useState(job.year != null ? String(job.year) : "");
@@ -98,7 +99,8 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
       name: name.trim(),
       title: title.trim() || name.trim(),
       campaignTitle: campaignTitle.trim() || title.trim() || name.trim(),
-      clientName: clientName.trim(),
+      clientId,
+      clientName: clientOptions.find((option) => option.value === clientId)?.label ?? job.clientName,
       category: category.trim(),
       status,
       year: Number.isFinite(parsedYear as number) ? parsedYear : null,
@@ -180,7 +182,7 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
       <TextField label="Client (brand)" value={name} onChange={setName} />
       <TextField label="Job title" value={title} onChange={setTitle} />
       <TextField label="Campaign title" value={campaignTitle} onChange={setCampaignTitle} placeholder="Client-facing campaign name" />
-      <TextField label="Client name" value={clientName} onChange={setClientName} />
+      <SelectField label="Client" value={clientId} onChange={setClientId} options={clientOptions} />
       <TextField label="Category" value={category} onChange={setCategory} />
       <SelectField
         label="Status"
