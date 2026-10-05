@@ -36,8 +36,7 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
     [users],
   );
 
-  const [name, setName] = React.useState(job.name ?? "");
-  const [title, setTitle] = React.useState(job.title ?? "");
+  const [title, setTitle] = React.useState(job.title ?? job.name ?? "");
   const [campaignTitle, setCampaignTitle] = React.useState(job.campaignTitle ?? job.title ?? job.name ?? "");
   const [clientId, setClientId] = React.useState(job.clientId ?? "");
   const clientOptions = useClientOptions({ clientId: job.clientId, clientName: job.clientName });
@@ -96,9 +95,8 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
     const knownAssignees = terms ? jobAssignees(terms) : [];
     const assignees = assignedUids.map((uid) => ({ uid, name: users.find((person) => person.uid === uid)?.name ?? knownAssignees.find((person) => person.uid === uid)?.name ?? "Assignee" }));
     await updateDoc(doc(firebaseDb, await jobsCollection(), job.slug), {
-      name: name.trim(),
-      title: title.trim() || name.trim(),
-      campaignTitle: campaignTitle.trim() || title.trim() || name.trim(),
+      title: title.trim() || job.name,
+      campaignTitle: campaignTitle.trim() || title.trim() || job.name,
       clientId,
       clientName: clientOptions.find((option) => option.value === clientId)?.label ?? job.clientName,
       category: category.trim(),
@@ -179,7 +177,6 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
       ) : undefined}
     >
       <ImageUploadField label="Cover image" value={image} onChange={setImage} />
-      <TextField label="Client (brand)" value={name} onChange={setName} />
       <TextField label="Job title" value={title} onChange={setTitle} />
       <TextField label="Campaign title" value={campaignTitle} onChange={setCampaignTitle} placeholder="Client-facing campaign name" />
       <SelectField label="Client" value={clientId} onChange={setClientId} options={clientOptions} />
