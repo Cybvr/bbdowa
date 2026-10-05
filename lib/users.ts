@@ -52,6 +52,10 @@ export type CreatorWorkHistory = {
 // compatibility field for existing Firestore records.
 export type User = {
   slug: string;
+  /** Admin switch: true sends the person through onboarding, false skips it. Unset uses the default rule. */
+  onboardingRequired?: boolean | null;
+  /** Set when the person finishes onboarding. */
+  onboardingCompletedAt?: unknown;
   /** Firebase Auth uid, present once this person has signed in and holds an account. */
   uid?: string | null;
   name: string;

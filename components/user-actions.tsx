@@ -17,6 +17,7 @@ import {
 } from "firebase/firestore";
 import { firebaseDb } from "@/lib/firebase/client";
 import { useAuth } from "@/components/auth-provider";
+import { needsOnboarding } from "@/lib/onboarding";
 import { ProfileFields, profileDraftFrom, profileDraftToFirestore, type ProfileDraft } from "@/components/profile-fields";
 import { EditSheet, ImageUploadField, SelectField } from "@/components/detail-editor";
 import {
@@ -62,6 +63,8 @@ export function UserActions({
   const [roles, setRoles] = React.useState<UserRole[]>(userRoles(user).length ? userRoles(user) : ["manager"]);
   const [draft, setDraft] = React.useState<ProfileDraft>(() => profileDraftFrom(user));
   const [profileImage, setProfileImage] = React.useState(user.profileImage ?? "");
+  const initialOnboarding = needsOnboarding(user);
+  const [onboarding, setOnboarding] = React.useState(initialOnboarding);
 
   const docRef = async () => {
     if (user.uid) {
@@ -83,6 +86,12 @@ export function UserActions({
       ? {
           role: status === "pending" ? "pending" : roles[0] ?? "manager",
           roles: status === "pending" ? [] : roles,
+          // Only write onboarding when the switch changed. On clears the finished mark so they go through it again.
+          ...(onboarding === initialOnboarding
+            ? {}
+            : onboarding
+              ? { onboardingRequired: true, onboardingCompletedAt: null, onboardingStatus: null }
+              : { onboardingRequired: false }),
         }
       : {};
     await updateDoc(ref, {
@@ -191,6 +200,24 @@ export function UserActions({
               })}
             </div>
             <p className="m-0 text-xs text-muted-foreground">A person can appear in both the team and creator directories.</p>
+          </div>
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <span className="block text-[13px] font-medium text-foreground">Onboarding</span>
+              <p className="m-0 mt-0.5 text-xs text-muted-foreground">
+                {onboarding ? "On: they'll be sent through onboarding next time they open Bantaba." : user.onboardingCompletedAt ? "Done. Turn on to send them through it again." : "Off: they won't be asked to onboard."}
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={onboarding}
+              aria-label="Onboarding"
+              onClick={() => setOnboarding((current) => !current)}
+              className={`relative mt-0.5 inline-flex h-5 w-9 shrink-0 items-center rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${onboarding ? "bg-primary" : "bg-muted-foreground/30"}`}
+            >
+              <span className={`inline-block h-4 w-4 rounded-full bg-background shadow transition ${onboarding ? "translate-x-[18px]" : "translate-x-0.5"}`} />
+            </button>
           </div>
         </>
       ) : null}

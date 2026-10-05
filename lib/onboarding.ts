@@ -67,3 +67,14 @@ export function emptyHrRecord(uid: string): HrRecord {
     updatedAt: "",
   };
 }
+
+/**
+ * Whether a person should be sent through onboarding. Admins can switch it on
+ * or off per person (`onboardingRequired`); otherwise pending people who have
+ * never finished it go through.
+ */
+export function needsOnboarding(data: { onboardingRequired?: unknown; onboardingCompletedAt?: unknown; role?: unknown }, isNewUser = false): boolean {
+  if (data.onboardingRequired === false) return false;
+  if (data.onboardingRequired === true) return !data.onboardingCompletedAt;
+  return !data.onboardingCompletedAt && (isNewUser || data.role === "pending");
+}

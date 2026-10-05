@@ -6,6 +6,7 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { firebaseAuth, firebaseDb } from "@/lib/firebase/client";
 import { sessionUserFromFirebaseUser, type SessionUser } from "@/lib/auth/session";
+import { needsOnboarding } from "@/lib/onboarding";
 
 type AuthContextValue = {
   user: SessionUser | null;
@@ -13,6 +14,10 @@ type AuthContextValue = {
   loading: boolean;
   /** The signed-in user's role from their Firestore profile, or null. */
   role: string | null;
+  /** True when an admin has switched onboarding on for the signed-in person and they haven't finished it. */
+  onboardingDue: boolean;
+  /** Call once onboarding is finished so the dashboard stops redirecting. */
+  markOnboarded: () => void;
   isAdmin: boolean;
   isViewingAs: boolean;
   viewAsUser: SessionUser | null;
@@ -34,6 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [actualUser, setActualUser] = React.useState<SessionUser | null>(null);
   const [actualRole, setActualRole] = React.useState<string | null>(null);
+  const [onboardingDue, setOnboardingDue] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
   const [viewAs, setViewAs] = React.useState<ViewAsState | null>(null);
   const [viewAsLoaded, setViewAsLoaded] = React.useState(false);
@@ -61,13 +67,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (firebaseUser) {
         try {
           const snapshot = await getDoc(doc(firebaseDb, "users", firebaseUser.uid));
-          const value = snapshot.data()?.role;
-          setActualRole(typeof value === "string" ? value : null);
+          const data = snapshot.data() ?? {};
+          setActualRole(typeof data.role === "string" ? data.role : null);
+          // Only the admin switch forces a redirect; the default rule runs at sign-in.
+          setOnboardingDue(data.onboardingRequired === true && needsOnboarding(data));
         } catch {
           setActualRole(null);
+          setOnboardingDue(false);
         }
       } else {
         setActualRole(null);
+        setOnboardingDue(false);
       }
 
       setLoading(false);
@@ -118,6 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router.refresh();
   }, [router, stopViewingAs]);
 
+  const markOnboarded = React.useCallback(() => setOnboardingDue(false), []);
   const activeViewAs = viewAsLoaded && actualRole === "admin" ? viewAs : null;
   const user = activeViewAs?.user ?? actualUser;
   const role = activeViewAs?.role ?? actualRole;
@@ -129,6 +140,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         actualUser,
         loading,
         role,
+        // Viewing as someone never redirects the admin into that person's onboarding.
+        onboardingDue: onboardingDue && !activeViewAs,
+        markOnboarded,
         isAdmin: role === "admin",
         isViewingAs: Boolean(activeViewAs),
         viewAsUser: activeViewAs?.user ?? null,

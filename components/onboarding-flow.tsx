@@ -51,7 +51,7 @@ function clean(value: string) {
 
 export function OnboardingFlow() {
   const router = useRouter();
-  const { user: authUser, loading: authLoading } = useAuth();
+  const { user: authUser, loading: authLoading, markOnboarded } = useAuth();
   const uid = authUser?.uid ?? null;
 
   const [loading, setLoading] = React.useState(true);
@@ -213,6 +213,7 @@ export function OnboardingFlow() {
         { ...profileFields(), onboardingStatus: "complete", onboardingCompletedAt: serverTimestamp(), updatedAt: serverTimestamp() },
         { merge: true },
       );
+      markOnboarded();
       router.replace("/dashboard");
     } catch (cause) {
       console.error("Unable to complete onboarding", cause);

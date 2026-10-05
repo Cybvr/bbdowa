@@ -1,6 +1,7 @@
 import type { User as FirebaseUser } from "firebase/auth";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { firebaseDb } from "@/lib/firebase/client";
+import { needsOnboarding } from "@/lib/onboarding";
 
 export type AuthIntent = "member" | "creator";
 
@@ -34,6 +35,6 @@ export async function upsertUserProfile(user: FirebaseUser, intent: AuthIntent) 
     isNewUser: !existingSnapshot.exists(),
     role: typeof existing.role === "string" ? existing.role : typeof userData.role === "string" ? userData.role : null,
     // New sign-ups and anyone still pending go through onboarding until they finish it once.
-    needsOnboarding: !existing.onboardingCompletedAt && (!existingSnapshot.exists() || (existing.role ?? userData.role) === "pending"),
+    needsOnboarding: needsOnboarding({ ...existing, role: existing.role ?? userData.role }, !existingSnapshot.exists()),
   };
 }

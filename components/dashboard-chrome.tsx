@@ -1,13 +1,16 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { DashboardFooter } from "@/components/dashboard-footer";
 import { MobileHeaderProvider } from "@/components/dashboard/mobile-header";
+import { useOptionalAuth } from "@/components/auth-provider";
 
 export function DashboardChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const onboardingDue = useOptionalAuth()?.onboardingDue ?? false;
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => pathname === "/dashboard/discover");
   const [hydrated, setHydrated] = useState(false);
   const isApplication = pathname === "/dashboard/careers/apply";
@@ -20,6 +23,11 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setHydrated(true);
   }, []);
+
+  // An admin switched onboarding on for this person: send them through it first.
+  useEffect(() => {
+    if (onboardingDue && !pathname.startsWith("/onboarding")) router.replace("/onboarding");
+  }, [onboardingDue, pathname, router]);
 
   if (isApplication) return <>{children}</>;
 
