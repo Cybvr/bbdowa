@@ -67,7 +67,7 @@ function paymentTotals(items: Payment[]) {
 
 function OtherJobsSidebar({ jobs, currentSlug }: { jobs: Job[]; currentSlug: string }) {
   const otherJobs = jobs
-    .filter((job) => job.slug !== currentSlug)
+    .filter((job) => job.slug !== currentSlug && job.status === "active")
     .sort((a, b) => byLastModified(a, b) || jobTitle(a).localeCompare(jobTitle(b)));
 
   return (
@@ -335,13 +335,16 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
   // the job each scroll on their own instead of the whole page scrolling.
   return <div className={embedded ? "w-full" : overviewOnly ? "flex flex-1 flex-col bg-muted px-5 pb-16 pt-8 sm:px-8 nav:h-[calc(100dvh-60px)] nav:overflow-hidden nav:pb-0 nav:pt-6" : "min-h-[calc(100dvh-60px)] flex-1 bg-muted px-4 pb-24 pt-6 sm:px-8"}>
     {!embedded ? <DetailBreadcrumb
-      crumbs={[
-        { label: adminMode ? "All jobs" : myJobs ? "My jobs" : "Jobs", href: jobsBase },
+      crumbs={adminMode ? [
+        { label: "All jobs", href: jobsBase },
         { label: job.clientName, href: `/admin/clients/${job.clientId}/overview` },
+        { label: title },
+      ] : [
+        { label: "Home", href: "/dashboard" },
         { label: title },
       ]}
       back={adminMode ? { label: "All jobs (admin)", href: jobsBase } : undefined}
-      mobileBack={{ label: myJobs ? "My jobs" : "Jobs", href: jobsBase }}
+      mobileBack={adminMode ? undefined : { label: "Home", href: "/dashboard" }}
       actions={null}
     /> : null}
     {/* On phones the title, share and edit live in the dashboard top bar. */}
@@ -357,7 +360,7 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
 
     {tab === "overview" ? adminMode ? <InlineJobOverviewEditor job={job} /> : <div className={overviewOnly ? "grid gap-6 pt-4 lg:grid-cols-[240px_minmax(0,1fr)] lg:items-start nav:min-h-0 nav:flex-1 nav:grid-rows-[minmax(0,1fr)] nav:items-stretch" : "mx-auto grid w-full max-w-3xl pt-4"}>
       {overviewOnly ? <OtherJobsSidebar jobs={otherJobs} currentSlug={slug} /> : null}
-      <div className={overviewOnly ? "grid min-w-0 content-start gap-3 nav:h-full nav:overflow-y-auto nav:overscroll-contain nav:pb-16" : "contents"}>
+      <div className={overviewOnly ? "grid min-w-0 content-start gap-3 nav:h-full nav:overflow-y-auto nav:overscroll-contain nav:pb-16 nav:pr-4" : "contents"}>
       <div className="grid min-w-0 content-start gap-3">
         <div className={`flex items-center justify-between gap-3${mobileHeader && !embedded ? " max-nav:hidden" : ""}`}>
           <h1 className="m-0 min-w-0 truncate text-page-title font-semibold lg:whitespace-normal lg:break-words lg:text-page-title-lg">{title}</h1>
