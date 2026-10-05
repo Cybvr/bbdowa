@@ -3,6 +3,7 @@
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { ExternalLink, MessageCircle } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { ItemCard, ItemCardList } from "@/components/dashboard/item-card";
 import { JobCard } from "@/components/job-card";
@@ -16,6 +17,7 @@ import { ACTIVITY_COLLECTION, elapsedMs, formatClockFull, startOfWeek, type Acti
 import type { User } from "@/lib/users";
 
 const PROFILE_FIELDS = ["Availability", "Hours this week", "Title", "Location"] as const;
+const TEAM_CHAT_URL = "https://teams.microsoft.com/l/team/19%3AFC6ZMVMFoEbe1WWMY555j6wfpeaN-olxhL1bmLmnkHg1%40thread.tacv2/conversations?groupId=863aed4a-20d5-4a27-a83b-38c7a6e0dedb&tenantId=6aa7a9a2-4b93-43c4-8311-ec14d3acf30c";
 
 function availabilityLabel(user: User | undefined, loading: boolean): string {
   if (loading) return "Loading…";
@@ -205,6 +207,21 @@ export default function HomePage() {
               </div>
             ))}
           </dl>
+          <a
+            href={TEAM_CHAT_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-7 flex items-center gap-3 rounded-xl border border-border bg-background p-4 text-foreground no-underline transition hover:border-foreground hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          >
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground">
+              <MessageCircle aria-hidden="true" className="h-4 w-4" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-semibold">Team chat</span>
+              <span className="mt-0.5 block text-xs text-muted-foreground">Open the agency conversation in Teams</span>
+            </span>
+            <ExternalLink aria-hidden="true" className="h-4 w-4 shrink-0 text-muted-foreground" />
+          </a>
         </aside>
       </div>
 
