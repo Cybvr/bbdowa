@@ -581,7 +581,7 @@ function OneUtilityClientWorkspace({
     const query = jobSearch.trim().toLowerCase();
     const filtered = jobs.filter((job) => {
       const matchesStatus = jobFilter === "all" || job.status === jobFilter;
-      const matchesSearch = !query || [jobDisplayTitle(job), job.title, job.status].join(" ").toLowerCase().includes(query);
+      const matchesSearch = !query || [job.title, job.status].join(" ").toLowerCase().includes(query);
       return matchesStatus && matchesSearch;
     });
 

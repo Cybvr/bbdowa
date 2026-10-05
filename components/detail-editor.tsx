@@ -239,8 +239,6 @@ export function TextField({
   type?: string;
   required?: boolean;
 }) {
-  const uniqueOptions = options.filter((option, index) => options.findIndex((candidate) => candidate.value === option.value) === index);
-
   return (
     <Field label={label}>
       <Input id={id} type={type} value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} required={required} />
@@ -279,11 +277,13 @@ export function SelectField({
   onChange: (value: string) => void;
   options: { value: string; label: string }[];
 }) {
+  const uniqueOptions = options.filter((option, index) => options.findIndex((candidate) => candidate.value === option.value) === index);
+
   return (
     <Field label={label}>
       <Select value={value} onValueChange={onChange}>
         <SelectTrigger className="w-full">
-        <SelectValue />
+          <SelectValue />
         </SelectTrigger>
         <SelectContent>
           {uniqueOptions.map((option) => (
