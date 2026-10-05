@@ -4,13 +4,14 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { addDoc, collection, doc, getDoc, getDocs, query, serverTimestamp, updateDoc, where } from "firebase/firestore";
-import { ArrowUpRight, CalendarDays, MapPin, Plus } from "lucide-react";
+import { ArrowUpRight, Plus } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { SectionHeading } from "@/components/dashboard/ui";
 import { DetailBreadcrumb, DetailTabs } from "@/components/dashboard/detail-hero";
 import { FilterBar } from "@/components/dashboard/filter-bar";
 import { TaskStatusBadge } from "@/components/tasks-view";
 import { JobActions } from "@/components/job-actions";
+import { JobCard } from "@/components/job-card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -26,7 +27,7 @@ import { TeamPanel } from "@/components/team-panel";
 import { JobMediaPanel } from "@/components/job-media-panel";
 import { firebaseDb } from "@/lib/firebase/client";
 import { useClientOptions, useFirestoreUsers } from "@/lib/firebase/client-content";
-import { byLastModified, jobHref, jobPostedDate, jobRecentDate, jobTitle, type Job } from "@/lib/jobs";
+import { byLastModified, jobPostedDate, jobTitle, type Job } from "@/lib/jobs";
 import { teamSizeLabel, type Client } from "@/lib/clients";
 import { TASK_COLLECTION, formatDate, isOverdue, type Task } from "@/lib/creator-tasks";
 import { longDate } from "@/lib/format";
@@ -74,24 +75,9 @@ function OtherJobsSidebar({ jobs, currentSlug }: { jobs: Job[]; currentSlug: str
     <aside className="hidden space-y-3 lg:block lg:sticky lg:top-6 nav:static nav:h-full nav:overflow-y-auto nav:overscroll-contain nav:pb-16">
       {otherJobs.length ? (
         <nav aria-label="Other jobs">
-          <ul className="m-0 list-none p-0">
+          <ul className="m-0 grid list-none gap-3 p-0">
             {otherJobs.map((otherJob) => (
-              <li key={otherJob.slug} className="border-b border-border last:border-b-0">
-                <Link href={jobHref(otherJob.slug)} className="block py-3 text-sm transition hover:text-primary">
-                  <span className="block min-w-0 truncate text-xs font-medium text-muted-foreground">{otherJob.clientName}</span>
-                  <span className="mt-1 block truncate font-semibold">{jobTitle(otherJob)}</span>
-                  {otherJob.category || otherJob.workSetup || otherJob.estimatedLength ? (
-                    <span className="mt-1 flex min-w-0 items-center gap-1 truncate text-xs text-muted-foreground">
-                      {otherJob.workSetup ? <MapPin aria-hidden="true" className="h-3.5 w-3.5 shrink-0" /> : null}
-                      {[otherJob.category, otherJob.workSetup, otherJob.estimatedLength].filter(Boolean).join(" · ")}
-                    </span>
-                  ) : null}
-                  <span className="mt-1 inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-                    <CalendarDays aria-hidden="true" className="h-3.5 w-3.5" />
-                    {longDate(jobRecentDate(otherJob))}
-                  </span>
-                </Link>
-              </li>
+              <li key={otherJob.slug}><JobCard job={otherJob} /></li>
             ))}
           </ul>
         </nav>
