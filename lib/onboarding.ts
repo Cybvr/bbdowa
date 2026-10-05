@@ -45,6 +45,8 @@ export const STEP_LABELS: Record<OnboardingStep, string> = {
   review: "Review",
 };
 
+export const ONBOARDING_STEPS: OnboardingStep[] = ["profile", "work", "hr", "policies", "review"];
+
 export function stepsFor(track: OnboardingTrack): OnboardingStep[] {
   // Contractor details belong to the creator's own profile, so creators skip HR.
   return track === "staff" ? ["profile", "work", "hr", "policies", "review"] : ["profile", "work", "policies", "review"];

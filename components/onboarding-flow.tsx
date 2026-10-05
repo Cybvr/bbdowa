@@ -16,12 +16,10 @@ import {
   EQUIPMENT_ITEMS,
   HR_COLLECTION,
   STEP_LABELS,
+  ONBOARDING_STEPS,
   emptyHrRecord,
-  stepsFor,
-  trackFor,
   type HrRecord,
   type OnboardingStep,
-  type OnboardingTrack,
 } from "@/lib/onboarding";
 
 type ProfileAnswers = {
@@ -55,7 +53,6 @@ export function OnboardingFlow() {
   const uid = authUser?.uid ?? null;
 
   const [loading, setLoading] = React.useState(true);
-  const [track, setTrack] = React.useState<OnboardingTrack>("staff");
   const [email, setEmail] = React.useState<string | null>(null);
   const [answers, setAnswers] = React.useState<ProfileAnswers | null>(null);
   const [hr, setHr] = React.useState<HrRecord | null>(null);
@@ -81,7 +78,6 @@ export function OnboardingFlow() {
       .then(([userSnapshot, hrSnapshot, assigned]) => {
         if (!active) return;
         const data = userSnapshot.data() ?? {};
-        setTrack(trackFor(data));
         setEmail(data.email ?? authUser?.email ?? null);
         setAnswers({
           name: data.name ?? authUser?.name ?? "",
@@ -129,7 +125,8 @@ export function OnboardingFlow() {
     );
   }
 
-  const steps = stepsFor(track);
+  // One onboarding for everyone, staff and creators alike.
+  const steps = ONBOARDING_STEPS;
   const index = steps.indexOf(step);
   const set = <K extends keyof ProfileAnswers>(key: K) => (value: ProfileAnswers[K]) => setAnswers({ ...answers, [key]: value });
   const setContact = (key: keyof HrRecord["emergencyContact"]) => (value: string) =>
@@ -142,21 +139,18 @@ export function OnboardingFlow() {
     phone: clean(answers.phone) || null,
     location: clean(answers.location),
     profileImage: clean(answers.profileImage) || null,
-    ...(track === "staff"
-      ? { title: clean(answers.title), department: clean(answers.department) }
-      : {
-          category: clean(answers.category),
-          portfolio: clean(answers.portfolio) || null,
-          linkedin: clean(answers.linkedin) || null,
-          instagram: clean(answers.instagram) || null,
-          availability: answers.availability,
-          craftNote: clean(answers.craftNote),
-        }),
+    title: clean(answers.title),
+    department: clean(answers.department),
+    category: clean(answers.category),
+    portfolio: clean(answers.portfolio) || null,
+    linkedin: clean(answers.linkedin) || null,
+    instagram: clean(answers.instagram) || null,
+    availability: answers.availability,
+    craftNote: clean(answers.craftNote),
   });
 
   const validate = (target: OnboardingStep): string | null => {
     if (target === "profile" && !clean(answers.name)) return "Add your name to continue.";
-    if (target === "work" && track === "creator" && !clean(answers.category)) return "Add your main craft to continue.";
     if (target === "hr" && (!clean(hr.emergencyContact.name) || !clean(hr.emergencyContact.phone))) {
       return "Add an emergency contact name and phone number to continue.";
     }
@@ -168,7 +162,7 @@ export function OnboardingFlow() {
     if (target === "profile" || target === "work") {
       await setDoc(doc(firebaseDb, "users", uid), { ...profileFields(), updatedAt: serverTimestamp() }, { merge: true });
     }
-    if (track === "staff" && (target === "work" || target === "hr")) {
+    if (target === "work" || target === "hr") {
       await setDoc(doc(firebaseDb, HR_COLLECTION, uid), { ...hr, uid, updatedAt: new Date().toISOString() }, { merge: true });
     }
   };
@@ -225,9 +219,7 @@ export function OnboardingFlow() {
     setError(null);
     setBusy(true);
     try {
-      if (track === "staff") {
-        await setDoc(doc(firebaseDb, HR_COLLECTION, uid), { ...hr, uid, updatedAt: new Date().toISOString() }, { merge: true });
-      }
+      await setDoc(doc(firebaseDb, HR_COLLECTION, uid), { ...hr, uid, updatedAt: new Date().toISOString() }, { merge: true });
       await setDoc(
         doc(firebaseDb, "users", uid),
         { ...profileFields(), onboardingStatus: "complete", onboardingCompletedAt: serverTimestamp(), updatedAt: serverTimestamp() },
@@ -248,28 +240,23 @@ export function OnboardingFlow() {
     { step: "profile", label: "Email", value: email ?? "" },
     { step: "profile", label: "Phone", value: answers.phone },
     { step: "profile", label: "Location", value: answers.location },
-    ...(track === "staff"
-      ? [
-          { step: "work" as const, label: "Title", value: answers.title },
-          { step: "work" as const, label: "Department", value: answers.department },
-          { step: "work" as const, label: "Manager", value: hr.managerName },
-          { step: "work" as const, label: "Start date", value: hr.startDate },
-          {
-            step: "hr" as const,
-            label: "Emergency contact",
-            value: [hr.emergencyContact.name, hr.emergencyContact.relationship, hr.emergencyContact.phone].filter(Boolean).join(", "),
-          },
-          {
-            step: "hr" as const,
-            label: "Equipment and access",
-            value: `${EQUIPMENT_ITEMS.filter((item) => hr.equipment[item.key]).length} of ${EQUIPMENT_ITEMS.length} confirmed`,
-          },
-        ]
-      : [
-          { step: "work" as const, label: "Craft", value: answers.category },
-          { step: "work" as const, label: "Portfolio", value: answers.portfolio },
-          { step: "work" as const, label: "Availability", value: answers.availability },
-        ]),
+    { step: "work", label: "Title", value: answers.title },
+    { step: "work", label: "Department", value: answers.department },
+    { step: "work", label: "Craft", value: answers.category },
+    { step: "work", label: "Manager", value: hr.managerName },
+    { step: "work", label: "Start date", value: hr.startDate },
+    { step: "work", label: "Portfolio", value: answers.portfolio },
+    { step: "work", label: "Availability", value: answers.availability },
+    {
+      step: "hr",
+      label: "Emergency contact",
+      value: [hr.emergencyContact.name, hr.emergencyContact.relationship, hr.emergencyContact.phone].filter(Boolean).join(", "),
+    },
+    {
+      step: "hr",
+      label: "Equipment and access",
+      value: `${EQUIPMENT_ITEMS.filter((item) => hr.equipment[item.key]).length} of ${EQUIPMENT_ITEMS.length} confirmed`,
+    },
     {
       step: "policies",
       label: "Policies",
@@ -281,7 +268,7 @@ export function OnboardingFlow() {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="m-0 text-[13px] font-semibold text-primary">{track === "staff" ? "Welcome to BBDO West Africa" : "Creator onboarding"}</p>
+          <p className="m-0 text-[13px] font-semibold text-primary">Welcome to BBDO West Africa</p>
           <h1 className="m-0 mt-2 text-[28px] font-bold leading-tight tracking-tight">{STEP_LABELS[step]}</h1>
         </div>
         <button type="button" disabled={busy} onClick={() => void skip()} className="shrink-0 text-[13px] font-semibold text-muted-foreground underline-offset-4 hover:text-foreground hover:underline disabled:opacity-50">
@@ -337,18 +324,12 @@ export function OnboardingFlow() {
         </div>
       ) : null}
 
-      {step === "work" && track === "staff" ? (
+      {step === "work" ? (
         <div className="space-y-4">
           <TextField label="Job title" value={answers.title} onChange={set("title")} placeholder="e.g. Senior Copywriter" />
           <TextField label="Department" value={answers.department} onChange={set("department")} placeholder="e.g. Creative" />
           <TextField label="Manager" value={hr.managerName} onChange={(value) => setHr({ ...hr, managerName: value })} />
           <TextField label="Start date" value={hr.startDate} onChange={(value) => setHr({ ...hr, startDate: value })} type="date" />
-          <p className="m-0 text-[12px] text-muted-foreground">Your manager and start date are only visible to you and the people team.</p>
-        </div>
-      ) : null}
-
-      {step === "work" && track === "creator" ? (
-        <div className="space-y-4">
           <SelectField
             label="Main craft"
             value={answers.category || undefined}
@@ -369,6 +350,7 @@ export function OnboardingFlow() {
             ]}
           />
           <TextareaField label="Short bio" value={answers.craftNote} onChange={set("craftNote")} placeholder="What do you make and what work do you want to do?" />
+          <p className="m-0 text-[12px] text-muted-foreground">Everything here is optional. Your manager and start date are only visible to you and the people team.</p>
         </div>
       ) : null}
 
