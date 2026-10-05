@@ -72,7 +72,7 @@ function OtherJobsSidebar({ jobs, currentSlug }: { jobs: Job[]; currentSlug: str
     .sort((a, b) => byLastModified(a, b) || jobTitle(a).localeCompare(jobTitle(b)));
 
   return (
-    <aside className="hidden space-y-3 lg:block lg:sticky lg:top-6 nav:static nav:h-full nav:overflow-y-auto nav:overscroll-contain nav:pb-16">
+    <aside className="hidden space-y-3 lg:block lg:sticky lg:top-6 nav:static nav:h-full nav:overflow-y-auto nav:overscroll-contain nav:pb-16 nav:pr-4">
       {otherJobs.length ? (
         <nav aria-label="Other jobs">
           <ul className="m-0 grid list-none gap-3 p-0">
