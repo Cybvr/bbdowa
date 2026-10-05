@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { useParams, usePathname } from "next/navigation";
+import { useParams, usePathname, useRouter } from "next/navigation";
 import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { EmptyThumbnail, ImageWithFallback } from "@/components/empty-thumbnail";
 import { ImageUploadField } from "@/components/detail-editor";
@@ -476,6 +476,7 @@ function OneUtilityClientWorkspace({
   createdBy: string;
   createdByName: string | null;
 }) {
+  const router = useRouter();
   const client = getClient(slug, clients);
   const clientName = client?.name ?? "Client";
   const workspace = getClientWorkspace(slug, clientName, availableJobs);
@@ -688,8 +689,6 @@ function OneUtilityClientWorkspace({
       : filtered;
   }, [mediaItems, mediaSearch, mediaSort]);
 
-  const nextJobNumberRef = useRef(2);
-
   // Toast state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -746,42 +745,12 @@ function OneUtilityClientWorkspace({
     showToast("Profile saved.");
   };
 
-  const handleNewJob = () => {
-    const jobNumber = nextJobNumberRef.current;
-    const id = `job-${jobNumber}`;
-    const title = `Untitled job ${jobNumber}`;
-    nextJobNumberRef.current += 1;
-    setJobs((prev) => [...prev, { id, title, status: "Draft" }]);
-    setActiveJobId(id);
-    setProjectName(title);
-    setJobDescriptions((previous) => ({ ...previous, [id]: "" }));
-    setActiveSection("social");
-    setMarketAudience(preset.footprintShort);
-    setBrandUrl(client?.website ?? preset.url);
-    setFootprint(client?.targetAudience ?? preset.footprint);
-    setAesthetic(preset.aesthetic);
-    setToneVal(preset.toneVal);
-    setToneLabel(preset.toneText);
-    setJobCopy(workspace.phaseContent.launch);
-    setActiveMainTab("job");
-    setJobView("editor");
-    showToast("New job draft created.");
-  };
-
-  const handleSelectJob = (jobId: string) => {
-    const selectedJob = jobs.find((job) => job.id === jobId);
-    if (!selectedJob) return;
-
-    setActiveJobId(selectedJob.id);
-    setProjectName(selectedJob.title);
-    const realJob = availableJobs.find((job) => job.slug === selectedJob.id);
-    setJobLeadSlug(realJob?.leadUserId ?? "");
-  };
-
   const handleOpenJob = (job: JobListItem) => {
-    handleSelectJob(job.id);
-    setActiveMainTab("job");
-    setJobView("editor");
+    if (availableJobs.some((record) => record.slug === job.id)) {
+      router.push(`/admin/jobs/${encodeURIComponent(job.id)}`);
+    } else {
+      router.push("/admin/jobs");
+    }
   };
 
   const handleProjectNameChange = (title: string) => {
@@ -1010,7 +979,7 @@ function OneUtilityClientWorkspace({
                       <>
                         <button
                           type="button"
-                          onClick={handleNewJob}
+                          onClick={() => router.push("/admin/jobs")}
                           className="flex h-9 items-center gap-1.5 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground transition hover:opacity-90"
                         >
                           <Plus className="h-3.5 w-3.5" />
