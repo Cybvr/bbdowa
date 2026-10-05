@@ -20,6 +20,8 @@ export type JobTerms = {
   rateUnit: "hour" | "day" | "fixed";
   commitment: string | null;
   workdayOverlap: string | null;
+  /** The client-side person for this job. Falls back to the client's contact when empty. */
+  contact?: { name: string | null; role: string | null; email: string | null } | null;
   updatedAt?: string | null;
 };
 

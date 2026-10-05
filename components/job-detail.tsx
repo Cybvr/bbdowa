@@ -301,6 +301,8 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
   }, [authLoading, job.clientId, loadRelated, loadTerms, overviewOnly, user]);
 
   const lead = users.find((person) => person.slug === job.leadUserId);
+  // A contact set on the job wins over the client's general contact.
+  const pointOfContact = terms?.contact?.name ? terms.contact : contact;
   const onTeam = Boolean(user?.uid && users.some((person) => person.uid === user.uid && person.slug && teamSlugs.includes(person.slug)));
   // Anyone on the job (assigned, on the team, or viewing it from My jobs) can log their own time.
   const assigned = Boolean(user?.uid && (terms?.assignedTo === user.uid || (terms ? jobAssignees(terms).some((person) => person.uid === user.uid) : false) || terms?.teamUids?.includes(user.uid) || onTeam || myJobs));
@@ -386,7 +388,7 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
         </div>
 
         {user ? <DetailCard title="Point of contact">
-          {contact?.name ? <div className="mt-3 flex min-w-0 items-center gap-3"><CreatorThumbnail avatarSeed={contact.name} className="h-10 w-10 shrink-0" /><div className="min-w-0"><p className="m-0 truncate text-body font-semibold">{contact.name}</p><p className="m-0 truncate text-sm text-muted-foreground">{contact.role || "—"}</p></div></div> : <p className="mb-0 mt-3 text-body text-muted-foreground">Not set</p>}
+          {pointOfContact?.name ? <div className="mt-3 flex min-w-0 items-center gap-3"><CreatorThumbnail avatarSeed={pointOfContact.name} className="h-10 w-10 shrink-0" /><div className="min-w-0"><p className="m-0 truncate text-body font-semibold">{pointOfContact.name}</p><p className="m-0 truncate text-sm text-muted-foreground">{pointOfContact.role || "—"}</p>{pointOfContact.email ? <a href={`mailto:${pointOfContact.email}`} className="block truncate text-sm text-muted-foreground hover:text-primary">{pointOfContact.email}</a> : null}</div></div> : <p className="mb-0 mt-3 text-body text-muted-foreground">Not set</p>}
         </DetailCard> : null}
 
         <DetailCard title="About the job">
