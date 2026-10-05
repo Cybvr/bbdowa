@@ -47,10 +47,15 @@ function localDateValue() {
 }
 
 function Detail({ label, children }: { label: string; children: React.ReactNode }) {
-  return <div className="grid min-w-0 grid-cols-[minmax(0,9rem)_minmax(0,1fr)] gap-3 py-2 text-sm"><dt className="text-muted-foreground">{label}</dt><dd className="m-0 min-w-0 break-words font-medium">{children}</dd></div>;
+  return <div className="grid min-w-0 grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-4 py-1.5 text-body"><dt className="text-muted-foreground">{label}</dt><dd className="m-0 min-w-0 break-words font-medium">{children}</dd></div>;
 }
 
-const DETAIL_LIST = "m-0 mt-3 divide-y divide-border border-y border-border";
+const DETAIL_LIST = "m-0 mt-3";
+
+/** A white panel on the grey job page. */
+function DetailCard({ title, children }: { title: string; children: React.ReactNode }) {
+  return <section className="rounded-xl border border-border bg-background p-4 sm:p-5"><h2 className="m-0 text-item-title font-semibold">{title}</h2>{children}</section>;
+}
 
 function OtherJobsSidebar({ jobs, currentSlug }: { jobs: Job[]; currentSlug: string }) {
   const otherJobs = jobs
@@ -332,7 +337,7 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
 
   // The dashboard job page fits the screen on desktop: the other-jobs list and
   // the job each scroll on their own instead of the whole page scrolling.
-  return <div className={embedded ? "w-full" : overviewOnly ? "flex flex-1 flex-col px-5 pb-16 pt-8 sm:px-8 nav:h-[calc(100dvh-60px)] nav:overflow-hidden nav:pb-0 nav:pt-6" : "flex-1 px-5 pb-16 pt-8 sm:px-8"}>
+  return <div className={embedded ? "w-full" : overviewOnly ? "flex flex-1 flex-col bg-muted px-5 pb-16 pt-8 sm:px-8 nav:h-[calc(100dvh-60px)] nav:overflow-hidden nav:pb-0 nav:pt-6" : "flex-1 bg-muted px-4 pb-16 pt-6 sm:px-8"}>
     {!embedded ? <DetailBreadcrumb
       crumbs={[
         { label: adminMode ? "All jobs" : myJobs ? "My jobs" : "Jobs", href: jobsBase },
@@ -354,56 +359,59 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
     {overviewOnly ? null : <DetailTabs tabs={tabs} active={tab} onChange={setTab} />}
     {actionError ? <p role="alert" className="mt-4 text-sm text-destructive">{actionError}</p> : null}
 
-    {tab === "overview" ? adminMode ? <InlineJobOverviewEditor job={job} /> : <div className={overviewOnly ? "grid gap-6 pt-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:items-start nav:min-h-0 nav:flex-1 nav:grid-rows-[minmax(0,1fr)] nav:items-stretch" : "grid gap-10 pt-6"}>
+    {tab === "overview" ? adminMode ? <InlineJobOverviewEditor job={job} /> : <div className={overviewOnly ? "grid gap-6 pt-4 lg:grid-cols-[240px_minmax(0,1fr)] lg:items-start nav:min-h-0 nav:flex-1 nav:grid-rows-[minmax(0,1fr)] nav:items-stretch" : "mx-auto grid w-full max-w-3xl pt-4"}>
       {overviewOnly ? <OtherJobsSidebar jobs={otherJobs} currentSlug={slug} /> : null}
-      <div className={overviewOnly ? "grid min-w-0 content-start gap-10 nav:h-full nav:overflow-y-auto nav:overscroll-contain nav:pb-16" : "contents"}>
-      <section className="min-w-0 space-y-10">
-        <div>
-          <div className={`flex items-center justify-between gap-3${mobileHeader && !embedded ? " max-nav:hidden" : ""}`}>
-            <h1 className="m-0 min-w-0 truncate text-lg font-semibold lg:whitespace-normal lg:break-words">{title}</h1>
-            <div className="flex shrink-0 items-center gap-2">
-              <ShareCreatorDialog creatorName={title} path={`${jobsBase}/${encodeURIComponent(slug)}`} kind="job" showLabel />
-              {!adminMode && role === "admin" ? <JobActions job={job} onSaved={() => void loadTerms()} /> : null}
-            </div>
+      <div className={overviewOnly ? "grid min-w-0 content-start gap-3 nav:h-full nav:overflow-y-auto nav:overscroll-contain nav:pb-16" : "contents"}>
+      <div className="grid min-w-0 content-start gap-3">
+        <div className={`flex items-center justify-between gap-3${mobileHeader && !embedded ? " max-nav:hidden" : ""}`}>
+          <h1 className="m-0 min-w-0 truncate text-page-title font-semibold lg:whitespace-normal lg:break-words lg:text-page-title-lg">{title}</h1>
+          <div className="flex shrink-0 items-center gap-2">
+            <ShareCreatorDialog creatorName={title} path={`${jobsBase}/${encodeURIComponent(slug)}`} kind="job" showLabel />
+            {!adminMode && role === "admin" ? <JobActions job={job} onSaved={() => void loadTerms()} /> : null}
           </div>
-          {richTextHasContent(job.summary) ? <RichTextContent value={job.summary} className="mt-6 max-w-[70ch] text-[16px] leading-[1.45] text-muted-foreground" /> : <p className="mb-0 mt-6 text-[16px] text-muted-foreground">No description added.</p>}
-          {user ? <section className="mt-6"><h2 className="m-0 text-lg font-semibold">Point of contact</h2><dl className={DETAIL_LIST}>
-            <Detail label="Name">{contact?.name || "Not set"}</Detail>
-            <Detail label="Role">{contact?.role || "—"}</Detail>
-          </dl></section> : null}
-          <section className="mt-10"><h2 className="m-0 text-lg font-semibold">Job details</h2><dl className={DETAIL_LIST}>
-            <Detail label="Lead">{lead ? <Link href={userHref(lead, isCreatorUser(lead) ? "creator" : "team")} className="text-foreground underline decoration-border underline-offset-4 hover:text-primary">{lead.name}</Link> : "To be confirmed"}</Detail>
-            <Detail label="Category">{job.category || "—"}</Detail>
-            <Detail label="Specialization">{job.specialization || "—"}</Detail>
-            <Detail label="Work setup">{job.workSetup || "—"}</Detail>
-            <Detail label="Estimated length">{job.estimatedLength || "—"}</Detail>
-            <Detail label="Desired start date">{job.desiredStartDate ? formatDate(job.desiredStartDate) : "—"}</Detail>
-            <Detail label="Job posted">{job.jobPostedAt ? formatDate(job.jobPostedAt) : "—"}</Detail>
-            <Detail label="Required skills">{job.requiredSkills?.length ? <span className="flex flex-wrap gap-2">{job.requiredSkills.map((skill) => <span key={skill} className="rounded-full bg-muted px-2.5 py-1 text-xs">{skill}</span>)}</span> : "—"}</Detail>
-            <Detail label="Fee">{job.fee || "—"}</Detail>
-            <Detail label="Start">{job.startDate ? formatDate(job.startDate) : "—"}</Detail>
-            <Detail label="End">{job.endDate ? formatDate(job.endDate) : "—"}</Detail>
-          </dl></section>
-          {job.externalLinks?.length ? <ul className="m-0 mt-5 flex list-none flex-wrap gap-2 p-0">
-            {job.externalLinks.map((link) => <li key={link.href}><a href={link.href} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center gap-1.5 rounded-md border border-border px-3 py-2 text-[13px] font-semibold text-foreground hover:border-primary hover:text-primary">{link.label}<ArrowUpRight aria-hidden="true" className="size-3.5" /></a></li>)}
-          </ul> : null}
         </div>
 
-        {myJobs && user ? <section><h2 className="m-0 text-lg font-semibold">Team</h2>{teamMembers.length ? <ul className="m-0 mt-3 list-none divide-y divide-border border-y border-border p-0">
-          {teamMembers.map((member) => <li key={member.slug}><Link href={userHref(member, isCreatorUser(member) ? "creator" : "team")} className="flex min-w-0 items-center gap-3 py-2 text-sm font-medium text-foreground hover:text-primary"><CreatorThumbnail imageSrc={member.profileImage} avatarSeed={member.name} className="h-7 w-7 shrink-0" /><span className="truncate">{member.name}</span></Link></li>)}
-        </ul> : <p className="mb-0 mt-3 text-sm text-muted-foreground">No one is on this job&apos;s team yet.</p>}</section> : null}
+        {user ? <DetailCard title="Point of contact">
+          {contact?.name ? <div className="mt-3 flex min-w-0 items-center gap-3"><CreatorThumbnail avatarSeed={contact.name} className="h-10 w-10 shrink-0" /><div className="min-w-0"><p className="m-0 truncate text-body font-semibold">{contact.name}</p><p className="m-0 truncate text-sm text-muted-foreground">{contact.role || "—"}</p></div></div> : <p className="mb-0 mt-3 text-body text-muted-foreground">Not set</p>}
+        </DetailCard> : null}
 
-        {terms ? <section><h2 className="m-0 text-lg font-semibold">Assignment and pay</h2><dl className={DETAIL_LIST}>
+        <DetailCard title="About the job">
+          {richTextHasContent(job.summary) ? <RichTextContent value={job.summary} className="mt-3 max-w-[70ch] text-body text-muted-foreground" /> : <p className="mb-0 mt-3 text-body text-muted-foreground">No description added.</p>}
+          {job.externalLinks?.length ? <ul className="m-0 mt-4 flex list-none flex-wrap gap-2 p-0">
+            {job.externalLinks.map((link) => <li key={link.href}><a href={link.href} target="_blank" rel="noreferrer" className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-[13px] font-semibold text-foreground hover:border-primary hover:text-primary">{link.label}<ArrowUpRight aria-hidden="true" className="size-3.5" /></a></li>)}
+          </ul> : null}
+        </DetailCard>
+
+        <DetailCard title="Job details"><dl className={DETAIL_LIST}>
+          <Detail label="Lead">{lead ? <Link href={userHref(lead, isCreatorUser(lead) ? "creator" : "team")} className="text-foreground underline decoration-border underline-offset-4 hover:text-primary">{lead.name}</Link> : "To be confirmed"}</Detail>
+          <Detail label="Category">{job.category || "—"}</Detail>
+          <Detail label="Specialization">{job.specialization || "—"}</Detail>
+          <Detail label="Work setup">{job.workSetup || "—"}</Detail>
+          <Detail label="Est. length">{job.estimatedLength || "—"}</Detail>
+          <Detail label="Desired start">{job.desiredStartDate ? formatDate(job.desiredStartDate) : "—"}</Detail>
+          <Detail label="Job posted">{job.jobPostedAt ? formatDate(job.jobPostedAt) : "—"}</Detail>
+          <Detail label="Fee">{job.fee || "—"}</Detail>
+          <Detail label="Start">{job.startDate ? formatDate(job.startDate) : "—"}</Detail>
+          <Detail label="End">{job.endDate ? formatDate(job.endDate) : "—"}</Detail>
+        </dl></DetailCard>
+
+        {job.requiredSkills?.length ? <DetailCard title="Required skills">
+          <ul className="m-0 mt-3 flex list-none flex-wrap gap-2 p-0">{job.requiredSkills.map((skill) => <li key={skill} className="rounded-full bg-muted px-3 py-1 text-sm font-medium">{skill}</li>)}</ul>
+        </DetailCard> : null}
+
+        {myJobs && user ? <DetailCard title="Team">{teamMembers.length ? <ul className="m-0 mt-3 grid list-none gap-2 p-0">
+          {teamMembers.map((member) => <li key={member.slug}><Link href={userHref(member, isCreatorUser(member) ? "creator" : "team")} className="flex min-w-0 items-center gap-3 text-body font-medium text-foreground hover:text-primary"><CreatorThumbnail imageSrc={member.profileImage} avatarSeed={member.name} className="h-8 w-8 shrink-0" /><span className="truncate">{member.name}</span></Link></li>)}
+        </ul> : <p className="mb-0 mt-3 text-body text-muted-foreground">No one is on this job&apos;s team yet.</p>}</DetailCard> : null}
+
+        {terms ? <DetailCard title="Assignment and pay"><dl className={DETAIL_LIST}>
           <Detail label="Assigned to">{terms.assignedToName || "Unassigned"}</Detail>
           <Detail label="Rate">{terms.rateAmount != null ? `${formatAmount(terms.rateAmount, terms.rateCurrency)} / ${terms.rateUnit === "fixed" ? "job" : terms.rateUnit}` : "Not set"}</Detail>
           <Detail label="Billing cycle">{BILLING_CYCLE_LABELS[terms.billingCycle]}</Detail>
           <Detail label="Commitment">{terms.commitment || "Not set"}</Detail>
           <Detail label="Workday overlap">{terms.workdayOverlap || "Not set"}</Detail>
-        </dl></section> : null}
-      </section>
+        </dl></DetailCard> : null}
 
-      <aside className="space-y-10">
-        <section><h2 className="m-0 text-lg font-semibold">Client</h2><dl className={DETAIL_LIST}>
+        <DetailCard title="Client"><dl className={DETAIL_LIST}>
           <Detail label="Name"><Link href={`/admin/clients/${job.clientId}/overview`} className="text-foreground underline decoration-border underline-offset-4 hover:text-primary">{client?.name ?? job.clientName}</Link></Detail>
           <Detail label="Industry">{client?.industry || "—"}</Detail>
           <Detail label="Team size">{client?.teamSize ?? "—"}</Detail>
@@ -411,8 +419,8 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
           <Detail label="City / Country">{client?.location || "—"}</Detail>
           <Detail label="Time zone">{client?.timezone || "—"}</Detail>
           <Detail label="Client hours">{client?.hours || "—"}</Detail>
-        </dl></section>
-      </aside>
+        </dl></DetailCard>
+      </div>
       </div>
     </div> : null}
 
