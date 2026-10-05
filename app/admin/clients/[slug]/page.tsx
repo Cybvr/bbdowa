@@ -1711,33 +1711,7 @@ function OneUtilityClientWorkspace({
           {activeMainTab === "brand" && (
             <ClientWorkspaceContent>
                 <ClientWorkspaceHeading title="About" />
-                <div className="grid w-full max-w-4xl grid-cols-1 items-start gap-6 md:grid-cols-[11rem_minmax(0,1fr)] md:gap-8">
-                  <nav aria-label="Profile sections" className="border-b border-border/70 md:border-b-0 md:border-r md:pr-4">
-                    <div role="tablist" aria-orientation="vertical" className="flex flex-col gap-1">
-                      {[
-                        { id: "company" as const, label: "About" },
-                      ].map((section) => {
-                        const isActive = profileSection === section.id;
-                        return (
-                          <button
-                            key={section.id}
-                            type="button"
-                            role="tab"
-                            aria-selected={isActive}
-                            aria-controls={`profile-panel-${section.id}`}
-                            onClick={() => setProfileSection(section.id)}
-                            className={`relative flex min-h-10 w-full items-center justify-start whitespace-nowrap rounded-md px-3 text-left text-[13px] font-semibold tracking-tight transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 after:absolute after:bottom-0 after:left-3 after:right-3 after:h-0.5 md:after:bottom-3 md:after:left-auto md:after:right-[-1px] md:after:top-3 md:after:h-auto md:after:w-0.5 ${isActive
-                              ? "bg-primary/5 text-primary after:bg-primary"
-                              : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                              }`}
-                          >
-                            {section.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </nav>
-
+                <div className="w-full max-w-4xl">
                   <div className="min-w-0">
                   {profileSection === "company" && (
                   <section id="profile-panel-company" role="tabpanel" aria-label="About" className="space-y-5">
