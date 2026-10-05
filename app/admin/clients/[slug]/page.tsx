@@ -550,6 +550,7 @@ function OneUtilityClientWorkspace({
     OneUtilityWorkspaceView
   >(initialView);
   const [taskRefreshToken, setTaskRefreshToken] = useState(0);
+  const [taskSearch, setTaskSearch] = useState("");
   const { tasks: allTasks, loading: tasksLoading } = useFirestoreTasks(taskRefreshToken);
   const clientJobIds = React.useMemo(
     () => new Set(availableJobs.filter((job) => job.clientId === slug).map((job) => job.slug)),
@@ -559,6 +560,11 @@ function OneUtilityClientWorkspace({
     () => allTasks.filter((task) => task.clientId === slug || (task.jobId ? clientJobIds.has(task.jobId) : false)),
     [allTasks, clientJobIds, slug],
   );
+  const visibleClientTasks = React.useMemo(() => {
+    const query = taskSearch.trim().toLowerCase();
+    if (!query) return clientTasks;
+    return clientTasks.filter((task) => [task.title, task.description, task.assignedToName, task.jobName].filter(Boolean).join(" ").toLowerCase().includes(query));
+  }, [clientTasks, taskSearch]);
   const assignees = React.useMemo<AssigneeOption[]>(
     () => availableUsers
       .filter((candidate) => candidate.uid)
@@ -1518,11 +1524,19 @@ function OneUtilityClientWorkspace({
                 title="Tasks"
                 actions={<NewTaskDialog assignees={assignees} createdBy={createdBy} createdByName={createdByName} initialClientId={slug} onCreated={() => setTaskRefreshToken((value) => value + 1)} />}
               />
+              <FilterBar
+                panelId="client-tasks-filter"
+                search={taskSearch}
+                onSearchChange={setTaskSearch}
+                searchPlaceholder="Search tasks"
+                resultCount={`${visibleClientTasks.length} ${visibleClientTasks.length === 1 ? "task" : "tasks"}`}
+                className="my-4"
+              />
               {tasksLoading ? (
                 <p className="py-10 text-sm text-muted-foreground">Loading tasks…</p>
-              ) : clientTasks.length ? (
+              ) : visibleClientTasks.length ? (
                 <ul className="m-0 divide-y divide-border border-y border-border p-0">
-                  {clientTasks.map((task) => (
+                  {visibleClientTasks.map((task) => (
                     <li key={task.id}>
                       <Link
                         href={`/dashboard/work/${encodeURIComponent(task.id)}`}
@@ -1541,7 +1555,7 @@ function OneUtilityClientWorkspace({
                   ))}
                 </ul>
               ) : (
-                <p className="py-10 text-sm text-muted-foreground">No tasks have been added for this client yet.</p>
+                <p className="py-10 text-sm text-muted-foreground">{clientTasks.length ? "No tasks match your search." : "No tasks have been added for this client yet."}</p>
               )}
             </ClientWorkspaceContent>
           )}

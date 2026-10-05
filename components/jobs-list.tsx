@@ -5,6 +5,7 @@ import Link from "next/link";
 import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 import { useAuth } from "@/components/auth-provider";
 import { DashboardListPage } from "@/components/dashboard/list-page";
+import { FilterBar } from "@/components/dashboard/filter-bar";
 import { PageLoadingSkeleton } from "@/components/dashboard/loading-skeleton";
 import { firebaseDb } from "@/lib/firebase/client";
 import { jobsCollection } from "@/lib/firebase/job-collections";
@@ -33,6 +34,7 @@ export function JobsList({ assignedOnly = false }: { assignedOnly?: boolean }) {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [filter, setFilter] = React.useState<JobFilter>("all");
+  const [search, setSearch] = React.useState("");
 
   React.useEffect(() => {
     if (authLoading) return;
@@ -71,10 +73,27 @@ export function JobsList({ assignedOnly = false }: { assignedOnly?: boolean }) {
   }, [assignedOnly, authLoading, user]);
 
   if (authLoading || loading) return <PageLoadingSkeleton titleWidth="w-32" />;
-  const visible = jobs.filter((job) => matchesFilter(job, filter));
+  const queryText = search.trim().toLowerCase();
+  const visible = jobs.filter((job) => {
+    if (!matchesFilter(job, filter)) return false;
+    if (!queryText) return true;
+    return [job.title, job.name, job.clientName, job.category, job.specialization]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase()
+      .includes(queryText);
+  });
 
   return <DashboardListPage title={assignedOnly ? "My jobs" : "Jobs"}>
     <p className="mt-2 text-sm text-muted-foreground">{assignedOnly ? "Client jobs assigned to you, with their tasks, timesheets and payments in one place." : "Browse all client jobs and open a job to see its details."}</p>
+    <FilterBar
+      panelId={assignedOnly ? "my-jobs-filter" : "jobs-filter"}
+      search={search}
+      onSearchChange={setSearch}
+      searchPlaceholder="Search jobs"
+      resultCount={`${visible.length} ${visible.length === 1 ? "job" : "jobs"}`}
+      className="mt-5"
+    />
     <div className="mt-6 flex gap-5 overflow-x-auto border-b border-border" role="group" aria-label="Job status">
       {filters.map((value) => <button key={value} type="button" onClick={() => setFilter(value)} aria-pressed={filter === value} className={`shrink-0 border-b-2 px-1 pb-3 text-sm font-medium ${filter === value ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>{value[0].toUpperCase() + value.slice(1)}</button>)}
     </div>
