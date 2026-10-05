@@ -389,12 +389,7 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
           {teamMembers.map((member) => <li key={member.slug}><Link href={userHref(member, isCreatorUser(member) ? "creator" : "team")} className="flex min-w-0 items-center gap-3 text-body font-medium text-foreground hover:text-primary"><CreatorThumbnail imageSrc={member.profileImage} avatarSeed={member.name} className="h-8 w-8 shrink-0" /><span className="truncate">{member.name}</span></Link></li>)}
         </ul> : <p className="mb-0 mt-3 text-body text-muted-foreground">No one is on this job&apos;s team yet.</p>}</DetailCard> : null}
 
-        {terms ? <DetailCard title="Assignment and pay"><dl className={DETAIL_LIST}>
-          <Detail label="Assigned to">{jobAssignees(terms).length ? <ul className="m-0 grid list-none gap-1.5 p-0">{jobAssignees(terms).map((person) => {
-            const profile = users.find((candidate) => candidate.uid === person.uid);
-            const inner = <><CreatorThumbnail imageSrc={profile?.profileImage} avatarSeed={profile?.name ?? person.name} className="h-6 w-6 shrink-0" /><span className="truncate">{profile?.name ?? person.name}</span></>;
-            return <li key={person.uid}>{profile?.slug ? <Link href={userHref(profile, isCreatorUser(profile) ? "creator" : "team")} className="flex min-w-0 items-center gap-2 text-foreground no-underline hover:text-primary">{inner}</Link> : <span className="flex min-w-0 items-center gap-2">{inner}</span>}</li>;
-          })}</ul> : "Unassigned"}</Detail>
+        {terms ? <DetailCard title="Pay"><dl className={DETAIL_LIST}>
           <Detail label="Rate">{terms.rateAmount != null ? `${formatAmount(terms.rateAmount, terms.rateCurrency)} / ${terms.rateUnit === "fixed" ? "job" : terms.rateUnit}` : "Not set"}</Detail>
           <Detail label="Billing cycle">{BILLING_CYCLE_LABELS[terms.billingCycle]}</Detail>
           <Detail label="Commitment">{terms.commitment || "Not set"}</Detail>
