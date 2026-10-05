@@ -3,7 +3,7 @@
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { ExternalLink } from "lucide-react";
+import { CheckCircle2, ExternalLink } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { ItemCard, ItemCardList } from "@/components/dashboard/item-card";
 import { JobCard } from "@/components/job-card";
@@ -205,7 +205,10 @@ export default function HomePage() {
             {facts.map((fact) => (
               <div key={fact.label} className="flex min-h-12 items-center justify-between gap-4 py-3">
                 <dt className="text-sm text-muted-foreground">{fact.label}</dt>
-                <dd className="m-0 min-w-0 truncate text-right text-sm font-medium text-foreground">{fact.value}</dd>
+                <dd className="m-0 flex min-w-0 items-center justify-end gap-1.5 truncate text-right text-sm font-medium text-foreground">
+                  <span className="truncate">{fact.value}</span>
+                  {fact.label === "Availability" && fact.value === "Busy" ? <CheckCircle2 aria-hidden="true" className="h-4 w-4 shrink-0 text-emerald-600" /> : null}
+                </dd>
               </div>
             ))}
           </dl>
