@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { ChevronRight } from "lucide-react";
+import { ArrowLeft, ChevronRight } from "lucide-react";
 import { EmptyState, ImageWithFallback } from "@/components/dashboard/ui";
 import { DashboardSidebarSheet } from "@/components/dashboard-sidebar";
 import { useMobileHeader } from "@/components/dashboard/mobile-header";
@@ -16,7 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 
 export type DetailCrumb = { label: string; href?: string };
 
-export function DetailBreadcrumb({ crumbs, actions }: { crumbs: DetailCrumb[]; actions?: ReactNode }) {
+export function DetailBreadcrumb({ crumbs, actions, back }: { crumbs: DetailCrumb[]; actions?: ReactNode; back?: DetailCrumb }) {
   const mobileHeader = useMobileHeader();
   return (
     <div className="mb-2 flex items-center justify-between gap-4 px-1">
@@ -29,24 +29,31 @@ export function DetailBreadcrumb({ crumbs, actions }: { crumbs: DetailCrumb[]; a
             <DashboardSidebarSheet />
           </div>
         )}
-        <nav aria-label="Breadcrumb" className="min-w-0">
-          <ol className="m-0 flex list-none flex-wrap items-center gap-x-2 gap-y-1 p-0 text-xs text-muted-foreground sm:text-sm">
-            {crumbs.map((crumb, index) => (
-              <li key={crumb.label} className="flex items-center gap-2">
-                {index > 0 ? <ChevronRight aria-hidden="true" className="h-3.5 w-3.5" /> : null}
-                {crumb.href ? (
-                  <Link href={crumb.href} className="transition hover:text-foreground">
-                    {crumb.label}
-                  </Link>
-                ) : (
-                  <span aria-current="page" className="text-foreground">
-                    {crumb.label}
-                  </span>
-                )}
-              </li>
-            ))}
-          </ol>
-        </nav>
+        {back ? (
+          <Link href={back.href ?? "#"} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition hover:text-foreground">
+            <ArrowLeft aria-hidden="true" className="h-4 w-4" />
+            {back.label}
+          </Link>
+        ) : (
+          <nav aria-label="Breadcrumb" className="min-w-0">
+            <ol className="m-0 flex list-none flex-wrap items-center gap-x-2 gap-y-1 p-0 text-xs text-muted-foreground sm:text-sm">
+              {crumbs.map((crumb, index) => (
+                <li key={crumb.label} className="flex items-center gap-2">
+                  {index > 0 ? <ChevronRight aria-hidden="true" className="h-3.5 w-3.5" /> : null}
+                  {crumb.href ? (
+                    <Link href={crumb.href} className="transition hover:text-foreground">
+                      {crumb.label}
+                    </Link>
+                  ) : (
+                    <span aria-current="page" className="text-foreground">
+                      {crumb.label}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ol>
+          </nav>
+        )}
       </div>
       {actions ? <div className="shrink-0">{actions}</div> : null}
     </div>

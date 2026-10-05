@@ -333,6 +333,7 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
         { label: job.clientName, href: `/admin/clients/${job.clientId}/overview` },
         { label: title },
       ]}
+      back={adminMode ? { label: "All jobs (admin)", href: jobsBase } : undefined}
       actions={null}
     /> : null}
     {overviewOnly ? null : <DetailTabs tabs={tabs} active={tab} onChange={setTab} />}
