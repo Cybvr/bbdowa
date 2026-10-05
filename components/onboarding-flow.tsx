@@ -7,7 +7,7 @@ import { ArrowLeft, ArrowRight, Check, Loader2 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { firebaseDb } from "@/lib/firebase/client";
 import { readDocumentsForAssignee, useFirestoreUsers } from "@/lib/firebase/client-content";
-import { Field, ImageUploadField, SelectField, TextField, TextareaField } from "@/components/detail-editor";
+import { Field, ImageUploadField, SelectField, TextField } from "@/components/detail-editor";
 import { DocumentSignDialog } from "@/components/document-sign-dialog";
 import { DocumentStatus } from "@/components/document-status";
 import { formatDocumentDateTime, type AgencyDocument } from "@/lib/documents";
