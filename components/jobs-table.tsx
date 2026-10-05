@@ -137,9 +137,9 @@ export function JobsTable({ jobs }: { jobs: Job[] }) {
                 </TableHeader>
                 <TableBody>
                   {visible.map((job) => (
-                    <ClickableTableRow key={job.slug} href={jobHref(job.slug, true)} label={`Open job ${jobTitle(job)}`}>
+                    <ClickableTableRow key={job.slug} href={jobHref(job, true)} label={`Open job ${jobTitle(job)}`}>
                       <TableCell className="px-4 py-4 font-semibold">
-                        <Link href={jobHref(job.slug, true)} className="text-foreground no-underline hover:text-primary focus-visible:text-primary">
+                        <Link href={jobHref(job, true)} className="text-foreground no-underline hover:text-primary focus-visible:text-primary">
                           {jobTitle(job)}
                         </Link>
                       </TableCell>

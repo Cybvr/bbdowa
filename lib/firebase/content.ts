@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { BlogPost } from "@/lib/blog";
-import { normalizeJob, type Job } from "@/lib/jobs";
+import { jobUrlSlug, normalizeJob, type Job } from "@/lib/jobs";
 import { MIGRATION_COLLECTION, MIGRATION_ID, collectionsFor, type MigrationState } from "@/lib/job-migration";
 import type { Client } from "@/lib/clients";
 import type { Opening } from "@/lib/openings";
@@ -120,8 +120,17 @@ export async function getJobs(): Promise<Job[]> {
 }
 
 export async function getJobBySlug(slug: string): Promise<Job | undefined> {
-  const record = await getDocument<Record<string, unknown>>((await collections()).jobs, slug);
-  return record ? normalizeJob(record, slug) : undefined;
+  const collectionName = (await collections()).jobs;
+  const record = await getDocument<Record<string, unknown>>(collectionName, slug);
+  if (record) return normalizeJob(record, slug);
+
+  // New links use the job title while older links still use the stored slug.
+  // Keep both resolving so existing bookmarks and task/payment references do
+  // not break when a title-based URL is opened.
+  const matchingRecord = (await getCollection<Record<string, unknown>>(collectionName))
+    .map((candidate) => normalizeJob(candidate))
+    .find((candidate) => jobUrlSlug(candidate) === slug);
+  return matchingRecord;
 }
 
 export async function getBlogPosts(): Promise<BlogPost[]> {

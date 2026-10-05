@@ -24,6 +24,7 @@ import { useAuth } from "@/components/auth-provider";
 import { firebaseDb } from "@/lib/firebase/client";
 import { jobsCollection } from "@/lib/firebase/job-collections";
 import { newJobRecord, slugify } from "@/lib/job-records";
+import { jobHref } from "@/lib/jobs";
 import { ImageUploadField } from "@/components/detail-editor";
 import { LIST_ACTION_CLASS } from "@/components/dashboard/list-page-actions";
 
@@ -247,7 +248,7 @@ export function QuickCreate({ type, iconOnly = false }: { type: CreateType; icon
         }));
         setOpen(false);
         reset();
-        router.push(`/admin/jobs/${slug}`);
+        router.push(jobHref({ slug, title: jobName, name: jobName }, true));
       }
       router.refresh();
     } catch (cause) {

@@ -19,7 +19,7 @@ export function JobCard({
   return (
     <DashboardCard className="h-full" actions={actions}>
       <Link
-        href={jobHref(job.slug, admin, myJobs)}
+        href={jobHref(job, admin, myJobs)}
         className="group flex h-full flex-col p-4 text-foreground no-underline transition hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
       >
         <span className="line-clamp-1 text-[13px] font-medium text-muted-foreground">{job.clientName}</span>

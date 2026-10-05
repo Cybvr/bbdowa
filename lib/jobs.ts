@@ -143,9 +143,20 @@ export const JOB_STATUS_LABELS: Record<JobStatus, string> = {
   archived: "Archived",
 };
 
+/** Human-readable URL segment for a job's current internal title. */
+export function jobUrlSlug(job: Pick<Job, "slug" | "title" | "name">): string {
+  const titleSlug = jobTitle(job)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
+  return titleSlug || job.slug;
+}
+
 /** A job's page: the admin page, shared jobs overview, or assigned-job workspace. */
-export function jobHref(slug: string, admin = false, myJobs = false): string {
+export function jobHref(jobOrSlug: string | Pick<Job, "slug" | "title" | "name">, admin = false, myJobs = false): string {
   const base = admin ? "/admin/jobs" : myJobs ? "/dashboard/my-jobs" : "/dashboard/jobs";
+  const slug = typeof jobOrSlug === "string" ? jobOrSlug : jobUrlSlug(jobOrSlug);
   return `${base}/${encodeURIComponent(slug)}`;
 }
 

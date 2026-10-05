@@ -29,7 +29,7 @@ import { TeamPanel } from "@/components/team-panel";
 import { JobMediaPanel } from "@/components/job-media-panel";
 import { firebaseDb } from "@/lib/firebase/client";
 import { useClientOptions, useFirestoreUsers } from "@/lib/firebase/client-content";
-import { byLastModified, jobId, jobPostedDate, jobTitle, type Job } from "@/lib/jobs";
+import { byLastModified, jobHref, jobId, jobPostedDate, jobTitle, type Job } from "@/lib/jobs";
 import { teamSizeLabel, type Client } from "@/lib/clients";
 import { TASK_COLLECTION, formatDate, isOverdue, type Task } from "@/lib/creator-tasks";
 import { longDate } from "@/lib/format";
@@ -288,6 +288,7 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
   const hasMedia = job.media.length > 0;
   const showSignInGate = !adminMode && !authLoading && !user;
   const jobsBase = adminMode ? "/admin/jobs" : myJobs ? "/dashboard/my-jobs" : "/dashboard/jobs";
+  const currentJobHref = jobHref(job, adminMode, myJobs);
   const tabs: { id: JobTab; label: string }[] = [
     { id: "overview", label: "Overview" },
     ...(overviewOnly || myJobs || showSignInGate ? [] : [{ id: "case-study" as const, label: "Case study" }]),
@@ -341,7 +342,7 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
     {!embedded ? <>
       <MobileHeaderTitle title={title} />
       <MobileHeaderActions>
-        <ShareCreatorDialog creatorName={title} path={`${jobsBase}/${encodeURIComponent(slug)}`} kind="job" />
+        <ShareCreatorDialog creatorName={title} path={currentJobHref} kind="job" />
         {!adminMode && role === "admin" ? <JobActions job={job} onSaved={() => void loadTerms()} /> : null}
       </MobileHeaderActions>
     </> : null}
@@ -358,7 +359,7 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
             <p className="m-0 mt-1 truncate text-xs text-muted-foreground">JobId: {jobId(job)}</p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <ShareCreatorDialog creatorName={title} path={`${jobsBase}/${encodeURIComponent(slug)}`} kind="job" showLabel />
+            <ShareCreatorDialog creatorName={title} path={currentJobHref} kind="job" showLabel />
             {!adminMode && role === "admin" ? <JobActions job={job} onSaved={() => void loadTerms()} /> : null}
           </div>
         </div>
@@ -432,7 +433,7 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
 
     {tab === "media" && (hasMedia || canManage) ? <JobMediaPanel jobSlug={slug} jobName={title} initialMedia={job.media} canManage={canManage} /> : null}
 
-    {tab === "team" ? <section className="pt-6"><ClientWorkspaceHeading title="Team" actions={canManage ? <TeamAddAction jobSlug={slug} jobName={title} creators={users} selectedSlugs={teamSlugs} onSaved={(slugs) => { setTeamSlugs(slugs); void loadTerms(); }} /> : null} /><TeamPanel panelId={`job-${slug}-team-filter`} label={`${title} team`} members={teamMembers} allUsers={users} listHref={`${jobsBase}/${encodeURIComponent(slug)}`} emptyText="No one is on this job's team yet." /></section> : null}
+    {tab === "team" ? <section className="pt-6"><ClientWorkspaceHeading title="Team" actions={canManage ? <TeamAddAction jobSlug={slug} jobName={title} creators={users} selectedSlugs={teamSlugs} onSaved={(slugs) => { setTeamSlugs(slugs); void loadTerms(); }} /> : null} /><TeamPanel panelId={`job-${slug}-team-filter`} label={`${title} team`} members={teamMembers} allUsers={users} listHref={currentJobHref} emptyText="No one is on this job's team yet." /></section> : null}
 
     {tab === "tasks" ? <section className="pt-6"><ClientWorkspaceHeading title="Tasks" actions={canManage ? <>{terms?.assignedTo ? <Button type="button" variant="outline" onClick={() => setAttachingTask(true)}>Attach task</Button> : null}<Button type="button" onClick={() => setAddingTask(true)}><Plus aria-hidden="true" className="h-3.5 w-3.5" />Add</Button></> : null} /><FilterBar panelId={`job-${slug}-tasks-filter`} search={taskSearch} onSearchChange={setTaskSearch} searchPlaceholder="Search tasks" resultCount={`${visibleTasks.length} ${visibleTasks.length === 1 ? "task" : "tasks"}`} className="my-4" />{visibleTasks.length ? <ul className="mt-5 divide-y divide-border border-y border-border">{visibleTasks.map((task) => <li key={task.id}><Link href={`/dashboard/work/${encodeURIComponent(task.id)}`} className="flex flex-wrap items-center justify-between gap-3 py-2.5 text-foreground hover:text-primary"><span className="min-w-0"><span className="block font-semibold">{task.title}</span><span className="mt-1 block text-xs text-muted-foreground">{task.assignedToName ? `${task.assignedToName} · ` : ""}{task.dueDate ? `Due ${formatDate(task.dueDate)}` : "No due date"}</span></span><TaskStatusBadge status={task.status} overdue={isOverdue(task)} /></Link></li>)}</ul> : <p className="py-10 text-sm text-muted-foreground">{tasks.length ? "No tasks match your search." : "No tasks have been added to this job."}</p>}</section> : null}
 
