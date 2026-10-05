@@ -6,12 +6,12 @@ import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { ArrowLeft, ArrowRight, Check, Loader2 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { firebaseDb } from "@/lib/firebase/client";
-import { readDocumentsForAssignee } from "@/lib/firebase/client-content";
+import { readDocumentsForAssignee, useFirestoreUsers } from "@/lib/firebase/client-content";
 import { Field, ImageUploadField, SelectField, TextField, TextareaField } from "@/components/detail-editor";
 import { DocumentSignDialog } from "@/components/document-sign-dialog";
 import { DocumentStatus } from "@/components/document-status";
 import { formatDocumentDateTime, type AgencyDocument } from "@/lib/documents";
-import { DEFAULT_CREATOR_CATEGORIES, type CreatorAvailability } from "@/lib/users";
+import { creatorCategoryOptions, isTeamUser, userRoles, type CreatorAvailability } from "@/lib/users";
 import {
   EQUIPMENT_ITEMS,
   HR_COLLECTION,
@@ -21,6 +21,11 @@ import {
   type HrRecord,
   type OnboardingStep,
 } from "@/lib/onboarding";
+
+/** Keeps a saved answer in the list even if nobody else has it yet. */
+function withCurrent(options: string[], current: string) {
+  return current && !options.includes(current) ? [...options, current] : options;
+}
 
 type ProfileAnswers = {
   name: string;
@@ -124,6 +129,12 @@ export function OnboardingFlow() {
       </div>
     );
   }
+
+  // Dropdowns use what's already in the directory: team departments, admins as managers, creator fields.
+  const { users: directory } = useFirestoreUsers();
+  const departmentOptions = React.useMemo(() => [...new Set(directory.filter(isTeamUser).map((person) => person.department?.trim()).filter((value): value is string => Boolean(value)))].sort(), [directory]);
+  const managerOptions = React.useMemo(() => directory.filter((person) => userRoles(person).includes("admin")).map((person) => person.name).filter(Boolean).sort(), [directory]);
+  const fieldOptions = React.useMemo(() => creatorCategoryOptions(directory), [directory]);
 
   // One onboarding for everyone, staff and creators alike.
   const steps = ONBOARDING_STEPS;
@@ -242,7 +253,7 @@ export function OnboardingFlow() {
     { step: "profile", label: "Location", value: answers.location },
     { step: "work", label: "Title", value: answers.title },
     { step: "work", label: "Department", value: answers.department },
-    { step: "work", label: "Craft", value: answers.category },
+    { step: "work", label: "Field", value: answers.category },
     { step: "work", label: "Manager", value: hr.managerName },
     { step: "work", label: "Start date", value: hr.startDate },
     { step: "work", label: "Portfolio", value: answers.portfolio },
@@ -327,14 +338,24 @@ export function OnboardingFlow() {
       {step === "work" ? (
         <div className="space-y-4">
           <TextField label="Job title" value={answers.title} onChange={set("title")} placeholder="e.g. Senior Copywriter" />
-          <TextField label="Department" value={answers.department} onChange={set("department")} placeholder="e.g. Creative" />
-          <TextField label="Manager" value={hr.managerName} onChange={(value) => setHr({ ...hr, managerName: value })} />
+          <SelectField
+            label="Department"
+            value={answers.department || undefined}
+            onChange={set("department")}
+            options={withCurrent(departmentOptions, answers.department).map((value) => ({ value, label: value }))}
+          />
+          <SelectField
+            label="Manager"
+            value={hr.managerName || undefined}
+            onChange={(value) => setHr({ ...hr, managerName: value })}
+            options={withCurrent(managerOptions, hr.managerName).map((value) => ({ value, label: value }))}
+          />
           <TextField label="Start date" value={hr.startDate} onChange={(value) => setHr({ ...hr, startDate: value })} type="date" />
           <SelectField
-            label="Main craft"
+            label="Field"
             value={answers.category || undefined}
             onChange={set("category")}
-            options={[...new Set([...DEFAULT_CREATOR_CATEGORIES, ...(answers.category ? [answers.category] : [])])].map((value) => ({ value, label: value }))}
+            options={withCurrent(fieldOptions, answers.category).map((value) => ({ value, label: value }))}
           />
           <TextField label="Portfolio or website" value={answers.portfolio} onChange={set("portfolio")} type="url" placeholder="https://" />
           <TextField label="LinkedIn" value={answers.linkedin} onChange={set("linkedin")} placeholder="https://linkedin.com/in/" />
