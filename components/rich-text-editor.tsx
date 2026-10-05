@@ -15,9 +15,74 @@ function escapeHtml(value: string): string {
     .replaceAll("'", "&#039;");
 }
 
+const MARKDOWN_HINT = /(\*\*[^*\n]+\*\*|^\s*#{1,3}\s|^\s*[-*•]\s+\S|^\s*\d+[.)]\s+\S)/m;
+
+function inlineMarkdown(text: string): string {
+  return escapeHtml(text)
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/(^|[^*\w])\*([^*\n]+)\*(?=[^*\w]|$)/g, "$1<em>$2</em>")
+    .replace(/(^|\W)_([^_\n]+)_(?=\W|$)/g, "$1<em>$2</em>");
+}
+
+/** Turns pasted Markdown (headings, bold, lists) into the editor's HTML. */
+function markdownToHtml(text: string): string {
+  const out: string[] = [];
+  let list: "ul" | "ol" | null = null;
+  const closeList = () => {
+    if (list) out.push(`</${list}>`);
+    list = null;
+  };
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line) {
+      closeList();
+      continue;
+    }
+    const heading = line.match(/^#{1,3}\s+(.*)$/) ?? line.match(/^\*\*([^*]+)\*\*:?$/);
+    const bullet = line.match(/^[-*•]\s+(.*)$/);
+    const numbered = line.match(/^\d+[.)]\s+(.*)$/);
+    if (heading) {
+      closeList();
+      out.push(`<h2>${inlineMarkdown(heading[1])}</h2>`);
+    } else if (bullet || numbered) {
+      const kind = bullet ? "ul" : "ol";
+      if (list !== kind) {
+        closeList();
+        out.push(`<${kind}>`);
+        list = kind;
+      }
+      out.push(`<li><p>${inlineMarkdown((bullet ?? numbered)![1])}</p></li>`);
+    } else {
+      closeList();
+      out.push(`<p>${inlineMarkdown(line)}</p>`);
+    }
+  }
+  closeList();
+  return out.join("");
+}
+
+function decodeEntities(value: string): string {
+  return value
+    .replaceAll("&nbsp;", " ")
+    .replaceAll("&lt;", "<")
+    .replaceAll("&gt;", ">")
+    .replaceAll("&quot;", '"')
+    .replaceAll("&#039;", "'")
+    .replaceAll("&amp;", "&");
+}
+
 function asEditorContent(value: string): string {
   if (!value.trim()) return "";
-  if (/<[a-z][\s\S]*>/i.test(value)) return value;
+  if (/<[a-z][\s\S]*>/i.test(value)) {
+    // Markdown pasted as plain paragraphs: rebuild it as real formatting. Already formatted HTML is left alone.
+    const plainParagraphsOnly = !/<(?!\/?(p|br)\b)[a-z]/i.test(value);
+    if (plainParagraphsOnly) {
+      const text = decodeEntities(value.replace(/<br\s*\/?>/gi, "\n").replace(/<\/p>/gi, "\n").replace(/<[^>]*>/g, ""));
+      if (MARKDOWN_HINT.test(text)) return markdownToHtml(text);
+    }
+    return value;
+  }
+  if (MARKDOWN_HINT.test(value)) return markdownToHtml(value);
   return value
     .split(/\r?\n/)
     .map((line) => `<p>${escapeHtml(line) || "<br>"}</p>`)
@@ -79,11 +144,21 @@ export function RichTextEditor({
   /** A much taller writing area, for long-form copy like a job description. */
   tall?: boolean;
 }) {
+  const pasteHtml = React.useRef<((html: string) => void) | null>(null);
   const editor = useEditor({
     extensions: [StarterKit],
     content: asEditorContent(value),
     immediatelyRender: false,
     editorProps: {
+      // Pasted Markdown (e.g. from a chat) becomes headings, bold and lists instead of literal ** and -.
+      handlePaste: (view, event) => {
+        const text = event.clipboardData?.getData("text/plain") ?? "";
+        const hasHtml = Boolean(event.clipboardData?.getData("text/html"));
+        if (!text || !MARKDOWN_HINT.test(text) || (hasHtml && !/\*\*|^\s*#{1,3}\s/m.test(text))) return false;
+        event.preventDefault();
+        pasteHtml.current?.(markdownToHtml(text));
+        return true;
+      },
       attributes: {
         "aria-label": label,
         class: `${tall ? "min-h-[32rem]" : compact ? "min-h-36" : "min-h-56"} px-4 py-3 text-[14px] leading-[1.65] outline-none [&_h2]:mb-3 [&_h2]:mt-5 [&_h2]:text-[16px] [&_h2]:font-semibold [&_h2:first-child]:mt-0 [&_li]:ml-5 [&_li]:pl-1 [&_ol]:list-decimal [&_p]:mb-3 [&_p:last-child]:mb-0 [&_ul]:list-disc`,
@@ -91,6 +166,10 @@ export function RichTextEditor({
     },
     onUpdate: ({ editor: currentEditor }) => onChange(currentEditor.getHTML()),
   });
+
+  React.useEffect(() => {
+    pasteHtml.current = editor ? (html) => editor.chain().focus().insertContent(html).run() : null;
+  }, [editor]);
 
   React.useEffect(() => {
     if (!editor) return;
