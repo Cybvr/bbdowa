@@ -123,8 +123,6 @@ function InlineJobOverviewEditor({ job }: { job: Job }) {
   const [startDate, setStartDate] = React.useState(job.startDate ?? "");
   const [endDate, setEndDate] = React.useState(job.endDate ?? "");
   const [fee, setFee] = React.useState(job.fee ?? "");
-  const [target, setTarget] = React.useState(job.target ?? "");
-  const [result, setResult] = React.useState(job.result ?? "");
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -155,8 +153,6 @@ function InlineJobOverviewEditor({ job }: { job: Job }) {
         startDate: startDate || null,
         endDate: endDate || null,
         fee: fee.trim(),
-        target: target.trim(),
-        result: result.trim(),
         updatedAt: serverTimestamp(),
       });
       router.refresh();
@@ -188,8 +184,6 @@ function InlineJobOverviewEditor({ job }: { job: Job }) {
         <label className="space-y-1.5 text-sm font-medium">End date<input type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} className={INLINE_FIELD} /></label>
         <label className="space-y-1.5 text-sm font-medium">Desired start<input type="date" value={desiredStartDate} onChange={(event) => setDesiredStartDate(event.target.value)} className={INLINE_FIELD} /></label>
         <label className="space-y-1.5 text-sm font-medium">Fee<input value={fee} onChange={(event) => setFee(event.target.value)} className={INLINE_FIELD} /></label>
-        <label className="space-y-1.5 text-sm font-medium">Target<input value={target} onChange={(event) => setTarget(event.target.value)} className={INLINE_FIELD} /></label>
-        <label className="space-y-1.5 text-sm font-medium">Result so far<input value={result} onChange={(event) => setResult(event.target.value)} className={INLINE_FIELD} /></label>
         <label className="space-y-1.5 text-sm font-medium sm:col-span-2 lg:col-span-1 xl:col-span-2">Required skills<input value={requiredSkills} onChange={(event) => setRequiredSkills(event.target.value)} className={INLINE_FIELD} placeholder="Framer, UI Design" /></label>
         <div className="flex items-center justify-between gap-3 border-t border-border pt-4 text-sm sm:col-span-2 lg:col-span-1 xl:col-span-2">
           <span className="text-muted-foreground">Created</span>
