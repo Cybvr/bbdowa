@@ -216,8 +216,13 @@ service cloud.firestore {
       match /messages/{messageId} {
         allow read: if signedIn()
           && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+        // Automatic notes from Bantaba (welcome, onboarding done) are written by the
+        // recipient's own app into their own conversation with "bantaba".
         allow create: if signedIn()
-          && request.resource.data.senderId == request.auth.uid
+          && (request.resource.data.senderId == request.auth.uid
+            || (request.resource.data.senderId == "bantaba"
+              && request.resource.data.system == true
+              && "bantaba" in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants))
           && request.resource.data.text is string
           && request.resource.data.text.size() > 0
           && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;

@@ -4,7 +4,8 @@ import * as React from "react";
 import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 import { useAuth } from "@/components/auth-provider";
 import { DashboardListPage } from "@/components/dashboard/list-page";
-import { FilterBar } from "@/components/dashboard/filter-bar";
+import { Search } from "lucide-react";
+import { useSavedJobs } from "@/lib/firebase/saved-jobs";
 import { PageLoadingSkeleton } from "@/components/dashboard/loading-skeleton";
 import { JobCard } from "@/components/job-card";
 import { firebaseDb } from "@/lib/firebase/client";
@@ -16,10 +17,11 @@ import { readMyJobIds } from "@/lib/firebase/job-team";
 import { ACTIVITY_COLLECTION } from "@/lib/time-tracking";
 import { PAYMENTS_COLLECTION } from "@/lib/payments";
 
-const filters = ["active", "completed", "archive"] as const;
+const filters = ["active", "completed", "archive", "saved"] as const;
 type JobFilter = (typeof filters)[number];
 
-function matchesFilter(job: Job, filter: JobFilter) {
+function matchesFilter(job: Job, filter: JobFilter, saved: string[]) {
+  if (filter === "saved") return saved.includes(job.slug);
   if (filter === "active") return job.status === "active";
   if (filter === "completed") return job.status === "completed";
   return job.status === "archived";
@@ -33,6 +35,7 @@ export function JobsList({ assignedOnly = false }: { assignedOnly?: boolean }) {
   const [error, setError] = React.useState<string | null>(null);
   const [filter, setFilter] = React.useState<JobFilter>("active");
   const [search, setSearch] = React.useState("");
+  const savedJobs = useSavedJobs(user?.uid);
 
   React.useEffect(() => {
     if (authLoading) return;
@@ -73,7 +76,7 @@ export function JobsList({ assignedOnly = false }: { assignedOnly?: boolean }) {
   if (authLoading || loading) return <PageLoadingSkeleton titleWidth="w-32" />;
   const queryText = search.trim().toLowerCase();
   const visible = jobs.filter((job) => {
-    if (!matchesFilter(job, filter)) return false;
+    if (!matchesFilter(job, filter, savedJobs)) return false;
     if (!queryText) return true;
     return [jobTitle(job), job.title, job.name, job.clientName, job.category, job.specialization]
       .filter(Boolean)
@@ -83,20 +86,21 @@ export function JobsList({ assignedOnly = false }: { assignedOnly?: boolean }) {
   });
 
   return <DashboardListPage title={assignedOnly ? "My jobs" : "Jobs"}>
-    <FilterBar
-      panelId={assignedOnly ? "my-jobs-filter" : "jobs-filter"}
-      search={search}
-      onSearchChange={setSearch}
-      searchPlaceholder="Search jobs"
-      resultCount={`${visible.length} ${visible.length === 1 ? "job" : "jobs"}`}
-      className="mt-5"
-    />
+    {/* A plain search box, always on the page, so it's easy to find on phones too. */}
+    <div className="mt-5 flex items-center gap-3">
+      <label className="relative min-w-0 flex-1">
+        <span className="sr-only">Search jobs</span>
+        <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search jobs" className="h-10 w-full rounded-lg border border-input bg-background pl-9 pr-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary/40" />
+      </label>
+      <span className="shrink-0 text-sm text-muted-foreground">{visible.length} {visible.length === 1 ? "job" : "jobs"}</span>
+    </div>
     <div className="mt-6 flex gap-5 overflow-x-auto border-b border-border" role="group" aria-label="Job status">
       {filters.map((value) => <button key={value} type="button" onClick={() => setFilter(value)} aria-pressed={filter === value} className={`shrink-0 border-b-2 px-1 pb-3 text-sm font-medium ${filter === value ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>{value[0].toUpperCase() + value.slice(1)}</button>)}
     </div>
     {error ? <p role="alert" className="mt-5 text-sm text-destructive">{error}</p> : null}
     {visible.length ? <ul className="mt-6 grid list-none gap-3 p-0 sm:grid-cols-2 lg:grid-cols-3">
       {visible.map((job) => <li key={job.slug}><JobCard job={job} myJobs={assignedOnly} /></li>)}
-    </ul> : <div className="py-14 text-center"><h2 className="text-lg font-semibold">{jobs.length ? "No jobs match" : "No jobs yet"}</h2><p className="text-sm text-muted-foreground">{jobs.length ? "Choose another status." : assignedOnly ? "Jobs assigned to you will appear here." : "Jobs will appear here when they are added."}</p></div>}
+    </ul> : <div className="py-14 text-center"><h2 className="text-lg font-semibold">{filter === "saved" && !search.trim() ? "No saved jobs yet" : jobs.length ? "No jobs match" : "No jobs yet"}</h2><p className="text-sm text-muted-foreground">{filter === "saved" ? "Tap the bookmark on a job to save it here." : jobs.length ? "Choose another status." : assignedOnly ? "Jobs assigned to you will appear here." : "Jobs will appear here when they are added."}</p></div>}
   </DashboardListPage>;
 }

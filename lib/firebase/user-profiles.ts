@@ -2,6 +2,7 @@ import type { User as FirebaseUser } from "firebase/auth";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { firebaseDb } from "@/lib/firebase/client";
 import { needsOnboarding } from "@/lib/onboarding";
+import { sendSystemMessage, welcomeMessage } from "@/lib/firebase/system-messages";
 
 export type AuthIntent = "member" | "creator";
 
@@ -30,6 +31,10 @@ export async function upsertUserProfile(user: FirebaseUser, intent: AuthIntent) 
   }
 
   await setDoc(userRef, userData, { merge: true });
+  if (!existingSnapshot.exists()) {
+    // Not awaited: the welcome note must never slow down or block sign-in.
+    void sendSystemMessage(user.uid, user.displayName, welcomeMessage(user.displayName));
+  }
 
   return {
     isNewUser: !existingSnapshot.exists(),

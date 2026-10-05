@@ -7,6 +7,7 @@ import { ArrowLeft, ArrowRight, Check, Loader2 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { firebaseDb } from "@/lib/firebase/client";
 import { readDocumentsForAssignee, useFirestoreUsers } from "@/lib/firebase/client-content";
+import { onboardingDoneMessage, sendSystemMessage } from "@/lib/firebase/system-messages";
 import { Field, ImageUploadField, SelectField, TextField } from "@/components/detail-editor";
 import { DocumentSignDialog } from "@/components/document-sign-dialog";
 import { DocumentStatus } from "@/components/document-status";
@@ -236,6 +237,7 @@ export function OnboardingFlow() {
         { ...profileFields(), onboardingStatus: "complete", onboardingCompletedAt: serverTimestamp(), updatedAt: serverTimestamp() },
         { merge: true },
       );
+      void sendSystemMessage(uid, answers.name, onboardingDoneMessage(answers.name));
       markOnboarded();
       router.replace("/dashboard");
     } catch (cause) {

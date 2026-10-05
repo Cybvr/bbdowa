@@ -236,24 +236,21 @@ export function TimeTracker({ compact = false, jobSlug }: { compact?: boolean; j
     }
   };
 
+  // Play on a stopped entry carries on the same entry: the time it sat
+  // stopped counts as a pause, so no duplicate entry is created.
   const restartActivity = async (entry: ActivityEntry) => {
     if (!user || busy) return;
     setBusy(true);
     setError(null);
     try {
       const active = runningEntry(entries);
-      if (active) await pauseEntryDoc(active);
-      await addDoc(collection(firebaseDb, ACTIVITY_COLLECTION), {
-        uid: user.uid,
-        name: user.name ?? user.email ?? null,
-        taskId: entry.taskId ?? null,
-        jobId: entry.jobId,
-        jobName: entry.jobName,
-        activity: entry.activity,
-        startedAt: new Date().toISOString(),
+      if (active && active.id !== entry.id) await pauseEntryDoc(active);
+      const stoppedAt = entry.endedAt ? Date.parse(entry.endedAt) : Number.NaN;
+      const stoppedFor = Number.isNaN(stoppedAt) ? 0 : Math.max(0, Date.now() - stoppedAt);
+      await updateDoc(doc(firebaseDb, ACTIVITY_COLLECTION, entry.id), {
         endedAt: null,
         pausedAt: null,
-        pausedMs: 0,
+        pausedMs: (entry.pausedMs ?? 0) + stoppedFor,
       });
       await load(user.uid);
     } catch (cause) {
@@ -546,7 +543,7 @@ export function TimeTracker({ compact = false, jobSlug }: { compact?: boolean; j
                   {open ? <div className="flex items-center gap-1">
                     <button type="button" onClick={() => void toggleEntry(entry)} disabled={busy} aria-label={`${paused ? "Play" : "Pause"} ${entry.activity}`} title={paused ? "Play" : "Pause"} className="grid h-9 w-9 place-items-center rounded-md text-foreground transition hover:bg-muted disabled:opacity-50">{paused ? <LuPlay className="h-4 w-4" aria-hidden="true" /> : <LuPause className="h-4 w-4" aria-hidden="true" />}</button>
                     <button type="button" onClick={() => void stopEntry(entry)} disabled={busy} aria-label={`Stop ${entry.activity}`} title="Stop" className="grid h-9 w-9 place-items-center rounded-md text-primary transition hover:bg-primary/10 disabled:opacity-50"><LuSquare className="h-4 w-4" aria-hidden="true" /></button>
-                  </div> : <button type="button" onClick={() => void restartActivity(entry)} disabled={busy} aria-label={`Restart ${entry.activity}`} title="Start again" className="grid h-9 w-9 place-items-center rounded-md text-foreground transition hover:bg-muted disabled:opacity-50"><LuPlay className="h-4 w-4" aria-hidden="true" /></button>}
+                  </div> : <button type="button" onClick={() => void restartActivity(entry)} disabled={busy} aria-label={`Continue ${entry.activity}`} title="Continue" className="grid h-9 w-9 place-items-center rounded-md text-foreground transition hover:bg-muted disabled:opacity-50"><LuPlay className="h-4 w-4" aria-hidden="true" /></button>}
                 </div>
               </DashboardCard></li>;
             })}
@@ -581,7 +578,7 @@ export function TimeTracker({ compact = false, jobSlug }: { compact?: boolean; j
                           <button type="button" onClick={() => void toggleEntry(entry)} disabled={busy} aria-label={`${paused ? "Play" : "Pause"} ${entry.activity}`} title={paused ? "Play" : "Pause"} className="grid h-9 w-9 place-items-center rounded-md text-foreground transition hover:bg-muted disabled:opacity-50">{paused ? <LuPlay className="h-4 w-4" aria-hidden="true" /> : <LuPause className="h-4 w-4" aria-hidden="true" />}</button>
                           <button type="button" onClick={() => void stopEntry(entry)} disabled={busy} aria-label={`Stop ${entry.activity}`} title="Stop" className="grid h-9 w-9 place-items-center rounded-md text-primary transition hover:bg-primary/10 disabled:opacity-50"><LuSquare className="h-4 w-4" aria-hidden="true" /></button>
                         </div> : <div className="flex justify-end">
-                          <button type="button" onClick={() => void restartActivity(entry)} disabled={busy} aria-label={`Restart ${entry.activity}`} title="Start again" className="grid h-9 w-9 place-items-center rounded-md text-foreground transition hover:bg-muted disabled:opacity-50"><LuPlay className="h-4 w-4" aria-hidden="true" /></button>
+                          <button type="button" onClick={() => void restartActivity(entry)} disabled={busy} aria-label={`Continue ${entry.activity}`} title="Continue" className="grid h-9 w-9 place-items-center rounded-md text-foreground transition hover:bg-muted disabled:opacity-50"><LuPlay className="h-4 w-4" aria-hidden="true" /></button>
                         </div>}
                       </TableCell>
                     </ClickableTableRow>

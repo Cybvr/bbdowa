@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { CalendarDays, Layers, MapPin } from "lucide-react";
 import { DashboardCard, DashboardCardActions } from "@/components/dashboard-card";
+import { SaveJobButton } from "@/components/save-job-button";
 import { jobHref, jobRecentDate, jobTitle, type Job } from "@/lib/jobs";
 import { longDate } from "@/lib/format";
 
@@ -17,12 +18,12 @@ export function JobCard({
   actions?: ReactNode;
 }) {
   return (
-    <DashboardCard className="h-full" actions={actions}>
+    <DashboardCard className="h-full" actions={actions ?? <SaveJobButton slug={job.slug} title={jobTitle(job)} />}>
       <Link
         href={jobHref(job, admin, myJobs)}
         className="group flex h-full flex-col p-4 text-foreground no-underline transition hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
       >
-        <span className="line-clamp-1 text-[13px] font-medium text-muted-foreground">{job.clientName}</span>
+        <span className="line-clamp-1 pr-8 text-[13px] font-medium text-muted-foreground">{job.clientName}</span>
         <h3 className="m-0 mt-1 line-clamp-2 text-[16px] font-semibold leading-tight group-hover:text-primary">
           {jobTitle(job)}
         </h3>
