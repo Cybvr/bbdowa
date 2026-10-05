@@ -78,100 +78,20 @@ function dateOnly(value: unknown): string | undefined {
   return undefined;
 }
 
-function ClientWorkspaceHero({
-  clientName,
-  title,
-  heroImage,
-  clientProfileImage,
-  onHome,
-  shareAction,
-  creators,
+function ClientWorkspaceHeader({
   navigation,
 }: {
-  clientName: string;
-  title: string;
-  heroImage: string;
-  clientProfileImage: string;
-  onHome: () => void;
-  shareAction: React.ReactNode;
-  creators: Array<Pick<User, "slug" | "name" | "profileImage" | "featuredImage">>;
   navigation?: React.ReactNode;
 }) {
-  const visibleCreators = creators.slice(0, 5);
-  const remainingCreators = Math.max(creators.length - visibleCreators.length, 0);
-
   return (
     <div>
       <div className="mb-2 flex items-center justify-between gap-4 px-1">
         <nav aria-label="Breadcrumb" className="min-w-0">
-          <ol className="m-0 flex list-none flex-wrap items-center gap-x-2 gap-y-1 p-0 text-xs text-muted-foreground sm:text-sm">
-            <li>
-              <Link href="/admin/clients" className="transition hover:text-foreground">
-                All
-              </Link>
-            </li>
-            <li aria-hidden="true"><ChevronRight className="h-3.5 w-3.5" /></li>
-            <li>
-              <button
-                type="button"
-                onClick={onHome}
-                className="text-left transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-              >
-                {clientName}
-              </button>
-            </li>
-            <li aria-hidden="true"><ChevronRight className="h-3.5 w-3.5" /></li>
-            <li aria-current="page" className="text-foreground">{title}</li>
-          </ol>
+          <Link href="/admin/clients" className="inline-flex items-center gap-1 text-xs text-muted-foreground transition hover:text-foreground sm:text-sm">
+            <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
+            Back
+          </Link>
         </nav>
-        <div className="shrink-0">{shareAction}</div>
-      </div>
-
-      <div className="relative h-[140px] overflow-hidden rounded-2xl bg-muted sm:h-[180px]">
-        <ImageWithFallback
-          src={heroImage}
-          alt={`${clientName} job`}
-          className="h-full w-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/5 to-black/20" aria-hidden="true" />
-        <button
-          type="button"
-          onClick={onHome}
-          aria-label={`${clientName} home`}
-          className="absolute bottom-0 left-4 flex h-12 w-20 items-center justify-center rounded-t-xl bg-card p-2 sm:left-6 sm:h-16 sm:w-24 sm:p-3"
-        >
-          <ImageWithFallback
-            src={clientProfileImage}
-            alt={`${clientName} logo`}
-            className="h-full w-full object-contain"
-            fallbackClassName="h-full w-full rounded-xl"
-          />
-        </button>
-        <div className="absolute bottom-4 right-4 flex items-center -space-x-1.5 sm:bottom-10 sm:right-6" aria-label={`${creators.length} selected team members`}>
-          {visibleCreators.map((creator) => (
-            <span
-              key={creator.slug}
-              title={creator.name}
-              className="h-8 w-8 overflow-hidden rounded-full border border-white bg-muted"
-            >
-              <ImageWithFallback
-                src={creator.profileImage ?? creator.featuredImage}
-                alt={creator.name}
-                className="h-full w-full object-cover"
-                fallbackClassName="h-full w-full rounded-full"
-                fallbackSeed={creator.name}
-              />
-            </span>
-          ))}
-          {remainingCreators > 0 ? (
-            <span
-              title={`${remainingCreators} more team members`}
-              className="grid h-8 min-w-8 place-items-center rounded-full border border-white bg-foreground px-1.5 text-[10px] font-semibold text-background"
-            >
-              +{remainingCreators}
-            </span>
-          ) : null}
-        </div>
       </div>
       <div className="mt-2">{navigation}</div>
     </div>
@@ -188,7 +108,6 @@ import {
   Feather,
   ScanLine,
   Box,
-  Share2,
   ChevronDown,
   ChevronRight,
   Film,
@@ -803,27 +722,6 @@ function OneUtilityClientWorkspace({
     showToast("Profile saved.");
   };
 
-  const handleShareJob = async () => {
-    const link = typeof window !== "undefined" ? window.location.href : "";
-
-    if (typeof navigator !== "undefined" && navigator.share) {
-      try {
-        await navigator.share({ title: `${clientName} — ${projectName}`, url: link });
-        return;
-      } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") return;
-      }
-    }
-
-    if (typeof navigator !== "undefined" && navigator.clipboard) {
-      await navigator.clipboard.writeText(link);
-      showToast(`Job link copied.\n\n${link}`);
-      return;
-    }
-
-    showToast("Sharing is unavailable in this browser.");
-  };
-
   const handleNewJob = () => {
     const jobNumber = nextJobNumberRef.current;
     const id = `job-${jobNumber}`;
@@ -1034,28 +932,6 @@ function OneUtilityClientWorkspace({
       </div>
     </nav>
   );
-  const workspaceHeroProps = {
-    clientName,
-    heroImage: jobImageFor(activeJobId, availableJobs),
-    clientProfileImage,
-    onHome: () => setActiveMainTab("job"),
-    creators: selectedCreators,
-    navigation: workspaceNavigation,
-    shareAction: (
-      <button
-        type="button"
-        onClick={handleShareJob}
-        aria-label="Share"
-        className="flex h-7 items-center justify-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-xs font-semibold text-foreground transition hover:bg-muted"
-      >
-        <Share2 className="h-3.5 w-3.5" aria-hidden="true" />
-        Share
-      </button>
-    ),
-  };
-  const activeWorkspaceTitle =
-    workspaceTabs.find((tab) => tab.view === activeMainTab)?.label ?? "Jobs";
-
   const jobSubTabs: { id: typeof jobSubTab; label: string }[] = [
     { id: "overview", label: "Overview" },
     { id: "case-study", label: "Case study" },
@@ -1096,7 +972,7 @@ function OneUtilityClientWorkspace({
         <main className="order-1">
           <div className="px-4 pt-2 sm:px-6">
             <div className="mx-auto w-full max-w-7xl">
-              <ClientWorkspaceHero {...workspaceHeroProps} title={activeWorkspaceTitle} />
+              <ClientWorkspaceHeader navigation={workspaceNavigation} />
             </div>
           </div>
 
@@ -1741,6 +1617,20 @@ function OneUtilityClientWorkspace({
                   <div className="min-w-0">
                   {profileSection === "company" && (
                   <section id="profile-panel-company" role="tabpanel" aria-label="About" className="space-y-5">
+                    <div className="flex items-center gap-4 border-b border-border pb-5">
+                      <div className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-xl border border-border bg-muted p-2 sm:h-24 sm:w-24">
+                        <ImageWithFallback
+                          src={clientProfileImage}
+                          alt={`${clientName} logo`}
+                          className="h-full w-full object-contain"
+                          fallbackClassName="h-full w-full rounded-lg"
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="m-0 text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">Client logo</p>
+                        <p className="mt-1 truncate text-base font-semibold text-foreground">{clientName}</p>
+                      </div>
+                    </div>
                     <div className="border-b border-border pb-3">
                       <span className="text-xs font-mono uppercase tracking-widest text-primary font-semibold">
                         About
