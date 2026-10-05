@@ -99,7 +99,8 @@ function localDateTimeToDate(date: string, time: string): Date | null {
   return Number.isNaN(value.getTime()) ? null : value;
 }
 
-export function TimeTracker({ compact = false }: { compact?: boolean }) {
+/** `jobSlug` scopes the tracker to one job: only its entries show and new trackers are logged against it. */
+export function TimeTracker({ compact = false, jobSlug }: { compact?: boolean; jobSlug?: string }) {
   const { user, loading: authLoading } = useAuth();
   const [entries, setEntries] = React.useState<ActivityEntry[]>([]);
   const [jobs, setJobs] = React.useState<JobOption[]>([]);
@@ -113,12 +114,12 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
   const [addingTimer, setAddingTimer] = React.useState(false);
   const [search, setSearch] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<"all" | "running" | "paused" | "completed">("all");
-  const [jobFilter, setJobFilter] = React.useState("all");
+  const [jobFilter, setJobFilter] = React.useState(jobSlug ?? "all");
   const [sort, setSort] = React.useState<"recent" | "oldest" | "activity" | "duration">("recent");
   const [view, setView] = React.useState<ViewMode>("table");
   const [selectedEntryId, setSelectedEntryId] = React.useState<string | null>(null);
   const [activity, setActivity] = React.useState("");
-  const [jobId, setJobId] = React.useState<string>(NO_JOB);
+  const [jobId, setJobId] = React.useState<string>(jobSlug ?? NO_JOB);
   const [entryDate, setEntryDate] = React.useState(() => localDateValue());
   const [entryTime, setEntryTime] = React.useState(() => localTimeValue());
   const [duration, setDuration] = React.useState("");
@@ -131,8 +132,8 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
       id: document.id,
       ...(document.data() as Omit<ActivityEntry, "id">),
     }));
-    setEntries(sortByStartedAt(rows));
-  }, []);
+    setEntries(sortByStartedAt(jobSlug ? rows.filter((row) => row.jobId === jobSlug) : rows));
+  }, [jobSlug]);
 
   React.useEffect(() => {
     if (authLoading) return;
@@ -196,7 +197,7 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
 
   const resetForm = () => {
     setActivity("");
-    setJobId(NO_JOB);
+    setJobId(jobSlug ?? NO_JOB);
     setEntryDate(localDateValue());
     setEntryTime(localTimeValue());
     setDuration("");
@@ -500,14 +501,14 @@ export function TimeTracker({ compact = false }: { compact?: boolean }) {
       {error ? <p role="alert" className="text-[13px] text-primary">{error}</p> : null}
 
       <FilterBar
-        panelId="tracker-filter"
+        panelId={jobSlug ? `tracker-filter-${jobSlug}` : "tracker-filter"}
         search={search}
         onSearchChange={setSearch}
         searchPlaceholder="Search activity"
         tabs={TRACKER_STATUS_TABS}
         activeTab={statusFilter}
         onTabChange={setStatusFilter}
-        filters={[{
+        filters={jobSlug ? [] : [{
           label: "Job",
           value: jobFilter,
           onChange: setJobFilter,
