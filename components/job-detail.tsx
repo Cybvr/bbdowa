@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { addDoc, collection, doc, getDoc, getDocs, query, serverTimestamp, updateDoc, where } from "firebase/firestore";
-import { ArrowUpRight, Plus } from "lucide-react";
+import { ArrowUpRight, Banknote, CalendarClock, CalendarDays, Flag, Plus } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { SectionHeading } from "@/components/dashboard/ui";
 import { DetailBreadcrumb, DetailTabs } from "@/components/dashboard/detail-hero";
@@ -52,6 +52,10 @@ function localDateValue() {
 
 function Detail({ label, children }: { label: string; children: React.ReactNode }) {
   return <div className="grid min-w-0 grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-4 py-1.5 text-body"><dt className="text-muted-foreground">{label}</dt><dd className="m-0 min-w-0 break-words font-medium">{children}</dd></div>;
+}
+
+function JobHeaderFact({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  return <div className="flex shrink-0 items-center gap-1.5 whitespace-nowrap"><dt className="flex items-center gap-1.5 text-muted-foreground">{icon}{label}</dt><dd className="m-0 font-medium text-foreground">{value}</dd></div>;
 }
 
 const DETAIL_LIST = "m-0 mt-3";
@@ -364,6 +368,13 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
           </div>
         </div>
 
+        <dl aria-label="Job dates and fee" className="m-0 flex min-w-0 gap-4 overflow-x-auto pb-1 text-sm">
+          <JobHeaderFact icon={<CalendarDays aria-hidden="true" className="size-4 shrink-0" />} label="Job posted" value={job.jobPostedAt ? formatDate(job.jobPostedAt) : "—"} />
+          <JobHeaderFact icon={<Banknote aria-hidden="true" className="size-4 shrink-0" />} label="Fee" value={job.fee || "—"} />
+          <JobHeaderFact icon={<CalendarClock aria-hidden="true" className="size-4 shrink-0" />} label="Start" value={job.startDate ? formatDate(job.startDate) : "—"} />
+          <JobHeaderFact icon={<Flag aria-hidden="true" className="size-4 shrink-0" />} label="End" value={job.endDate ? formatDate(job.endDate) : "—"} />
+        </dl>
+
         <div className={showSignInGate ? "relative max-h-[560px] overflow-hidden" : undefined}>
 
         {user ? <DetailCard title="Point of contact">
@@ -382,10 +393,6 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
           <Detail label="Work setup">{job.workSetup || "—"}</Detail>
           <Detail label="Est. length">{job.estimatedLength || "—"}</Detail>
           <Detail label="Desired start">{job.desiredStartDate ? formatDate(job.desiredStartDate) : "—"}</Detail>
-          <Detail label="Job posted">{job.jobPostedAt ? formatDate(job.jobPostedAt) : "—"}</Detail>
-          <Detail label="Fee">{job.fee || "—"}</Detail>
-          <Detail label="Start">{job.startDate ? formatDate(job.startDate) : "—"}</Detail>
-          <Detail label="End">{job.endDate ? formatDate(job.endDate) : "—"}</Detail>
         </dl></DetailCard>
 
         {job.requiredSkills?.length ? <DetailCard title="Tags">
