@@ -67,6 +67,12 @@ export function OnboardingFlow() {
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
+  // Dropdowns use what's already in the directory: team departments, admins as managers, creator fields.
+  const { users: directory } = useFirestoreUsers();
+  const departmentOptions = React.useMemo(() => [...new Set(directory.filter(isTeamUser).map((person) => person.department?.trim()).filter((value): value is string => Boolean(value)))].sort(), [directory]);
+  const managerOptions = React.useMemo(() => directory.filter((person) => userRoles(person).includes("admin")).map((person) => person.name).filter(Boolean).sort(), [directory]);
+  const fieldOptions = React.useMemo(() => creatorCategoryOptions(directory).filter((value) => typeof value === "string" && value.trim()), [directory]);
+
   React.useEffect(() => {
     if (authLoading) return;
     if (!uid) {
@@ -129,12 +135,6 @@ export function OnboardingFlow() {
       </div>
     );
   }
-
-  // Dropdowns use what's already in the directory: team departments, admins as managers, creator fields.
-  const { users: directory } = useFirestoreUsers();
-  const departmentOptions = React.useMemo(() => [...new Set(directory.filter(isTeamUser).map((person) => person.department?.trim()).filter((value): value is string => Boolean(value)))].sort(), [directory]);
-  const managerOptions = React.useMemo(() => directory.filter((person) => userRoles(person).includes("admin")).map((person) => person.name).filter(Boolean).sort(), [directory]);
-  const fieldOptions = React.useMemo(() => creatorCategoryOptions(directory), [directory]);
 
   // One onboarding for everyone, staff and creators alike.
   const steps = ONBOARDING_STEPS;
