@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
+import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 import { useAuth } from "@/components/auth-provider";
 import { useFirestoreUsers, useOwnUser } from "@/lib/firebase/client-content";
 import { firebaseDb } from "@/lib/firebase/client";
 import { PageHeader } from "@/components/dashboard/ui";
 import { PageLoadingSkeleton } from "@/components/dashboard/loading-skeleton";
-import { Field, ImageUploadField } from "@/components/detail-editor";
+import { Field, ImageUploadField, TextField } from "@/components/detail-editor";
 import {
   PROFILE_SECTIONS,
   ProfileFields,
@@ -18,6 +18,7 @@ import {
   type ProfileSectionKey,
 } from "@/components/profile-fields";
 import { creatorCategoryOptions, userRoles } from "@/lib/users";
+import { emptyHrRecord, HR_COLLECTION, type HrRecord } from "@/lib/onboarding";
 
 // Account also holds the profile fields, so "profile" never shows as its own section.
 type SectionKey = "account" | Exclude<ProfileSectionKey, "profile">;
@@ -45,6 +46,7 @@ export default function SettingsPage() {
 
   const [section, setSection] = useState<SectionKey>("account");
   const [draft, setDraft] = useState<ProfileDraft>(() => profileDraftFrom({}));
+  const [hr, setHr] = useState<HrRecord>(() => emptyHrRecord(""));
   const [profileImage, setProfileImage] = useState("");
   const [busy, setBusy] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -71,6 +73,17 @@ export default function SettingsPage() {
     setDraft(profileDraftFrom(own));
     setProfileImage(own.profileImage ?? "");
   }, [own]);
+
+  useEffect(() => {
+    if (!authUser?.uid) return;
+    let active = true;
+    getDoc(doc(firebaseDb, HR_COLLECTION, authUser.uid))
+      .then((snapshot) => {
+        if (active) setHr({ ...emptyHrRecord(authUser.uid), ...(snapshot.data() as Partial<HrRecord> | undefined) });
+      })
+      .catch((cause) => console.error("Unable to load financial details", cause));
+    return () => { active = false; };
+  }, [authUser?.uid]);
 
   if (authLoading || ownLoading) return <PageLoadingSkeleton titleWidth="w-32" />;
 
@@ -107,6 +120,13 @@ export default function SettingsPage() {
         profileImage: profileImage.trim() || null,
         updatedAt: serverTimestamp(),
       });
+      await setDoc(doc(firebaseDb, HR_COLLECTION, authUser.uid), {
+        ...hr,
+        uid: authUser.uid,
+        bankName: hr.bankName.trim(),
+        accountNumber: hr.accountNumber.trim(),
+        updatedAt: new Date().toISOString(),
+      }, { merge: true });
       setSaved(true);
     } catch (cause) {
       console.error("Unable to save settings", cause);
@@ -175,6 +195,11 @@ export default function SettingsPage() {
                 </p>
               </Field>
               <ProfileFields draft={draft} onChange={setDraft} categoryOptions={creatorCategoryOptions(users)} section="profile" />
+              <div className="space-y-4 border-t border-border pt-5">
+                <h3 className="m-0 text-[13px] font-semibold">Financial details</h3>
+                <TextField label="Bank name" value={hr.bankName} onChange={(value) => setHr({ ...hr, bankName: value })} />
+                <TextField label="Account number" value={hr.accountNumber} onChange={(value) => setHr({ ...hr, accountNumber: value })} />
+              </div>
             </div>
           ) : (
             <ProfileFields draft={draft} onChange={setDraft} categoryOptions={creatorCategoryOptions(users)} section={section} />

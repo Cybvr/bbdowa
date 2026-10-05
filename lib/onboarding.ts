@@ -1,9 +1,9 @@
 // Onboarding for everyone who signs in, staff and creators alike.
 //
 // Public profile answers go on the person's `users` record, which anyone can
-// read. Anything private (emergency contact, manager, start date, the
-// equipment checklist) goes in `hrRecords/{uid}`, which only that person and
-// staff can read.
+// read. Anything private (emergency contact, manager, start date, financial
+// details and the equipment checklist) goes in `hrRecords/{uid}`, which only
+// that person and staff can read.
 
 export const HR_COLLECTION = "hrRecords";
 
@@ -19,6 +19,8 @@ export type HrRecord = {
   /** YYYY-MM-DD. */
   startDate: string;
   emergencyContact: EmergencyContact;
+  bankName: string;
+  accountNumber: string;
   /** Equipment and access items the person has confirmed, keyed by EQUIPMENT_ITEMS key. */
   equipment: Record<string, boolean>;
   updatedAt: string;
@@ -30,7 +32,6 @@ export const EQUIPMENT_ITEMS = [
   { key: "chat", label: "Added to the team chat" },
   { key: "drive", label: "Can open one drive" },
   { key: "building", label: "Building access card received" },
-  { key: "payroll", label: "Payroll details sent to finance" },
 ] as const;
 
 export type OnboardingTrack = "staff" | "creator";
@@ -65,6 +66,8 @@ export function emptyHrRecord(uid: string): HrRecord {
     managerName: "",
     startDate: "",
     emergencyContact: { name: "", relationship: "", phone: "" },
+    bankName: "",
+    accountNumber: "",
     equipment: {},
     updatedAt: "",
   };

@@ -173,7 +173,7 @@ export function OnboardingFlow() {
     if (target === "profile" || target === "work") {
       await setDoc(doc(firebaseDb, "users", uid), { ...profileFields(), updatedAt: serverTimestamp() }, { merge: true });
     }
-    if (target === "work" || target === "hr") {
+    if (target === "profile" || target === "work" || target === "hr") {
       await setDoc(doc(firebaseDb, HR_COLLECTION, uid), { ...hr, uid, updatedAt: new Date().toISOString() }, { merge: true });
     }
   };
@@ -332,6 +332,8 @@ export function OnboardingFlow() {
           </Field>
           <TextField label="Phone" value={answers.phone} onChange={set("phone")} />
           <TextField label="Location" value={answers.location} onChange={set("location")} placeholder="e.g. Lagos, Nigeria" />
+          <TextField label="Bank name" value={hr.bankName} onChange={(value) => setHr({ ...hr, bankName: value })} />
+          <TextField label="Account number" value={hr.accountNumber} onChange={(value) => setHr({ ...hr, accountNumber: value })} />
         </div>
       ) : null}
 
