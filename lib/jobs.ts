@@ -101,6 +101,16 @@ export function jobPostedDate(job: Pick<Job, "createdAt" | "jobPostedAt">): stri
   return job.createdAt?.slice(0, 10) || job.jobPostedAt?.slice(0, 10) || null;
 }
 
+/** Full last-modified timestamp, for sorting newest first. Falls back to older dates. */
+export function jobModifiedAt(job: Pick<Job, "updatedAt" | "createdAt" | "jobPostedAt" | "liveAt">): string {
+  return job.updatedAt || job.createdAt || job.jobPostedAt || job.liveAt?.date || "";
+}
+
+/** Newest-modified first. */
+export function byLastModified(a: Job, b: Job): number {
+  return jobModifiedAt(b).localeCompare(jobModifiedAt(a));
+}
+
 /** The latest date available for compact job cards. */
 export function jobRecentDate(job: Pick<Job, "updatedAt" | "createdAt" | "jobPostedAt" | "liveAt">): string | null {
   return job.updatedAt?.slice(0, 10) || job.createdAt?.slice(0, 10) || job.jobPostedAt || job.liveAt?.date || null;

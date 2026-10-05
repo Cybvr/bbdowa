@@ -25,7 +25,7 @@ import { TeamPanel } from "@/components/team-panel";
 import { JobMediaPanel } from "@/components/job-media-panel";
 import { firebaseDb } from "@/lib/firebase/client";
 import { useClientOptions, useFirestoreUsers } from "@/lib/firebase/client-content";
-import { jobHref, jobPostedDate, jobRecentDate, jobTitle, type Job } from "@/lib/jobs";
+import { byLastModified, jobHref, jobPostedDate, jobRecentDate, jobTitle, type Job } from "@/lib/jobs";
 import { teamSizeLabel, type Client } from "@/lib/clients";
 import { TASK_COLLECTION, formatDate, isOverdue, type Task } from "@/lib/creator-tasks";
 import { longDate } from "@/lib/format";
@@ -67,11 +67,7 @@ function paymentTotals(items: Payment[]) {
 function OtherJobsSidebar({ jobs, currentSlug }: { jobs: Job[]; currentSlug: string }) {
   const otherJobs = jobs
     .filter((job) => job.slug !== currentSlug)
-    .sort((a, b) => {
-      const aDate = Date.parse(jobRecentDate(a) ?? "") || 0;
-      const bDate = Date.parse(jobRecentDate(b) ?? "") || 0;
-      return bDate - aDate || jobTitle(a).localeCompare(jobTitle(b));
-    });
+    .sort((a, b) => byLastModified(a, b) || jobTitle(a).localeCompare(jobTitle(b)));
 
   return (
     <aside className="hidden space-y-3 lg:block lg:sticky lg:top-6 nav:static nav:h-full nav:overflow-y-auto nav:overscroll-contain nav:pb-16">

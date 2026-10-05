@@ -11,7 +11,7 @@ import { firebaseDb } from "@/lib/firebase/client";
 import { jobsCollection } from "@/lib/firebase/job-collections";
 import { readJobsFromFirestore } from "@/lib/firebase/client-content";
 import { TASK_COLLECTION } from "@/lib/creator-tasks";
-import { jobRecentDate, jobTitle, normalizeJob, type Job } from "@/lib/jobs";
+import { byLastModified, jobTitle, normalizeJob, type Job } from "@/lib/jobs";
 import { readMyJobIds } from "@/lib/firebase/job-team";
 import { ACTIVITY_COLLECTION } from "@/lib/time-tracking";
 import { PAYMENTS_COLLECTION } from "@/lib/payments";
@@ -42,7 +42,7 @@ export function JobsList({ assignedOnly = false }: { assignedOnly?: boolean }) {
       try {
         if (!assignedOnly) {
           const nextJobs = await readJobsFromFirestore();
-          if (active) setJobs(nextJobs.sort((a, b) => (jobRecentDate(b) ?? "").localeCompare(jobRecentDate(a) ?? "")));
+          if (active) setJobs(nextJobs.sort(byLastModified));
           return;
         }
 
@@ -58,7 +58,7 @@ export function JobsList({ assignedOnly = false }: { assignedOnly?: boolean }) {
         timeSnapshot.docs.forEach((item) => { const jobId = item.data().jobId; if (typeof jobId === "string" && jobId) assignedJobIds.add(jobId); });
         paymentSnapshot.docs.forEach((item) => { const jobId = item.data().jobId; if (typeof jobId === "string" && jobId) assignedJobIds.add(jobId); });
         const snapshots = await Promise.all([...assignedJobIds].map((jobId) => getDoc(doc(firebaseDb, jobsName, jobId))));
-        if (active) setJobs(snapshots.filter((item) => item.exists()).map((item) => normalizeJob(item.data() as Record<string, unknown>, item.id)).sort((a, b) => (jobRecentDate(b) ?? "").localeCompare(jobRecentDate(a) ?? "")));
+        if (active) setJobs(snapshots.filter((item) => item.exists()).map((item) => normalizeJob(item.data() as Record<string, unknown>, item.id)).sort(byLastModified));
       } catch (cause) {
         console.error("Unable to load jobs", cause);
         if (active) setError("Couldn’t load jobs. Try again later.");

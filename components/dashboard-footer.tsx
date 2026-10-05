@@ -22,6 +22,7 @@ export function DashboardFooter({ hidden = false }: { hidden?: boolean }) {
   const items = isAdminSection
     ? [
         { label: "Overview", href: "/admin" },
+        { label: "Jobs", href: "/admin/jobs" },
         ...(auth?.role === "admin" ? [{ label: "Users", href: "/admin/users" }] : []),
         { label: "Documents", href: "/admin/documents" },
         { label: "Tasks", href: "/admin/tasks" },

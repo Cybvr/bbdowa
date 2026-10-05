@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { JOB_STATUS_LABELS, jobTitle, type Job } from "@/lib/jobs";
+import { JOB_STATUS_LABELS, byLastModified, jobTitle, type Job } from "@/lib/jobs";
 import { jobHref, jobLiveDateLabel } from "@/lib/jobs";
 import { longDate, plural } from "@/lib/format";
 import { Badge, EmptyState } from "@/components/dashboard/ui";
@@ -29,10 +29,10 @@ function jobMatchesStatus(job: Job, status: StatusKey) {
 }
 
 const SORTS: SortOption<"recent" | "name" | "client" | "modified">[] = [
+  { key: "modified", label: "Last modified" },
   { key: "recent", label: "Most recent" },
   { key: "name", label: "Name (A–Z)" },
   { key: "client", label: "Client (A–Z)" },
-  { key: "modified", label: "Recently updated" },
 ];
 
 type SortKey = (typeof SORTS)[number]["key"];
@@ -50,7 +50,7 @@ export function JobsTable({ jobs }: { jobs: Job[] }) {
   const [status, setStatus] = useState<StatusKey>("all");
   const [category, setCategory] = useState("all");
   const [search, setSearch] = useState("");
-  const [sort, setSort] = useState<SortKey>("recent");
+  const [sort, setSort] = useState<SortKey>("modified");
   const [view, setView] = useState<ViewMode>("cards");
 
   const categoryOptions = useMemo(
@@ -81,7 +81,7 @@ export function JobsTable({ jobs }: { jobs: Job[] }) {
     return [...filtered].sort((a, b) => {
       if (sort === "name") return a.name.localeCompare(b.name);
       if (sort === "client") return a.clientName.localeCompare(b.clientName);
-      if (sort === "modified") return (b.updatedAt ?? "").localeCompare(a.updatedAt ?? "");
+      if (sort === "modified") return byLastModified(a, b);
       return liveTime(b) - liveTime(a);
     });
   }, [jobs, status, category, search, sort]);
