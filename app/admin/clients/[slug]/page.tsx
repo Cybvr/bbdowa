@@ -665,6 +665,9 @@ function OneUtilityClientWorkspace({
   const [primaryColor] = useState<string>(workspace.primaryColor);
   const [selectedCreatorSlugs, setSelectedCreatorSlugs] = useState(client?.creatorSlugs ?? []);
   const [mediaItems, setMediaItems] = useState(workspace.moodboardImages);
+  const [mediaSearch, setMediaSearch] = useState("");
+  const [mediaSort, setMediaSort] = useState<"recent" | "name">("recent");
+  const [mediaView, setMediaView] = useState<ViewMode>("cards");
   const [creatorSearch, setCreatorSearch] = useState("");
   const [creatorCategory, setCreatorCategory] = useState("all");
   const [creatorSort, setCreatorSort] = useState<ClientCreatorSort>("name");
@@ -727,6 +730,15 @@ function OneUtilityClientWorkspace({
     [availableJobs, jobs],
   );
   const latestCreators = selectedCreators.slice(0, 4);
+  const visibleMedia = React.useMemo(() => {
+    const query = mediaSearch.trim().toLowerCase();
+    const filtered = mediaItems
+      .map((image, mediaIndex) => ({ image, mediaIndex }))
+      .filter(({ image }) => !query || image.alt.toLowerCase().includes(query) || image.src.toLowerCase().includes(query));
+    return mediaSort === "name"
+      ? filtered.sort((a, b) => a.image.alt.localeCompare(b.image.alt))
+      : filtered;
+  }, [mediaItems, mediaSearch, mediaSort]);
 
   const nextJobNumberRef = useRef(2);
 
@@ -2046,8 +2058,24 @@ function OneUtilityClientWorkspace({
                     />
                   }
                 />
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
-                  {mediaItems.map((image, mediaIndex) => (
+                <FilterBar
+                  panelId="client-media-filter-panel"
+                  search={mediaSearch}
+                  onSearchChange={setMediaSearch}
+                  searchPlaceholder="Search media"
+                  sortOptions={[
+                    { key: "recent", label: "Added order" },
+                    { key: "name", label: "Name (A–Z)" },
+                  ]}
+                  activeSort={mediaSort}
+                  onSortChange={setMediaSort}
+                  resultCount={plural(visibleMedia.length, "media item")}
+                  view={mediaView}
+                  onViewChange={setMediaView}
+                  className="my-0"
+                />
+                {mediaView === "cards" ? <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+                  {visibleMedia.map(({ image, mediaIndex }) => (
                     <DashboardCard
                       key={`${image.src}-${mediaIndex}`}
                       className="h-full"
@@ -2072,7 +2100,8 @@ function OneUtilityClientWorkspace({
                       </button>
                     </DashboardCard>
                   ))}
-                </div>
+                </div> : <div className="overflow-x-auto"><Table className="w-full border-collapse"><TableHeader><TableRow><TableHead>Media</TableHead><TableHead>Source</TableHead><TableHead className="w-20 text-right">Action</TableHead></TableRow></TableHeader><TableBody>{visibleMedia.map(({ image, mediaIndex }) => <TableRow key={`${image.src}-${mediaIndex}`}><TableCell className="px-4 py-3"><button type="button" onClick={() => setSelectedMediaIndex(mediaIndex)} className="flex items-center gap-3 text-left font-semibold text-foreground hover:text-primary"><ImageWithFallback src={image.src} alt="" className="h-12 w-16 rounded-md object-cover" />{image.alt || "Untitled media"}</button></TableCell><TableCell className="max-w-[320px] truncate px-4 py-3 text-sm text-muted-foreground">{image.src}</TableCell><TableCell className="px-4 py-3 text-right"><ClientMediaDeleteAction jobId={primaryJob?.slug ?? null} clientName={clientName} mediaItems={mediaItems} mediaIndex={mediaIndex} onSaved={setMediaItems} onError={showToast} /></TableCell></TableRow>)}</TableBody></Table></div>}
+                {!visibleMedia.length ? <p className="py-10 text-center text-sm text-muted-foreground">{mediaItems.length ? "No media matches your search." : "No media has been added yet."}</p> : null}
                 {selectedMediaIndex !== null && mediaItems[selectedMediaIndex] ? (
                   <div
                     className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 sm:p-8"
