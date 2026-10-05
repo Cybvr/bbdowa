@@ -393,7 +393,7 @@ export function JobDetailContent({ job, adminMode = false, embedded = false, myJ
           <ul className="m-0 mt-3 flex list-none flex-wrap gap-2 p-0">{job.requiredSkills.map((skill) => <li key={skill} className="rounded-full bg-muted px-3 py-1 text-sm font-medium">{skill}</li>)}</ul>
         </DetailCard> : null}
 
-        {myJobs && user ? <DetailCard title="Team">{teamMembers.length ? <ul className="m-0 mt-3 grid list-none gap-2 p-0">
+        {user ? <DetailCard title="Assigned team">{teamMembers.length ? <ul className="m-0 mt-3 grid list-none gap-2 p-0">
           {teamMembers.map((member) => <li key={member.slug}><Link href={userHref(member, isCreatorUser(member) ? "creator" : "team")} className="flex min-w-0 items-center gap-3 text-body font-medium text-foreground hover:text-primary"><CreatorThumbnail imageSrc={member.profileImage} avatarSeed={member.name} className="h-8 w-8 shrink-0" /><span className="truncate">{member.name}</span></Link></li>)}
         </ul> : <p className="mb-0 mt-3 text-body text-muted-foreground">No one is on this job&apos;s team yet.</p>}</DetailCard> : null}
 
