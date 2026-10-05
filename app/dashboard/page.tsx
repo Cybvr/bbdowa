@@ -152,7 +152,8 @@ export default function HomePage() {
       ) : null}
 
       <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.45fr)_minmax(280px,0.75fr)] lg:gap-10">
-        <section aria-labelledby="your-tasks-heading" className="min-w-0">
+        <div className="min-w-0 space-y-8">
+        <section aria-labelledby="your-tasks-heading">
           <div className="mb-2 flex items-center justify-between gap-3">
             <h2 id="your-tasks-heading" className="m-0 text-item-title font-semibold">Your tasks</h2>
             <Link href="/dashboard/work" className="shrink-0 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">View all</Link>
@@ -176,7 +177,7 @@ export default function HomePage() {
           )}
         </section>
 
-        <section aria-labelledby="your-jobs-heading" className="min-w-0 lg:col-start-1">
+        <section aria-labelledby="your-jobs-heading">
           <div className="mb-2 flex items-center justify-between gap-3">
             <h2 id="your-jobs-heading" className="m-0 text-item-title font-semibold">Your jobs</h2>
             <Link href="/dashboard/my-jobs" className="shrink-0 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">View all</Link>
@@ -193,6 +194,7 @@ export default function HomePage() {
             <p className="py-5 text-sm text-muted-foreground">No jobs assigned yet.</p>
           )}
         </section>
+        </div>
 
         <aside aria-labelledby="profile-overview-heading" className="min-w-0 lg:col-start-2 lg:row-start-1 lg:border-l lg:border-border lg:pl-7">
           <div className="mb-2 flex items-center justify-between gap-3">
