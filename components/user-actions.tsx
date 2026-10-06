@@ -17,6 +17,7 @@ import {
 } from "firebase/firestore";
 import { firebaseDb } from "@/lib/firebase/client";
 import { useAuth } from "@/components/auth-provider";
+import { useClientOptions } from "@/lib/firebase/client-content";
 import { needsOnboarding } from "@/lib/onboarding";
 import { ProfileFields, profileDraftFrom, profileDraftToFirestore, type ProfileDraft } from "@/components/profile-fields";
 import { EditSheet, ImageUploadField, SelectField } from "@/components/detail-editor";
@@ -27,7 +28,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { userRoles, type User, type UserRole } from "@/lib/users";
+import { userRoles, type User, type UserRole, toggleRole } from "@/lib/users";
 
 type AccountStatus = "active" | "pending";
 
@@ -64,6 +65,8 @@ export function UserActions({
   const [draft, setDraft] = React.useState<ProfileDraft>(() => profileDraftFrom(user));
   const [profileImage, setProfileImage] = React.useState(user.profileImage ?? "");
   const initialOnboarding = needsOnboarding(user);
+  const [clientId, setClientId] = React.useState(user.clientId ?? "");
+  const clientOptions = useClientOptions();
   const [onboarding, setOnboarding] = React.useState(initialOnboarding);
 
   const docRef = async () => {
@@ -80,12 +83,14 @@ export function UserActions({
   };
 
   const save = async () => {
+    if (isAdmin && status !== "pending" && roles.includes("client") && !clientId) throw new Error("Pick the client company this person works for.");
     const ref = await docRef();
     if (!ref) throw new Error("User document not found");
     const accessFields = isAdmin
       ? {
           role: status === "pending" ? "pending" : roles[0] ?? "manager",
           roles: status === "pending" ? [] : roles,
+          clientId: roles.includes("client") ? clientId || null : null,
           // Only write onboarding when the switch changed. On clears the finished mark so they go through it again.
           ...(onboarding === initialOnboarding
             ? {}
@@ -178,6 +183,7 @@ export function UserActions({
                 ["admin", "Admin"],
                 ["manager", "Manager"],
                 ["creator", "Creator"],
+                ["client", "Client"],
               ] as const).map(([value, label]) => {
                 const selected = roles.includes(value);
                 const cannotRemove = selected && roles.length === 1;
@@ -187,11 +193,7 @@ export function UserActions({
                     type="button"
                     aria-pressed={selected}
                     disabled={cannotRemove}
-                    onClick={() =>
-                      setRoles((current) =>
-                        selected ? current.filter((role) => role !== value) : [...current, value],
-                      )
-                    }
+                    onClick={() => setRoles((current) => toggleRole(current, value))}
                     className={`rounded-lg border px-3 py-2 text-[13px] font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-50 ${selected ? "border-foreground bg-foreground text-background" : "border-border bg-background text-muted-foreground hover:border-foreground/50 hover:text-foreground"}`}
                   >
                     {label}
@@ -199,8 +201,9 @@ export function UserActions({
                 );
               })}
             </div>
-            <p className="m-0 text-xs text-muted-foreground">A person can appear in both the team and creator directories.</p>
+            <p className="m-0 text-xs text-muted-foreground">A person can appear in both the team and creator directories. Client is on its own.</p>
           </div>
+          {roles.includes("client") ? <SelectField label="Company" value={clientId || undefined} onChange={setClientId} options={clientOptions} /> : null}
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <span className="block text-[13px] font-medium text-foreground">Onboarding</span>

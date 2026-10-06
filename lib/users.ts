@@ -1,5 +1,6 @@
 // A user can hold more than one directory role.
-export type UserRole = "admin" | "manager" | "creator";
+/** "client" is someone at a client company; they only see their company's jobs. */
+export type UserRole = "admin" | "manager" | "creator" | "client";
 export type UserAccountRole = UserRole | "pending";
 
 export type CreatorAvailability = "open" | "busy" | "unconfirmed";
@@ -52,6 +53,8 @@ export type CreatorWorkHistory = {
 // compatibility field for existing Firestore records.
 export type User = {
   slug: string;
+  /** For client users: the client company (client slug) they belong to. */
+  clientId?: string | null;
   /** Admin switch: true sends the person through onboarding, false skips it. Unset uses the default rule. */
   onboardingRequired?: boolean | null;
   /** Set when the person finishes onboarding. */
@@ -140,7 +143,7 @@ export function normalizeUser(user: User): User {
 }
 
 export function isUserRole(value: unknown): value is UserRole {
-  return value === "admin" || value === "manager" || value === "creator";
+  return value === "admin" || value === "manager" || value === "creator" || value === "client";
 }
 
 export function userRoles(user: Pick<User, "roles" | "role">): UserRole[] {
@@ -220,4 +223,13 @@ export function userInitials(user: User): string {
     .join("")
     .slice(0, 2)
     .toUpperCase();
+}
+
+/** Turns a role on or off. Client is a role on its own: picking it clears the others, and the reverse. */
+export function toggleRole(current: UserRole[], role: UserRole): UserRole[] {
+  const selected = current.includes(role);
+  let next: UserRole[];
+  if (role === "client") next = selected ? current.filter((item) => item !== "client") : ["client"];
+  else next = selected ? current.filter((item) => item !== role) : [...current.filter((item) => item !== "client"), role];
+  return next.length ? next : current;
 }

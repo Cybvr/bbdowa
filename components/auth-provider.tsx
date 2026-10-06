@@ -16,12 +16,14 @@ type AuthContextValue = {
   role: string | null;
   /** True when an admin has switched onboarding on for the signed-in person and they haven't finished it. */
   onboardingDue: boolean;
+  /** For client users: the client company they belong to. */
+  clientId: string | null;
   /** Call once onboarding is finished so the dashboard stops redirecting. */
   markOnboarded: () => void;
   isAdmin: boolean;
   isViewingAs: boolean;
   viewAsUser: SessionUser | null;
-  startViewingAs: (target: { uid: string; name: string | null; email: string | null; picture?: string | null; role: string | null }) => void;
+  startViewingAs: (target: { uid: string; name: string | null; email: string | null; picture?: string | null; role: string | null; clientId?: string | null }) => void;
   stopViewingAs: () => void;
   logout: () => Promise<void>;
 };
@@ -33,6 +35,7 @@ type ViewAsState = {
   ownerUid: string;
   user: SessionUser;
   role: string | null;
+  clientId?: string | null;
 };
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -40,6 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [actualUser, setActualUser] = React.useState<SessionUser | null>(null);
   const [actualRole, setActualRole] = React.useState<string | null>(null);
   const [onboardingDue, setOnboardingDue] = React.useState(false);
+  const [actualClientId, setActualClientId] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [viewAs, setViewAs] = React.useState<ViewAsState | null>(null);
   const [viewAsLoaded, setViewAsLoaded] = React.useState(false);
@@ -69,14 +73,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const snapshot = await getDoc(doc(firebaseDb, "users", firebaseUser.uid));
           const data = snapshot.data() ?? {};
           setActualRole(typeof data.role === "string" ? data.role : null);
+          setActualClientId(typeof data.clientId === "string" && data.clientId ? data.clientId : null);
           // Only the admin switch forces a redirect; the default rule runs at sign-in.
           setOnboardingDue(data.onboardingRequired === true && needsOnboarding(data));
         } catch {
           setActualRole(null);
+          setActualClientId(null);
           setOnboardingDue(false);
         }
       } else {
         setActualRole(null);
+        setActualClientId(null);
         setOnboardingDue(false);
       }
 
@@ -93,7 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [actualRole, actualUser, loading, viewAs]);
 
   const startViewingAs = React.useCallback(
-    (target: { uid: string; name: string | null; email: string | null; picture?: string | null; role: string | null }) => {
+    (target: { uid: string; name: string | null; email: string | null; picture?: string | null; role: string | null; clientId?: string | null }) => {
       if (!actualUser || actualRole !== "admin" || !target.uid || target.uid === actualUser.uid) return;
       const next: ViewAsState = {
         ownerUid: actualUser.uid,
@@ -104,6 +111,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           picture: target.picture ?? null,
         },
         role: target.role,
+        clientId: target.clientId ?? null,
       };
       setViewAs(next);
       window.sessionStorage.setItem(VIEW_AS_STORAGE_KEY, JSON.stringify(next));
@@ -141,6 +149,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         role,
         // Viewing as someone never redirects the admin into that person's onboarding.
         onboardingDue: onboardingDue && !activeViewAs,
+        clientId: activeViewAs ? activeViewAs.clientId ?? null : actualClientId,
         markOnboarded,
         isAdmin: role === "admin",
         isViewingAs: Boolean(activeViewAs),

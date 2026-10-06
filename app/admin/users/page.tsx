@@ -22,6 +22,7 @@ const ROLE_LABELS: Record<UserRole, string> = {
   admin: "Admin",
   manager: "Manager",
   creator: "Creator",
+  client: "Client",
 };
 
 function RoleBadge({ role }: { role: UserRole }) {
@@ -74,7 +75,7 @@ function UserRow({ user, categoryOptions }: { user: User; categoryOptions: strin
           {targetUid && targetUid !== actualUser?.uid ? (
             <button
               type="button"
-              onClick={() => startViewingAs({ uid: targetUid, name: user.name, email: user.email, picture: user.profileImage, role: user.role })}
+              onClick={() => startViewingAs({ uid: targetUid, name: user.name, email: user.email, picture: user.profileImage, role: user.role, clientId: user.clientId ?? null })}
               aria-label={`View ${user.name} as this user`}
               title="View as"
               className="grid h-8 w-8 place-items-center rounded-md border-0 bg-transparent p-0 text-muted-foreground shadow-none transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
@@ -153,6 +154,7 @@ export default function AdminUsersPage() {
               { value: "manager", label: "Managers" },
               { value: "creator", label: "Creators" },
               { value: "admin", label: "Admins" },
+              { value: "client", label: "Clients" },
               { value: "pending", label: "Pending" },
             ],
           },

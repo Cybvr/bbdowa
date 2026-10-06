@@ -34,7 +34,7 @@ service cloud.firestore {
     }
 
     function validRole() {
-      return request.resource.data.role in ["pending", "admin", "manager", "creator"];
+      return request.resource.data.role in ["pending", "admin", "manager", "creator", "client"];
     }
 
     match /users/{userId} {

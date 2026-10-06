@@ -10,7 +10,9 @@ import { useOptionalAuth } from "@/components/auth-provider";
 export function DashboardChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const onboardingDue = useOptionalAuth()?.onboardingDue ?? false;
+  const auth = useOptionalAuth();
+  const onboardingDue = auth?.onboardingDue ?? false;
+  const isClientUser = auth?.role === "client";
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => pathname === "/dashboard/discover");
   const [hydrated, setHydrated] = useState(false);
   const isApplication = pathname === "/dashboard/careers/apply";
@@ -24,11 +26,17 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
     setHydrated(true);
   }, []);
 
+  // Client users have their own portal and never use the agency dashboard.
+  useEffect(() => {
+    if (isClientUser) router.replace("/portal");
+  }, [isClientUser, router]);
+
   // An admin switched onboarding on for this person: send them through it first.
   useEffect(() => {
     if (onboardingDue && !pathname.startsWith("/onboarding")) router.replace("/onboarding");
   }, [onboardingDue, pathname, router]);
 
+  if (isClientUser) return null;
   if (isApplication) return <>{children}</>;
 
   const hideMobileHeader = isClientDetail;
