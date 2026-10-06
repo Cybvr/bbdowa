@@ -7,7 +7,6 @@ import { PageHeader } from "@/components/dashboard/ui";
 import { ItemCard, ItemCardList } from "@/components/dashboard/item-card";
 import { DocumentStatus } from "@/components/document-status";
 import { JobMigrationPanel } from "@/components/job-migration-panel";
-import { TeamMigrationPanel } from "@/components/team-migration-panel";
 import { TaskStatusBadge } from "@/components/tasks-view";
 import { useFirestoreDocuments, useFirestoreTasks, useFirestoreUsers } from "@/lib/firebase/client-content";
 import { formatDate as formatTaskDate, isOverdue } from "@/lib/creator-tasks";
@@ -40,7 +39,6 @@ export default function AdminPage() {
 
       <div className="mt-6 space-y-8">
         <JobMigrationPanel />
-        <TeamMigrationPanel />
         {role === "admin" ? <section>
           <div className="mb-1 flex items-center justify-between gap-3">
             <h2 className="m-0 text-eyebrow font-semibold uppercase tracking-[0.08em] text-muted-foreground">Users</h2>
