@@ -110,6 +110,13 @@ export function LoginForm({
 
   const finishClientSession = async (user: User, intent: AuthIntent) => {
     const profileState = await upsertUserProfile(user, intent);
+    if (profileState.role === "client") {
+      // A full load so the app picks up the client role and opens their portal.
+      setSuccessMessage("Welcome. Opening your portal...");
+      onSuccess?.();
+      window.location.assign("/portal");
+      return;
+    }
     const needsOnboarding = profileState.needsOnboarding;
     setSuccessMessage(needsOnboarding ? "Account ready. Opening your onboarding..." : "Welcome back. Opening Bantaba...");
     onSuccess?.();
