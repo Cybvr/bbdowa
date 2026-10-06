@@ -68,6 +68,8 @@ service cloud.firestore {
         || (isSelf(userId)
           && request.resource.data.uid == userId
           && request.resource.data.role == "client"
+          && request.resource.data.roles == ["client"]
+          && request.resource.data.clientRole == "owner"
           && exists(/databases/$(database)/documents/clients/$(request.resource.data.clientId))
           && get(/databases/$(database)/documents/clients/$(request.resource.data.clientId)).data.get("ownerUid", "") == userId)
         // A client invited by email becomes a client of that company on first sign-in.
@@ -108,7 +110,11 @@ service cloud.firestore {
       allow write: if isAdmin();
       // A company owner adds and removes colleagues for their own company.
       allow create: if isCompanyOwner(request.resource.data.clientId)
-        && request.resource.data.email == email;
+        && request.resource.data.email == email
+        && request.resource.data.invitedBy == request.auth.uid
+        && request.resource.data.keys().hasOnly([
+          "email", "name", "title", "clientId", "clientName", "invitedBy", "invitedAt"
+        ]);
       allow delete: if isCompanyOwner(resource.data.clientId);
     }
     match /clients/{id} {
@@ -117,12 +123,21 @@ service cloud.firestore {
       // A client signing up creates their own company and owns it.
       allow create: if signedIn()
         && request.resource.data.ownerUid == request.auth.uid
-        && request.resource.data.get("internal", false) == false;
+        && request.resource.data.slug == id
+        && request.resource.data.get("internal", false) == false
+        && request.resource.data.keys().hasOnly([
+          "type", "slug", "name", "industry", "teamSize", "location", "timezone",
+          "website", "description", "date", "internal", "ownerUid", "createdAt", "updatedAt"
+        ]);
       // The owner keeps their company profile up to date.
       allow update: if signedIn()
         && resource.data.get("ownerUid", "") == request.auth.uid
         && request.resource.data.ownerUid == request.auth.uid
-        && request.resource.data.get("internal", false) == false;
+        && request.resource.data.get("internal", false) == false
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          "name", "description", "industry", "teamSize", "location", "timezone",
+          "website", "profileImage", "updatedAt"
+        ]);
     }
     // Client jobs. They lived in `campaigns` before the campaigns → jobs
     // migration; `campaigns` is kept as a backup until it is deleted.
@@ -132,7 +147,21 @@ service cloud.firestore {
       // Clients post jobs for their own company and edit the brief. The team,
       // lead, status and pay stay with the agency.
       allow create: if isClientOf(request.resource.data.clientId)
-        && request.resource.data.postedBy == request.auth.uid;
+        && request.resource.data.postedBy == request.auth.uid
+        && request.resource.data.slug == id
+        && request.resource.data.status == "active"
+        && request.resource.data.leadUserId == null
+        && request.resource.data.creatorSlugs == []
+        && request.resource.data.publishedBy == null
+        && request.resource.data.keys().hasOnly([
+          "slug", "name", "title", "campaignTitle", "clientId", "clientName",
+          "category", "year", "liveAt", "status", "leadUserId", "creatorSlugs",
+          "publishedBy", "fee", "target", "result", "image", "imageAlt", "media",
+          "summary", "challenge", "insight", "strategy", "platform", "execution",
+          "outcome", "placeholder", "createdAt", "updatedAt", "requiredSkills",
+          "workSetup", "estimatedLength", "desiredStartDate", "startDate", "endDate",
+          "languages", "postedBy", "postedByName"
+        ]);
       allow update: if isClientOf(resource.data.clientId)
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           "name", "title", "campaignTitle", "summary", "category", "requiredSkills",
