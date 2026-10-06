@@ -66,7 +66,7 @@ export function UserActions({
   const [profileImage, setProfileImage] = React.useState(user.profileImage ?? "");
   const initialOnboarding = needsOnboarding(user);
   const [clientId, setClientId] = React.useState(user.clientId ?? "");
-  const clientOptions = useClientOptions();
+  const clientOptions = useClientOptions(undefined, { outsideOnly: true });
   const [onboarding, setOnboarding] = React.useState(initialOnboarding);
 
   const docRef = async () => {

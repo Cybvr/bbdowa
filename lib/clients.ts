@@ -31,6 +31,8 @@ export type Client = {
   hours?: string | null;
   hoursConverted?: string | null;
   timezone?: string | null;
+  /** The agency's own work (e.g. BBDO West Africa), not an outside client. */
+  internal?: boolean | null;
   /** Point of contact details live in `clientContacts` (not public). */
 };
 
@@ -141,3 +143,8 @@ export type ClientInvite = {
   invitedBy: string | null;
   invitedAt: string;
 };
+
+/** The agency's own record counts as internal even before the flag is set. */
+export function isInternalClient(client: Pick<Client, "slug" | "internal">): boolean {
+  return client.internal ?? client.slug === "bbdo-west-africa";
+}

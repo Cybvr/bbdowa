@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import type { Client } from "@/lib/clients";
+import { isInternalClient, type Client } from "@/lib/clients";
 import type { Job } from "@/lib/jobs";
 import { longDate, plural } from "@/lib/format";
 import { matchesJobTeamKey, type Creator, type User } from "@/lib/users";
@@ -108,7 +108,7 @@ export function ClientsDirectory({ clients, jobs }: { clients: Client[]; jobs: J
                     </div>
                     <div className="flex min-h-[170px] flex-col gap-3 p-4">
                       <h3 className="m-0 text-[16px] font-semibold leading-tight group-hover:text-primary">{client.name}</h3>
-                      <Badge>{client.industry}</Badge>
+                      <div className="flex flex-wrap gap-1.5"><Badge>{client.industry}</Badge>{isInternalClient(client) ? <Badge tone="active">Internal</Badge> : null}</div>
                       <CreatorAvatarStack creators={clientCreators(client, jobs, users)} />
                       <div className="mt-auto text-[12px] text-muted-foreground">
                         {client.date ? (
@@ -150,7 +150,7 @@ export function ClientsDirectory({ clients, jobs }: { clients: Client[]; jobs: J
                           {client.name}
                         </Link>
                       </TableCell>
-                      <TableCell className="px-4 py-3.5"><Badge>{client.industry}</Badge></TableCell>
+                      <TableCell className="px-4 py-3.5"><span className="inline-flex flex-wrap gap-1.5"><Badge>{client.industry}</Badge>{isInternalClient(client) ? <Badge tone="active">Internal</Badge> : null}</span></TableCell>
                       <TableCell className="whitespace-nowrap px-4 py-3.5 text-muted-foreground">{client.date ? <time dateTime={client.date}>{longDate(client.date)}</time> : "—"}</TableCell>
                       <TableCell className="whitespace-nowrap px-4 py-3.5 text-muted-foreground">{client.updatedAt ? updatedDate(client.updatedAt) : "—"}</TableCell>
                     </ClickableTableRow>

@@ -44,7 +44,7 @@ export function UserCreateAction({
   const [rateCurrency, setRateCurrency] = React.useState<RateCurrency>("NGN");
   const [availability, setAvailability] = React.useState("unconfirmed");
   const [clientId, setClientId] = React.useState("");
-  const clientOptions = useClientOptions();
+  const clientOptions = useClientOptions(undefined, { outsideOnly: true });
   const { user: authUser } = useAuth();
   const isClient = roles.includes("client");
 

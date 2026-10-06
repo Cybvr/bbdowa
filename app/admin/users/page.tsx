@@ -69,7 +69,7 @@ function useAddedClients(users: User[]) {
 
 function AddedClientRow({ invite }: { invite: ClientInvite }) {
   const { startViewingAs } = useAuth();
-  const clientOptions = useClientOptions({ clientId: invite.clientId, clientName: invite.clientName });
+  const clientOptions = useClientOptions({ clientId: invite.clientId, clientName: invite.clientName }, { outsideOnly: true });
   const [name, setName] = React.useState(invite.name);
   const [title, setTitle] = React.useState(invite.title ?? "");
   const [clientId, setClientId] = React.useState(invite.clientId);

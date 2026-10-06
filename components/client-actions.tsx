@@ -6,7 +6,7 @@ import { deleteDoc, doc, getDoc, serverTimestamp, setDoc, updateDoc } from "fire
 import { useAuth } from "@/components/auth-provider";
 import { firebaseDb } from "@/lib/firebase/client";
 import { EditSheet, ImageUploadField, SelectField, TextField, TextareaField } from "@/components/detail-editor";
-import { CLIENT_TIMEZONES, TEAM_SIZE_RANGES, teamSizeLabel, type Client } from "@/lib/clients";
+import { CLIENT_TIMEZONES, TEAM_SIZE_RANGES, teamSizeLabel, type Client, isInternalClient } from "@/lib/clients";
 import { CLIENT_CONTACTS_COLLECTION, type ClientContact } from "@/lib/job-terms";
 
 const numberOrNull = (value: string) => (value.trim() ? Number(value) : null);
@@ -20,6 +20,7 @@ export function ClientActions({ client }: { client: Client }) {
 
   const [name, setName] = React.useState(client.name ?? "");
   const [industry, setIndustry] = React.useState(client.industry ?? "");
+  const [internal, setInternal] = React.useState(isInternalClient(client));
   const [date, setDate] = React.useState(client.date ?? "");
   const [profileImage, setProfileImage] = React.useState(client.profileImage ?? "");
   const [description, setDescription] = React.useState(client.description ?? "");
@@ -65,6 +66,7 @@ export function ClientActions({ client }: { client: Client }) {
     await updateDoc(doc(firebaseDb, "clients", client.slug), {
       name: name.trim(),
       industry: industry.trim(),
+      internal,
       date: date.trim() || null,
       profileImage: profileImage.trim() || null,
       description: description.trim() || null,
@@ -107,6 +109,10 @@ export function ClientActions({ client }: { client: Client }) {
       <ImageUploadField label="Avatar" value={profileImage} onChange={setProfileImage} variant="avatar" />
       <TextField label="Name" value={name} onChange={setName} />
       <TextField label="Industry" value={industry} onChange={setIndustry} />
+      <label className="flex items-center gap-2 text-sm font-medium">
+        <input type="checkbox" checked={internal} onChange={(event) => setInternal(event.target.checked)} className="h-4 w-4 accent-primary" />
+        Internal (our own work)
+      </label>
       <TextField label="First live date" value={date} onChange={setDate} type="date" />
       <TextareaField label="Description" value={description} onChange={setDescription} />
       <TextareaField label="Target audience" value={targetAudience} onChange={setTargetAudience} rows={3} placeholder="Who is this client trying to reach?" />

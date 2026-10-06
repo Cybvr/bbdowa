@@ -5,7 +5,7 @@ import { collection, doc, getDoc, getDocs, limit, orderBy, query, where } from "
 import { firebaseDb } from "@/lib/firebase/client";
 import { useAuth } from "@/components/auth-provider";
 import { normalizeJob, type Job } from "@/lib/jobs";
-import type { Client } from "@/lib/clients";
+import { isInternalClient, type Client } from "@/lib/clients";
 import { DOCUMENT_COLLECTION, sortDocuments, type AgencyDocument } from "@/lib/documents";
 import { TASK_COLLECTION, sortTasks, type Task } from "@/lib/creator-tasks";
 import { jobsCollection } from "@/lib/firebase/job-collections";
@@ -43,7 +43,8 @@ export function readClientsFromFirestore() {
 }
 
 /** Clients sorted by name, for pickers. Keeps the job's current client listed even if it was removed. */
-export function useClientOptions(current?: { clientId: string; clientName: string }) {
+/** `outsideOnly` leaves out the agency's own internal record, e.g. when picking a client user's company. */
+export function useClientOptions(current?: { clientId: string; clientName: string }, { outsideOnly = false }: { outsideOnly?: boolean } = {}) {
   const [clients, setClients] = useState<Client[]>([]);
   useEffect(() => {
     let active = true;
@@ -53,10 +54,13 @@ export function useClientOptions(current?: { clientId: string; clientName: strin
     return () => { active = false; };
   }, []);
   return useMemo(() => {
-    const options = clients.map((client) => ({ value: client.slug, label: client.name })).sort((a, b) => a.label.localeCompare(b.label));
+    const options = clients
+      .filter((client) => !outsideOnly || !isInternalClient(client))
+      .map((client) => ({ value: client.slug, label: isInternalClient(client) ? `${client.name} (internal)` : client.name }))
+      .sort((a, b) => a.label.localeCompare(b.label));
     if (current?.clientId && !options.some((option) => option.value === current.clientId)) options.unshift({ value: current.clientId, label: current.clientName || current.clientId });
     return options;
-  }, [clients, current?.clientId, current?.clientName]);
+  }, [clients, current?.clientId, current?.clientName, outsideOnly]);
 }
 
 export async function readDocumentsForAssignee(uid: string | null | undefined, slug?: string | null) {
