@@ -201,6 +201,18 @@ service cloud.firestore {
 
     // Payments owed to people. Staff record and settle them; each payee
     // can read only their own.
+    // What we bill client companies. Staff manage them; a client user sees their
+    // own company's invoices once they're sent (never drafts).
+    match /invoices/{id} {
+      allow read: if isStaff()
+        || (signedIn()
+          && resource.data.status in ["sent", "paid"]
+          && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "client"
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.clientId == resource.data.clientId);
+      allow write: if isStaff();
+    }
+
     match /payments/{id} {
       allow read: if isStaff() || (signedIn() && resource.data.payeeUid == request.auth.uid);
       allow create, update, delete: if isStaff();

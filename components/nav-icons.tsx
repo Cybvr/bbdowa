@@ -324,6 +324,7 @@ export const NAV_ICON_SET: Record<string, NavIconComponent> = {
   Messages: MessagesIcon,
   Help: HelpIcon,
   Payments: PaymentsIcon,
+  Invoices: PaymentsIcon,
   Updates: UpdatesIcon,
   Blog: BlogIcon,
   Company: CompanyIcon,

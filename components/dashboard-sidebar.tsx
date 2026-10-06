@@ -13,12 +13,12 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { firebaseDb } from "@/lib/firebase/client";
 import { ACTIVITY_COLLECTION, elapsedMs, formatClock, isPaused, runningEntry, type ActivityEntry } from "@/lib/time-tracking";
 
-const NAV_TEXT =
+export const NAV_TEXT =
   "flex min-h-10 w-full items-center gap-1.5 rounded-lg px-2.5 py-1.5 font-sans text-body font-normal leading-normal text-foreground no-underline transition-colors hover:bg-foreground/10 hover:text-foreground focus-visible:bg-foreground/10 focus-visible:text-foreground focus-visible:outline-none nav:min-h-9 nav:gap-1.5 nav:px-2 nav:py-1.5";
 
 const NAV_LABEL = "min-w-0 overflow-hidden text-ellipsis whitespace-nowrap transition-[max-width,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]";
 
-const NAV_ACTIVE = "bg-muted !text-foreground hover:bg-muted";
+export const NAV_ACTIVE = "bg-muted !text-foreground hover:bg-muted";
 
 function NavIcon({ label }: { label: string }) {
   const Icon = NAV_ICON_SET[label];
