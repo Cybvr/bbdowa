@@ -169,7 +169,6 @@ export function UserCreateAction({
           <SelectField label="Company" value={clientId || undefined} onChange={setClientId} options={clientOptions} />
           <TextField label="Email" value={email} onChange={setEmail} type="email" />
           <TextField label="Title" value={title} onChange={setTitle} placeholder="e.g. Brand manager" />
-          <p className="m-0 text-xs text-muted-foreground">When they sign in with this email, they go straight to their company’s portal.</p>
         </>
       ) : (
         <>
