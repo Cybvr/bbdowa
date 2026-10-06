@@ -126,7 +126,8 @@ export function MetaItem({ label, children }: { label: string; children: ReactNo
 
 export function StatRow({ children }: { children: ReactNode }) {
   return (
-    <div className="grid grid-cols-1 gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-3">
+    // Always one row, so the numbers sit side by side on phones too.
+    <div className="grid grid-cols-3 gap-px overflow-hidden rounded-xl border border-border bg-border">
       {children}
     </div>
   );
@@ -142,12 +143,12 @@ export function StatItem({
   detail?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-1.5 bg-background p-5">
-      <span className="text-eyebrow font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+    <div className="flex min-w-0 flex-col gap-1 bg-background p-3 sm:p-4">
+      <span className="truncate text-xs font-medium text-muted-foreground">
         {label}
       </span>
-      <strong className="text-hero-stat font-bold leading-none tracking-tight tabular-nums">{value}</strong>
-      {detail ? <div className="text-[14px] leading-snug text-muted-foreground">{detail}</div> : null}
+      <strong className="truncate text-item-title font-semibold tabular-nums">{value}</strong>
+      {detail ? <div className="truncate text-xs text-muted-foreground">{detail}</div> : null}
     </div>
   );
 }

@@ -123,7 +123,34 @@ export function PaymentsView() {
 
       <section id="payments-panel" aria-label="Payments">
         {visible.length > 0 ? (
-          <div className="overflow-x-auto">
+          <>
+          {/* Phones get one card per payment; wider screens keep the table. */}
+          <ul className="m-0 grid list-none gap-2 p-0 sm:hidden">
+            {visible.map((payment) => (
+              <li key={payment.id} className="rounded-xl border border-border bg-background p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    {isStaff ? <p className="m-0 truncate text-body font-semibold">{payment.payeeName}</p> : null}
+                    <p className={`m-0 text-sm ${isStaff ? "text-muted-foreground" : "font-semibold text-foreground"}`}>{payment.description}</p>
+                  </div>
+                  <p className="m-0 shrink-0 text-body font-semibold tabular-nums">{formatAmount(payment.amount, payment.currency)}</p>
+                </div>
+                {payment.jobName ? <p className="m-0 mt-1 truncate text-xs text-muted-foreground">{payment.jobId ? <Link href={jobHref(payment.jobId)} className="text-muted-foreground hover:text-primary">{payment.jobName}</Link> : payment.jobName}</p> : null}
+                <div className="mt-3 flex items-center justify-between gap-3">
+                  <span className="text-xs text-muted-foreground">{payment.dueDate ? `Due ${longDate(payment.dueDate)}` : "No due date"}</span>
+                  <Badge tone={payment.status === "paid" ? "neutral" : "active"}>
+                    {payment.status === "paid" ? `Paid${payment.paidAt ? ` ${longDate(payment.paidAt.slice(0, 10))}` : ""}` : "Pending"}
+                  </Badge>
+                </div>
+                {isStaff ? (
+                  <button type="button" onClick={() => void toggleStatus(payment)} className="mt-3 text-xs font-semibold text-primary hover:underline">
+                    {payment.status === "paid" ? "Mark pending" : "Mark paid"}
+                  </button>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+          <div className="hidden overflow-x-auto sm:block">
             <Table className="w-full border-collapse">
               <TableHeader>
                 <TableRow>
@@ -171,6 +198,7 @@ export function PaymentsView() {
               </TableBody>
             </Table>
           </div>
+          </>
         ) : loaded ? (
           <EmptyState
             title={payments.length ? "No payments match" : "No payments yet"}
