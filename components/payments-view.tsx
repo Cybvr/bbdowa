@@ -133,7 +133,7 @@ export function PaymentsView() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     {isStaff ? <p className="m-0 truncate text-body font-semibold">{payment.payeeName}</p> : null}
-                    <p className={`m-0 text-sm ${isStaff ? "text-muted-foreground" : "font-semibold text-foreground"}`}>{payment.description}</p>
+                    <Link href={`/dashboard/payments/${payment.id}`} className={`m-0 block text-sm no-underline hover:text-primary ${isStaff ? "text-muted-foreground" : "font-semibold text-foreground"}`}>{payment.description}</Link>
                   </div>
                   <p className="m-0 shrink-0 text-body font-semibold tabular-nums">{formatAmount(payment.amount, payment.currency)}</p>
                 </div>
@@ -172,7 +172,7 @@ export function PaymentsView() {
                   <TableRow key={payment.id}>
                     {isStaff ? <TableCell className="px-4 py-4 font-semibold">{payment.payeeName}</TableCell> : null}
                     <TableCell className="px-4 py-4">
-                      <span className="block">{payment.description}</span>
+                      <Link href={`/dashboard/payments/${payment.id}`} className="block text-foreground hover:text-primary">{payment.description}</Link>
                       {payment.jobName ? (
                         <span className="text-[12px] text-muted-foreground">{payment.jobName}</span>
                       ) : null}
