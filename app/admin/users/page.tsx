@@ -1,8 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { Eye } from "lucide-react";
-import { collection, deleteDoc, doc, onSnapshot } from "firebase/firestore";
+import { Eye, Pencil } from "lucide-react";
+import { collection, deleteDoc, doc, onSnapshot, updateDoc } from "firebase/firestore";
+import { EditSheet, SelectField, TextField } from "@/components/detail-editor";
 import { firebaseDb } from "@/lib/firebase/client";
 import { CLIENT_INVITES_COLLECTION, type ClientInvite } from "@/lib/clients";
 import { UserCreateAction } from "@/components/user-create-action";
@@ -12,7 +13,7 @@ import { useAuth } from "@/components/auth-provider";
 import { PageHeader } from "@/components/dashboard/ui";
 import { DashboardListPage } from "@/components/dashboard/list-page";
 import { FilterBar } from "@/components/dashboard/filter-bar";
-import { useFirestoreUsers } from "@/lib/firebase/client-content";
+import { useClientOptions, useFirestoreUsers } from "@/lib/firebase/client-content";
 import { creatorCategoryOptions, isCreatorUser, isTeamUser, userHref, userRoles, type User, type UserRole } from "@/lib/users";
 import { UsersTableSkeleton } from "@/components/dashboard/loading-skeleton";
 import { plural } from "@/lib/format";
@@ -67,10 +68,23 @@ function useAddedClients(users: User[]) {
 }
 
 function AddedClientRow({ invite }: { invite: ClientInvite }) {
-  const remove = async () => {
-    if (!window.confirm(`Remove ${invite.name}?`)) return;
-    await deleteDoc(doc(firebaseDb, CLIENT_INVITES_COLLECTION, invite.email)).catch((cause) => console.error("Unable to remove client", cause));
+  const { startViewingAs } = useAuth();
+  const clientOptions = useClientOptions({ clientId: invite.clientId, clientName: invite.clientName });
+  const [name, setName] = React.useState(invite.name);
+  const [title, setTitle] = React.useState(invite.title ?? "");
+  const [clientId, setClientId] = React.useState(invite.clientId);
+  const ref = doc(firebaseDb, CLIENT_INVITES_COLLECTION, invite.email);
+
+  const save = async () => {
+    if (!name.trim()) throw new Error("Name is required");
+    await updateDoc(ref, {
+      name: name.trim(),
+      title: title.trim(),
+      clientId,
+      clientName: clientOptions.find((option) => option.value === clientId)?.label ?? invite.clientName,
+    });
   };
+
   return (
     <TableRow className="align-middle">
       <TableCell className="px-4 py-3.5 sm:px-5">
@@ -84,7 +98,33 @@ function AddedClientRow({ invite }: { invite: ClientInvite }) {
         </div>
       </TableCell>
       <TableCell className="px-4 py-3.5 text-right">
-        <button type="button" onClick={() => void remove()} className="text-xs font-semibold text-destructive hover:underline">Remove</button>
+        <div className="flex items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => startViewingAs({ uid: `client:${invite.email}`, name: invite.name, email: invite.email, role: "client", clientId: invite.clientId })}
+            aria-label={`View ${invite.name} as this user`}
+            title="View as"
+            className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground"
+          >
+            <Eye aria-hidden="true" className="h-3.5 w-3.5" />
+          </button>
+          <EditSheet
+            title="Edit client user"
+            description={invite.email}
+            onSave={save}
+            onDelete={() => deleteDoc(ref)}
+            deleteConfirm={`Remove ${invite.name}? This can’t be undone.`}
+            trigger={(open) => (
+              <button type="button" onClick={open} aria-label={`Edit ${invite.name}`} title="Edit" className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground">
+                <Pencil aria-hidden="true" className="h-3.5 w-3.5" />
+              </button>
+            )}
+          >
+            <TextField label="Name" value={name} onChange={setName} />
+            <SelectField label="Company" value={clientId || undefined} onChange={setClientId} options={clientOptions} />
+            <TextField label="Title" value={title} onChange={setTitle} />
+          </EditSheet>
+        </div>
       </TableCell>
     </TableRow>
   );
