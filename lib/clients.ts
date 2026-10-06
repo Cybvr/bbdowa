@@ -128,3 +128,16 @@ export const CLIENT_TIMEZONES = [
   "America/Chicago",
   "America/New_York",
 ];
+
+/** Client users invited by email, keyed by the lower-case email. */
+export const CLIENT_INVITES_COLLECTION = "clientInvites";
+
+export type ClientInvite = {
+  email: string;
+  name: string;
+  title: string;
+  clientId: string;
+  clientName: string;
+  invitedBy: string | null;
+  invitedAt: string;
+};
