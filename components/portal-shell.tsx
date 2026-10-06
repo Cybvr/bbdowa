@@ -99,6 +99,7 @@ export function PortalShell({ children }: { children: React.ReactNode }) {
   const pageTitle = PORTAL_NAV.find((item) => isCurrent(pathname, item.href))?.label ?? "Home";
   const jobDetailPage = /^\/portal\/jobs\/(?!new(?:\/|$))[^/]+(?:\/|$)/.test(pathname);
   const conversationPage = pathname === "/portal/messages";
+  const njeriPage = pathname === "/portal/njeri";
   const profileNav = (collapsed = false, inMobileMenu = false) => (
     <div className={`w-full shrink-0 ${collapsed ? "flex justify-center" : ""}`}>
       <ProfileNav
@@ -118,11 +119,11 @@ export function PortalShell({ children }: { children: React.ReactNode }) {
   );
   const logo = (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src="/bbdo-west-africa.png" alt="BBDO West Africa" className="block h-auto w-[clamp(112px,10vw,138px)] max-w-full brightness-0" />
+    <img src="/bbdo-west-africa.png" alt="BBDO West Africa" className="block h-auto w-[clamp(112px,10vw,138px)] max-w-full brightness-0 dark:invert" />
   );
 
   return (
-    <div className="flex min-h-screen flex-1 flex-col bg-background nav:flex-row">
+    <div className={`flex flex-1 flex-col bg-background nav:flex-row ${njeriPage ? "h-dvh overflow-hidden" : "min-h-screen"}`}>
       {/* Desktop sidebar, same frame as the dashboard */}
       <nav aria-label="Portal" className={`hidden flex-col gap-2 overflow-y-auto border-r border-border bg-background p-2.5 text-foreground transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] nav:fixed nav:inset-y-4 nav:left-4 nav:flex ${sidebarCollapsed ? "nav:w-[64px]" : "nav:w-[256px]"}`}>
         <div className={`flex min-h-9 items-center gap-2 ${sidebarCollapsed ? "justify-center" : "justify-between"}`}>
@@ -167,8 +168,8 @@ export function PortalShell({ children }: { children: React.ReactNode }) {
         {isViewingAs ? <button type="button" onClick={stopViewingAs} className="inline-flex h-9 items-center rounded-lg border border-primary/30 bg-primary/5 px-2.5 text-[11px] font-semibold text-primary">Exit view</button> : null}
       </div>
 
-      <div className={`min-w-0 flex-1 pb-16 transition-[margin-left] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] nav:pb-0 ${sidebarCollapsed ? "nav:ml-[80px]" : "nav:ml-[272px]"}`}>
-        <main className={jobDetailPage ? "min-h-[calc(100dvh-60px)] w-full bg-muted px-4 pb-24 pt-6 sm:px-8" : conversationPage ? "w-full" : "mx-auto w-full max-w-5xl px-5 pb-16 pt-4 sm:px-8 nav:pt-8"}>
+      <div className={`min-w-0 flex-1 pb-16 transition-[margin-left] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] nav:pb-0 ${njeriPage ? "min-h-0 overflow-hidden" : ""} ${sidebarCollapsed ? "nav:ml-[80px]" : "nav:ml-[272px]"}`}>
+        <main className={jobDetailPage ? "min-h-[calc(100dvh-60px)] w-full bg-muted px-4 pb-24 pt-6 sm:px-8" : njeriPage ? "h-full min-h-0 w-full" : conversationPage ? "w-full" : "mx-auto w-full max-w-5xl px-5 pb-16 pt-4 sm:px-8 nav:pt-8"}>
           {clientId ? (
             <PortalContext.Provider value={{ clientId, client }}>{children}</PortalContext.Provider>
           ) : (

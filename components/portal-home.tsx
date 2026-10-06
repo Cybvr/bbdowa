@@ -71,8 +71,8 @@ export function PortalHome() {
       </header>
 
       <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.45fr)_minmax(280px,0.75fr)] lg:gap-10">
-        <div className="contents">
-          <section aria-labelledby="portal-jobs-heading" className="order-1 min-w-0 lg:col-start-1 lg:row-start-1">
+        <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-8">
+          <section aria-labelledby="portal-jobs-heading" className="order-1 min-w-0">
             <div className="mb-2 flex items-center justify-between gap-3">
               <h2 id="portal-jobs-heading" className="m-0 text-item-title font-semibold">Your jobs</h2>
               <Link href="/portal/jobs" className="shrink-0 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">View all</Link>
@@ -100,7 +100,7 @@ export function PortalHome() {
             )}
           </section>
 
-          <section aria-labelledby="portal-payments-heading" className="order-3 min-w-0 lg:col-start-1 lg:row-start-2">
+          <section aria-labelledby="portal-payments-heading" className="order-3 min-w-0">
             <div className="mb-2 flex items-center justify-between gap-3">
               <h2 id="portal-payments-heading" className="m-0 text-item-title font-semibold">Payments</h2>
               <Link href="/portal/payments" className="shrink-0 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">View all</Link>
@@ -127,7 +127,7 @@ export function PortalHome() {
           </section>
         </div>
 
-        <aside aria-labelledby="portal-company-heading" className="order-2 min-w-0 lg:col-start-2 lg:row-start-1 lg:border-l lg:border-border lg:pl-7">
+        <aside aria-labelledby="portal-company-heading" className="order-2 min-w-0 lg:self-start lg:border-l lg:border-border lg:pl-7">
           <div className="mb-2 flex items-center justify-between gap-3">
             <h2 id="portal-company-heading" className="m-0 text-item-title font-semibold">Your company</h2>
             <Link href="/portal/company" className="shrink-0 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">{canEditCompany ? "Edit company" : "Company"}</Link>

@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 import { doc, onSnapshot } from "firebase/firestore";
+import { Moon } from "lucide-react";
 import { LuChevronRight } from "react-icons/lu";
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
@@ -15,6 +17,9 @@ import {
 import { useOptionalAuth } from "@/components/auth-provider";
 import { createGlyphAvatarDataUri } from "@/lib/avatar";
 import { firebaseDb } from "@/lib/firebase/client";
+
+const THEME_STORAGE_KEY = "bbdowa-theme";
+const THEME_CHANGE_EVENT = "bbdowa-theme-change";
 
 export type ProfileNavItem = {
   label: string;
@@ -108,6 +113,31 @@ export function ProfileNav({
   const logout = auth?.logout;
   const role = auth?.role ?? null;
   const profileImage = useProfileImage(user?.uid ?? null);
+  const [darkMode, setDarkMode] = useState(false);
+
+  useEffect(() => {
+    const syncTheme = () => setDarkMode(document.documentElement.classList.contains("dark"));
+    syncTheme();
+    const syncFromStorage = (event: StorageEvent) => {
+      if (event.key !== THEME_STORAGE_KEY) return;
+      const enabled = event.newValue === "dark";
+      document.documentElement.classList.toggle("dark", enabled);
+      syncTheme();
+    };
+    window.addEventListener("storage", syncFromStorage);
+    window.addEventListener(THEME_CHANGE_EVENT, syncTheme);
+    return () => {
+      window.removeEventListener("storage", syncFromStorage);
+      window.removeEventListener(THEME_CHANGE_EVENT, syncTheme);
+    };
+  }, []);
+
+  const setTheme = (enabled: boolean) => {
+    document.documentElement.classList.toggle("dark", enabled);
+    setDarkMode(enabled);
+    try { window.localStorage.setItem(THEME_STORAGE_KEY, enabled ? "dark" : "light"); } catch { /* Storage may be unavailable. */ }
+    window.dispatchEvent(new Event(THEME_CHANGE_EVENT));
+  };
   const roleLabel = role ? role.charAt(0).toUpperCase() + role.slice(1) : null;
   const isAdmin = auth?.isAdmin ?? false;
   const menuItems: readonly ProfileNavItem[] = [
@@ -221,6 +251,10 @@ export function ProfileNav({
             )}
           </DropdownMenuItem>
         ))}
+        <DropdownMenuCheckboxItem checked={darkMode} onCheckedChange={(checked) => setTheme(checked === true)}>
+          <Moon aria-hidden="true" />
+          Dark mode
+        </DropdownMenuCheckboxItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={handleLogout}>
           <LogOutIcon />

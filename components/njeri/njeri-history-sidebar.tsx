@@ -19,6 +19,7 @@ interface NjeriHistorySidebarProps {
   onDeleteConversation: (id: string) => void;
   onRenameConversation: (id: string, newTitle: string) => void;
   className?: string;
+  flat?: boolean;
 }
 
 export function NjeriHistorySidebar({
@@ -30,6 +31,7 @@ export function NjeriHistorySidebar({
   onDeleteConversation,
   onRenameConversation,
   className = "",
+  flat = false,
 }: NjeriHistorySidebarProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
@@ -111,10 +113,10 @@ export function NjeriHistorySidebar({
                       onClick={() => onSelectConversation(conversation.id)}
                       aria-current={isActive ? "page" : undefined}
                       title={conversation.title || "Untitled chat"}
-                      className={`flex min-h-10 min-w-0 flex-1 items-center rounded-lg px-2.5 py-1.5 text-left text-sm font-medium leading-normal transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
+                      className={`flex min-h-10 min-w-0 flex-1 items-center px-2.5 py-1.5 text-left text-sm leading-normal transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${flat ? "rounded-none" : "rounded-lg"} ${
                         isActive
-                          ? "bg-muted text-foreground"
-                          : "text-foreground hover:bg-foreground/10"
+                          ? flat ? "font-semibold text-primary" : "bg-muted font-medium text-foreground"
+                          : flat ? "font-medium text-foreground hover:text-primary" : "font-medium text-foreground hover:bg-foreground/10"
                       }`}
                     >
                       <span className="truncate">{conversation.title || "Untitled chat"}</span>

@@ -38,7 +38,7 @@ export function DashboardLogo({ onNavigate, light = false }: { onNavigate?: () =
       <img
         src="/bbdo-west-africa.png"
         alt="BBDO West Africa"
-        className={`block h-auto w-[clamp(112px,10vw,138px)] max-w-full ${light ? "brightness-0 invert" : "brightness-0"}`}
+        className={`block h-auto w-[clamp(112px,10vw,138px)] max-w-full ${light ? "brightness-0 invert" : "brightness-0 dark:invert"}`}
       />
     </Link>
   );

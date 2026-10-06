@@ -51,9 +51,12 @@ export const dynamic = "force-dynamic";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: 'try{if(localStorage.getItem("bbdowa-theme")==="dark")document.documentElement.classList.add("dark")}catch{}' }} />
+      </head>
       <body
-        className={`${outfit.variable} ${robotoMono.variable} flex min-h-screen flex-col bg-white font-sans text-foreground antialiased`}
+        className={`${outfit.variable} ${robotoMono.variable} flex min-h-screen flex-col bg-background font-sans text-foreground antialiased`}
       >
         <PwaRegister />
         <AuthProvider>
