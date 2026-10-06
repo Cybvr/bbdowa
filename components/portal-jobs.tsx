@@ -33,7 +33,7 @@ export function PortalJobs() {
 
   return (
     <div>
-      <h1 className="m-0 text-page-title font-bold sm:text-page-title-lg">Your jobs</h1>
+      <h1 className="m-0 text-page-title font-bold sm:text-page-title-lg">Jobs</h1>
       <p className="mb-0 mt-1 text-body text-muted-foreground">Everything we’re working on for {portal?.client?.name ?? "you"}.</p>
 
       <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search jobs" aria-label="Search jobs" className="mt-5 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary/40" />

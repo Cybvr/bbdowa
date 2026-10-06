@@ -46,7 +46,7 @@ export function PortalJobDetail({ jobId }: { jobId: string }) {
     return () => { active = false; };
   }, [jobId]);
 
-  const back = <Link href="/portal" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground no-underline hover:text-foreground"><ArrowLeft aria-hidden="true" className="h-4 w-4" />Your jobs</Link>;
+  const back = <Link href="/portal/jobs" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground no-underline hover:text-foreground"><ArrowLeft aria-hidden="true" className="h-4 w-4" />Jobs</Link>;
   if (job === undefined) return <div>{back}<p className="mt-6 text-sm text-muted-foreground">Loading…</p></div>;
   // Only this company's jobs, even if someone guesses another job's link.
   if (!job || job.clientId !== portal?.clientId) return <div>{back}<p className="mt-6 text-sm text-muted-foreground">This job doesn’t exist or isn’t yours.</p></div>;
