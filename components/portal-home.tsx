@@ -2,10 +2,11 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowRight, Plus } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { StatItem, StatRow } from "@/components/dashboard/ui";
 import { usePortalClient } from "@/components/portal-shell";
+import { PostJobButton } from "@/components/portal-job-brief";
 import { readJobsFromFirestore } from "@/lib/firebase/client-content";
 import { byLastModified, jobTitle, type Job } from "@/lib/jobs";
 
@@ -33,7 +34,7 @@ export function PortalHome() {
       <div>
         <h1 className="m-0 text-page-title font-bold sm:text-page-title-lg">Welcome{firstName ? `, ${firstName}` : ""}</h1>
         <p className="mb-0 mt-1 text-body text-muted-foreground">Here’s where your work with BBDO West Africa stands.</p>
-        <div className="mt-4"><Link href="/portal/jobs/new" className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground no-underline hover:opacity-90"><Plus aria-hidden="true" className="h-4 w-4" />Post a job</Link></div>
+        <div className="mt-4"><PostJobButton /></div>
       </div>
 
       <StatRow>

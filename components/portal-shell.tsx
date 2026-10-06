@@ -7,7 +7,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { Building2 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { NAV_ACTIVE, NAV_TEXT } from "@/components/dashboard-sidebar";
-import { BriefcaseIcon, HomeIcon, PaymentsIcon, type NavIconComponent } from "@/components/nav-icons";
+import { BriefcaseIcon, HomeIcon, NAV_ICON_SET, PaymentsIcon, type NavIconComponent } from "@/components/nav-icons";
 import { useProfileImage } from "@/components/profile-nav";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { createGlyphAvatarDataUri } from "@/lib/avatar";
@@ -17,6 +17,7 @@ import type { Client } from "@/lib/clients";
 const PORTAL_NAV: { href: string; label: string; icon: NavIconComponent }[] = [
   { href: "/portal", label: "Home", icon: HomeIcon },
   { href: "/portal/jobs", label: "Jobs", icon: BriefcaseIcon },
+  { href: "/portal/njeri", label: "Njeri", icon: NAV_ICON_SET.Njeri },
   { href: "/portal/payments", label: "Payments", icon: PaymentsIcon },
   { href: "/portal/company", label: "Company", icon: CompanyIcon },
 ];

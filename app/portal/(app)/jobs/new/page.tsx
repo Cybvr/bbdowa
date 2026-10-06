@@ -1,5 +1,10 @@
-import { PortalJobForm } from "@/components/portal-job-form";
+import { Suspense } from "react";
+import { PostJobSteps } from "@/components/portal-job-brief";
 
 export default function PortalNewJobPage() {
-  return <PortalJobForm />;
+  return (
+    <Suspense fallback={null}>
+      <PostJobSteps />
+    </Suspense>
+  );
 }

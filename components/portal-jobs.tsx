@@ -2,8 +2,9 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { CalendarDays, Plus } from "lucide-react";
+import { CalendarDays } from "lucide-react";
 import { usePortalClient } from "@/components/portal-shell";
+import { PostJobButton } from "@/components/portal-job-brief";
 import { readJobsFromFirestore } from "@/lib/firebase/client-content";
 import { longDate } from "@/lib/format";
 import { JOB_STATUS_LABELS, byLastModified, jobRecentDate, jobTitle, type Job } from "@/lib/jobs";
@@ -35,7 +36,7 @@ export function PortalJobs() {
     <div>
       <div className="flex items-center justify-between gap-3">
         <h1 className="m-0 text-page-title font-bold max-nav:hidden sm:text-page-title-lg">Jobs</h1>
-        <Link href="/portal/jobs/new" className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground no-underline hover:opacity-90"><Plus aria-hidden="true" className="h-4 w-4" />Post a job</Link>
+        <PostJobButton />
       </div>
       <p className="mb-0 mt-1 text-body text-muted-foreground max-nav:mt-0">Everything we’re working on for {portal?.client?.name ?? "you"}.</p>
 

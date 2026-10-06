@@ -3,45 +3,53 @@
 import * as React from "react";
 import Link from "next/link";
 import { doc, getDoc } from "firebase/firestore";
-import { ArrowLeft, Pencil } from "lucide-react";
+import { ArrowLeft, Eye, Pencil } from "lucide-react";
 import { usePortalClient } from "@/components/portal-shell";
 import { CreatorThumbnail } from "@/components/creator-thumbnail";
-import { RichTextContent, richTextHasContent } from "@/components/rich-text-editor";
+import { BasicsFields, BriefPreview, DetailsFields, TimingFields } from "@/components/portal-job-brief";
+import { ShareCreatorDialog } from "@/components/share-creator-dialog";
 import { firebaseDb } from "@/lib/firebase/client";
 import { jobsCollection } from "@/lib/firebase/job-collections";
 import { useFirestoreUsers } from "@/lib/firebase/client-content";
-import { longDate } from "@/lib/format";
-import { JOB_STATUS_LABELS, jobTitle, normalizeJob, type Job } from "@/lib/jobs";
-
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="grid min-w-0 grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-4 py-1.5 text-body">
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd className="m-0 min-w-0 break-words font-medium">{children}</dd>
-    </div>
-  );
-}
+import { JOB_STATUS_LABELS, normalizeJob, type Job } from "@/lib/jobs";
+import { briefFromJob, updateClientJob, type JobBrief } from "@/lib/portal-jobs";
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="rounded-xl border border-border bg-background p-4 sm:p-5">
       <h2 className="m-0 text-item-title font-semibold">{title}</h2>
-      {children}
+      <div className="mt-3">{children}</div>
     </section>
   );
 }
 
-/** A client's read-only view of one of their jobs. Nothing about pay or internal work. */
+/**
+ * A client's job page. It opens ready to edit; Preview shows the read-only
+ * version and Share sends a link to a colleague.
+ */
 export function PortalJobDetail({ jobId }: { jobId: string }) {
   const portal = usePortalClient();
   const { users } = useFirestoreUsers();
   const [job, setJob] = React.useState<Job | null | undefined>(undefined);
+  const [brief, setBrief] = React.useState<JobBrief | null>(null);
+  const [saved, setSaved] = React.useState<JobBrief | null>(null);
+  const [preview, setPreview] = React.useState(false);
+  const [saving, setSaving] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     let active = true;
     jobsCollection()
       .then((name) => getDoc(doc(firebaseDb, name, jobId)))
-      .then((snapshot) => { if (active) setJob(snapshot.exists() ? normalizeJob(snapshot.data() as Record<string, unknown>, snapshot.id) : null); })
+      .then((snapshot) => {
+        if (!active) return;
+        const loaded = snapshot.exists() ? normalizeJob(snapshot.data() as Record<string, unknown>, snapshot.id) : null;
+        setJob(loaded);
+        if (loaded) {
+          setBrief(briefFromJob(loaded));
+          setSaved(briefFromJob(loaded));
+        }
+      })
       .catch(() => { if (active) setJob(null); });
     return () => { active = false; };
   }, [jobId]);
@@ -49,48 +57,65 @@ export function PortalJobDetail({ jobId }: { jobId: string }) {
   const back = <Link href="/portal/jobs" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground no-underline hover:text-foreground"><ArrowLeft aria-hidden="true" className="h-4 w-4" />Jobs</Link>;
   if (job === undefined) return <div>{back}<p className="mt-6 text-sm text-muted-foreground">Loading…</p></div>;
   // Only this company's jobs, even if someone guesses another job's link.
-  if (!job || job.clientId !== portal?.clientId) return <div>{back}<p className="mt-6 text-sm text-muted-foreground">This job doesn’t exist or isn’t yours.</p></div>;
+  if (!job || !brief || job.clientId !== portal?.clientId) return <div>{back}<p className="mt-6 text-sm text-muted-foreground">This job doesn’t exist or isn’t yours.</p></div>;
+
+  const dirty = JSON.stringify(brief) !== JSON.stringify(saved);
+  const change = <K extends keyof JobBrief>(key: K, value: JobBrief[K]) => setBrief((current) => (current ? { ...current, [key]: value } : current));
+
+  const save = async () => {
+    if (!brief.title.trim()) return setError("Give the job a title.");
+    if (brief.startDate && brief.endDate && brief.endDate < brief.startDate) return setError("The end date must be after the start date.");
+    setSaving(true);
+    setError(null);
+    try {
+      await updateClientJob(job.slug, brief);
+      setSaved(brief);
+    } catch (cause) {
+      console.error("Unable to save job", cause);
+      setError("Couldn’t save. Try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const lead = users.find((person) => person.slug === job.leadUserId);
-  const team = users.filter((person) => person.slug && (job.creatorSlugs ?? []).includes(person.slug));
+  const team = users.filter((person) => person.slug && (job.creatorSlugs ?? []).includes(person.slug) && person.slug !== lead?.slug);
 
   return (
     <div className="grid gap-3">
       {back}
-      <div>
-        {job.campaignTitle && job.campaignTitle !== jobTitle(job) ? <p className="m-0 text-sm font-medium text-muted-foreground">{job.campaignTitle}</p> : null}
-        <div className="mt-1 flex items-start justify-between gap-3">
-          <h1 className="m-0 min-w-0 text-page-title font-semibold sm:text-page-title-lg">{jobTitle(job)}</h1>
-          <Link href={`/portal/jobs/${encodeURIComponent(job.slug)}/edit`} className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md border border-border bg-background px-3 text-sm font-semibold text-foreground no-underline hover:border-foreground"><Pencil aria-hidden="true" className="h-3.5 w-3.5" />Edit</Link>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="m-0 truncate text-page-title font-semibold sm:text-page-title-lg">{brief.title || "Untitled job"}</h1>
+          <p className="m-0 mt-1 text-sm text-muted-foreground">{JOB_STATUS_LABELS[job.status]}</p>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <button type="button" onClick={() => setPreview((value) => !value)} className="inline-flex h-9 items-center gap-1.5 rounded-md border border-border bg-background px-3 text-sm font-semibold hover:border-foreground">
+            {preview ? <><Pencil aria-hidden="true" className="h-3.5 w-3.5" />Edit</> : <><Eye aria-hidden="true" className="h-3.5 w-3.5" />Preview</>}
+          </button>
+          <ShareCreatorDialog creatorName={brief.title || "this job"} path={`/portal/jobs/${encodeURIComponent(job.slug)}`} kind="job" showLabel className="border border-border" />
         </div>
       </div>
 
-      <Card title="About the job">
-        {richTextHasContent(job.summary ?? "") ? <RichTextContent value={job.summary ?? ""} className="mt-3 text-body text-muted-foreground" /> : <p className="mb-0 mt-3 text-body text-muted-foreground">No description yet.</p>}
-      </Card>
-
-      <Card title="Details">
-        <dl className="m-0 mt-3">
-          <Row label="Status">{JOB_STATUS_LABELS[job.status]}</Row>
-          <Row label="Category">{job.category || "—"}</Row>
-          <Row label="Start">{job.startDate ? longDate(job.startDate) : "—"}</Row>
-          <Row label="End">{job.endDate ? longDate(job.endDate) : "—"}</Row>
-          <Row label="Est. length">{job.estimatedLength || "—"}</Row>
-          <Row label="Work setup">{job.workSetup || "—"}</Row>
-          <Row label="Budget">{job.fee || "—"}</Row>
-        </dl>
-      </Card>
-
-      {job.requiredSkills?.length ? (
-        <Card title="Tags">
-          <ul className="m-0 mt-3 flex list-none flex-wrap gap-2 p-0">{job.requiredSkills.map((tag) => <li key={tag} className="rounded-full bg-muted px-3 py-1 text-sm font-medium">{tag}</li>)}</ul>
-        </Card>
-      ) : null}
+      {preview ? (
+        <BriefPreview brief={saved ?? brief} />
+      ) : (
+        <>
+          <Card title="Basics"><BasicsFields brief={brief} change={change} /></Card>
+          <Card title="Details"><DetailsFields brief={brief} change={change} /></Card>
+          <Card title="Timing and budget"><TimingFields brief={brief} change={change} /></Card>
+          {error ? <p role="alert" className="m-0 text-sm text-destructive">{error}</p> : null}
+          <div className="sticky bottom-20 z-10 flex items-center justify-end gap-3 nav:bottom-4">
+            {dirty ? <button type="button" onClick={() => setBrief(saved)} className="h-10 rounded-md bg-background px-4 text-sm font-semibold text-muted-foreground hover:text-foreground">Discard</button> : null}
+            <button type="button" onClick={() => void save()} disabled={!dirty || saving} className="h-10 rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-sm disabled:opacity-50">{saving ? "Saving…" : dirty ? "Save changes" : "Saved"}</button>
+          </div>
+        </>
+      )}
 
       <Card title="Your team">
         {lead || team.length ? (
-          <ul className="m-0 mt-3 grid list-none gap-2 p-0">
-            {[...(lead ? [lead] : []), ...team.filter((person) => person.slug !== lead?.slug)].map((person) => (
+          <ul className="m-0 grid list-none gap-2 p-0">
+            {[...(lead ? [lead] : []), ...team].map((person) => (
               <li key={person.slug} className="flex min-w-0 items-center gap-3 text-body">
                 <CreatorThumbnail imageSrc={person.profileImage} avatarSeed={person.name} className="h-8 w-8 shrink-0" />
                 <span className="truncate font-medium">{person.name}</span>
@@ -98,7 +123,7 @@ export function PortalJobDetail({ jobId }: { jobId: string }) {
               </li>
             ))}
           </ul>
-        ) : <p className="mb-0 mt-3 text-body text-muted-foreground">We’re putting the team together.</p>}
+        ) : <p className="m-0 text-body text-muted-foreground">We’re putting the team together.</p>}
       </Card>
     </div>
   );
