@@ -57,6 +57,12 @@ service cloud.firestore {
         || (isSelf(userId)
           && request.resource.data.uid == userId
           && request.resource.data.role == "pending")
+        // A client who signed up and created a company becomes its owner.
+        || (isSelf(userId)
+          && request.resource.data.uid == userId
+          && request.resource.data.role == "client"
+          && exists(/databases/$(database)/documents/clients/$(request.resource.data.clientId))
+          && get(/databases/$(database)/documents/clients/$(request.resource.data.clientId)).data.get("ownerUid", "") == userId)
         // A client invited by email becomes a client of that company on first sign-in.
         || (isSelf(userId)
           && request.resource.data.uid == userId
@@ -96,6 +102,15 @@ service cloud.firestore {
     match /clients/{id} {
       allow read: if true;
       allow write: if isStaff();
+      // A client signing up creates their own company and owns it.
+      allow create: if signedIn()
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.get("internal", false) == false;
+      // The owner keeps their company profile up to date.
+      allow update: if signedIn()
+        && resource.data.get("ownerUid", "") == request.auth.uid
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.get("internal", false) == false;
     }
     // Client jobs. They lived in `campaigns` before the campaigns → jobs
     // migration; `campaigns` is kept as a backup until it is deleted.

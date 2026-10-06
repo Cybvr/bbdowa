@@ -63,7 +63,9 @@ export function PortalShell({ children }: { children: React.ReactNode }) {
 
   React.useEffect(() => {
     if (loading) return;
-    if (!user) router.replace("/auth/login?next=/portal");
+    if (!user) router.replace("/portal/login");
+    // Signed in but no account yet: finish client sign-up by creating the company.
+    else if (!role) router.replace("/portal/signup/company");
     else if (role !== "client") router.replace("/dashboard");
   }, [loading, role, router, user]);
 
