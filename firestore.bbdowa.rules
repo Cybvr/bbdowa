@@ -33,6 +33,14 @@ service cloud.firestore {
         || resource.data.get("roles", []).hasAny(["creator"]);
     }
 
+    // A client user of this company (users/{uid} has role "client" and that clientId).
+    function isClientOf(clientId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "client"
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.clientId == clientId;
+    }
+
     function validRole() {
       return request.resource.data.role in ["pending", "admin", "manager", "creator", "client"];
     }
@@ -94,6 +102,16 @@ service cloud.firestore {
     match /jobs/{id} {
       allow read: if true;
       allow write: if isStaff();
+      // Clients post jobs for their own company and edit the brief. The team,
+      // lead, status and pay stay with the agency.
+      allow create: if isClientOf(request.resource.data.clientId)
+        && request.resource.data.postedBy == request.auth.uid;
+      allow update: if isClientOf(resource.data.clientId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          "name", "title", "campaignTitle", "summary", "category", "requiredSkills",
+          "workSetup", "estimatedLength", "desiredStartDate", "startDate", "endDate",
+          "languages", "fee", "updatedAt"
+        ]);
     }
     match /campaigns/{id} {
       allow read: if true;

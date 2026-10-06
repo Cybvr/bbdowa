@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { doc, getDoc } from "firebase/firestore";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Pencil } from "lucide-react";
 import { usePortalClient } from "@/components/portal-shell";
 import { CreatorThumbnail } from "@/components/creator-thumbnail";
 import { RichTextContent, richTextHasContent } from "@/components/rich-text-editor";
@@ -59,7 +59,10 @@ export function PortalJobDetail({ jobId }: { jobId: string }) {
       {back}
       <div>
         {job.campaignTitle && job.campaignTitle !== jobTitle(job) ? <p className="m-0 text-sm font-medium text-muted-foreground">{job.campaignTitle}</p> : null}
-        <h1 className="m-0 mt-1 text-page-title font-semibold sm:text-page-title-lg">{jobTitle(job)}</h1>
+        <div className="mt-1 flex items-start justify-between gap-3">
+          <h1 className="m-0 min-w-0 text-page-title font-semibold sm:text-page-title-lg">{jobTitle(job)}</h1>
+          <Link href={`/portal/jobs/${encodeURIComponent(job.slug)}/edit`} className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md border border-border bg-background px-3 text-sm font-semibold text-foreground no-underline hover:border-foreground"><Pencil aria-hidden="true" className="h-3.5 w-3.5" />Edit</Link>
+        </div>
       </div>
 
       <Card title="About the job">
@@ -73,6 +76,8 @@ export function PortalJobDetail({ jobId }: { jobId: string }) {
           <Row label="Start">{job.startDate ? longDate(job.startDate) : "—"}</Row>
           <Row label="End">{job.endDate ? longDate(job.endDate) : "—"}</Row>
           <Row label="Est. length">{job.estimatedLength || "—"}</Row>
+          <Row label="Work setup">{job.workSetup || "—"}</Row>
+          <Row label="Budget">{job.fee || "—"}</Row>
         </dl>
       </Card>
 

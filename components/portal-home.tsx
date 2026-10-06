@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Plus } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { StatItem, StatRow } from "@/components/dashboard/ui";
 import { usePortalClient } from "@/components/portal-shell";
@@ -33,6 +33,7 @@ export function PortalHome() {
       <div>
         <h1 className="m-0 text-page-title font-bold sm:text-page-title-lg">Welcome{firstName ? `, ${firstName}` : ""}</h1>
         <p className="mb-0 mt-1 text-body text-muted-foreground">Here’s where your work with BBDO West Africa stands.</p>
+        <div className="mt-4"><Link href="/portal/jobs/new" className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground no-underline hover:opacity-90"><Plus aria-hidden="true" className="h-4 w-4" />Post a job</Link></div>
       </div>
 
       <StatRow>
@@ -60,7 +61,7 @@ export function PortalHome() {
             ))}
           </ul>
         ) : (
-          <p className="rounded-xl border border-border bg-background p-6 text-center text-sm text-muted-foreground">No active jobs right now.</p>
+          <p className="rounded-xl border border-border bg-background p-6 text-center text-sm text-muted-foreground">No active jobs yet. Post a job to get started.</p>
         )}
       </section>
     </div>
