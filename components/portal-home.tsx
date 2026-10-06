@@ -3,12 +3,12 @@
 import * as React from "react";
 import Link from "next/link";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
-import { Plus } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { DashboardCard } from "@/components/dashboard-card";
 import { ItemCard, ItemCardList } from "@/components/dashboard/item-card";
 import { CreatorThumbnail } from "@/components/creator-thumbnail";
 import { usePortalClient } from "@/components/portal-shell";
+import { PostJobButton } from "@/components/portal-job-brief";
 import { readJobsFromFirestore, useFirestoreUsers } from "@/lib/firebase/client-content";
 import { firebaseDb } from "@/lib/firebase/client";
 import { teamSizeLabel } from "@/lib/clients";
@@ -94,16 +94,7 @@ export function PortalHome() {
                   </li>
                 ))}
                 <li className={activeJobs.length ? "" : "sm:col-span-2"}>
-                  <Link
-                    href="/portal/jobs/new"
-                    className="group flex min-h-32 h-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-primary/50 bg-primary/5 p-5 text-center text-foreground no-underline transition-colors hover:border-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                  >
-                    <span className="grid h-9 w-9 place-items-center rounded-full bg-primary text-primary-foreground transition-colors group-hover:bg-primary/90">
-                      <Plus aria-hidden="true" className="h-5 w-5" />
-                    </span>
-                    <span className="text-sm font-semibold">Post a job</span>
-                    {!activeJobs.length ? <span className="text-xs text-muted-foreground">No active jobs yet. Create one to get started.</span> : null}
-                  </Link>
+                  <PostJobButton variant="card" empty={!activeJobs.length} />
                 </li>
               </ul>
             )}

@@ -1,8 +1,13 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
-import { NjeriPageView } from "@/components/njeri/njeri-page-view";
+import { PortalNjeri } from "@/components/portal-njeri";
 
 export const metadata: Metadata = { title: "Njeri" };
 
 export default function PortalNjeriPage() {
-  return <NjeriPageView />;
+  return (
+    <Suspense fallback={null}>
+      <PortalNjeri />
+    </Suspense>
+  );
 }

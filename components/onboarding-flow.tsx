@@ -161,13 +161,8 @@ export function OnboardingFlow() {
     craftNote: clean(answers.craftNote),
   });
 
-  const validate = (target: OnboardingStep): string | null => {
-    if (target === "profile" && !clean(answers.name)) return "Add your name to continue.";
-    if (target === "hr" && (!clean(hr.emergencyContact.name) || !clean(hr.emergencyContact.phone))) {
-      return "Add an emergency contact name and phone number to continue.";
-    }
-    return null;
-  };
+  // Nothing is required: people can move on from any step and still finish.
+  const validate = (_target: OnboardingStep): string | null => null;
 
   // Every step saves as you leave it, so closing the tab never loses answers.
   const saveProgress = async (target: OnboardingStep) => {
@@ -327,7 +322,7 @@ export function OnboardingFlow() {
       {step === "profile" ? (
         <div className="space-y-4">
           <ImageUploadField label="Profile photo" value={answers.profileImage} onChange={set("profileImage")} variant="avatar" uploadPath={`users/${uid}/avatar`} />
-          <TextField label="Full name" value={answers.name} onChange={set("name")} required />
+          <TextField label="Full name" value={answers.name} onChange={set("name")} />
           <TextField label="Preferred name" value={answers.preferredName} onChange={set("preferredName")} placeholder="What should people call you?" />
           <Field label="Email">
             <p className="m-0 text-[14px] text-muted-foreground">{email ?? "Not set"}</p>
@@ -379,9 +374,9 @@ export function OnboardingFlow() {
         <div className="space-y-6">
           <div className="space-y-4">
             <h2 className="m-0 text-[15px] font-semibold">Emergency contact</h2>
-            <TextField label="Name" value={hr.emergencyContact.name} onChange={setContact("name")} required />
+            <TextField label="Name" value={hr.emergencyContact.name} onChange={setContact("name")} />
             <TextField label="Relationship" value={hr.emergencyContact.relationship} onChange={setContact("relationship")} placeholder="e.g. Sister" />
-            <TextField label="Phone" value={hr.emergencyContact.phone} onChange={setContact("phone")} required />
+            <TextField label="Phone" value={hr.emergencyContact.phone} onChange={setContact("phone")} />
           </div>
           <div className="space-y-3">
             <h2 className="m-0 text-[15px] font-semibold">Equipment and access</h2>

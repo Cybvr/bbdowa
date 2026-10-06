@@ -98,7 +98,7 @@ export function PortalShell({ children }: { children: React.ReactNode }) {
   const avatar = profileImage || createGlyphAvatarDataUri(displayName);
   const pageTitle = PORTAL_NAV.find((item) => isCurrent(pathname, item.href))?.label ?? "Home";
   const jobDetailPage = /^\/portal\/jobs\/(?!new(?:\/|$))[^/]+(?:\/|$)/.test(pathname);
-  const conversationPage = pathname === "/portal/njeri" || pathname === "/portal/messages";
+  const conversationPage = pathname === "/portal/messages";
   const profileNav = (collapsed = false, inMobileMenu = false) => (
     <div className={`w-full shrink-0 ${collapsed ? "flex justify-center" : ""}`}>
       <ProfileNav
@@ -151,11 +151,12 @@ export function PortalShell({ children }: { children: React.ReactNode }) {
                 <img src={avatar} alt="" className="h-full w-full object-cover" />
               </button>
             </SheetTrigger>
-            <SheetContent side="left" className="flex w-[280px] flex-col gap-2 p-2.5">
-              <SheetHeader className="p-1.5">
-                <SheetTitle className="sr-only">Menu</SheetTitle>
-                {logo}
+            {/* Same panel as the dashboard's mobile menu. */}
+            <SheetContent side="left" className="w-[min(264px,84vw)] gap-1 overflow-y-auto border-r border-border bg-background p-2 text-foreground shadow-2xl">
+              <SheetHeader className="sr-only">
+                <SheetTitle>Menu</SheetTitle>
               </SheetHeader>
+              <div className="flex min-h-9 items-center px-1.5">{logo}</div>
               {profileNav(false, true)}
               <PortalNavList onNavigate={() => setMenuOpen(false)} />
             </SheetContent>
