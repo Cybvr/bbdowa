@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
+import { Building2 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { NAV_ACTIVE, NAV_TEXT } from "@/components/dashboard-sidebar";
 import { BriefcaseIcon, HomeIcon, PaymentsIcon, type NavIconComponent } from "@/components/nav-icons";
@@ -17,7 +18,12 @@ const PORTAL_NAV: { href: string; label: string; icon: NavIconComponent }[] = [
   { href: "/portal", label: "Home", icon: HomeIcon },
   { href: "/portal/jobs", label: "Jobs", icon: BriefcaseIcon },
   { href: "/portal/payments", label: "Payments", icon: PaymentsIcon },
+  { href: "/portal/company", label: "Company", icon: CompanyIcon },
 ];
+
+function CompanyIcon({ className }: { className?: string }) {
+  return <Building2 aria-hidden="true" className={className} strokeWidth={1.75} />;
+}
 
 const isCurrent = (pathname: string, href: string) => (href === "/portal" ? pathname === "/portal" : pathname.startsWith(href));
 

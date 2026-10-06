@@ -41,6 +41,13 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.clientId == clientId;
     }
 
+    // The client user who owns this company (clients/{clientId}.ownerUid).
+    function isCompanyOwner(clientId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/clients/$(clientId))
+        && get(/databases/$(database)/documents/clients/$(clientId)).data.get("ownerUid", "") == request.auth.uid;
+    }
+
     function validRole() {
       return request.resource.data.role in ["pending", "admin", "manager", "creator", "client"];
     }
@@ -96,8 +103,13 @@ service cloud.firestore {
     // Client users invited by email, keyed by the lower-case email. Read on first sign-in.
     match /clientInvites/{email} {
       allow read: if isStaff()
-        || (signedIn() && request.auth.token.email != null && request.auth.token.email.lower() == email);
+        || (signedIn() && request.auth.token.email != null && request.auth.token.email.lower() == email)
+        || isCompanyOwner(resource.data.clientId);
       allow write: if isAdmin();
+      // A company owner adds and removes colleagues for their own company.
+      allow create: if isCompanyOwner(request.resource.data.clientId)
+        && request.resource.data.email == email;
+      allow delete: if isCompanyOwner(resource.data.clientId);
     }
     match /clients/{id} {
       allow read: if true;

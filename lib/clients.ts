@@ -31,6 +31,8 @@ export type Client = {
   hours?: string | null;
   hoursConverted?: string | null;
   timezone?: string | null;
+  /** Firebase uid of the client user who owns this company and can edit its profile. */
+  ownerUid?: string | null;
   /** The agency's own work (e.g. BBDO West Africa), not an outside client. */
   internal?: boolean | null;
   /** Point of contact details live in `clientContacts` (not public). */

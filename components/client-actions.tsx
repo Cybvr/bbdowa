@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { deleteDoc, doc, getDoc, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 import { useAuth } from "@/components/auth-provider";
 import { firebaseDb } from "@/lib/firebase/client";
+import { useFirestoreUsers } from "@/lib/firebase/client-content";
 import { EditSheet, ImageUploadField, SelectField, TextField, TextareaField } from "@/components/detail-editor";
 import { CLIENT_TIMEZONES, TEAM_SIZE_RANGES, teamSizeLabel, type Client, isInternalClient } from "@/lib/clients";
 import { CLIENT_CONTACTS_COLLECTION, type ClientContact } from "@/lib/job-terms";
@@ -21,6 +22,12 @@ export function ClientActions({ client }: { client: Client }) {
   const [name, setName] = React.useState(client.name ?? "");
   const [industry, setIndustry] = React.useState(client.industry ?? "");
   const [internal, setInternal] = React.useState(isInternalClient(client));
+  const [ownerUid, setOwnerUid] = React.useState(client.ownerUid ?? "");
+  const { users } = useFirestoreUsers();
+  // Only this company's client users who have signed in can own it.
+  const ownerOptions = users
+    .filter((person) => person.uid && person.clientId === client.slug && person.role === "client")
+    .map((person) => ({ value: person.uid!, label: person.name || person.email || "Client user" }));
   const [date, setDate] = React.useState(client.date ?? "");
   const [profileImage, setProfileImage] = React.useState(client.profileImage ?? "");
   const [description, setDescription] = React.useState(client.description ?? "");
@@ -67,6 +74,7 @@ export function ClientActions({ client }: { client: Client }) {
       name: name.trim(),
       industry: industry.trim(),
       internal,
+      ownerUid: ownerUid || null,
       date: date.trim() || null,
       profileImage: profileImage.trim() || null,
       description: description.trim() || null,
@@ -109,6 +117,14 @@ export function ClientActions({ client }: { client: Client }) {
       <ImageUploadField label="Avatar" value={profileImage} onChange={setProfileImage} variant="avatar" />
       <TextField label="Name" value={name} onChange={setName} />
       <TextField label="Industry" value={industry} onChange={setIndustry} />
+      {!internal ? (
+        <SelectField
+          label="Company owner"
+          value={ownerUid || "none"}
+          onChange={(value) => setOwnerUid(value === "none" ? "" : value)}
+          options={[{ value: "none", label: ownerOptions.length ? "No owner" : "No client users yet" }, ...ownerOptions]}
+        />
+      ) : null}
       <label className="flex items-center gap-2 text-sm font-medium">
         <input type="checkbox" checked={internal} onChange={(event) => setInternal(event.target.checked)} className="h-4 w-4 accent-primary" />
         Internal (our own work)
