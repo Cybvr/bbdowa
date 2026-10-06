@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { EditPaymentDialog } from "@/components/edit-payment-dialog";
 import { addDoc, collection, doc, getDocs, onSnapshot, query, updateDoc, where } from "firebase/firestore";
 import { LuPlus } from "react-icons/lu";
 import { useAuth } from "@/components/auth-provider";
@@ -48,6 +49,7 @@ export function PaymentsView() {
   const [status, setStatus] = React.useState<"all" | PaymentStatus>("all");
   const [search, setSearch] = React.useState("");
   const [adding, setAdding] = React.useState(false);
+  const [editing, setEditing] = React.useState<Payment | null>(null);
 
   React.useEffect(() => {
     if (!uid) return;
@@ -143,9 +145,12 @@ export function PaymentsView() {
                   </Badge>
                 </div>
                 {isStaff ? (
-                  <button type="button" onClick={() => void toggleStatus(payment)} className="mt-3 text-xs font-semibold text-primary hover:underline">
-                    {payment.status === "paid" ? "Mark pending" : "Mark paid"}
-                  </button>
+                  <div className="mt-3 flex gap-4">
+                    <button type="button" onClick={() => void toggleStatus(payment)} className="text-xs font-semibold text-primary hover:underline">
+                      {payment.status === "paid" ? "Mark pending" : "Mark paid"}
+                    </button>
+                    <button type="button" onClick={() => setEditing(payment)} className="text-xs font-semibold text-foreground hover:underline">Edit</button>
+                  </div>
                 ) : null}
               </li>
             ))}
@@ -188,9 +193,12 @@ export function PaymentsView() {
                     </TableCell>
                     {isStaff ? (
                       <TableCell className="px-4 py-4 text-right">
-                        <button type="button" onClick={() => void toggleStatus(payment)} className={LIST_ACTION_CLASS}>
-                          {payment.status === "paid" ? "Mark pending" : "Mark paid"}
-                        </button>
+                        <span className="inline-flex gap-2">
+                          <button type="button" onClick={() => void toggleStatus(payment)} className={LIST_ACTION_CLASS}>
+                            {payment.status === "paid" ? "Mark pending" : "Mark paid"}
+                          </button>
+                          <button type="button" onClick={() => setEditing(payment)} className={LIST_ACTION_CLASS}>Edit</button>
+                        </span>
                       </TableCell>
                     ) : null}
                   </TableRow>
@@ -214,6 +222,7 @@ export function PaymentsView() {
       </section>
 
       {isStaff && uid ? <AddPaymentDialog open={adding} onOpenChange={setAdding} createdBy={uid} /> : null}
+      {isStaff ? <EditPaymentDialog payment={editing} onOpenChange={(open) => { if (!open) setEditing(null); }} onSaved={() => undefined} /> : null}
     </main>
   );
 }
