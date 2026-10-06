@@ -201,7 +201,7 @@ export function UserActions({
                 );
               })}
             </div>
-            <p className="m-0 text-xs text-muted-foreground">A person can appear in both the team and creator directories. Client is on its own.</p>
+            <p className="m-0 text-xs text-muted-foreground">A person can appear in both the team and creator directories.</p>
           </div>
           {roles.includes("client") ? <SelectField label="Company" value={clientId || undefined} onChange={setClientId} options={clientOptions} /> : null}
           <div className="flex items-start justify-between gap-4">
