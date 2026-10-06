@@ -132,7 +132,15 @@ export function PortalHome() {
             <h2 id="portal-company-heading" className="m-0 text-item-title font-semibold">Your company</h2>
             <Link href="/portal/company" className="shrink-0 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">{canEditCompany ? "Edit company" : "Company"}</Link>
           </div>
-          <div className="pt-2">
+          <dl className="m-0 mt-5 divide-y divide-border border-t border-border">
+            {facts.map((fact) => (
+              <div key={fact.label} className="flex min-h-12 items-center justify-between gap-4 py-3">
+                <dt className="shrink-0 text-sm text-muted-foreground">{fact.label}</dt>
+                <dd className="m-0 min-w-0 break-words text-right text-sm font-medium text-foreground">{fact.value}</dd>
+              </div>
+            ))}
+          </dl>
+          <div className="mt-5 border-t border-border pt-5">
             <h3 className="m-0 text-sm font-semibold text-foreground">Your contacts</h3>
             <div className="mt-3 flex items-center gap-3 py-2">
               <CreatorThumbnail imageSrc={leadContact?.profileImage} avatarSeed={leadContact?.name || "Lead contact"} className="h-9 w-9 shrink-0" />
@@ -151,14 +159,6 @@ export function PortalHome() {
               </div>
             </div>
           </div>
-          <dl className="m-0 mt-5 divide-y divide-border border-t border-border">
-            {facts.map((fact) => (
-              <div key={fact.label} className="flex min-h-12 items-center justify-between gap-4 py-3">
-                <dt className="shrink-0 text-sm text-muted-foreground">{fact.label}</dt>
-                <dd className="m-0 min-w-0 break-words text-right text-sm font-medium text-foreground">{fact.value}</dd>
-              </div>
-            ))}
-          </dl>
         </aside>
       </div>
     </div>

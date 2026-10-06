@@ -47,7 +47,7 @@ export function DashboardCardActions({
   title,
   onMutated,
   showCopy = true,
-  copyLabel = "Copy",
+  copyLabel = "Duplicate",
 }: {
   collection: ContentCollection;
   slug: string;
