@@ -23,7 +23,8 @@ export function NjeriWidget() {
   } = useNjeri();
 
   // Hidden on the dedicated Njeri page and across the admin section.
-  const isHidden = pathname === "/dashboard/njeri" || pathname === "/njeri" || pathname.startsWith("/admin");
+  const isHidden = pathname === "/dashboard/njeri" || pathname === "/portal/njeri" || pathname === "/njeri" || pathname.startsWith("/admin");
+  const fullPageHref = pathname.startsWith("/portal") ? "/portal/njeri" : "/dashboard/njeri";
 
   useEffect(() => {
     if (!open) return;
@@ -81,7 +82,7 @@ export function NjeriWidget() {
             </button>
 
             <Link
-              href="/dashboard/njeri"
+              href={fullPageHref}
               onClick={() => setOpen(false)}
               aria-label="Open full page"
               title="Open full page with history"

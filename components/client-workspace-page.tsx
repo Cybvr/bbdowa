@@ -537,6 +537,22 @@ function OneUtilityClientWorkspace({
   const [clientLocation, setClientLocation] = useState(client?.location ?? "");
   const [clientLinkedIn, setClientLinkedIn] = useState(client?.linkedIn ?? "");
   const [clientTimezone, setClientTimezone] = useState(client?.timezone ?? "");
+  const [leadContactUserId, setLeadContactUserId] = useState(client?.leadContactUserId ?? "");
+  const [accountManagerUserId, setAccountManagerUserId] = useState(client?.accountManagerUserId ?? "");
+  const agencyContactUsers = availableUsers.filter((person) =>
+    person.role !== "client" && !person.roles?.includes("client") && (
+      person.role === "admin" || person.role === "manager" || person.roles?.includes("manager")
+      || /client service|account/i.test(`${person.department} ${person.title}`)
+      || matchesJobTeamKey(person, leadContactUserId)
+      || matchesJobTeamKey(person, accountManagerUserId)
+    ),
+  );
+  const agencyContactOptions = (selectedKey: string) => agencyContactUsers.flatMap((person) => {
+    const key = selectedKey && matchesJobTeamKey(person, selectedKey) ? selectedKey : person.uid ? `uid:${person.uid}` : jobTeamKey(person);
+    return key ? [{ value: key, label: person.name && person.email ? `${person.name} · ${person.email}` : person.name || person.email || key }] : [];
+  }).sort((a, b) => a.label.localeCompare(b.label));
+  const leadContactOptions = agencyContactOptions(leadContactUserId);
+  const accountManagerOptions = agencyContactOptions(accountManagerUserId);
   const [aesthetic, setAesthetic] = useState(preset.aesthetic);
   const [brandArchetype, setBrandArchetype] = useState(workspace.brandArchetype);
   const [toneVal, setToneVal] = useState(preset.toneVal);
@@ -592,6 +608,10 @@ function OneUtilityClientWorkspace({
 
   const handleSaveBusinessProfile = async () => {
     if (businessProfileSaving) return;
+    if (leadContactUserId && !leadContactOptions.some((person) => person.value === leadContactUserId)) {
+      showToast("Choose an agency user for the lead contact.");
+      return;
+    }
     const yearFounded = clientYearFounded.trim() ? Number(clientYearFounded) : null;
     if (yearFounded !== null && (!Number.isInteger(yearFounded) || yearFounded < 1800 || yearFounded > new Date().getFullYear())) {
       showToast("Enter a valid founding year.");
@@ -599,7 +619,7 @@ function OneUtilityClientWorkspace({
     }
     setBusinessProfileSaving(true);
     try {
-      await updateDoc(doc(firebaseDb, "clients", slug), {
+      const clientChanges = {
         name: clientNameInput.trim() || clientName,
         industry: clientIndustry.trim(),
         date: clientDate || null,
@@ -612,8 +632,11 @@ function OneUtilityClientWorkspace({
         location: clientLocation.trim() || null,
         linkedIn: clientLinkedIn.trim() || null,
         timezone: clientTimezone.trim() || null,
+        leadContactUserId: leadContactUserId || null,
+        accountManagerUserId: accountManagerUserId || null,
         updatedAt: serverTimestamp(),
-      });
+      };
+      await updateDoc(doc(firebaseDb, "clients", slug), clientChanges);
       setBusinessProfileDirty(false);
       showToast("About saved.");
     } catch (cause) {
@@ -818,8 +841,7 @@ function OneUtilityClientWorkspace({
       )}
 
       <div className="flex flex-col">
-        {/* Back link and tabs stay pinned while the page scrolls. */}
-        <header className="sticky top-0 z-20 shrink-0 bg-background px-4 pt-2 sm:px-6 nav:top-[60px]">
+        <header className="bg-background px-4 pt-2 sm:px-6">
           <div className="mx-auto w-full max-w-7xl">
             <ClientWorkspaceHeader navigation={workspaceNavigation} />
           </div>
@@ -1458,6 +1480,25 @@ function OneUtilityClientWorkspace({
                       <div className="space-y-1.5">
                         <label htmlFor="clientDate" className="text-sm font-medium text-foreground">First live date</label>
                         <input id="clientDate" type="date" value={clientDate} onChange={(e) => { setClientDate(e.target.value); setBusinessProfileDirty(true); }} className="w-full border-0 border-b border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-0" />
+                      </div>
+                    </div>
+
+                    <div className="border-t border-border pt-5">
+                      <h3 className="m-0 text-sm font-semibold text-foreground">Agency contacts</h3>
+                      <div className="mt-4 space-y-1.5">
+                        <label htmlFor="leadContactUserId" className="text-sm font-medium text-foreground">Lead contact</label>
+                        <select id="leadContactUserId" value={leadContactUserId} onChange={(event) => { setLeadContactUserId(event.target.value); setBusinessProfileDirty(true); }} className="w-full border-0 border-b border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-0">
+                          <option value="">{leadContactOptions.length ? "Unassigned" : "No agency users yet"}</option>
+                          {leadContactUserId && !leadContactOptions.some((person) => person.value === leadContactUserId) ? <option value={leadContactUserId}>Previous selection is not an agency user</option> : null}
+                          {leadContactOptions.map((person) => <option key={person.value} value={person.value}>{person.label}</option>)}
+                        </select>
+                      </div>
+                      <div className="mt-4 space-y-1.5">
+                        <label htmlFor="accountManagerUserId" className="text-sm font-medium text-foreground">Client service / account manager</label>
+                        <select id="accountManagerUserId" value={accountManagerUserId} onChange={(event) => { setAccountManagerUserId(event.target.value); setBusinessProfileDirty(true); }} className="w-full border-0 border-b border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-0">
+                          <option value="">Unassigned</option>
+                          {accountManagerOptions.map((person) => <option key={person.value} value={person.value}>{person.label}</option>)}
+                        </select>
                       </div>
                     </div>
 

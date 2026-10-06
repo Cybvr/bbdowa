@@ -1,6 +1,6 @@
-import { PortalJobForm } from "@/components/portal-job-form";
+import { redirect } from "next/navigation";
 
 export default async function PortalEditJobPage({ params }: { params: Promise<{ jobId: string }> }) {
   const { jobId } = await params;
-  return <PortalJobForm jobId={decodeURIComponent(jobId)} />;
+  redirect(`/portal/jobs/${encodeURIComponent(decodeURIComponent(jobId))}`);
 }

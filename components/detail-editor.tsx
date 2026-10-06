@@ -36,6 +36,8 @@ import { firebaseStorage } from "@/lib/firebase/client";
 
 const LABEL = "block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground";
 
+export class FormValidationError extends Error {}
+
 export function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
@@ -271,11 +273,13 @@ export function SelectField({
   value,
   onChange,
   options,
+  placeholder,
 }: {
   label: string;
   value?: string;
   onChange: (value: string) => void;
   options: { value: string; label: string }[];
+  placeholder?: string;
 }) {
   const uniqueOptions = options.filter((option, index) => options.findIndex((candidate) => candidate.value === option.value) === index);
 
@@ -283,7 +287,7 @@ export function SelectField({
     <Field label={label}>
       <Select value={value} onValueChange={onChange}>
         <SelectTrigger className="w-full">
-          <SelectValue />
+          <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>
           {uniqueOptions.map((option) => (
@@ -412,8 +416,12 @@ export function EditSheet({
       await onSave();
       setOpen(false);
     } catch (cause) {
-      console.error("Unable to save", cause);
-      setError("Couldn’t save that. Try again.");
+      if (cause instanceof FormValidationError) {
+        setError(cause.message);
+      } else {
+        console.error("Unable to save", cause);
+        setError("Couldn’t save that. Try again.");
+      }
     } finally {
       setBusy(null);
     }

@@ -14,11 +14,7 @@ import {
   type User,
 } from "@/lib/users";
 
-/**
- * Every user carries the same profile fields, whether they sit in the team
- * directory, the creator directory or both. Settings and the admin edit sheet
- * both render this form so the two can never drift apart.
- */
+/** Shared draft shape for the user directory editor and personal settings. */
 export type ProfileDraft = {
   name: string;
   title: string;

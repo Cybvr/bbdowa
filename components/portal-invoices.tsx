@@ -77,6 +77,27 @@ export function PortalInvoices() {
   );
 }
 
+/** Invoices for one job, shown in the shared job detail's Payments tab. */
+export function PortalJobInvoices({ jobId }: { jobId: string }) {
+  const portal = usePortalClient();
+  const [invoices, setInvoices] = React.useState<Invoice[] | null>(null);
+  const clientId = portal?.clientId;
+
+  React.useEffect(() => {
+    if (!clientId) return;
+    return onSnapshot(
+      query(collection(firebaseDb, INVOICES_COLLECTION), where("clientId", "==", clientId), where("status", "in", ["sent", "paid"])),
+      (snapshot) => setInvoices(snapshot.docs.map((item) => ({ id: item.id, ...item.data() }) as Invoice).filter((invoice) => invoice.jobId === jobId).sort((a, b) => b.issueDate.localeCompare(a.issueDate))),
+      (cause) => { console.error("Unable to load job invoices", cause); setInvoices([]); },
+    );
+  }, [clientId, jobId]);
+
+  return <section className="pt-6">
+    <h2 className="m-0 text-item-title font-semibold">Payments</h2>
+    {invoices === null ? <p className="mt-4 text-sm text-muted-foreground">Loading…</p> : invoices.length ? <ul className="m-0 mt-4 grid list-none gap-2 p-0 sm:grid-cols-2">{invoices.map((invoice) => <li key={invoice.id}><Link href={`/portal/payments/${invoice.id}`} className="block rounded-xl border border-border bg-background p-4 text-foreground no-underline hover:border-foreground/30"><div className="flex items-start justify-between gap-3"><div><p className="m-0 font-semibold">{invoice.description}</p><p className="m-0 mt-1 text-sm text-muted-foreground">{invoice.number} · {statusLabel(invoice)}</p></div><span className="shrink-0 font-semibold tabular-nums">{formatAmount(invoice.amount, invoice.currency)}</span></div></Link></li>)}</ul> : <p className="mt-4 text-sm text-muted-foreground">No invoices for this job yet.</p>}
+  </section>;
+}
+
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="grid min-w-0 grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-4 py-1.5 text-body">

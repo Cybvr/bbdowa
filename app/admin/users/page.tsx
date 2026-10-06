@@ -1,11 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Eye, Pencil } from "lucide-react";
-import { collection, deleteDoc, doc, onSnapshot, updateDoc } from "firebase/firestore";
-import { EditSheet, SelectField, TextField } from "@/components/detail-editor";
-import { firebaseDb } from "@/lib/firebase/client";
-import { CLIENT_INVITES_COLLECTION, type ClientInvite } from "@/lib/clients";
+import { Eye } from "lucide-react";
 import { UserCreateAction } from "@/components/user-create-action";
 import { UserActions } from "@/components/user-actions";
 import { BackfillUidsAction } from "@/components/backfill-uids-action";
@@ -13,7 +9,7 @@ import { useAuth } from "@/components/auth-provider";
 import { PageHeader } from "@/components/dashboard/ui";
 import { DashboardListPage } from "@/components/dashboard/list-page";
 import { FilterBar } from "@/components/dashboard/filter-bar";
-import { useClientOptions, useFirestoreUsers } from "@/lib/firebase/client-content";
+import { useFirestoreUsers } from "@/lib/firebase/client-content";
 import { creatorCategoryOptions, isCreatorUser, isTeamUser, userHref, userRoles, type User, type UserRole } from "@/lib/users";
 import { UsersTableSkeleton } from "@/components/dashboard/loading-skeleton";
 import { plural } from "@/lib/format";
@@ -52,82 +48,6 @@ function toMs(value: unknown): number {
 function userAddedMs(user: User): number {
   const record = user as User & { createdAt?: unknown; updatedAt?: unknown };
   return toMs(record.createdAt) || toMs(user.addedAt) || toMs(record.updatedAt);
-}
-
-/** Client users added by email. Their account is finished the first time they sign in. */
-function useAddedClients(users: User[]) {
-  const [invites, setInvites] = React.useState<ClientInvite[]>([]);
-  React.useEffect(() => onSnapshot(
-    collection(firebaseDb, CLIENT_INVITES_COLLECTION),
-    (snapshot) => setInvites(snapshot.docs.map((item) => item.data() as ClientInvite)),
-    (cause) => console.error("Unable to load clients", cause),
-  ), []);
-  // Once they've signed in they're a normal user row, so don't list them twice.
-  const signedIn = new Set(users.filter((person) => person.uid).map((person) => person.email?.toLowerCase()).filter(Boolean));
-  return invites.filter((invite) => !signedIn.has(invite.email));
-}
-
-function AddedClientRow({ invite }: { invite: ClientInvite }) {
-  const { startViewingAs } = useAuth();
-  const clientOptions = useClientOptions({ clientId: invite.clientId, clientName: invite.clientName }, { outsideOnly: true });
-  const [name, setName] = React.useState(invite.name);
-  const [title, setTitle] = React.useState(invite.title ?? "");
-  const [clientId, setClientId] = React.useState(invite.clientId);
-  const ref = doc(firebaseDb, CLIENT_INVITES_COLLECTION, invite.email);
-
-  const save = async () => {
-    if (!name.trim()) throw new Error("Name is required");
-    await updateDoc(ref, {
-      name: name.trim(),
-      title: title.trim(),
-      clientId,
-      clientName: clientOptions.find((option) => option.value === clientId)?.label ?? invite.clientName,
-    });
-  };
-
-  return (
-    <TableRow className="align-middle">
-      <TableCell className="px-4 py-3.5 sm:px-5">
-        <div className="min-w-0">
-          <strong className="block truncate font-semibold text-foreground">{invite.name}</strong>
-          <div className="mt-1 flex min-w-0 items-center gap-2 overflow-hidden whitespace-nowrap text-sm text-muted-foreground">
-            <RoleBadge role="client" />
-            <span className="truncate">{invite.clientName}</span>
-            <span className="hidden truncate sm:inline">· {invite.email}</span>
-          </div>
-        </div>
-      </TableCell>
-      <TableCell className="px-4 py-3.5 text-right">
-        <div className="flex items-center justify-end gap-2">
-          <button
-            type="button"
-            onClick={() => startViewingAs({ uid: `client:${invite.email}`, name: invite.name, email: invite.email, role: "client", clientId: invite.clientId })}
-            aria-label={`View ${invite.name} as this user`}
-            title="View as"
-            className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground"
-          >
-            <Eye aria-hidden="true" className="h-3.5 w-3.5" />
-          </button>
-          <EditSheet
-            title="Edit client user"
-            description={invite.email}
-            onSave={save}
-            onDelete={() => deleteDoc(ref)}
-            deleteConfirm={`Remove ${invite.name}? This can’t be undone.`}
-            trigger={(open) => (
-              <button type="button" onClick={open} aria-label={`Edit ${invite.name}`} title="Edit" className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground">
-                <Pencil aria-hidden="true" className="h-3.5 w-3.5" />
-              </button>
-            )}
-          >
-            <TextField label="Name" value={name} onChange={setName} />
-            <SelectField label="Company" value={clientId || undefined} onChange={setClientId} options={clientOptions} />
-            <TextField label="Title" value={title} onChange={setTitle} />
-          </EditSheet>
-        </div>
-      </TableCell>
-    </TableRow>
-  );
 }
 
 function UserRow({ user, categoryOptions }: { user: User; categoryOptions: string[] }) {
@@ -197,12 +117,6 @@ export default function AdminUsersPage() {
   }, [roleFilter, search, users]);
 
   const categoryOptions = React.useMemo(() => creatorCategoryOptions(users), [users]);
-  const addedClients = useAddedClients(users);
-  const visibleClients = addedClients.filter((invite) => {
-    if (roleFilter !== "all" && roleFilter !== "client") return false;
-    const needle = search.trim().toLowerCase();
-    return !needle || [invite.name, invite.email, invite.clientName].join(" ").toLowerCase().includes(needle);
-  });
 
   if (authLoading || loading) {
     return <UsersTableSkeleton />;
@@ -245,11 +159,11 @@ export default function AdminUsersPage() {
             ],
           },
         ]}
-        resultCount={plural(visibleUsers.length + visibleClients.length, "user")}
+        resultCount={plural(visibleUsers.length, "user")}
       />}>
 
       <section className="overflow-x-auto">
-        {visibleUsers.length || visibleClients.length ? (
+        {visibleUsers.length ? (
           <div>
             <Table className="w-full table-fixed border-collapse text-left">
               <TableHeader className="font-semibold uppercase text-muted-foreground">
@@ -259,7 +173,6 @@ export default function AdminUsersPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {visibleClients.map((invite) => <AddedClientRow key={invite.email} invite={invite} />)}
                 {visibleUsers.map((user, index) => <UserRow key={`${user.slug || "user"}-${user.email || "record"}-${index}`} user={user} categoryOptions={categoryOptions} />)}
               </TableBody>
             </Table>

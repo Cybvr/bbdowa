@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { collection, deleteDoc, doc, onSnapshot, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore";
-import { Globe, Pencil } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { ImageUploadField } from "@/components/detail-editor";
 import { CreatorThumbnail } from "@/components/creator-thumbnail";
@@ -26,15 +25,6 @@ function Card({ title, action, children }: { title: string; action?: React.React
   );
 }
 
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="grid min-w-0 grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-4 py-1.5 text-body">
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd className="m-0 min-w-0 break-words font-medium">{children}</dd>
-    </div>
-  );
-}
-
 /** The client's company profile. Everyone at the company sees it; the owner edits it and adds colleagues. */
 export function PortalCompany() {
   const { user, isViewingAs } = useAuth();
@@ -43,7 +33,6 @@ export function PortalCompany() {
   const { users } = useFirestoreUsers();
   const [company, setCompany] = React.useState<Client | null>(null);
   const [invites, setInvites] = React.useState<ClientInvite[]>([]);
-  const [editing, setEditing] = React.useState(false);
 
   React.useEffect(() => {
     if (!clientId) return;
@@ -72,39 +61,8 @@ export function PortalCompany() {
 
   return (
     <div className="grid gap-3">
-      <h1 className="m-0 text-page-title font-bold max-nav:hidden sm:text-page-title-lg">Company</h1>
-      {editing ? (
-        <CompanyForm company={company} onDone={() => setEditing(false)} />
-      ) : (
-        <>
-          <section className="flex items-center gap-4 rounded-xl border border-border bg-background p-4 sm:p-5">
-            <CreatorThumbnail imageSrc={company.profileImage} avatarSeed={company.name} className="h-16 w-16 shrink-0" rounded={false} />
-            <div className="min-w-0 flex-1">
-              <p className="m-0 truncate text-page-title font-semibold">{company.name}</p>
-              {company.industry ? <p className="m-0 mt-1 truncate text-sm text-muted-foreground">{company.industry}</p> : null}
-            </div>
-            {isOwner ? (
-              <button type="button" onClick={() => setEditing(true)} className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md border border-border bg-background px-3 text-sm font-semibold hover:border-foreground">
-                <Pencil aria-hidden="true" className="h-3.5 w-3.5" />Edit
-              </button>
-            ) : null}
-          </section>
-
-          <Card title="About">
-            <p className="mb-0 mt-3 whitespace-pre-line text-body text-muted-foreground">{company.description?.trim() || "No description yet."}</p>
-          </Card>
-
-          <Card title="Details">
-            <dl className="m-0 mt-3">
-              <Row label="Industry">{company.industry || "—"}</Row>
-              <Row label="Team size">{teamSizeLabel(company.teamSize) ?? "—"}</Row>
-              <Row label="City / Country">{company.location || "—"}</Row>
-              <Row label="Time zone">{company.timezone || "—"}</Row>
-              <Row label="Website">{company.website ? <a href={company.website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-foreground underline decoration-border underline-offset-4 hover:text-primary"><Globe aria-hidden="true" className="h-3.5 w-3.5" />{company.website.replace(/^https?:\/\//, "")}</a> : "—"}</Row>
-            </dl>
-          </Card>
-        </>
-      )}
+      <h1 className="m-0 text-page-title font-bold max-nav:hidden sm:text-page-title-lg">Company Profile</h1>
+      <CompanyForm company={company} />
 
       <Card title="People">
         <ul className="m-0 mt-3 grid list-none gap-2 p-0">
@@ -172,7 +130,7 @@ function AddColleague({ company }: { company: Client }) {
   );
 }
 
-function CompanyForm({ company, onDone }: { company: Client; onDone: () => void }) {
+function CompanyForm({ company }: { company: Client }) {
   const [name, setName] = React.useState(company.name ?? "");
   const [description, setDescription] = React.useState(company.description ?? "");
   const [industry, setIndustry] = React.useState(company.industry ?? "");
@@ -201,7 +159,7 @@ function CompanyForm({ company, onDone }: { company: Client; onDone: () => void 
         profileImage: profileImage.trim() || null,
         updatedAt: serverTimestamp(),
       });
-      onDone();
+      setBusy(false);
     } catch (cause) {
       console.error("Unable to save company", cause);
       setError("Couldn’t save. Try again.");
@@ -210,7 +168,7 @@ function CompanyForm({ company, onDone }: { company: Client; onDone: () => void 
   };
 
   return (
-    <form onSubmit={save} className="grid gap-4 rounded-xl border border-border bg-background p-4 sm:p-5">
+    <form onSubmit={save} className="grid gap-4">
       <ImageUploadField label="Logo" value={profileImage} onChange={setProfileImage} variant="avatar" uploadPath={`clients/${company.slug}/logo`} />
       <label className={FIELD}>Company name<input value={name} onChange={(event) => setName(event.target.value)} className={INPUT} required /></label>
       <label className={FIELD}>About<textarea value={description} onChange={(event) => setDescription(event.target.value)} rows={4} className={`${INPUT} h-auto py-2`} placeholder="What your company does" /></label>
@@ -232,8 +190,7 @@ function CompanyForm({ company, onDone }: { company: Client; onDone: () => void 
       </div>
       <label className={FIELD}>Website<input type="url" value={website} onChange={(event) => setWebsite(event.target.value)} className={INPUT} placeholder="https://" /></label>
       {error ? <p role="alert" className="m-0 text-sm text-destructive">{error}</p> : null}
-      <div className="flex justify-end gap-2">
-        <button type="button" onClick={onDone} className="h-10 rounded-md px-4 text-sm font-semibold text-muted-foreground hover:text-foreground">Cancel</button>
+      <div className="flex justify-end">
         <button type="submit" disabled={busy} className="h-10 rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground disabled:opacity-50">{busy ? "Saving…" : "Save"}</button>
       </div>
     </form>

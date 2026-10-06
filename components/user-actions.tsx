@@ -17,10 +17,10 @@ import {
 } from "firebase/firestore";
 import { firebaseDb } from "@/lib/firebase/client";
 import { useAuth } from "@/components/auth-provider";
-import { useClientOptions } from "@/lib/firebase/client-content";
 import { needsOnboarding } from "@/lib/onboarding";
-import { ProfileFields, profileDraftFrom, profileDraftToFirestore, type ProfileDraft } from "@/components/profile-fields";
-import { EditSheet, ImageUploadField, SelectField } from "@/components/detail-editor";
+import { profileDraftFrom, profileDraftToFirestore, type ProfileDraft } from "@/components/profile-fields";
+import { EditSheet, FormValidationError } from "@/components/detail-editor";
+import { UserEditorFields, type UserAccountStatus } from "@/components/user-editor-fields";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,9 +28,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { userRoles, type User, type UserRole, toggleRole } from "@/lib/users";
-
-type AccountStatus = "active" | "pending";
+import { userRoles, type User, type UserRole } from "@/lib/users";
 
 /**
  * Edit / delete for a user record. People and creators are both `users`, so
@@ -60,13 +58,12 @@ export function UserActions({
   const { isAdmin, role } = useAuth();
   const canEditUser = isAdmin || (role === "manager" && variant === "creator");
 
-  const [status, setStatus] = React.useState<AccountStatus>(user.role === "pending" ? "pending" : "active");
+  const [status, setStatus] = React.useState<UserAccountStatus>(user.role === "pending" ? "pending" : "active");
   const [roles, setRoles] = React.useState<UserRole[]>(userRoles(user).length ? userRoles(user) : ["manager"]);
   const [draft, setDraft] = React.useState<ProfileDraft>(() => profileDraftFrom(user));
   const [profileImage, setProfileImage] = React.useState(user.profileImage ?? "");
   const initialOnboarding = needsOnboarding(user);
   const [clientId, setClientId] = React.useState(user.clientId ?? "");
-  const clientOptions = useClientOptions(undefined, { outsideOnly: true });
   const [onboarding, setOnboarding] = React.useState(initialOnboarding);
 
   const docRef = async () => {
@@ -83,7 +80,7 @@ export function UserActions({
   };
 
   const save = async () => {
-    if (isAdmin && status !== "pending" && roles.includes("client") && !clientId) throw new Error("Pick the client company this person works for.");
+    if (isAdmin && status !== "pending" && roles.includes("client") && !clientId) throw new FormValidationError("Pick the client company this person works for.");
     const ref = await docRef();
     if (!ref) throw new Error("User document not found");
     const accessFields = isAdmin
@@ -164,67 +161,24 @@ export function UserActions({
         </DropdownMenu>
       ) : undefined}
     >
-      <ImageUploadField label="Avatar" value={profileImage} onChange={setProfileImage} variant="avatar" uploadPath={`users/${user.uid ?? user.slug}/avatar`} />
-      {isAdmin ? (
-        <>
-          <SelectField
-            label="Account status"
-            value={status}
-            onChange={(value) => setStatus(value as AccountStatus)}
-            options={[
-              { value: "active", label: "Active" },
-              { value: "pending", label: "Pending" },
-            ]}
-          />
-          <div className="space-y-1.5">
-            <span className="text-[13px] font-medium text-foreground">Roles</span>
-            <div className="flex flex-wrap gap-2">
-              {([
-                ["admin", "Admin"],
-                ["manager", "Manager"],
-                ["creator", "Creator"],
-                ["client", "Client"],
-              ] as const).map(([value, label]) => {
-                const selected = roles.includes(value);
-                const cannotRemove = selected && roles.length === 1;
-                return (
-                  <button
-                    key={value}
-                    type="button"
-                    aria-pressed={selected}
-                    disabled={cannotRemove}
-                    onClick={() => setRoles((current) => toggleRole(current, value))}
-                    className={`rounded-lg border px-3 py-2 text-[13px] font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-50 ${selected ? "border-foreground bg-foreground text-background" : "border-border bg-background text-muted-foreground hover:border-foreground/50 hover:text-foreground"}`}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-            <p className="m-0 text-xs text-muted-foreground">A person can appear in both the team and creator directories.</p>
-          </div>
-          {roles.includes("client") ? <SelectField label="Company" value={clientId || undefined} onChange={setClientId} options={clientOptions} /> : null}
-          <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0">
-              <span className="block text-[13px] font-medium text-foreground">Onboarding</span>
-              <p className="m-0 mt-0.5 text-xs text-muted-foreground">
-                {onboarding ? "On: they'll be sent through onboarding next time they open Bantaba." : user.onboardingCompletedAt ? "Done. Turn on to send them through it again." : "Off: they won't be asked to onboard."}
-              </p>
-            </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={onboarding}
-              aria-label="Onboarding"
-              onClick={() => setOnboarding((current) => !current)}
-              className={`relative mt-0.5 inline-flex h-5 w-9 shrink-0 items-center rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${onboarding ? "bg-primary" : "bg-muted-foreground/30"}`}
-            >
-              <span className={`inline-block h-4 w-4 rounded-full bg-background shadow transition ${onboarding ? "translate-x-[18px]" : "translate-x-0.5"}`} />
-            </button>
-          </div>
-        </>
-      ) : null}
-      <ProfileFields draft={draft} onChange={setDraft} categoryOptions={categoryOptions} editableEmail showVouchedBy />
+      <UserEditorFields
+        draft={draft}
+        onDraftChange={setDraft}
+        profileImage={profileImage}
+        onProfileImageChange={setProfileImage}
+        avatarUploadPath={`users/${user.uid ?? user.slug}/avatar`}
+        categoryOptions={categoryOptions}
+        canManageAccess={isAdmin}
+        status={status}
+        onStatusChange={setStatus}
+        roles={roles}
+        onRolesChange={setRoles}
+        clientId={clientId}
+        onClientIdChange={setClientId}
+        onboarding={onboarding}
+        onOnboardingChange={setOnboarding}
+        onboardingCompletedAt={user.onboardingCompletedAt}
+      />
     </EditSheet>
   );
 }

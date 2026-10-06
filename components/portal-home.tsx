@@ -2,18 +2,30 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowRight, Plus } from "lucide-react";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { Plus } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
-import { StatItem, StatRow } from "@/components/dashboard/ui";
+import { DashboardCard } from "@/components/dashboard-card";
+import { ItemCard, ItemCardList } from "@/components/dashboard/item-card";
+import { CreatorThumbnail } from "@/components/creator-thumbnail";
 import { usePortalClient } from "@/components/portal-shell";
-import { readJobsFromFirestore } from "@/lib/firebase/client-content";
-import { byLastModified, jobTitle, type Job } from "@/lib/jobs";
+import { readJobsFromFirestore, useFirestoreUsers } from "@/lib/firebase/client-content";
+import { firebaseDb } from "@/lib/firebase/client";
+import { teamSizeLabel } from "@/lib/clients";
+import { longDate } from "@/lib/format";
+import { INVOICES_COLLECTION, INVOICE_STATUS_LABELS, type Invoice } from "@/lib/invoices";
+import { byLastModified, jobRecentDate, jobTitle, type Job } from "@/lib/jobs";
+import { formatAmount } from "@/lib/payments";
+import { matchesJobTeamKey } from "@/lib/users";
 
-/** Portal home: a quick count of the company's jobs and the latest active ones. */
+/** Portal home follows the dashboard home: work on the left, company context on the right. */
 export function PortalHome() {
-  const { user } = useAuth();
+  const { user, isViewingAs } = useAuth();
   const portal = usePortalClient();
+  const { users, loading: peopleLoading, error: peopleError } = useFirestoreUsers();
   const [jobs, setJobs] = React.useState<Job[] | null>(null);
+  const [invoices, setInvoices] = React.useState<Invoice[] | null>(null);
+  const [invoicesError, setInvoicesError] = React.useState(false);
   const clientId = portal?.clientId;
 
   React.useEffect(() => {
@@ -25,45 +37,139 @@ export function PortalHome() {
     return () => { active = false; };
   }, [clientId]);
 
-  const firstName = user?.name?.trim().split(/\s+/)[0];
+  React.useEffect(() => {
+    if (!clientId) return;
+    setInvoicesError(false);
+    return onSnapshot(
+      query(collection(firebaseDb, INVOICES_COLLECTION), where("clientId", "==", clientId), where("status", "in", ["sent", "paid"])),
+      (snapshot) => setInvoices(snapshot.docs.map((item) => ({ id: item.id, ...item.data() }) as Invoice).sort((a, b) => b.issueDate.localeCompare(a.issueDate))),
+      (cause) => {
+        console.error("Unable to load invoices", cause);
+        setInvoicesError(true);
+      },
+    );
+  }, [clientId]);
+
+  const name = user?.name?.trim().split(/\s+/)[0] ?? user?.email?.split("@")[0] ?? "there";
   const activeJobs = (jobs ?? []).filter((job) => job.status === "active");
+  const company = portal?.client;
+  const leadContact = users.find((person) => company?.leadContactUserId && person.role !== "client" && !person.roles?.includes("client") && matchesJobTeamKey(person, company.leadContactUserId));
+  const accountManager = users.find((person) => company?.accountManagerUserId && person.role !== "client" && !person.roles?.includes("client") && matchesJobTeamKey(person, company.accountManagerUserId));
+  const personLabel = (key: string | null | undefined, personName?: string) => peopleLoading ? "Loading…" : peopleError ? "Unavailable" : personName || (key ? "Assigned person unavailable" : "To be assigned");
+  const canEditCompany = Boolean(company && user && (company.ownerUid === user.uid || isViewingAs));
+  const facts = [
+    { label: "Company", value: company?.name || "—" },
+    { label: "Industry", value: company?.industry || "—" },
+    { label: "Team size", value: teamSizeLabel(company?.teamSize) || "—" },
+  ];
 
   return (
-    <div className="grid gap-6">
-      <div>
-        <h1 className="m-0 text-page-title font-bold sm:text-page-title-lg">Welcome{firstName ? `, ${firstName}` : ""}</h1>
-        <p className="mb-0 mt-1 text-body text-muted-foreground">Here’s where your work with BBDO West Africa stands.</p>
-        <div className="mt-4"><Link href="/portal/jobs/new" className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground no-underline hover:opacity-90"><Plus aria-hidden="true" className="h-4 w-4" />Post a job</Link></div>
-      </div>
+    <div>
+      <header className="border-b border-border pb-5">
+        <h1 className="m-0 text-page-title font-bold leading-tight tracking-tight sm:text-page-title-lg">Welcome back, {name}</h1>
+        <p className="mb-0 mt-2 text-body text-muted-foreground">Here’s what’s happening with your work at BBDO West Africa.</p>
+      </header>
 
-      <StatRow>
-        <StatItem label="Active jobs" value={jobs ? activeJobs.length : "–"} />
-        <StatItem label="Completed" value={jobs ? jobs.filter((job) => job.status === "completed").length : "–"} />
-        <StatItem label="All jobs" value={jobs ? jobs.length : "–"} />
-      </StatRow>
+      <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.45fr)_minmax(280px,0.75fr)] lg:gap-10">
+        <div className="contents">
+          <section aria-labelledby="portal-jobs-heading" className="order-1 min-w-0 lg:col-start-1 lg:row-start-1">
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <h2 id="portal-jobs-heading" className="m-0 text-item-title font-semibold">Your jobs</h2>
+              <Link href="/portal/jobs" className="shrink-0 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">View all</Link>
+            </div>
+            {jobs === null ? (
+              <p className="py-5 text-sm text-muted-foreground">Loading your jobs…</p>
+            ) : (
+              <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2">
+                {activeJobs.slice(0, 4).map((job) => (
+                  <li key={job.slug}>
+                    <DashboardCard className="h-full">
+                      <Link href={`/portal/jobs/${encodeURIComponent(job.slug)}`} className="group flex h-full flex-col p-4 text-foreground no-underline transition hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
+                        <span className="text-[13px] font-medium text-muted-foreground">Active</span>
+                        <h3 className="m-0 mt-1 line-clamp-2 text-[16px] font-semibold leading-tight group-hover:text-primary">{jobTitle(job)}</h3>
+                        {job.category ? <span className="mt-2 line-clamp-1 text-xs text-muted-foreground">{job.category}</span> : null}
+                        <span className="mt-2 text-[11px] text-muted-foreground">Updated {longDate(jobRecentDate(job))}</span>
+                      </Link>
+                    </DashboardCard>
+                  </li>
+                ))}
+                <li className={activeJobs.length ? "" : "sm:col-span-2"}>
+                  <Link
+                    href="/portal/jobs/new"
+                    className="group flex min-h-32 h-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-primary/50 bg-primary/5 p-5 text-center text-foreground no-underline transition-colors hover:border-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                  >
+                    <span className="grid h-9 w-9 place-items-center rounded-full bg-primary text-primary-foreground transition-colors group-hover:bg-primary/90">
+                      <Plus aria-hidden="true" className="h-5 w-5" />
+                    </span>
+                    <span className="text-sm font-semibold">Post a job</span>
+                    {!activeJobs.length ? <span className="text-xs text-muted-foreground">No active jobs yet. Create one to get started.</span> : null}
+                  </Link>
+                </li>
+              </ul>
+            )}
+          </section>
 
-      <section>
-        <div className="mb-2 flex items-center justify-between gap-3">
-          <h2 className="m-0 text-item-title font-semibold">Active jobs</h2>
-          <Link href="/portal/jobs" className="inline-flex items-center gap-1 text-[13px] font-semibold text-primary hover:underline">View all<ArrowRight aria-hidden="true" className="h-3.5 w-3.5" /></Link>
+          <section aria-labelledby="portal-payments-heading" className="order-3 min-w-0 lg:col-start-1 lg:row-start-2">
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <h2 id="portal-payments-heading" className="m-0 text-item-title font-semibold">Payments</h2>
+              <Link href="/portal/payments" className="shrink-0 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">View all</Link>
+            </div>
+            {invoicesError ? (
+              <p className="py-5 text-sm text-muted-foreground">Payments are unavailable right now. Try the Payments page again shortly.</p>
+            ) : invoices === null ? (
+              <p className="py-5 text-sm text-muted-foreground">Loading payments…</p>
+            ) : invoices.length ? (
+              <ItemCardList>
+                {invoices.slice(0, 4).map((invoice) => (
+                  <ItemCard
+                    key={invoice.id}
+                    href={`/portal/payments/${encodeURIComponent(invoice.id)}`}
+                    title={invoice.description}
+                    subtitle={`${invoice.number} · ${INVOICE_STATUS_LABELS[invoice.status]}`}
+                    trailing={<span className="text-sm font-semibold tabular-nums">{formatAmount(invoice.amount, invoice.currency)}</span>}
+                  />
+                ))}
+              </ItemCardList>
+            ) : (
+              <p className="py-5 text-sm text-muted-foreground">No invoices yet. Invoices for your jobs will show here.</p>
+            )}
+          </section>
         </div>
-        {jobs === null ? (
-          <p className="text-sm text-muted-foreground">Loading…</p>
-        ) : activeJobs.length ? (
-          <ul className="m-0 grid list-none gap-2 p-0">
-            {activeJobs.slice(0, 5).map((job) => (
-              <li key={job.slug}>
-                <Link href={`/portal/jobs/${encodeURIComponent(job.slug)}`} className="block rounded-xl border border-border bg-background p-4 text-foreground no-underline transition hover:border-foreground/30">
-                  <span className="block truncate text-body font-semibold">{jobTitle(job)}</span>
-                  {job.category ? <span className="mt-1 block text-xs text-muted-foreground">{job.category}</span> : null}
-                </Link>
-              </li>
+
+        <aside aria-labelledby="portal-company-heading" className="order-2 min-w-0 lg:col-start-2 lg:row-start-1 lg:border-l lg:border-border lg:pl-7">
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <h2 id="portal-company-heading" className="m-0 text-item-title font-semibold">Your company</h2>
+            <Link href="/portal/company" className="shrink-0 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">{canEditCompany ? "Edit company" : "Company"}</Link>
+          </div>
+          <div className="pt-2">
+            <h3 className="m-0 text-sm font-semibold text-foreground">Your contacts</h3>
+            <div className="mt-3 flex items-center gap-3 py-2">
+              <CreatorThumbnail imageSrc={leadContact?.profileImage} avatarSeed={leadContact?.name || "Lead contact"} className="h-9 w-9 shrink-0" />
+              <div className="min-w-0">
+                <p className="m-0 text-xs text-muted-foreground">Lead contact</p>
+                <p className="m-0 mt-0.5 truncate text-sm font-medium">{personLabel(company?.leadContactUserId, leadContact?.name)}</p>
+                {leadContact?.title ? <p className="m-0 mt-0.5 truncate text-xs text-muted-foreground">{leadContact.title}</p> : null}
+                {leadContact?.email ? <p className="m-0 mt-0.5 truncate text-xs text-muted-foreground">{leadContact.email}</p> : null}
+              </div>
+            </div>
+            <div className="flex items-center gap-3 py-2">
+              <CreatorThumbnail imageSrc={accountManager?.profileImage} avatarSeed={accountManager?.name || "Account manager"} className="h-9 w-9 shrink-0" />
+              <div className="min-w-0">
+                <p className="m-0 text-xs text-muted-foreground">Client service / account manager</p>
+                <p className="m-0 mt-0.5 truncate text-sm font-medium">{personLabel(company?.accountManagerUserId, accountManager?.name)}</p>
+              </div>
+            </div>
+          </div>
+          <dl className="m-0 mt-5 divide-y divide-border border-t border-border">
+            {facts.map((fact) => (
+              <div key={fact.label} className="flex min-h-12 items-center justify-between gap-4 py-3">
+                <dt className="shrink-0 text-sm text-muted-foreground">{fact.label}</dt>
+                <dd className="m-0 min-w-0 break-words text-right text-sm font-medium text-foreground">{fact.value}</dd>
+              </div>
             ))}
-          </ul>
-        ) : (
-          <p className="rounded-xl border border-border bg-background p-6 text-center text-sm text-muted-foreground">No active jobs yet. Post a job to get started.</p>
-        )}
-      </section>
+          </dl>
+        </aside>
+      </div>
     </div>
   );
 }
