@@ -27,6 +27,7 @@ export type ProfileNavProps = {
   initials?: string;
   name?: string;
   email?: string;
+  avatarSrc?: string | null;
   items?: readonly ProfileNavItem[];
   logoutLabel?: string;
   onLogout?: () => void;
@@ -87,6 +88,7 @@ export function ProfileNav({
   initials,
   name,
   email,
+  avatarSrc,
   items = DEFAULT_ITEMS,
   logoutLabel = "Log out",
   onLogout,
@@ -116,7 +118,7 @@ export function ProfileNav({
   const displayName = name ?? user?.name ?? user?.email?.split("@")[0] ?? "BBDO User";
   const displayEmail = email ?? user?.email ?? (loading ? "Loading profile..." : "Signed in");
   const handle = (email ?? user?.email)?.split("@")[0]?.toLowerCase() ?? null;
-  const avatarSrc = profileImage || createGlyphAvatarDataUri(displayName || displayEmail || initials || "BBDO User");
+  const resolvedAvatarSrc = avatarSrc || profileImage || createGlyphAvatarDataUri(displayName || displayEmail || initials || "BBDO User");
   const handleLogout = onLogout ?? (logout ? () => void logout() : undefined);
 
   if (!auth || !user) {
@@ -139,7 +141,7 @@ export function ProfileNav({
         className={`inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 ${tone === "background" ? "bg-primary focus-visible:outline-primary" : "bg-primary-foreground focus-visible:outline-primary-foreground"}`}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={avatarSrc} alt={`${displayName} avatar`} className="h-full w-full object-cover" />
+        <img src={resolvedAvatarSrc} alt={`${displayName} avatar`} className="h-full w-full object-cover" />
       </Link>
     );
   }
@@ -155,7 +157,7 @@ export function ProfileNav({
           >
             <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
+              <img src={resolvedAvatarSrc} alt="" className="h-full w-full object-cover" />
             </span>
             <span className="min-w-0 flex-1">
               {showHandleOnly ? (
@@ -185,7 +187,7 @@ export function ProfileNav({
             className={`inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 ${tone === "background" ? "bg-primary focus-visible:outline-primary" : "bg-primary-foreground focus-visible:outline-primary-foreground"}`}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={avatarSrc} alt={`${displayName} avatar`} className="h-full w-full object-cover" />
+            <img src={resolvedAvatarSrc} alt={`${displayName} avatar`} className="h-full w-full object-cover" />
           </button>
         )}
       </DropdownMenuTrigger>
@@ -195,7 +197,7 @@ export function ProfileNav({
           <div className="flex items-center gap-2">
             <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
+              <img src={resolvedAvatarSrc} alt="" className="h-full w-full object-cover" />
             </span>
             <div className="min-w-0">
               <p className="truncate text-[13px] font-extrabold">{displayName}</p>

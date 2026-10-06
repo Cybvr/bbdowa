@@ -95,13 +95,14 @@ export function PortalShell({ children }: { children: React.ReactNode }) {
   if (loading || !user || role !== "client") return null;
 
   const displayName = user.name ?? user.email?.split("@")[0] ?? "Client";
-  const avatar = profileImage || createGlyphAvatarDataUri(displayName);
+  const avatar = client?.profileImage || profileImage || createGlyphAvatarDataUri(displayName);
   const pageTitle = PORTAL_NAV.find((item) => isCurrent(pathname, item.href))?.label ?? "Home";
   const jobDetailPage = /^\/portal\/jobs\/(?!new(?:\/|$))[^/]+(?:\/|$)/.test(pathname);
   const conversationPage = pathname === "/portal/messages";
   const profileNav = (collapsed = false, inMobileMenu = false) => (
     <div className={`w-full shrink-0 ${collapsed ? "flex justify-center" : ""}`}>
       <ProfileNav
+        avatarSrc={client?.profileImage}
         variant={collapsed ? "avatar" : "row"}
         showRole
         showChevron={!collapsed}
