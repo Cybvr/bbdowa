@@ -53,41 +53,40 @@ function userAddedMs(user: User): number {
   return toMs(record.createdAt) || toMs(user.addedAt) || toMs(record.updatedAt);
 }
 
-/** Clients added by email who haven't signed in yet. Once they sign in they show as normal users. */
-function InvitedClients({ users }: { users: User[] }) {
+/** Client users added by email. Their account is finished the first time they sign in. */
+function useAddedClients(users: User[]) {
   const [invites, setInvites] = React.useState<ClientInvite[]>([]);
-
   React.useEffect(() => onSnapshot(
     collection(firebaseDb, CLIENT_INVITES_COLLECTION),
     (snapshot) => setInvites(snapshot.docs.map((item) => item.data() as ClientInvite)),
-    (cause) => console.error("Unable to load client invites", cause),
+    (cause) => console.error("Unable to load clients", cause),
   ), []);
+  // Once they've signed in they're a normal user row, so don't list them twice.
+  const signedIn = new Set(users.filter((person) => person.uid).map((person) => person.email?.toLowerCase()).filter(Boolean));
+  return invites.filter((invite) => !signedIn.has(invite.email));
+}
 
-  const signedInEmails = new Set(users.filter((person) => person.uid).map((person) => person.email?.toLowerCase()).filter(Boolean));
-  const waiting = invites.filter((invite) => !signedInEmails.has(invite.email)).sort((a, b) => b.invitedAt.localeCompare(a.invitedAt));
-  if (!waiting.length) return null;
-
-  const remove = async (invite: ClientInvite) => {
-    if (!window.confirm(`Remove the invite for ${invite.email}?`)) return;
-    await deleteDoc(doc(firebaseDb, CLIENT_INVITES_COLLECTION, invite.email)).catch((cause) => console.error("Unable to remove invite", cause));
+function AddedClientRow({ invite }: { invite: ClientInvite }) {
+  const remove = async () => {
+    if (!window.confirm(`Remove ${invite.name}?`)) return;
+    await deleteDoc(doc(firebaseDb, CLIENT_INVITES_COLLECTION, invite.email)).catch((cause) => console.error("Unable to remove client", cause));
   };
-
   return (
-    <section className="mb-6" aria-label="Invited clients">
-      <h2 className="m-0 mb-2 text-item-title font-semibold">Invited clients</h2>
-      <ul className="m-0 grid list-none gap-2 p-0">
-        {waiting.map((invite) => (
-          <li key={invite.email} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background p-3">
-            <div className="min-w-0">
-              <p className="m-0 truncate text-body font-semibold">{invite.name} <span className="ml-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">Invited</span></p>
-              <p className="m-0 truncate text-sm text-muted-foreground">{invite.email} · {invite.clientName}</p>
-            </div>
-            <button type="button" onClick={() => void remove(invite)} className="shrink-0 text-xs font-semibold text-destructive hover:underline">Remove</button>
-          </li>
-        ))}
-      </ul>
-      <p className="mb-0 mt-2 text-xs text-muted-foreground">They’ll become clients of their company the first time they sign in with this email.</p>
-    </section>
+    <TableRow className="align-middle">
+      <TableCell className="px-4 py-3.5 sm:px-5">
+        <div className="min-w-0">
+          <strong className="block truncate font-semibold text-foreground">{invite.name}</strong>
+          <div className="mt-1 flex min-w-0 items-center gap-2 overflow-hidden whitespace-nowrap text-sm text-muted-foreground">
+            <RoleBadge role="client" />
+            <span className="truncate">{invite.clientName}</span>
+            <span className="hidden truncate sm:inline">· {invite.email}</span>
+          </div>
+        </div>
+      </TableCell>
+      <TableCell className="px-4 py-3.5 text-right">
+        <button type="button" onClick={() => void remove()} className="text-xs font-semibold text-destructive hover:underline">Remove</button>
+      </TableCell>
+    </TableRow>
   );
 }
 
@@ -158,6 +157,12 @@ export default function AdminUsersPage() {
   }, [roleFilter, search, users]);
 
   const categoryOptions = React.useMemo(() => creatorCategoryOptions(users), [users]);
+  const addedClients = useAddedClients(users);
+  const visibleClients = addedClients.filter((invite) => {
+    if (roleFilter !== "all" && roleFilter !== "client") return false;
+    const needle = search.trim().toLowerCase();
+    return !needle || [invite.name, invite.email, invite.clientName].join(" ").toLowerCase().includes(needle);
+  });
 
   if (authLoading || loading) {
     return <UsersTableSkeleton />;
@@ -200,12 +205,11 @@ export default function AdminUsersPage() {
             ],
           },
         ]}
-        resultCount={plural(visibleUsers.length, "user")}
+        resultCount={plural(visibleUsers.length + visibleClients.length, "user")}
       />}>
 
-      <InvitedClients users={users} />
       <section className="overflow-x-auto">
-        {visibleUsers.length ? (
+        {visibleUsers.length || visibleClients.length ? (
           <div>
             <Table className="w-full table-fixed border-collapse text-left">
               <TableHeader className="font-semibold uppercase text-muted-foreground">
@@ -215,6 +219,7 @@ export default function AdminUsersPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
+                {visibleClients.map((invite) => <AddedClientRow key={invite.email} invite={invite} />)}
                 {visibleUsers.map((user, index) => <UserRow key={`${user.slug || "user"}-${user.email || "record"}-${index}`} user={user} categoryOptions={categoryOptions} />)}
               </TableBody>
             </Table>
