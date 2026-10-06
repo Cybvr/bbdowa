@@ -1,12 +1,15 @@
 "use client";
 
 import * as React from "react";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { addDoc, collection, doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { Plus } from "lucide-react";
 import { DayRateField } from "@/components/day-rate-field";
 import { CreatableSelectField, EditSheet, SelectField, TextField } from "@/components/detail-editor";
 import { firebaseDb } from "@/lib/firebase/client";
-import { creatorRateLabel, type RateCurrency, type UserRole } from "@/lib/users";
+import { creatorRateLabel, toggleRole, type RateCurrency, type UserRole } from "@/lib/users";
+import { CLIENT_INVITES_COLLECTION, type ClientInvite } from "@/lib/clients";
+import { useClientOptions } from "@/lib/firebase/client-content";
+import { useAuth } from "@/components/auth-provider";
 import { LIST_ACTION_CLASS } from "@/components/dashboard/list-page-actions";
 
 // Creates any directory user, including people with multiple roles.
@@ -14,6 +17,7 @@ const ROLE_OPTIONS: readonly { value: UserRole; label: string }[] = [
   { value: "manager", label: "Manager" },
   { value: "creator", label: "Creator" },
   { value: "admin", label: "Admin" },
+  { value: "client", label: "Client" },
 ];
 
 function slugify(value: string) {
@@ -39,10 +43,34 @@ export function UserCreateAction({
   const [rateMin, setRateMin] = React.useState<number | null>(null);
   const [rateCurrency, setRateCurrency] = React.useState<RateCurrency>("NGN");
   const [availability, setAvailability] = React.useState("unconfirmed");
+  const [clientId, setClientId] = React.useState("");
+  const clientOptions = useClientOptions();
+  const { user: authUser } = useAuth();
+  const isClient = roles.includes("client");
 
   const save = async () => {
     const cleanName = name.trim();
     if (!cleanName) throw new Error("Name is required");
+
+    // Clients are saved by email: the first time they sign in with it, they
+    // become a client of this company and land in their portal.
+    if (isClient) {
+      const cleanEmail = email.trim().toLowerCase();
+      if (!cleanEmail || !cleanEmail.includes("@")) throw new Error("Enter the client's email.");
+      if (!clientId) throw new Error("Pick the company they work for.");
+      await setDoc(doc(firebaseDb, CLIENT_INVITES_COLLECTION, cleanEmail), {
+        email: cleanEmail,
+        name: cleanName,
+        title: title.trim(),
+        clientId,
+        clientName: clientOptions.find((option) => option.value === clientId)?.label ?? clientId,
+        invitedBy: authUser?.uid ?? null,
+        invitedAt: new Date().toISOString(),
+      } satisfies ClientInvite);
+      onCreated?.();
+      window.location.reload();
+      return;
+    }
 
     const baseSlug = slugify(cleanName);
     let slug = baseSlug;
@@ -126,7 +154,7 @@ export function UserCreateAction({
                 type="button"
                 aria-pressed={selected}
                 disabled={cannotRemove}
-                onClick={() => setRoles((current) => selected ? current.filter((role) => role !== option.value) : [...current, option.value])}
+                onClick={() => setRoles((current) => toggleRole(current, option.value))}
                 className={`rounded-lg border px-3 py-2 text-[13px] font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-50 ${selected ? "border-foreground bg-foreground text-background" : "border-border bg-background text-muted-foreground hover:border-foreground/50 hover:text-foreground"}`}
               >
                 {option.label}
@@ -136,6 +164,15 @@ export function UserCreateAction({
         </div>
         <p className="m-0 text-xs text-muted-foreground">Select Creator too when this person should appear in the creator directory.</p>
       </div>
+      {isClient ? (
+        <>
+          <SelectField label="Company" value={clientId || undefined} onChange={setClientId} options={clientOptions} />
+          <TextField label="Email" value={email} onChange={setEmail} type="email" />
+          <TextField label="Title" value={title} onChange={setTitle} placeholder="e.g. Brand manager" />
+          <p className="m-0 text-xs text-muted-foreground">When they sign in with this email, they go straight to their company’s portal.</p>
+        </>
+      ) : (
+        <>
       <TextField label="Title" value={title} onChange={setTitle} placeholder="e.g. Account Manager" />
       <TextField label="Department" value={department} onChange={setDepartment} placeholder="e.g. Client service" />
       {roles.includes("creator") ? (
@@ -168,6 +205,8 @@ export function UserCreateAction({
       ) : null}
       <TextField label="Location" value={location} onChange={setLocation} placeholder="e.g. Lagos, Nigeria" />
       <TextField label="Email" value={email} onChange={setEmail} type="email" />
+        </>
+      )}
     </EditSheet>
   );
 }

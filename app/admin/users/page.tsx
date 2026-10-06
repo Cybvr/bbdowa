@@ -2,6 +2,9 @@
 
 import * as React from "react";
 import { Eye } from "lucide-react";
+import { collection, deleteDoc, doc, onSnapshot } from "firebase/firestore";
+import { firebaseDb } from "@/lib/firebase/client";
+import { CLIENT_INVITES_COLLECTION, type ClientInvite } from "@/lib/clients";
 import { UserCreateAction } from "@/components/user-create-action";
 import { UserActions } from "@/components/user-actions";
 import { BackfillUidsAction } from "@/components/backfill-uids-action";
@@ -48,6 +51,44 @@ function toMs(value: unknown): number {
 function userAddedMs(user: User): number {
   const record = user as User & { createdAt?: unknown; updatedAt?: unknown };
   return toMs(record.createdAt) || toMs(user.addedAt) || toMs(record.updatedAt);
+}
+
+/** Clients added by email who haven't signed in yet. Once they sign in they show as normal users. */
+function InvitedClients({ users }: { users: User[] }) {
+  const [invites, setInvites] = React.useState<ClientInvite[]>([]);
+
+  React.useEffect(() => onSnapshot(
+    collection(firebaseDb, CLIENT_INVITES_COLLECTION),
+    (snapshot) => setInvites(snapshot.docs.map((item) => item.data() as ClientInvite)),
+    (cause) => console.error("Unable to load client invites", cause),
+  ), []);
+
+  const signedInEmails = new Set(users.filter((person) => person.uid).map((person) => person.email?.toLowerCase()).filter(Boolean));
+  const waiting = invites.filter((invite) => !signedInEmails.has(invite.email)).sort((a, b) => b.invitedAt.localeCompare(a.invitedAt));
+  if (!waiting.length) return null;
+
+  const remove = async (invite: ClientInvite) => {
+    if (!window.confirm(`Remove the invite for ${invite.email}?`)) return;
+    await deleteDoc(doc(firebaseDb, CLIENT_INVITES_COLLECTION, invite.email)).catch((cause) => console.error("Unable to remove invite", cause));
+  };
+
+  return (
+    <section className="mb-6" aria-label="Invited clients">
+      <h2 className="m-0 mb-2 text-item-title font-semibold">Invited clients</h2>
+      <ul className="m-0 grid list-none gap-2 p-0">
+        {waiting.map((invite) => (
+          <li key={invite.email} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background p-3">
+            <div className="min-w-0">
+              <p className="m-0 truncate text-body font-semibold">{invite.name} <span className="ml-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">Invited</span></p>
+              <p className="m-0 truncate text-sm text-muted-foreground">{invite.email} · {invite.clientName}</p>
+            </div>
+            <button type="button" onClick={() => void remove(invite)} className="shrink-0 text-xs font-semibold text-destructive hover:underline">Remove</button>
+          </li>
+        ))}
+      </ul>
+      <p className="mb-0 mt-2 text-xs text-muted-foreground">They’ll become clients of their company the first time they sign in with this email.</p>
+    </section>
+  );
 }
 
 function UserRow({ user, categoryOptions }: { user: User; categoryOptions: string[] }) {
@@ -162,6 +203,7 @@ export default function AdminUsersPage() {
         resultCount={plural(visibleUsers.length, "user")}
       />}>
 
+      <InvitedClients users={users} />
       <section className="overflow-x-auto">
         {visibleUsers.length ? (
           <div>
