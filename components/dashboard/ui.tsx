@@ -147,7 +147,7 @@ export function StatItem({
       <span className="truncate text-xs font-medium text-muted-foreground">
         {label}
       </span>
-      <strong className="truncate text-item-title font-semibold tabular-nums">{value}</strong>
+      <strong className="break-words text-sm font-semibold leading-snug tabular-nums sm:text-item-title">{value}</strong>
       {detail ? <div className="truncate text-xs text-muted-foreground">{detail}</div> : null}
     </div>
   );

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { EditPaymentDialog } from "@/components/edit-payment-dialog";
 import { addDoc, collection, doc, getDocs, onSnapshot, query, updateDoc, where } from "firebase/firestore";
 import { LuPlus } from "react-icons/lu";
@@ -41,6 +42,7 @@ const SELECT = "h-11 w-full border-0 border-b border-input bg-transparent px-3 t
 
 export function PaymentsView() {
   const { user, role } = useAuth();
+  const router = useRouter();
   const uid = user?.uid ?? null;
   const isStaff = role === "admin" || role === "manager";
 
@@ -129,7 +131,11 @@ export function PaymentsView() {
           {/* Phones get one card per payment; wider screens keep the table. */}
           <ul className="m-0 grid list-none gap-2 p-0 sm:hidden">
             {visible.map((payment) => (
-              <li key={payment.id} className="rounded-xl border border-border bg-background p-4">
+              <li
+                key={payment.id}
+                onClick={(event) => { if (!(event.target as HTMLElement).closest("button, a")) router.push(`/dashboard/payments/${payment.id}`); }}
+                className="cursor-pointer rounded-xl border border-border bg-background p-4 transition hover:border-foreground/30"
+              >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     {isStaff ? <p className="m-0 truncate text-body font-semibold">{payment.payeeName}</p> : null}
@@ -137,7 +143,7 @@ export function PaymentsView() {
                   </div>
                   <p className="m-0 shrink-0 text-body font-semibold tabular-nums">{formatAmount(payment.amount, payment.currency)}</p>
                 </div>
-                {payment.jobName ? <p className="m-0 mt-1 truncate text-xs text-muted-foreground">{payment.jobId ? <Link href={jobHref(payment.jobId)} className="text-muted-foreground hover:text-primary">{payment.jobName}</Link> : payment.jobName}</p> : null}
+                {payment.jobName ? <p className="m-0 mt-1 truncate text-xs text-muted-foreground">{payment.jobName}</p> : null}
                 <div className="mt-3 flex items-center justify-between gap-3">
                   <span className="text-xs text-muted-foreground">{payment.dueDate ? `Due ${longDate(payment.dueDate)}` : "No due date"}</span>
                   <Badge tone={payment.status === "paid" ? "neutral" : "active"}>
