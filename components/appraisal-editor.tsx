@@ -10,7 +10,7 @@ import { MobileHeaderActions, MobileHeaderTitle } from "@/components/dashboard/m
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { APPRAISAL_COLLECTION, EMPTY_SIGNOFF, type Appraisal } from "@/lib/appraisals";
+import { APPRAISAL_COLLECTION, type Appraisal } from "@/lib/appraisals";
 import { firebaseDb } from "@/lib/firebase/client";
 import type { User } from "@/lib/users";
 
@@ -23,8 +23,8 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 export function AppraisalEditor({ appraisal, user, users }: { appraisal?: Appraisal; user: { uid: string; name: string | null }; users: User[] }) {
   const router = useRouter();
   const [assignedTo, setAssignedTo] = React.useState(appraisal?.assignedTo ?? "");
-  const [employeeName, setEmployeeName] = React.useState(appraisal?.employeeName ?? "");
-  const [employeeTitle, setEmployeeTitle] = React.useState(appraisal?.employeeTitle ?? "");
+  const [assignedToName, setAssignedToName] = React.useState(appraisal?.assignedToName ?? "");
+  const [assignedToTitle, setAssignedToTitle] = React.useState(appraisal?.assignedToTitle ?? "");
   const [period, setPeriod] = React.useState(appraisal?.period ?? "");
   const [message, setMessage] = React.useState(appraisal?.message ?? "");
   const [busy, setBusy] = React.useState(false);
@@ -33,14 +33,14 @@ export function AppraisalEditor({ appraisal, user, users }: { appraisal?: Apprai
   const people = users
     .filter((candidate) => candidate.uid && candidate.role !== "client")
     .sort((a, b) => a.name.localeCompare(b.name));
-  const valid = assignedTo.length > 0 && employeeName.trim().length > 0 && period.trim().length > 0;
+  const valid = assignedTo.length > 0 && assignedToName.trim().length > 0 && period.trim().length > 0;
   const submitted = appraisal?.status === "submitted";
 
-  const pickEmployee = (uid: string) => {
+  const pickUser = (uid: string) => {
     setAssignedTo(uid);
     const person = people.find((candidate) => candidate.uid === uid);
-    setEmployeeName(person?.name ?? "");
-    setEmployeeTitle(person?.title ?? "");
+    setAssignedToName(person?.name ?? "");
+    setAssignedToTitle(person?.title ?? "");
   };
 
   const save = async () => {
@@ -51,10 +51,8 @@ export function AppraisalEditor({ appraisal, user, users }: { appraisal?: Apprai
     const fields = {
       status: "assigned" as const,
       assignedTo,
-      employeeName: employeeName.trim(),
-      employeeTitle: employeeTitle.trim(),
-      preparerName: user.name ?? "",
-      preparerTitle: "",
+      assignedToName: assignedToName.trim(),
+      assignedToTitle: assignedToTitle.trim(),
       period: period.trim(),
       message: message.trim(),
       updatedAt: now,
@@ -68,8 +66,6 @@ export function AppraisalEditor({ appraisal, user, users }: { appraisal?: Apprai
           ratings: {},
           comments: {},
           qualitative: {},
-          response: {},
-          signoff: EMPTY_SIGNOFF,
           submittedAt: "",
           createdBy: user.uid,
           createdByName: user.name,
@@ -115,7 +111,7 @@ export function AppraisalEditor({ appraisal, user, users }: { appraisal?: Apprai
         </div>
         <div className="grid gap-5 sm:grid-cols-2">
           <Field label="Team member">
-            <Select value={assignedTo || "__none__"} onValueChange={(value) => pickEmployee(value === "__none__" ? "" : value)} disabled={busy}>
+            <Select value={assignedTo || "__none__"} onValueChange={(value) => pickUser(value === "__none__" ? "" : value)} disabled={busy}>
               <SelectTrigger><SelectValue placeholder="Choose a person" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="__none__">Choose a person</SelectItem>
@@ -128,8 +124,8 @@ export function AppraisalEditor({ appraisal, user, users }: { appraisal?: Apprai
           </Field>
         </div>
         {assignedTo ? <dl className="m-0 grid gap-3 border-y border-border py-4 text-[14px] sm:grid-cols-2">
-          <div><dt className="text-muted-foreground">Employee</dt><dd className="m-0 mt-1 font-semibold">{employeeName}</dd></div>
-          <div><dt className="text-muted-foreground">Title</dt><dd className="m-0 mt-1 font-semibold">{employeeTitle || "—"}</dd></div>
+          <div><dt className="text-muted-foreground">User</dt><dd className="m-0 mt-1 font-semibold">{assignedToName}</dd></div>
+          <div><dt className="text-muted-foreground">Title</dt><dd className="m-0 mt-1 font-semibold">{assignedToTitle || "—"}</dd></div>
         </dl> : null}
         <Field label="Message (optional)">
           <Textarea rows={4} value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Add any context for this appraisal…" disabled={busy} />

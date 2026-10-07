@@ -88,7 +88,7 @@ export function AppraisalResponseForm({ appraisal }: { appraisal: Appraisal }) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="m-0 text-page-title font-bold leading-tight">{appraisal.period || "Performance appraisal"}</h1>
-          <p className="mb-0 mt-1 text-[14px] text-muted-foreground">Assigned by {appraisal.createdByName || appraisal.preparerName || "BBDO West Africa"}</p>
+          <p className="mb-0 mt-1 text-[14px] text-muted-foreground">Assigned by {appraisal.createdByName || "BBDO West Africa"}</p>
         </div>
         <AppraisalStatus status={appraisal.status} />
       </div>

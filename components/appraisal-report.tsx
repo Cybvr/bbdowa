@@ -1,6 +1,6 @@
 import * as React from "react";
 import {
-  APPRAISAL_SECTIONS, JOB_RELEVANCE_SCALE, PERFORMANCE_SCALE, QUALITATIVE_QUESTIONS, RESPONSE_QUESTIONS,
+  APPRAISAL_SECTIONS, JOB_RELEVANCE_SCALE, PERFORMANCE_SCALE, QUALITATIVE_QUESTIONS,
   formatOverall, itemScore, overallLabel, scoreAppraisal, type Appraisal,
 } from "@/lib/appraisals";
 import { formatDocumentDate } from "@/lib/documents";
@@ -16,16 +16,14 @@ function Answer({ label, value }: { label: string; value: string | undefined }) 
   return <div><p className="m-0 mb-1 text-[13px] font-semibold">{label}</p><p className="m-0 whitespace-pre-wrap text-[14px] text-muted-foreground">{value?.trim() || "—"}</p></div>;
 }
 
-/** Read-only appraisal submission for staff review and the employee's records. */
+/** Read-only appraisal submission. */
 export function AppraisalReport({ appraisal }: { appraisal: Appraisal }) {
   const score = scoreAppraisal(appraisal.ratings);
-  const hasLegacyResponse = Object.values(appraisal.response).some((value) => value.trim());
-  const hasLegacySignoff = Object.values(appraisal.signoff).some((value) => value.trim());
 
   return <div className="space-y-8">
     <dl className="m-0 grid gap-4 text-[14px] sm:grid-cols-2">
-      <div><dt className="text-muted-foreground">Employee</dt><dd className="m-0 font-semibold">{appraisal.employeeName}{appraisal.employeeTitle ? ` · ${appraisal.employeeTitle}` : ""}</dd></div>
-      <div><dt className="text-muted-foreground">Assigned by</dt><dd className="m-0 font-semibold">{appraisal.createdByName || appraisal.preparerName || "—"}</dd></div>
+      <div><dt className="text-muted-foreground">Assigned to</dt><dd className="m-0 font-semibold">{appraisal.assignedToName}{appraisal.assignedToTitle ? ` · ${appraisal.assignedToTitle}` : ""}</dd></div>
+      <div><dt className="text-muted-foreground">Assigned by</dt><dd className="m-0 font-semibold">{appraisal.createdByName || "—"}</dd></div>
       <div><dt className="text-muted-foreground">Review period</dt><dd className="m-0 font-semibold">{appraisal.period || "—"}</dd></div>
       <div><dt className="text-muted-foreground">Overall score</dt><dd className="m-0 font-semibold">{formatOverall(score.overall)}{score.overall !== null ? ` · ${overallLabel(score.overall)}` : ""}</dd></div>
       {appraisal.submittedAt ? <div><dt className="text-muted-foreground">Submitted</dt><dd className="m-0 font-semibold">{formatDocumentDate(appraisal.submittedAt)}</dd></div> : null}
@@ -62,17 +60,5 @@ export function AppraisalReport({ appraisal }: { appraisal: Appraisal }) {
       {QUALITATIVE_QUESTIONS.map((question, index) => <Answer key={question.id} label={`${index + 1}. ${question.label}`} value={appraisal.qualitative[question.id]} />)}
     </Block>
 
-    {hasLegacyResponse ? <Block title="Employee response">
-      {RESPONSE_QUESTIONS.map((question, index) => <Answer key={question.id} label={`${index + 1}. ${question.label}`} value={appraisal.response[question.id]} />)}
-    </Block> : null}
-
-    {hasLegacySignoff ? <Block title="Sign-off">
-      <dl className="m-0 grid gap-3 text-[14px] sm:grid-cols-2">
-        <div><dt className="text-muted-foreground">Appraisal discussed with employee</dt><dd className="m-0 font-semibold">{formatDocumentDate(appraisal.signoff.discussedOn)}</dd></div>
-        <div><dt className="text-muted-foreground">Preparer’s signature</dt><dd className="m-0 font-semibold">{formatDocumentDate(appraisal.signoff.preparerDate)}</dd></div>
-        <div><dt className="text-muted-foreground">Employee’s signature</dt><dd className="m-0 font-semibold">{formatDocumentDate(appraisal.signoff.employeeDate)}</dd></div>
-        <div><dt className="text-muted-foreground">MD’s signature</dt><dd className="m-0 font-semibold">{formatDocumentDate(appraisal.signoff.mdDate)}</dd></div>
-      </dl>
-    </Block> : null}
   </div>;
 }

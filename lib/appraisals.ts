@@ -1,6 +1,6 @@
 export const APPRAISAL_COLLECTION = "appraisals";
 
-export type AppraisalStatus = "draft" | "shared" | "assigned" | "submitted";
+export type AppraisalStatus = "assigned" | "submitted";
 
 /** Job relevance: how much an item matters to the role. */
 export const JOB_RELEVANCE_SCALE = [
@@ -107,47 +107,27 @@ export const QUALITATIVE_QUESTIONS: AppraisalQuestion[] = [
   { id: "promotable", label: "How ready do you feel for greater responsibility or promotion, and on what timeline?" },
 ];
 
-export const RESPONSE_QUESTIONS: AppraisalQuestion[] = [
-  { id: "disagree", label: "Are there any elements of this appraisal with which you disagree? To what extent and why?" },
-  { id: "manager", label: "How would you change your immediate superior’s management style or techniques to further your development?" },
-  { id: "excluded", label: "Have any significant opportunities for growth or development been excluded from this appraisal?" },
-  { id: "further", label: "Any further comments?" },
-];
-
 export type AppraisalRating = { job: number | null; performance: number | null };
-
-export type AppraisalSignoff = {
-  discussedOn: string;
-  preparerDate: string;
-  employeeDate: string;
-  mdDate: string;
-};
 
 export type Appraisal = {
   id: string;
   status: AppraisalStatus;
   /** Firebase uid of the user assigned to complete this appraisal. */
   assignedTo: string | null;
-  employeeName: string;
-  employeeTitle: string;
-  preparerName: string;
-  preparerTitle: string;
+  assignedToName: string;
+  assignedToTitle: string;
   /** Review period, e.g. “January – June 2026”. */
   period: string;
   message: string;
   ratings: Record<string, AppraisalRating>;
   comments: Record<string, string>;
   qualitative: Record<string, string>;
-  response: Record<string, string>;
-  signoff: AppraisalSignoff;
   createdBy: string;
   createdByName: string | null;
   createdAt: string;
   updatedAt: string;
   submittedAt: string;
 };
-
-export const EMPTY_SIGNOFF: AppraisalSignoff = { discussedOn: "", preparerDate: "", employeeDate: "", mdDate: "" };
 
 /** An item counts only when both the job relevance and the performance are rated. */
 export function itemScore(rating: AppraisalRating | undefined): number | null {
@@ -187,23 +167,18 @@ export function sortAppraisals(appraisals: Appraisal[]): Appraisal[] {
   return [...appraisals].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
-/** Older or partial records still open: fill anything missing. */
-export function normalizeAppraisal(id: string, data: Partial<Appraisal> & { employeeUid?: string | null }): Appraisal {
+export function normalizeAppraisal(id: string, data: Partial<Appraisal>): Appraisal {
   return {
     id,
-    status: data.status === "submitted" || data.status === "assigned" || data.status === "shared" ? data.status : "draft",
-    assignedTo: data.assignedTo ?? data.employeeUid ?? null,
-    employeeName: data.employeeName ?? "",
-    employeeTitle: data.employeeTitle ?? "",
-    preparerName: data.preparerName ?? "",
-    preparerTitle: data.preparerTitle ?? "",
+    status: data.status === "submitted" ? "submitted" : "assigned",
+    assignedTo: data.assignedTo ?? null,
+    assignedToName: data.assignedToName ?? "",
+    assignedToTitle: data.assignedToTitle ?? "",
     period: data.period ?? "",
     message: data.message ?? "",
     ratings: data.ratings ?? {},
     comments: data.comments ?? {},
     qualitative: data.qualitative ?? {},
-    response: data.response ?? {},
-    signoff: { ...EMPTY_SIGNOFF, ...(data.signoff ?? {}) },
     createdBy: data.createdBy ?? "",
     createdByName: data.createdByName ?? null,
     createdAt: data.createdAt ?? "",
@@ -213,5 +188,5 @@ export function normalizeAppraisal(id: string, data: Partial<Appraisal> & { empl
 }
 
 export function appraisalNeedsCompletion(appraisal: Appraisal): boolean {
-  return appraisal.status === "assigned" || appraisal.status === "shared";
+  return appraisal.status === "assigned";
 }

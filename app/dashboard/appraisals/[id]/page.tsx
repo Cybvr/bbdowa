@@ -30,13 +30,13 @@ export default function AppraisalDetailPage() {
   }, [authLoading, id, user]);
   if (authLoading || loading) return <PageLoadingSkeleton titleWidth="w-48" />;
   if (!appraisal) return <main className="flex-1 px-4 py-8 text-sm text-destructive">{error ?? "Appraisal not found."}</main>;
-  const isEmployee = !!user && appraisal.assignedTo === user.uid;
-  const isStaff = role === "admin" || role === "manager";
-  if (!isEmployee && !isStaff) return <main className="flex-1 px-4 py-8 text-sm text-destructive">Appraisal not found.</main>;
+  const isAssignee = !!user && appraisal.assignedTo === user.uid;
+  const canManage = role === "admin" || role === "manager";
+  if (!isAssignee && !canManage) return <main className="flex-1 px-4 py-8 text-sm text-destructive">Appraisal not found.</main>;
   return <main className="mx-auto w-full max-w-4xl flex-1 px-5 pb-16 pt-4 sm:px-8">
     <MobileHeaderTitle title="Appraisal" />
     <Link href="/dashboard/appraisals" className="mb-4 inline-flex items-center gap-1 text-[13px] font-semibold text-muted-foreground no-underline hover:text-foreground"><ChevronLeft className="h-4 w-4" aria-hidden="true" />Appraisals</Link>
-    {isEmployee && appraisalNeedsCompletion(appraisal) ? <AppraisalResponseForm appraisal={appraisal} /> : <>
+    {isAssignee && appraisalNeedsCompletion(appraisal) ? <AppraisalResponseForm appraisal={appraisal} /> : <>
       <h1 className="m-0 mb-6 text-page-title font-bold leading-tight">{appraisal.period || "Performance appraisal"}</h1>
       <AppraisalReport appraisal={appraisal} />
     </>}

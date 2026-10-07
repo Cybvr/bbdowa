@@ -262,10 +262,10 @@ type FirestoreAppraisalsState = {
   error: string | null;
 };
 
-/** Staff see every appraisal; everyone else sees assignments addressed to them. */
+/** Admins and managers see every appraisal; other users see their assignments. */
 export function useFirestoreAppraisals(): FirestoreAppraisalsState {
   const { loading: authLoading, user, role } = useAuth();
-  const isStaff = role === "admin" || role === "manager";
+  const canManage = role === "admin" || role === "manager";
   const [state, setState] = useState<FirestoreAppraisalsState>({ appraisals: [], loading: true, error: null });
 
   useEffect(() => {
@@ -278,20 +278,16 @@ export function useFirestoreAppraisals(): FirestoreAppraisalsState {
 
     let active = true;
     setState((current) => ({ ...current, loading: true, error: null }));
-    const sources = isStaff
+    const sources = canManage
       ? [getDocs(collection(firebaseDb, APPRAISAL_COLLECTION))]
-      : [
-          getDocs(query(collection(firebaseDb, APPRAISAL_COLLECTION), where("assignedTo", "==", user.uid))),
-          getDocs(query(collection(firebaseDb, APPRAISAL_COLLECTION), where("employeeUid", "==", user.uid))),
-        ];
+      : [getDocs(query(collection(firebaseDb, APPRAISAL_COLLECTION), where("assignedTo", "==", user.uid)))];
     Promise.all(sources)
       .then((snapshots) => {
         const entries = new Map(snapshots.flatMap((snapshot) => snapshot.docs).map((entry) => [entry.id, entry]));
         return [...entries.values()].map((entry) => normalizeAppraisal(entry.id, entry.data() as Partial<Appraisal>));
       })
       .then((appraisals) => {
-        const visible = isStaff ? appraisals : appraisals.filter((appraisal) => appraisal.status !== "draft");
-        if (active) setState({ appraisals: sortAppraisals(visible), loading: false, error: null });
+        if (active) setState({ appraisals: sortAppraisals(appraisals), loading: false, error: null });
       })
       .catch((error) => {
         console.error("Unable to load appraisals from Firestore", error);
@@ -301,7 +297,7 @@ export function useFirestoreAppraisals(): FirestoreAppraisalsState {
     return () => {
       active = false;
     };
-  }, [authLoading, isStaff, user]);
+  }, [authLoading, canManage, user]);
 
   return state;
 }

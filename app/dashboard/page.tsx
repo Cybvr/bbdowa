@@ -186,7 +186,7 @@ export default function HomePage() {
         <section aria-label="Appraisal to complete" className="mt-6 flex flex-wrap items-center justify-between gap-3 border-y border-border py-4">
           <div className="min-w-0">
             <h2 className="m-0 text-item-title font-semibold">You have a self-appraisal to complete</h2>
-            <p className="m-0 mt-1 text-sm text-muted-foreground">{pendingAppraisal.period || "Performance appraisal"} · Assigned by {pendingAppraisal.createdByName || pendingAppraisal.preparerName || "BBDO West Africa"}</p>
+            <p className="m-0 mt-1 text-sm text-muted-foreground">{pendingAppraisal.period || "Performance appraisal"} · Assigned by {pendingAppraisal.createdByName || "BBDO West Africa"}</p>
           </div>
           <Link href={`/dashboard/appraisals/${pendingAppraisal.id}`} className="inline-flex h-9 shrink-0 items-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground no-underline hover:opacity-90">
             Complete appraisal

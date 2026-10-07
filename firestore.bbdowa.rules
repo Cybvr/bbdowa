@@ -22,12 +22,6 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "manager";
     }
 
-    // Admins and managers both run the agency side of the dashboard: giving
-    // out tasks, drafting documents, and looking up who's a creator.
-    function isStaff() {
-      return isAdmin() || isManager();
-    }
-
     function isCreatorProfile() {
       return resource.data.role == "creator"
         || resource.data.get("roles", []).hasAny(["creator"]);
@@ -104,7 +98,7 @@ service cloud.firestore {
     // Dashboard content collections: public to read, admin-only to write.
     // Client users invited by email, keyed by the lower-case email. Read on first sign-in.
     match /clientInvites/{email} {
-      allow read: if isStaff()
+      allow read: if (isAdmin() || isManager())
         || (signedIn() && request.auth.token.email != null && request.auth.token.email.lower() == email)
         || isCompanyOwner(resource.data.clientId);
       allow write: if isAdmin();
@@ -119,7 +113,7 @@ service cloud.firestore {
     }
     match /clients/{id} {
       allow read: if true;
-      allow write: if isStaff();
+      allow write: if (isAdmin() || isManager());
       // A client signing up creates their own company and owns it.
       allow create: if signedIn()
         && request.resource.data.ownerUid == request.auth.uid
@@ -143,7 +137,7 @@ service cloud.firestore {
     // migration; `campaigns` is kept as a backup until it is deleted.
     match /jobs/{id} {
       allow read: if true;
-      allow write: if isStaff();
+      allow write: if (isAdmin() || isManager());
       // Clients post jobs for their own company and edit the brief. The team,
       // lead, status and pay stay with the agency.
       allow create: if isClientOf(request.resource.data.clientId)
@@ -171,7 +165,7 @@ service cloud.firestore {
     }
     match /campaigns/{id} {
       allow read: if true;
-      allow write: if isStaff();
+      allow write: if (isAdmin() || isManager());
     }
     match /blogs/{id} {
       allow read: if true;
@@ -217,7 +211,7 @@ service cloud.firestore {
     // Clock in / clock out. Each shift belongs to the person who created it:
     // they read and write only their own; admins and managers can read everyone's.
     match /timeEntries/{id} {
-      allow read: if isStaff()
+      allow read: if (isAdmin() || isManager())
         || (signedIn() && resource.data.uid == request.auth.uid);
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid;
@@ -233,28 +227,28 @@ service cloud.firestore {
     }
 
     // A job's assignment and pay terms are kept here, keyed by the job slug,
-    // because jobs are public. Staff, the assignee and everyone on the
-    // job's team (teamUids) can read them; only staff can change them.
+    // because jobs are public. Admins, managers, the assignee and everyone on
+    // the job's team (teamUids) can read them; only admins and managers can change them.
     match /jobTerms/{jobId} {
-      allow read: if isStaff()
+      allow read: if (isAdmin() || isManager())
         || (signedIn() && resource.data.assignedTo == request.auth.uid)
         || (signedIn() && request.auth.uid in resource.data.get("teamUids", []));
-      allow write: if isStaff();
+      allow write: if (isAdmin() || isManager());
     }
 
     // A client's point of contact, kept out of the public client record.
-    // Signed-in team members can read it; only staff can change it.
+    // Signed-in team members can read it; only admins and managers can change it.
     match /clientContacts/{clientId} {
       allow read: if signedIn();
-      allow write: if isStaff();
+      allow write: if (isAdmin() || isManager());
     }
 
-    // Tasks are public to read for creator profiles. Staff manage all task fields;
+    // Tasks are public to read for creator profiles. Admins and managers manage all task fields;
     // assignees can edit their tasks, and enabled share links can edit task details.
     match /creatorTasks/{id} {
       allow read: if true;
-      allow create: if isStaff() && request.resource.data.createdBy == request.auth.uid;
-      allow update: if isStaff()
+      allow create: if (isAdmin() || isManager()) && request.resource.data.createdBy == request.auth.uid;
+      allow update: if (isAdmin() || isManager())
         || (request.resource.data.shareEnabled == true
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["shareEnabled", "updatedAt"]))
         || (resource.data.shareEnabled == true
@@ -271,33 +265,33 @@ service cloud.firestore {
             "title", "description", "content", "status", "dueDate",
             "clientId", "clientName", "jobId", "jobName", "updatedAt", "shareEnabled"
           ]));
-      allow delete: if isStaff()
+      allow delete: if (isAdmin() || isManager())
         || (signedIn() && resource.data.assignedTo == request.auth.uid);
     }
 
-    // Payments owed to people. Staff record and settle them; each payee
+    // Payments owed to people. Admins and managers record and settle them; each payee
     // can read only their own.
-    // What we bill client companies. Staff manage them; a client user sees their
+    // What we bill client companies. Admins and managers manage them; a client user sees their
     // own company's invoices once they're sent (never drafts).
     match /invoices/{id} {
-      allow read: if isStaff()
+      allow read: if (isAdmin() || isManager())
         || (signedIn()
           && resource.data.status in ["sent", "paid"]
           && exists(/databases/$(database)/documents/users/$(request.auth.uid))
           && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "client"
           && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.clientId == resource.data.clientId);
-      allow write: if isStaff();
+      allow write: if (isAdmin() || isManager());
     }
 
     match /payments/{id} {
-      allow read: if isStaff() || (signedIn() && resource.data.payeeUid == request.auth.uid);
-      allow create, update, delete: if isStaff();
+      allow read: if (isAdmin() || isManager()) || (signedIn() && resource.data.payeeUid == request.auth.uid);
+      allow create, update, delete: if (isAdmin() || isManager());
     }
 
     // Private onboarding answers: emergency contact, manager, start date and
-    // the equipment checklist. Only the person and staff can read them.
+    // the equipment checklist. Only the person, admins, and managers can read them.
     match /hrRecords/{userId} {
-      allow read: if isSelf(userId) || isStaff();
+      allow read: if isSelf(userId) || (isAdmin() || isManager());
       allow create, update: if (isSelf(userId) && request.resource.data.uid == userId) || isAdmin();
       allow delete: if isAdmin();
     }
@@ -333,7 +327,7 @@ service cloud.firestore {
     // A document starts as a draft, can be sent to one creator, and locks when sent.
     match /documents/{id} {
       allow read: if true;
-      allow create: if isStaff()
+      allow create: if (isAdmin() || isManager())
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.signedAt == null
         && request.resource.data.signedName == null
@@ -341,7 +335,7 @@ service cloud.firestore {
           || (request.resource.data.status == "pending_signature"
             && request.resource.data.assignedTo is string
             && request.resource.data.assignedTo.size() > 0));
-      allow update: if (isStaff()
+      allow update: if ((isAdmin() || isManager())
           && resource.data.status == "draft"
           && request.resource.data.createdBy == resource.data.createdBy
           && request.resource.data.signedAt == null
@@ -350,7 +344,7 @@ service cloud.firestore {
             || (request.resource.data.status == "pending_signature"
               && request.resource.data.assignedTo is string
               && request.resource.data.assignedTo.size() > 0)))
-        || (isStaff()
+        || ((isAdmin() || isManager())
           && resource.data.status == "pending_signature"
           && request.resource.data.status == "pending_signature"
           && request.resource.data.assignedTo is string
@@ -371,20 +365,21 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // Staff assign appraisals. The selected employee completes the full form
-    // and may submit it once; staff retain review access.
+    // Admins and managers assign appraisals to existing users.
     match /appraisals/{id} {
-      allow read: if isStaff()
+      allow read: if isAdmin() || isManager()
+        || (signedIn() && resource.data.assignedTo == request.auth.uid);
+      allow create: if (isAdmin() || isManager())
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.status == "assigned"
+        && request.resource.data.assignedTo is string
+        && exists(/databases/$(database)/documents/users/$(request.resource.data.assignedTo));
+      allow update: if ((isAdmin() || isManager())
+          && request.resource.data.assignedTo is string
+          && exists(/databases/$(database)/documents/users/$(request.resource.data.assignedTo)))
         || (signedIn()
-          && (("assignedTo" in resource.data && resource.data.assignedTo == request.auth.uid)
-            || ("employeeUid" in resource.data && resource.data.employeeUid == request.auth.uid)));
-      allow create: if isStaff()
-        && request.resource.data.createdBy == request.auth.uid;
-      allow update: if isStaff()
-        || (signedIn()
-          && (("assignedTo" in resource.data && resource.data.assignedTo == request.auth.uid)
-            || ("employeeUid" in resource.data && resource.data.employeeUid == request.auth.uid))
-          && resource.data.status in ["assigned", "shared"]
+          && resource.data.assignedTo == request.auth.uid
+          && resource.data.status == "assigned"
           && request.resource.data.status in ["assigned", "submitted"]
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
             "ratings", "comments", "qualitative", "status", "submittedAt", "updatedAt"
