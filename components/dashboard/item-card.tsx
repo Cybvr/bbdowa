@@ -29,7 +29,7 @@ export function ItemCard({
   const body = (
     <>
       {icon ? (
-        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground">{icon}</span>
+        <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl bg-muted text-muted-foreground">{icon}</span>
       ) : null}
       <span className="min-w-0 flex-1">
         <span className="block truncate text-[15px] font-semibold text-foreground">{title}</span>

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Check, ExternalLink, Plus } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
+import { DashboardThumbnail } from "@/components/dashboard-thumbnail";
 import { ItemCard, ItemCardList } from "@/components/dashboard/item-card";
 import { JobCard } from "@/components/job-card";
 import { LIST_ACTION_CLASS } from "@/components/dashboard/list-page-actions";
@@ -265,6 +266,7 @@ export default function HomePage() {
                 <ItemCard
                   key={post.slug}
                   href={`/dashboard/blog/${post.slug}`}
+                  icon={<DashboardThumbnail src={post.image} label={post.title} className="h-full w-full" />}
                   title={post.title}
                   subtitle={`${post.category} · ${formatBlogDate(post.publishedAt)}`}
                 />
