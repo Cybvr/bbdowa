@@ -26,7 +26,6 @@ export type NavItem =
 export const NAV_ITEMS: NavItem[] = [
   { kind: "link", label: "My profile", href: "/dashboard/me", requiresAuth: true, hideInSidebar: true },
   { kind: "link", label: "Home", href: "/dashboard" },
-  { kind: "link", label: "Blog", href: "/dashboard/blog", requiresAuth: true },
   { kind: "link", label: "Jobs", href: "/dashboard/jobs", requiresAuth: true },
   { kind: "link", label: "My Jobs", href: "/dashboard/my-jobs", requiresAuth: true },
   { kind: "link", label: "Tracker", href: "/dashboard/tracker", requiresAuth: true },
