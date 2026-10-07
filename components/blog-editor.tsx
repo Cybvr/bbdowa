@@ -111,7 +111,7 @@ export function BlogEditor({ post }: { post?: BlogPost }) {
             <RichTextEditor label="Content" value={content} onChange={setContent} placeholder="Write the post…" tall />
           </div>
 
-          <aside className="min-w-0 space-y-6 rounded-xl border border-border bg-background p-5 sm:p-6" aria-label="Post details">
+          <aside className="min-w-0 space-y-6" aria-label="Post details">
             <ImageUploadField label="Cover image" value={image} onChange={setImage} uploadPath="blog/images" disabled={busy} />
 
             <div>
