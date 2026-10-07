@@ -43,6 +43,7 @@ export const NAV_ITEMS: NavItem[] = [
       "/dashboard/brand",
       "/dashboard/resources",
       "/dashboard/people",
+      "/dashboard/appraisals",
     ],
     items: [
       { label: "Discover", href: "/dashboard/discover" },
@@ -50,6 +51,7 @@ export const NAV_ITEMS: NavItem[] = [
       { label: "Brand assets", href: "/dashboard/brand" },
       { label: "Resources", href: "/dashboard/resources" },
       { label: "Team", href: "/dashboard/people" },
+      { label: "Appraisals", href: "/dashboard/appraisals" },
     ],
   },
   { kind: "link", label: "Admin", href: "/admin", requiresAuth: true, requiresAdmin: true, hideInSidebar: true },
@@ -62,6 +64,7 @@ export const ADMIN_NAV_ITEMS: NavItem[] = [
   { kind: "link", label: "Clients", href: "/admin/clients" },
   { kind: "link", label: "Invoices", href: "/admin/invoices" },
   { kind: "link", label: "Documents", href: "/admin/documents" },
+  { kind: "link", label: "Appraisals", href: "/admin/appraisals" },
   { kind: "link", label: "Blog", href: "/admin/blog", requiresAdmin: true },
   { kind: "link", label: "Tasks", href: "/admin/tasks" },
   { kind: "link", label: "Dashboard", href: "/dashboard" },

@@ -257,6 +257,14 @@ export const DocumentsIcon: NavIconComponent = ({ className }) => (
   </Glyph>
 );
 
+// Appraisals — scored page with a star
+export const AppraisalsIcon: NavIconComponent = ({ className }) => (
+  <Glyph className={className}>
+    <path d="M6 3.5h12v17H6Z" />
+    <path d="M12 8l1.2 2.4 2.6.4-1.9 1.8.5 2.6-2.4-1.3-2.4 1.3.5-2.6-1.9-1.8 2.6-.4Z" />
+  </Glyph>
+);
+
 // Tasks — checklist
 export const TasksIcon: NavIconComponent = ({ className }) => (
   <Glyph className={className}>
@@ -340,5 +348,6 @@ export const NAV_ICON_SET: Record<string, NavIconComponent> = {
   Overview: DashboardIcon,
   Users: TeamIcon,
   Documents: DocumentsIcon,
+  Appraisals: AppraisalsIcon,
   Tasks: TasksIcon,
 };

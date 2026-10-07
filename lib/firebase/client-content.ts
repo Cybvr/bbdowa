@@ -7,6 +7,7 @@ import { useAuth } from "@/components/auth-provider";
 import { normalizeJob, type Job } from "@/lib/jobs";
 import { isInternalClient, type Client } from "@/lib/clients";
 import { DOCUMENT_COLLECTION, sortDocuments, type AgencyDocument } from "@/lib/documents";
+import { APPRAISAL_COLLECTION, normalizeAppraisal, sortAppraisals, type Appraisal } from "@/lib/appraisals";
 import { TASK_COLLECTION, sortTasks, type Task } from "@/lib/creator-tasks";
 import { jobsCollection } from "@/lib/firebase/job-collections";
 import { ACTIVITY_COLLECTION, type ActivityEntry } from "@/lib/time-tracking";
@@ -251,6 +252,49 @@ export function useFirestoreTasks(refreshToken = 0): FirestoreTasksState {
       active = false;
     };
   }, [authLoading, isStaff, refreshToken, user]);
+
+  return state;
+}
+
+type FirestoreAppraisalsState = {
+  appraisals: Appraisal[];
+  loading: boolean;
+  error: string | null;
+};
+
+/** Staff see every appraisal; everyone else sees only the ones shared with them. */
+export function useFirestoreAppraisals(): FirestoreAppraisalsState {
+  const { loading: authLoading, user, role } = useAuth();
+  const isStaff = role === "admin" || role === "manager";
+  const [state, setState] = useState<FirestoreAppraisalsState>({ appraisals: [], loading: true, error: null });
+
+  useEffect(() => {
+    if (authLoading) return;
+
+    if (!user) {
+      setState({ appraisals: [], loading: false, error: null });
+      return;
+    }
+
+    let active = true;
+    setState((current) => ({ ...current, loading: true, error: null }));
+    const source = isStaff
+      ? collection(firebaseDb, APPRAISAL_COLLECTION)
+      : query(collection(firebaseDb, APPRAISAL_COLLECTION), where("employeeUid", "==", user.uid), where("status", "==", "shared"));
+    getDocs(source)
+      .then((snapshot) => snapshot.docs.map((entry) => normalizeAppraisal(entry.id, entry.data() as Partial<Appraisal>)))
+      .then((appraisals) => {
+        if (active) setState({ appraisals: sortAppraisals(appraisals), loading: false, error: null });
+      })
+      .catch((error) => {
+        console.error("Unable to load appraisals from Firestore", error);
+        if (active) setState({ appraisals: [], loading: false, error: "Unable to load appraisals." });
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [authLoading, isStaff, user]);
 
   return state;
 }

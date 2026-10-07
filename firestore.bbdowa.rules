@@ -370,5 +370,22 @@ service cloud.firestore {
           ]));
       allow delete: if isAdmin();
     }
+
+    // Performance appraisals. Staff write them; the employee can read one once
+    // it is shared and may only add their own Part III response.
+    match /appraisals/{id} {
+      allow read: if isStaff()
+        || (signedIn()
+          && resource.data.status == "shared"
+          && resource.data.employeeUid == request.auth.uid);
+      allow create: if isStaff()
+        && request.resource.data.createdBy == request.auth.uid;
+      allow update: if isStaff()
+        || (signedIn()
+          && resource.data.status == "shared"
+          && resource.data.employeeUid == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["response", "updatedAt"]));
+      allow delete: if isAdmin();
+    }
   }
 }
