@@ -48,7 +48,7 @@ export default function AppraisalsAdminPage() {
   if (authLoading || loading) return <UsersTableSkeleton />;
   if (!isStaff) return <main className="mx-auto w-full max-w-6xl flex-1 px-5 pb-16 pt-8 sm:px-8"><PageHeader title="Appraisals" /><p className="mt-8 text-sm text-muted-foreground">A staff account is required to manage appraisals.</p></main>;
 
-  return <DashboardListPage title="Appraisals" actions={<Link href="/admin/appraisals/new" className={LIST_ACTION_CLASS}><Plus aria-hidden="true" className="h-3.5 w-3.5" />New appraisal</Link>}
+  return <DashboardListPage title="Appraisals" actions={<Link href="/admin/appraisals/new" className={LIST_ACTION_CLASS}><Plus aria-hidden="true" className="h-3.5 w-3.5" />Assign appraisal</Link>}
     toolbar={<FilterBar panelId="admin-appraisals-filter" search={search} onSearchChange={setSearch} searchPlaceholder="Search appraisals" resultCount={plural(visible.length, "appraisal")} />}>
     {error || actionError ? <p className="mb-4 text-[13px] text-destructive">{error ?? actionError}</p> : null}
     <section className="mt-4 overflow-x-auto">
@@ -56,7 +56,7 @@ export default function AppraisalsAdminPage() {
         <TableCell className="px-4 py-3"><div className="min-w-0"><Link href={`/admin/appraisals/${appraisal.id}/edit`} className="block truncate font-semibold hover:text-primary">{appraisal.employeeName || "Unnamed"}</Link><div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted-foreground"><AppraisalStatus status={appraisal.status} />{appraisal.period ? <span>{appraisal.period}</span> : null}<span>Updated {formatDocumentDate(appraisal.updatedAt)}</span></div></div></TableCell>
         <TableCell className="hidden px-4 py-3 text-[14px] font-semibold sm:table-cell">{formatOverall(scoreAppraisal(appraisal.ratings).overall)}</TableCell>
         <TableCell className="px-4 py-3"><div className="flex justify-end gap-1.5"><Link href={`/admin/appraisals/${appraisal.id}/edit`} aria-label={`Edit appraisal for ${appraisal.employeeName}`} className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:text-foreground"><Pencil className="h-4 w-4" /></Link>{role === "admin" && <button type="button" onClick={() => void remove(appraisal.id, appraisal.employeeName)} disabled={busyId === appraisal.id} aria-label={`Delete appraisal for ${appraisal.employeeName}`} className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:text-destructive disabled:opacity-50"><Trash2 className="h-4 w-4" /></button>}</div></TableCell>
-      </ClickableTableRow>)}</TableBody></Table> : <div className="px-5 py-12 text-center"><p className="m-0 text-[15px] font-semibold">{appraisals.length ? "No appraisals match" : "No appraisals yet"}</p><p className="mb-0 mt-1 text-sm text-muted-foreground">{appraisals.length ? "Try another search." : "Create an appraisal to get started."}</p></div>}
+      </ClickableTableRow>)}</TableBody></Table> : <div className="px-5 py-12 text-center"><p className="m-0 text-[15px] font-semibold">{appraisals.length ? "No appraisals match" : "No appraisals yet"}</p><p className="mb-0 mt-1 text-sm text-muted-foreground">{appraisals.length ? "Try another search." : "Assign an appraisal to get started."}</p></div>}
     </section>
   </DashboardListPage>;
 }

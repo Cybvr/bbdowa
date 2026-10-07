@@ -1,6 +1,6 @@
 export const APPRAISAL_COLLECTION = "appraisals";
 
-export type AppraisalStatus = "draft" | "shared";
+export type AppraisalStatus = "draft" | "shared" | "assigned" | "submitted";
 
 /** Job relevance: how much an item matters to the role. */
 export const JOB_RELEVANCE_SCALE = [
@@ -98,13 +98,13 @@ export const APPRAISAL_SECTIONS: AppraisalSection[] = [
 export type AppraisalQuestion = { id: string; label: string };
 
 export const QUALITATIVE_QUESTIONS: AppraisalQuestion[] = [
-  { id: "overall", label: "Comment on the factors that contributed to the employee’s assessment overall." },
-  { id: "strengths", label: "What are the employee’s key strengths?" },
-  { id: "improvements", label: "What areas need improvement, and on what timing should improvement be expected?" },
-  { id: "goals", label: "What are the next six months’ development goals?" },
-  { id: "projects", label: "What specific projects or ongoing responsibilities will they be assigned to contribute to growth and development?" },
-  { id: "training", label: "From what formal training (seminars, etc.) could this employee benefit?" },
-  { id: "promotable", label: "To what extent is the employee promotable? On what timing?" },
+  { id: "overall", label: "What factors contributed to your overall assessment?" },
+  { id: "strengths", label: "What are your key strengths?" },
+  { id: "improvements", label: "What areas would you like to improve, and by when?" },
+  { id: "goals", label: "What are your development goals for the next six months?" },
+  { id: "projects", label: "What projects or responsibilities would help you grow and develop?" },
+  { id: "training", label: "What formal training, seminars, or other support would benefit you?" },
+  { id: "promotable", label: "How ready do you feel for greater responsibility or promotion, and on what timeline?" },
 ];
 
 export const RESPONSE_QUESTIONS: AppraisalQuestion[] = [
@@ -126,13 +126,15 @@ export type AppraisalSignoff = {
 export type Appraisal = {
   id: string;
   status: AppraisalStatus;
-  employeeUid: string | null;
+  /** Firebase uid of the user assigned to complete this appraisal. */
+  assignedTo: string | null;
   employeeName: string;
   employeeTitle: string;
   preparerName: string;
   preparerTitle: string;
   /** Review period, e.g. “January – June 2026”. */
   period: string;
+  message: string;
   ratings: Record<string, AppraisalRating>;
   comments: Record<string, string>;
   qualitative: Record<string, string>;
@@ -142,6 +144,7 @@ export type Appraisal = {
   createdByName: string | null;
   createdAt: string;
   updatedAt: string;
+  submittedAt: string;
 };
 
 export const EMPTY_SIGNOFF: AppraisalSignoff = { discussedOn: "", preparerDate: "", employeeDate: "", mdDate: "" };
@@ -185,16 +188,17 @@ export function sortAppraisals(appraisals: Appraisal[]): Appraisal[] {
 }
 
 /** Older or partial records still open: fill anything missing. */
-export function normalizeAppraisal(id: string, data: Partial<Appraisal>): Appraisal {
+export function normalizeAppraisal(id: string, data: Partial<Appraisal> & { employeeUid?: string | null }): Appraisal {
   return {
     id,
-    status: data.status === "shared" ? "shared" : "draft",
-    employeeUid: data.employeeUid ?? null,
+    status: data.status === "submitted" || data.status === "assigned" || data.status === "shared" ? data.status : "draft",
+    assignedTo: data.assignedTo ?? data.employeeUid ?? null,
     employeeName: data.employeeName ?? "",
     employeeTitle: data.employeeTitle ?? "",
     preparerName: data.preparerName ?? "",
     preparerTitle: data.preparerTitle ?? "",
     period: data.period ?? "",
+    message: data.message ?? "",
     ratings: data.ratings ?? {},
     comments: data.comments ?? {},
     qualitative: data.qualitative ?? {},
@@ -204,5 +208,10 @@ export function normalizeAppraisal(id: string, data: Partial<Appraisal>): Apprai
     createdByName: data.createdByName ?? null,
     createdAt: data.createdAt ?? "",
     updatedAt: data.updatedAt ?? "",
+    submittedAt: data.submittedAt ?? "",
   };
+}
+
+export function appraisalNeedsCompletion(appraisal: Appraisal): boolean {
+  return appraisal.status === "assigned" || appraisal.status === "shared";
 }

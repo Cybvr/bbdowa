@@ -13,12 +13,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { BLOG_CATEGORIES, type BlogCategory, type BlogPost } from "@/lib/blog";
 import { formatBlogDate } from "@/lib/blog-dates";
 import { TASK_COLLECTION, formatDate as formatTaskDate, isOverdue, sortTasks, type Task } from "@/lib/creator-tasks";
-import { readJobsFromFirestore, useFirestoreUsers } from "@/lib/firebase/client-content";
+import { readJobsFromFirestore, useFirestoreAppraisals, useFirestoreUsers } from "@/lib/firebase/client-content";
 import { firebaseDb } from "@/lib/firebase/client";
 import { readMyJobIds } from "@/lib/firebase/job-team";
 import { byLastModified, type Job } from "@/lib/jobs";
 import { ACTIVITY_COLLECTION, elapsedMs, formatClockFull, startOfWeek, type ActivityEntry } from "@/lib/time-tracking";
 import type { User } from "@/lib/users";
+import { appraisalNeedsCompletion } from "@/lib/appraisals";
 
 const PROFILE_FIELDS = ["Availability", "Hours this week", "Title", "Location"] as const;
 const TEAM_CHAT_URL = "https://teams.microsoft.com/l/team/19%3AFC6ZMVMFoEbe1WWMY555j6wfpeaN-olxhL1bmLmnkHg1%40thread.tacv2/conversations?groupId=863aed4a-20d5-4a27-a83b-38c7a6e0dedb&tenantId=6aa7a9a2-4b93-43c4-8311-ec14d3acf30c";
@@ -34,6 +35,7 @@ function availabilityLabel(user: User | undefined, loading: boolean): string {
 export default function HomePage() {
   const { user, isAdmin, isViewingAs } = useAuth();
   const { users, loading: usersLoading } = useFirestoreUsers();
+  const { appraisals } = useFirestoreAppraisals();
   const [myTasks, setMyTasks] = useState<Task[]>([]);
   const [tasksLoading, setTasksLoading] = useState(true);
   const [myJobs, setMyJobs] = useState<Job[]>([]);
@@ -155,6 +157,7 @@ export default function HomePage() {
     .sort((a, b) => b.publishedAt.localeCompare(a.publishedAt))
     .slice(0, 4);
   const blogHref = blogCategory === "all" ? "/dashboard/blog" : `/dashboard/blog?category=${encodeURIComponent(blogCategory)}`;
+  const pendingAppraisal = appraisals.find((appraisal) => appraisal.assignedTo === user?.uid && appraisalNeedsCompletion(appraisal));
 
   return (
     <main className="flex-1 px-5 pb-16 pt-4 sm:px-8">
@@ -176,6 +179,18 @@ export default function HomePage() {
           {isViewingAs ? null : <Link href="/onboarding" className="inline-flex h-9 shrink-0 items-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground no-underline hover:opacity-90">
             Complete onboarding
           </Link>}
+        </section>
+      ) : null}
+
+      {pendingAppraisal && !isViewingAs ? (
+        <section aria-label="Appraisal to complete" className="mt-6 flex flex-wrap items-center justify-between gap-3 border-y border-border py-4">
+          <div className="min-w-0">
+            <h2 className="m-0 text-item-title font-semibold">You have a self-appraisal to complete</h2>
+            <p className="m-0 mt-1 text-sm text-muted-foreground">{pendingAppraisal.period || "Performance appraisal"} · Assigned by {pendingAppraisal.createdByName || pendingAppraisal.preparerName || "BBDO West Africa"}</p>
+          </div>
+          <Link href={`/dashboard/appraisals/${pendingAppraisal.id}`} className="inline-flex h-9 shrink-0 items-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground no-underline hover:opacity-90">
+            Complete appraisal
+          </Link>
         </section>
       ) : null}
 

@@ -262,7 +262,7 @@ type FirestoreAppraisalsState = {
   error: string | null;
 };
 
-/** Staff see every appraisal; everyone else sees only the ones shared with them. */
+/** Staff see every appraisal; everyone else sees assignments addressed to them. */
 export function useFirestoreAppraisals(): FirestoreAppraisalsState {
   const { loading: authLoading, user, role } = useAuth();
   const isStaff = role === "admin" || role === "manager";
@@ -278,13 +278,20 @@ export function useFirestoreAppraisals(): FirestoreAppraisalsState {
 
     let active = true;
     setState((current) => ({ ...current, loading: true, error: null }));
-    const source = isStaff
-      ? collection(firebaseDb, APPRAISAL_COLLECTION)
-      : query(collection(firebaseDb, APPRAISAL_COLLECTION), where("employeeUid", "==", user.uid), where("status", "==", "shared"));
-    getDocs(source)
-      .then((snapshot) => snapshot.docs.map((entry) => normalizeAppraisal(entry.id, entry.data() as Partial<Appraisal>)))
+    const sources = isStaff
+      ? [getDocs(collection(firebaseDb, APPRAISAL_COLLECTION))]
+      : [
+          getDocs(query(collection(firebaseDb, APPRAISAL_COLLECTION), where("assignedTo", "==", user.uid))),
+          getDocs(query(collection(firebaseDb, APPRAISAL_COLLECTION), where("employeeUid", "==", user.uid))),
+        ];
+    Promise.all(sources)
+      .then((snapshots) => {
+        const entries = new Map(snapshots.flatMap((snapshot) => snapshot.docs).map((entry) => [entry.id, entry]));
+        return [...entries.values()].map((entry) => normalizeAppraisal(entry.id, entry.data() as Partial<Appraisal>));
+      })
       .then((appraisals) => {
-        if (active) setState({ appraisals: sortAppraisals(appraisals), loading: false, error: null });
+        const visible = isStaff ? appraisals : appraisals.filter((appraisal) => appraisal.status !== "draft");
+        if (active) setState({ appraisals: sortAppraisals(visible), loading: false, error: null });
       })
       .catch((error) => {
         console.error("Unable to load appraisals from Firestore", error);

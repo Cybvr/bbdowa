@@ -2,5 +2,7 @@ import { Badge } from "@/components/dashboard/ui";
 import type { Appraisal } from "@/lib/appraisals";
 
 export function AppraisalStatus({ status }: { status: Appraisal["status"] }) {
-  return <Badge tone={status === "shared" ? "inverse" : "active"}>{status === "shared" ? "Shared" : "Draft"}</Badge>;
+  if (status === "submitted") return <Badge tone="active">Submitted</Badge>;
+  if (status === "assigned" || status === "shared") return <Badge tone="inverse">Assigned</Badge>;
+  return <Badge tone="neutral">Draft</Badge>;
 }

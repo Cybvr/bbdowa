@@ -1,14 +1,9 @@
-"use client";
-
 import * as React from "react";
-import { doc, updateDoc } from "firebase/firestore";
-import { firebaseDb } from "@/lib/firebase/client";
 import {
-  APPRAISAL_COLLECTION, APPRAISAL_SECTIONS, JOB_RELEVANCE_SCALE, PERFORMANCE_SCALE, QUALITATIVE_QUESTIONS, RESPONSE_QUESTIONS,
+  APPRAISAL_SECTIONS, JOB_RELEVANCE_SCALE, PERFORMANCE_SCALE, QUALITATIVE_QUESTIONS, RESPONSE_QUESTIONS,
   formatOverall, itemScore, overallLabel, scoreAppraisal, type Appraisal,
 } from "@/lib/appraisals";
 import { formatDocumentDate } from "@/lib/documents";
-import { Textarea } from "@/components/ui/textarea";
 
 const labelFor = (scale: readonly { value: number; label: string }[], value: number | null | undefined) =>
   scale.find((option) => option.value === value)?.label ?? "—";
@@ -21,37 +16,19 @@ function Answer({ label, value }: { label: string; value: string | undefined }) 
   return <div><p className="m-0 mb-1 text-[13px] font-semibold">{label}</p><p className="m-0 whitespace-pre-wrap text-[14px] text-muted-foreground">{value?.trim() || "—"}</p></div>;
 }
 
-/** Read-only appraisal. When `canRespond` is set the employee can write Part III. */
-export function AppraisalReport({ appraisal, canRespond, onSaved }: { appraisal: Appraisal; canRespond?: boolean; onSaved?: (response: Record<string, string>) => void }) {
+/** Read-only appraisal submission for staff review and the employee's records. */
+export function AppraisalReport({ appraisal }: { appraisal: Appraisal }) {
   const score = scoreAppraisal(appraisal.ratings);
-  const [response, setResponse] = React.useState<Record<string, string>>(appraisal.response);
-  const [busy, setBusy] = React.useState(false);
-  const [message, setMessage] = React.useState<string | null>(null);
-  const [failed, setFailed] = React.useState(false);
-
-  const saveResponse = async () => {
-    setBusy(true);
-    setMessage(null);
-    setFailed(false);
-    try {
-      await updateDoc(doc(firebaseDb, APPRAISAL_COLLECTION, appraisal.id), { response, updatedAt: new Date().toISOString() });
-      onSaved?.(response);
-      setMessage("Response saved.");
-    } catch (cause) {
-      console.error("Unable to save appraisal response", cause);
-      setFailed(true);
-      setMessage("Couldn’t save your response. Please try again.");
-    } finally {
-      setBusy(false);
-    }
-  };
+  const hasLegacyResponse = Object.values(appraisal.response).some((value) => value.trim());
+  const hasLegacySignoff = Object.values(appraisal.signoff).some((value) => value.trim());
 
   return <div className="space-y-8">
     <dl className="m-0 grid gap-4 text-[14px] sm:grid-cols-2">
       <div><dt className="text-muted-foreground">Employee</dt><dd className="m-0 font-semibold">{appraisal.employeeName}{appraisal.employeeTitle ? ` · ${appraisal.employeeTitle}` : ""}</dd></div>
-      <div><dt className="text-muted-foreground">Prepared by</dt><dd className="m-0 font-semibold">{appraisal.preparerName || "—"}{appraisal.preparerTitle ? ` · ${appraisal.preparerTitle}` : ""}</dd></div>
+      <div><dt className="text-muted-foreground">Assigned by</dt><dd className="m-0 font-semibold">{appraisal.createdByName || appraisal.preparerName || "—"}</dd></div>
       <div><dt className="text-muted-foreground">Review period</dt><dd className="m-0 font-semibold">{appraisal.period || "—"}</dd></div>
       <div><dt className="text-muted-foreground">Overall score</dt><dd className="m-0 font-semibold">{formatOverall(score.overall)}{score.overall !== null ? ` · ${overallLabel(score.overall)}` : ""}</dd></div>
+      {appraisal.submittedAt ? <div><dt className="text-muted-foreground">Submitted</dt><dd className="m-0 font-semibold">{formatDocumentDate(appraisal.submittedAt)}</dd></div> : null}
     </dl>
 
     <Block title="Part I: Appraisal of performance">
@@ -85,26 +62,17 @@ export function AppraisalReport({ appraisal, canRespond, onSaved }: { appraisal:
       {QUALITATIVE_QUESTIONS.map((question, index) => <Answer key={question.id} label={`${index + 1}. ${question.label}`} value={appraisal.qualitative[question.id]} />)}
     </Block>
 
-    <Block title="Part III: Employee response">
-      {canRespond ? <>
-        {RESPONSE_QUESTIONS.map((question, index) => <label key={question.id} className="block">
-          <span className="mb-1.5 block text-[13px] font-semibold">{index + 1}. {question.label}</span>
-          <Textarea rows={4} value={response[question.id] ?? ""} onChange={(event) => setResponse((current) => ({ ...current, [question.id]: event.target.value }))} />
-        </label>)}
-        <div className="flex items-center gap-3">
-          <button type="button" disabled={busy} onClick={() => void saveResponse()} className="inline-flex h-10 items-center rounded-md bg-primary px-4 text-[13px] font-semibold text-primary-foreground disabled:opacity-50">{busy ? "Saving…" : "Save response"}</button>
-          {message && <p className={`m-0 text-[13px] ${failed ? "text-destructive" : "text-muted-foreground"}`}>{message}</p>}
-        </div>
-      </> : RESPONSE_QUESTIONS.map((question, index) => <Answer key={question.id} label={`${index + 1}. ${question.label}`} value={appraisal.response[question.id]} />)}
-    </Block>
+    {hasLegacyResponse ? <Block title="Employee response">
+      {RESPONSE_QUESTIONS.map((question, index) => <Answer key={question.id} label={`${index + 1}. ${question.label}`} value={appraisal.response[question.id]} />)}
+    </Block> : null}
 
-    <Block title="Sign-off">
+    {hasLegacySignoff ? <Block title="Sign-off">
       <dl className="m-0 grid gap-3 text-[14px] sm:grid-cols-2">
         <div><dt className="text-muted-foreground">Appraisal discussed with employee</dt><dd className="m-0 font-semibold">{formatDocumentDate(appraisal.signoff.discussedOn)}</dd></div>
         <div><dt className="text-muted-foreground">Preparer’s signature</dt><dd className="m-0 font-semibold">{formatDocumentDate(appraisal.signoff.preparerDate)}</dd></div>
         <div><dt className="text-muted-foreground">Employee’s signature</dt><dd className="m-0 font-semibold">{formatDocumentDate(appraisal.signoff.employeeDate)}</dd></div>
         <div><dt className="text-muted-foreground">MD’s signature</dt><dd className="m-0 font-semibold">{formatDocumentDate(appraisal.signoff.mdDate)}</dd></div>
       </dl>
-    </Block>
+    </Block> : null}
   </div>;
 }
