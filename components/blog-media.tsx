@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { Play } from "lucide-react";
 import { EmptyThumbnail, ImageWithFallback } from "@/components/empty-thumbnail";
 import type { BlogMediaType } from "@/lib/blog";
 
@@ -37,15 +36,12 @@ export function BlogMedia({
           className={mediaClassName}
           controls={controls}
           muted={!controls}
+          autoPlay={!controls}
+          loop={!controls}
           playsInline
-          preload="metadata"
+          preload={controls ? "metadata" : "auto"}
           onError={() => setVideoFailed(true)}
         />
-        {!controls ? (
-          <span aria-hidden="true" className="pointer-events-none absolute bottom-3 right-3 grid h-8 w-8 place-items-center rounded-full bg-black/70 text-white shadow-lg">
-            <Play className="ml-0.5 h-3.5 w-3.5 fill-current" />
-          </span>
-        ) : null}
       </div>
     );
   }
