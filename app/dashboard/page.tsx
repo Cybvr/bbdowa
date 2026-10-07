@@ -154,7 +154,7 @@ export default function HomePage() {
     .filter((post) => blogCategory === "all" || post.category === blogCategory)
     .sort((a, b) => b.publishedAt.localeCompare(a.publishedAt))
     .slice(0, 4);
-  const blogHref = blogCategory === "all" ? "/blog" : `/blog?category=${encodeURIComponent(blogCategory)}`;
+  const blogHref = blogCategory === "all" ? "/dashboard/blog" : `/dashboard/blog?category=${encodeURIComponent(blogCategory)}`;
 
   return (
     <main className="flex-1 px-5 pb-16 pt-4 sm:px-8">
@@ -249,7 +249,7 @@ export default function HomePage() {
               {visibleBlogPosts.map((post) => (
                 <ItemCard
                   key={post.slug}
-                  href={`/blog/${post.slug}`}
+                  href={`/dashboard/blog/${post.slug}`}
                   title={post.title}
                   subtitle={`${post.category} · ${formatBlogDate(post.publishedAt)}`}
                 />

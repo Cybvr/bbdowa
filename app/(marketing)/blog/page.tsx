@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { getBlogPosts } from "@/lib/firebase/content";
@@ -14,14 +15,15 @@ export const metadata: Metadata = {
 type Props = { searchParams: Promise<{ category?: string }> };
 const BLOG_FILTERS: { value?: BlogCategory; label: string }[] = [
   { label: "All posts" },
-  ...BLOG_CATEGORIES.map((value) => ({ value, label: value })),
+  ...BLOG_CATEGORIES.filter((value) => value !== "Challenges").map((value) => ({ value, label: value })),
 ];
 
 export default async function BlogPage({ searchParams }: Props) {
   const { category: requestedCategory } = await searchParams;
+  if (requestedCategory === "Challenges") notFound();
   const category = BLOG_CATEGORIES.find((value) => value === requestedCategory);
   const posts = (await getBlogPosts())
-    .filter((post) => !category || post.category === category)
+    .filter((post) => post.category !== "Challenges" && (!category || post.category === category))
     .sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
 
   return (
@@ -69,7 +71,7 @@ export default async function BlogPage({ searchParams }: Props) {
               ))}
             </ul>
           ) : (
-            <p className="m-0 text-[18px]">{category === "Challenges" ? "No challenge posts yet." : category ? `No ${category.toLowerCase()} posts yet.` : "No posts yet."}</p>
+            <p className="m-0 text-[18px]">{category ? `No ${category.toLowerCase()} posts yet.` : "No posts yet."}</p>
           )}
         </section>
       </main>

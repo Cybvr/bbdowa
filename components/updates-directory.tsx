@@ -6,7 +6,7 @@ import { BLOG_CATEGORIES, type BlogCategory, type BlogPost } from "@/lib/blog";
 import { plural } from "@/lib/format";
 import { EmptyState } from "@/components/dashboard/ui";
 import { DashboardThumbnail } from "@/components/dashboard-thumbnail";
-import { DashboardCard, DashboardCardActions } from "@/components/dashboard-card";
+import { DashboardCard } from "@/components/dashboard-card";
 import { FilterBar, type SortOption, type ViewMode } from "@/components/dashboard/filter-bar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ClickableTableRow } from "@/components/ui/clickable-table-row";
@@ -39,8 +39,8 @@ function formatDate(value: string): string {
   }).format(new Date(Date.UTC(year, month - 1, day || 1)));
 }
 
-export function UpdatesDirectory({ posts }: { posts: BlogPost[] }) {
-  const [category, setCategory] = useState<BlogCategory | "all">("all");
+export function UpdatesDirectory({ posts, initialCategory = "all" }: { posts: BlogPost[]; initialCategory?: BlogCategory | "all" }) {
+  const [category, setCategory] = useState<BlogCategory | "all">(initialCategory);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<"recent" | "title">("recent");
   const [view, setView] = useState<ViewMode>("cards");
@@ -50,7 +50,7 @@ export function UpdatesDirectory({ posts }: { posts: BlogPost[] }) {
     const filtered = posts.filter((post) => {
       const matchesCategory = category === "all" || post.category === category;
       const matchesSearch =
-        !query || [post.title, post.category, post.sourceName, post.excerpt].join(" ").toLowerCase().includes(query);
+        !query || [post.title, post.category, post.excerpt].join(" ").toLowerCase().includes(query);
       return matchesCategory && matchesSearch;
     });
 
@@ -66,36 +66,33 @@ export function UpdatesDirectory({ posts }: { posts: BlogPost[] }) {
         panelId="updates-panel"
         search={search}
         onSearchChange={setSearch}
-        searchPlaceholder="Search updates"
+        searchPlaceholder="Search posts"
         filters={[{ label: "Category", value: category, onChange: (value) => setCategory(value as BlogCategory | "all"), options: CATEGORIES }]}
         sortOptions={SORTS}
         activeSort={sort}
         onSortChange={setSort}
-        resultCount={plural(visible.length, "update")}
+        resultCount={plural(visible.length, "post")}
         view={view}
         onViewChange={setView}
       />
 
-      <section id="updates-panel" aria-label="Updates">
+      <section id="updates-panel" aria-label="Blog posts">
         {visible.length > 0 ? (
           view === "cards" ? (
             <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2 lg:grid-cols-3">
               {visible.map((post) => (
                 <li key={post.slug}>
-                  <DashboardCard
-                    className="h-full"
-                    actions={<DashboardCardActions collection="blogs" slug={post.slug} titleField="title" title={post.title} />}
-                  >
-                    <Link href={`/blog/${post.slug}`} className="group flex h-full flex-col text-foreground no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
-                    <DashboardThumbnail src={post.image} label={post.category} className="h-36 w-full" imageClassName="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]" />
-                    <div className="flex min-h-[164px] flex-col p-4">
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                        <span className="text-primary">{post.category}</span>
-                        <span>{formatDate(post.publishedAt)}</span>
+                  <DashboardCard className="h-full">
+                    <Link href={`/dashboard/blog/${post.slug}`} className="group flex h-full flex-col text-foreground no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
+                      <DashboardThumbnail src={post.image} label={post.category} className="h-36 w-full" imageClassName="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]" />
+                      <div className="flex min-h-[164px] flex-col p-4">
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                          <span className="text-primary">{post.category}</span>
+                          <span>{formatDate(post.publishedAt)}</span>
+                        </div>
+                        <h2 className="m-0 mt-3 text-[16px] font-semibold leading-[1.25] tracking-tight group-hover:text-primary">{post.title}</h2>
+                        <p className="mb-0 mt-auto line-clamp-2 pt-4 text-[12px] leading-[1.4] text-muted-foreground">{post.excerpt}</p>
                       </div>
-                      <h2 className="m-0 mt-3 text-[16px] font-semibold leading-[1.25] tracking-tight group-hover:text-primary">{post.title}</h2>
-                      <span className="mt-auto pt-4 text-[12px] text-muted-foreground">{post.sourceName}</span>
-                    </div>
                     </Link>
                   </DashboardCard>
                 </li>
@@ -106,20 +103,18 @@ export function UpdatesDirectory({ posts }: { posts: BlogPost[] }) {
               <Table className="w-full border-collapse">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Update</TableHead>
+                    <TableHead>Post</TableHead>
                     <TableHead>Category</TableHead>
-                    <TableHead>Source</TableHead>
                     <TableHead>Published</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {visible.map((post) => (
-                    <ClickableTableRow key={post.slug} href={`/blog/${post.slug}`} label={`Open update ${post.title}`}>
+                    <ClickableTableRow key={post.slug} href={`/dashboard/blog/${post.slug}`} label={`Open post ${post.title}`}>
                       <TableCell className="px-4 py-4 font-semibold">
-                        <Link href={`/blog/${post.slug}`} className="text-foreground no-underline hover:text-primary focus-visible:text-primary">{post.title}</Link>
+                        <Link href={`/dashboard/blog/${post.slug}`} className="text-foreground no-underline hover:text-primary focus-visible:text-primary">{post.title}</Link>
                       </TableCell>
                       <TableCell className="px-4 py-4 text-primary">{post.category}</TableCell>
-                      <TableCell className="px-4 py-4 text-muted-foreground">{post.sourceName}</TableCell>
                       <TableCell className="whitespace-nowrap px-4 py-4 text-muted-foreground">{formatDate(post.publishedAt)}</TableCell>
                     </ClickableTableRow>
                   ))}
@@ -128,7 +123,7 @@ export function UpdatesDirectory({ posts }: { posts: BlogPost[] }) {
             </div>
           )
         ) : (
-          <EmptyState title="No updates match" description="Try a different search term or category filter." />
+          <EmptyState title="No posts match" description="Try a different search term or category filter." />
         )}
       </section>
     </>

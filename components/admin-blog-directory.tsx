@@ -98,7 +98,7 @@ export function AdminBlogDirectory({ posts }: { posts: BlogPost[] }) {
                   <TableCell className="whitespace-nowrap px-4 py-4 text-muted-foreground">{formatBlogDate(post.publishedAt)}</TableCell>
                   <TableCell className="px-4 py-4">
                     <div className="flex justify-end gap-1">
-                      <Link href={`/blog/${post.slug}`} aria-label={`View ${post.title}`} className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:text-foreground"><ExternalLink aria-hidden="true" className="h-4 w-4" /></Link>
+                      <Link href={`/dashboard/blog/${post.slug}`} aria-label={`View ${post.title}`} className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:text-foreground"><ExternalLink aria-hidden="true" className="h-4 w-4" /></Link>
                       <Link href={`/admin/blog/${encodeURIComponent(post.slug)}`} aria-label={`Edit ${post.title}`} className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:text-foreground"><Pencil aria-hidden="true" className="h-4 w-4" /></Link>
                       <button type="button" onClick={() => void remove(post)} disabled={Boolean(busySlug)} aria-label={`Delete ${post.title}`} className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:text-destructive disabled:opacity-50"><Trash2 aria-hidden="true" className="h-4 w-4" /></button>
                     </div>

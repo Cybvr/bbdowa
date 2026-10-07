@@ -102,7 +102,7 @@ export function BlogEditor({ post }: { post?: BlogPost }) {
       <PageHeader
         title={post ? "Edit post" : "New post"}
         description={post ? "Update this post and its category." : "Add a post to the agency blog."}
-        actions={post ? <Link href={`/blog/${post.slug}`} className={LIST_ACTION_CLASS}><ExternalLink aria-hidden="true" className="h-3.5 w-3.5" />View post</Link> : undefined}
+        actions={post ? <Link href={`/dashboard/blog/${post.slug}`} className={LIST_ACTION_CLASS}><ExternalLink aria-hidden="true" className="h-3.5 w-3.5" />View post</Link> : undefined}
       />
 
       <form onSubmit={save} className="mt-7 space-y-7">

@@ -15,16 +15,16 @@ const LINK = "text-foreground underline underline-offset-4 hover:text-primary fo
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
   const post = await getBlogPostBySlug(slug);
-  if (!post) return { title: "Post not found" };
+  if (!post || post.category === "Challenges") return { title: "Post not found" };
   return { title: post.title, description: post.excerpt };
 }
 
 export default async function BlogPostPage({ params }: Params) {
   const { slug } = await params;
   const post = await getBlogPostBySlug(slug);
-  if (!post) notFound();
+  if (!post || post.category === "Challenges") notFound();
 
-  const related = (await getBlogPosts()).filter((entry) => entry.slug !== post.slug).slice(0, 3);
+  const related = (await getBlogPosts()).filter((entry) => entry.slug !== post.slug && entry.category !== "Challenges").slice(0, 3);
 
   return (
     <>

@@ -34,7 +34,7 @@ export function DashboardNotifications({ posts }: { posts: BlogPost[] }) {
           {posts.map((post) => (
             <li key={post.slug}>
               <Link
-                href={`/blog/${post.slug}`}
+                href={`/dashboard/blog/${post.slug}`}
                 className="block px-4 py-3 text-foreground no-underline outline-none hover:bg-muted focus-visible:bg-muted"
               >
                 <div className="flex items-start justify-between gap-4">
@@ -49,7 +49,7 @@ export function DashboardNotifications({ posts }: { posts: BlogPost[] }) {
           ))}
         </ul>
         <Link
-          href="/blog"
+          href="/dashboard/blog"
           className="block border-t border-border px-4 py-3 text-[12px] font-semibold text-primary no-underline hover:bg-muted focus-visible:outline-none focus-visible:bg-muted"
         >
           View all updates
