@@ -115,7 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
       setViewAs(next);
       window.sessionStorage.setItem(VIEW_AS_STORAGE_KEY, JSON.stringify(next));
-      router.push("/dashboard");
+      router.push(target.role === "client" ? "/portal" : "/dashboard");
     },
     [actualRole, actualUser, router],
   );

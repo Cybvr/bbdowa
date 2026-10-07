@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import type { BlogCategory, BlogPost } from "@/lib/blog";
+import { BLOG_CATEGORIES, type BlogCategory, type BlogPost } from "@/lib/blog";
 import { plural } from "@/lib/format";
 import { EmptyState } from "@/components/dashboard/ui";
 import { DashboardThumbnail } from "@/components/dashboard-thumbnail";
@@ -13,10 +13,7 @@ import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 
 const CATEGORIES: { value: BlogCategory | "all"; label: string }[] = [
   { value: "all", label: "All categories" },
-  { value: "News", label: "News" },
-  { value: "People", label: "People" },
-  { value: "Work", label: "Work" },
-  { value: "Industry", label: "Industry" },
+  ...BLOG_CATEGORIES.map((value) => ({ value, label: value })),
 ];
 
 const SORTS: SortOption<"recent" | "title">[] = [

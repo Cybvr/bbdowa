@@ -27,6 +27,7 @@ import { newJobRecord, slugify } from "@/lib/job-records";
 import { jobHref } from "@/lib/jobs";
 import { ImageUploadField } from "@/components/detail-editor";
 import { LIST_ACTION_CLASS } from "@/components/dashboard/list-page-actions";
+import { BLOG_CATEGORIES } from "@/lib/blog";
 
 export type CreateType = "update" | "resource" | "client" | "job";
 type JobStatus = "active" | "completed" | "archived";
@@ -34,8 +35,8 @@ type ClientOption = { slug: string; name: string };
 
 const CREATE_COPY: Record<CreateType, { button: string; title: string; description: string }> = {
   update: {
-    button: "New",
-    title: "New",
+    button: "New post",
+    title: "New post",
     description: "Publish a new agency update.",
   },
   resource: {
@@ -55,7 +56,7 @@ const CREATE_COPY: Record<CreateType, { button: string; title: string; descripti
   },
 };
 
-const UPDATE_CATEGORIES = ["News", "People", "Work", "Industry"] as const;
+const UPDATE_CATEGORIES = BLOG_CATEGORIES;
 const JOB_STATUSES: { value: JobStatus; label: string }[] = [
   { value: "active", label: "Active" },
   { value: "completed", label: "Completed" },

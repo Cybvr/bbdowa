@@ -3,11 +3,15 @@
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Check, ExternalLink } from "lucide-react";
+import { Check, ExternalLink, Plus } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { ItemCard, ItemCardList } from "@/components/dashboard/item-card";
 import { JobCard } from "@/components/job-card";
+import { LIST_ACTION_CLASS } from "@/components/dashboard/list-page-actions";
 import { TaskStatusBadge } from "@/components/tasks-view";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { BLOG_CATEGORIES, type BlogCategory, type BlogPost } from "@/lib/blog";
+import { formatBlogDate } from "@/lib/blog-dates";
 import { TASK_COLLECTION, formatDate as formatTaskDate, isOverdue, sortTasks, type Task } from "@/lib/creator-tasks";
 import { readJobsFromFirestore, useFirestoreUsers } from "@/lib/firebase/client-content";
 import { firebaseDb } from "@/lib/firebase/client";
@@ -28,12 +32,16 @@ function availabilityLabel(user: User | undefined, loading: boolean): string {
 }
 
 export default function HomePage() {
-  const { user, isViewingAs } = useAuth();
+  const { user, isAdmin, isViewingAs } = useAuth();
   const { users, loading: usersLoading } = useFirestoreUsers();
   const [myTasks, setMyTasks] = useState<Task[]>([]);
   const [tasksLoading, setTasksLoading] = useState(true);
   const [myJobs, setMyJobs] = useState<Job[]>([]);
   const [jobsLoading, setJobsLoading] = useState(true);
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+  const [blogCategory, setBlogCategory] = useState<BlogCategory | "all">("Challenges");
+  const [blogLoading, setBlogLoading] = useState(true);
+  const [blogUnavailable, setBlogUnavailable] = useState(false);
   const [activities, setActivities] = useState<ActivityEntry[]>([]);
   const [hoursLoading, setHoursLoading] = useState(true);
   const [hoursUnavailable, setHoursUnavailable] = useState(false);
@@ -88,6 +96,20 @@ export default function HomePage() {
 
   useEffect(() => {
     let active = true;
+    getDocs(collection(firebaseDb, "blogs"))
+      .then((snapshot) => {
+        if (active) setBlogPosts(snapshot.docs.map((post) => post.data() as BlogPost));
+      })
+      .catch((cause) => {
+        console.error("Unable to load blog posts", cause);
+        if (active) setBlogUnavailable(true);
+      })
+      .finally(() => { if (active) setBlogLoading(false); });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
     const uid = user?.uid;
     setHoursLoading(true);
     setHoursUnavailable(false);
@@ -128,6 +150,11 @@ export default function HomePage() {
     { label: PROFILE_FIELDS[2], value: usersLoading ? "Loading…" : profile?.title || "—" },
     { label: PROFILE_FIELDS[3], value: usersLoading ? "Loading…" : profile?.location || "—" },
   ];
+  const visibleBlogPosts = blogPosts
+    .filter((post) => blogCategory === "all" || post.category === blogCategory)
+    .sort((a, b) => b.publishedAt.localeCompare(a.publishedAt))
+    .slice(0, 4);
+  const blogHref = blogCategory === "all" ? "/blog" : `/blog?category=${encodeURIComponent(blogCategory)}`;
 
   return (
     <main className="flex-1 px-5 pb-16 pt-4 sm:px-8">
@@ -193,6 +220,43 @@ export default function HomePage() {
             </ul>
           ) : (
             <p className="py-5 text-sm text-muted-foreground">No jobs assigned yet.</p>
+          )}
+        </section>
+
+        <section aria-labelledby="blog-posts-heading">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+            <h2 id="blog-posts-heading" className="m-0 text-item-title font-semibold">Blog posts</h2>
+            <div className="flex flex-wrap items-center gap-3">
+              <Select value={blogCategory} onValueChange={(value) => setBlogCategory(value as BlogCategory | "all")}>
+                <SelectTrigger aria-label="Filter blog posts by category" className="h-9 w-[160px] bg-background text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All categories</SelectItem>
+                  {BLOG_CATEGORIES.map((category) => <SelectItem key={category} value={category}>{category}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Link href={blogHref} className="shrink-0 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">View all</Link>
+              {isAdmin ? <Link href="/admin/blog/new" className={LIST_ACTION_CLASS}><Plus aria-hidden="true" className="h-3.5 w-3.5" />New post</Link> : null}
+            </div>
+          </div>
+          {blogLoading ? (
+            <p className="py-5 text-sm text-muted-foreground">Loading blog posts…</p>
+          ) : blogUnavailable ? (
+            <p className="py-5 text-sm text-muted-foreground">Blog posts are unavailable right now.</p>
+          ) : visibleBlogPosts.length ? (
+            <ItemCardList>
+              {visibleBlogPosts.map((post) => (
+                <ItemCard
+                  key={post.slug}
+                  href={`/blog/${post.slug}`}
+                  title={post.title}
+                  subtitle={`${post.category} · ${formatBlogDate(post.publishedAt)}`}
+                />
+              ))}
+            </ItemCardList>
+          ) : (
+            <p className="py-5 text-sm text-muted-foreground">{blogCategory === "all" ? "No blog posts yet." : blogCategory === "Challenges" ? "No challenge posts yet." : `No ${blogCategory.toLowerCase()} posts yet.`}</p>
           )}
         </section>
         </div>

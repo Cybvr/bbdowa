@@ -13,6 +13,8 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
   const auth = useOptionalAuth();
   const onboardingDue = auth?.onboardingDue ?? false;
   const isClientUser = auth?.role === "client";
+  const isViewingAs = auth?.isViewingAs ?? false;
+  const stopViewingAs = auth?.stopViewingAs;
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => pathname === "/dashboard/discover");
   const [hydrated, setHydrated] = useState(false);
   const isApplication = pathname === "/dashboard/careers/apply";
@@ -26,10 +28,13 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
     setHydrated(true);
   }, []);
 
-  // Client users have their own portal and never use the agency dashboard.
+  // Entering the dashboard while viewing a client ends the admin's temporary view.
+  // A signed-in client still belongs in the portal.
   useEffect(() => {
-    if (isClientUser) router.replace("/portal");
-  }, [isClientUser, router]);
+    if (!isClientUser) return;
+    if (isViewingAs) stopViewingAs?.();
+    else router.replace("/portal");
+  }, [isClientUser, isViewingAs, stopViewingAs, router]);
 
   // An admin switched onboarding on for this person: send them through it first.
   useEffect(() => {
