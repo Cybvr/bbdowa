@@ -261,17 +261,15 @@ export default function HomePage() {
           ) : blogUnavailable ? (
             <p className="py-5 text-sm text-muted-foreground">Blog posts are unavailable right now.</p>
           ) : visibleBlogPosts.length ? (
-            <ItemCardList>
+            <div className="grid gap-6 sm:grid-cols-2">
               {visibleBlogPosts.map((post) => (
-                <ItemCard
-                  key={post.slug}
-                  href={`/dashboard/blog/${post.slug}`}
-                  icon={<DashboardThumbnail src={post.image} label={post.title} className="h-full w-full" />}
-                  title={post.title}
-                  subtitle={`${post.category} · ${formatBlogDate(post.publishedAt)}`}
-                />
+                <Link key={post.slug} href={`/dashboard/blog/${post.slug}`} className="block transition hover:opacity-80">
+                  <DashboardThumbnail src={post.image} label={post.title} className="aspect-video w-full rounded-xl" />
+                  <span className="mt-3 block text-[15px] font-semibold text-foreground">{post.title}</span>
+                  <span className="mt-0.5 block text-[13px] text-muted-foreground">{post.category} · {formatBlogDate(post.publishedAt)}</span>
+                </Link>
               ))}
-            </ItemCardList>
+            </div>
           ) : (
             <p className="py-5 text-sm text-muted-foreground">{blogCategory === "all" ? "No blog posts yet." : blogCategory === "Challenges" ? "No challenge posts yet." : `No ${blogCategory.toLowerCase()} posts yet.`}</p>
           )}
