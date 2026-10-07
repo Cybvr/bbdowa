@@ -1,17 +1,15 @@
 "use client";
 
 import { collection, getDocs, query, where } from "firebase/firestore";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Check, ExternalLink, Plus } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, ExternalLink, Plus } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { DashboardThumbnail } from "@/components/dashboard-thumbnail";
 import { ItemCard, ItemCardList } from "@/components/dashboard/item-card";
 import { JobCard } from "@/components/job-card";
-import { LIST_ACTION_CLASS } from "@/components/dashboard/list-page-actions";
 import { TaskStatusBadge } from "@/components/tasks-view";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BLOG_CATEGORIES, type BlogCategory, type BlogPost } from "@/lib/blog";
+import type { BlogPost } from "@/lib/blog";
 import { formatBlogDate } from "@/lib/blog-dates";
 import { TASK_COLLECTION, formatDate as formatTaskDate, isOverdue, sortTasks, type Task } from "@/lib/creator-tasks";
 import { readJobsFromFirestore, useFirestoreAppraisals, useFirestoreUsers } from "@/lib/firebase/client-content";
@@ -42,13 +40,15 @@ export default function HomePage() {
   const [myJobs, setMyJobs] = useState<Job[]>([]);
   const [jobsLoading, setJobsLoading] = useState(true);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
-  const [blogCategory, setBlogCategory] = useState<BlogCategory | "all">("Challenges");
   const [blogLoading, setBlogLoading] = useState(true);
   const [blogUnavailable, setBlogUnavailable] = useState(false);
   const [activities, setActivities] = useState<ActivityEntry[]>([]);
   const [hoursLoading, setHoursLoading] = useState(true);
   const [hoursUnavailable, setHoursUnavailable] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+  const jobsTrackRef = useRef<HTMLUListElement>(null);
+  const [canScrollJobsLeft, setCanScrollJobsLeft] = useState(false);
+  const [canScrollJobsRight, setCanScrollJobsRight] = useState(false);
 
   const loadMyTasks = useCallback(async () => {
     const uid = user?.uid;
@@ -141,6 +141,28 @@ export default function HomePage() {
     return () => window.clearInterval(interval);
   }, [activities]);
 
+  useEffect(() => {
+    const track = jobsTrackRef.current;
+    if (!track) return;
+    const update = () => {
+      setCanScrollJobsLeft(track.scrollLeft > 4);
+      setCanScrollJobsRight(track.scrollLeft + track.clientWidth < track.scrollWidth - 4);
+    };
+    update();
+    track.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      track.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, [jobsLoading, myJobs.length]);
+
+  const scrollJobs = (direction: -1 | 1) => {
+    const track = jobsTrackRef.current;
+    if (!track) return;
+    track.scrollBy({ left: direction * Math.max(300, track.clientWidth * 0.82), behavior: "smooth" });
+  };
+
   const profile = users.find((candidate) => candidate.uid === user?.uid);
   const name = user?.name?.trim().split(/\s+/)[0] ?? user?.email?.split("@")[0] ?? "there";
   const weekStart = startOfWeek();
@@ -154,10 +176,10 @@ export default function HomePage() {
     { label: PROFILE_FIELDS[3], value: usersLoading ? "Loading…" : profile?.location || "—" },
   ];
   const visibleBlogPosts = blogPosts
-    .filter((post) => blogCategory === "all" || post.category === blogCategory)
+    .filter((post) => post.category === "Challenges")
     .sort((a, b) => b.publishedAt.localeCompare(a.publishedAt))
     .slice(0, 4);
-  const blogHref = blogCategory === "all" ? "/dashboard/blog" : `/dashboard/blog?category=${encodeURIComponent(blogCategory)}`;
+  const blogHref = "/dashboard/blog?category=Challenges";
   const pendingAppraisal = appraisals.find((appraisal) => appraisal.assignedTo === user?.uid && appraisalNeedsCompletion(appraisal));
 
   return (
@@ -224,14 +246,20 @@ export default function HomePage() {
         <section aria-labelledby="your-jobs-heading">
           <div className="mb-2 flex items-center justify-between gap-3">
             <h2 id="your-jobs-heading" className="m-0 text-item-title font-semibold">Your jobs</h2>
-            <Link href="/dashboard/my-jobs" className="shrink-0 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">View all</Link>
+            <div className="flex items-center gap-2">
+              <Link href="/dashboard/my-jobs" className="mr-1 shrink-0 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">View all</Link>
+              {myJobs.length > 1 ? <>
+                <button type="button" aria-label="Previous jobs" onClick={() => scrollJobs(-1)} disabled={!canScrollJobsLeft} className="grid h-8 w-8 place-items-center rounded-full border border-border bg-background text-foreground transition hover:border-foreground disabled:cursor-not-allowed disabled:opacity-35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"><ChevronLeft aria-hidden="true" className="h-4 w-4" /></button>
+                <button type="button" aria-label="Next jobs" onClick={() => scrollJobs(1)} disabled={!canScrollJobsRight} className="grid h-8 w-8 place-items-center rounded-full border border-border bg-background text-foreground transition hover:border-foreground disabled:cursor-not-allowed disabled:opacity-35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"><ChevronRight aria-hidden="true" className="h-4 w-4" /></button>
+              </> : null}
+            </div>
           </div>
           {jobsLoading ? (
             <p className="py-5 text-sm text-muted-foreground">Loading your jobs…</p>
           ) : myJobs.length ? (
-            <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2">
+            <ul ref={jobsTrackRef} className="no-scrollbar -mx-5 m-0 flex snap-x snap-mandatory list-none gap-3 overflow-x-auto px-5 pb-2 sm:mx-0 sm:px-0">
               {myJobs.map((job) => (
-                <li key={job.slug}><JobCard job={job} myJobs /></li>
+                <li key={job.slug} className="w-[88%] shrink-0 snap-start sm:w-[calc(50%_-_0.375rem)]"><JobCard job={job} myJobs /></li>
               ))}
             </ul>
           ) : (
@@ -239,27 +267,18 @@ export default function HomePage() {
           )}
         </section>
 
-        <section aria-labelledby="blog-posts-heading">
+        <section aria-labelledby="digest-heading">
           <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
-            <h2 id="blog-posts-heading" className="m-0 text-item-title font-semibold">Blog posts</h2>
+            <h2 id="digest-heading" className="m-0 text-item-title font-semibold">Digest</h2>
             <div className="flex flex-wrap items-center gap-3">
-              <Select value={blogCategory} onValueChange={(value) => setBlogCategory(value as BlogCategory | "all")}>
-                <SelectTrigger aria-label="Filter blog posts by category" className="h-9 w-[160px] bg-background text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All categories</SelectItem>
-                  {BLOG_CATEGORIES.map((category) => <SelectItem key={category} value={category}>{category}</SelectItem>)}
-                </SelectContent>
-              </Select>
               <Link href={blogHref} className="shrink-0 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">View all</Link>
-              {isAdmin ? <Link href="/admin/blog/new" className={LIST_ACTION_CLASS}><Plus aria-hidden="true" className="h-3.5 w-3.5" />New post</Link> : null}
+              {isAdmin ? <Link href="/admin/blog/new" aria-label="New post" title="New post" className="grid h-8 w-8 place-items-center rounded-lg border border-border bg-background text-foreground transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"><Plus aria-hidden="true" className="h-4 w-4" /></Link> : null}
             </div>
           </div>
           {blogLoading ? (
-            <p className="py-5 text-sm text-muted-foreground">Loading blog posts…</p>
+            <p className="py-5 text-sm text-muted-foreground">Loading Digest…</p>
           ) : blogUnavailable ? (
-            <p className="py-5 text-sm text-muted-foreground">Blog posts are unavailable right now.</p>
+            <p className="py-5 text-sm text-muted-foreground">Digest is unavailable right now.</p>
           ) : visibleBlogPosts.length ? (
             <div className="grid gap-6 sm:grid-cols-2">
               {visibleBlogPosts.map((post) => (
@@ -271,7 +290,7 @@ export default function HomePage() {
               ))}
             </div>
           ) : (
-            <p className="py-5 text-sm text-muted-foreground">{blogCategory === "all" ? "No blog posts yet." : blogCategory === "Challenges" ? "No challenge posts yet." : `No ${blogCategory.toLowerCase()} posts yet.`}</p>
+            <p className="py-5 text-sm text-muted-foreground">No challenge posts yet.</p>
           )}
         </section>
         </div>
