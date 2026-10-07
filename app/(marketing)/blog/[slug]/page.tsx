@@ -6,7 +6,9 @@ import { Header } from "@/components/header";
 import { getBlogPostBySlug, getBlogPosts } from "@/lib/firebase/content";
 import { formatBlogDate } from "@/lib/blog-dates";
 import { BlogActions } from "@/components/blog-actions";
+import { BlogMedia } from "@/components/blog-media";
 import { RichTextContent } from "@/components/rich-text-editor";
+import { getBlogMediaType } from "@/lib/blog";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -43,8 +45,14 @@ export default async function BlogPostPage({ params }: Params) {
 
         <section className={`${post.image ? "grid grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] gap-x-[clamp(28px,8vw,128px)] gap-y-12 max-[820px]:grid-cols-1" : ""} px-[clamp(20px,5vw,72px)] py-[clamp(56px,9vw,128px)]`}>
           {post.image ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={post.image} alt="" className="block h-auto w-full object-cover" />
+            <BlogMedia
+              src={post.image}
+              type={getBlogMediaType(post)}
+              alt={`${post.title} cover`}
+              className="w-full"
+              mediaClassName="h-auto w-full object-cover"
+              controls={getBlogMediaType(post) === "video"}
+            />
           ) : null}
           <div className="max-w-[58ch] text-[18px] leading-[1.55]">
             <RichTextContent value={post.content || post.excerpt} />

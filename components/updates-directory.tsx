@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { BLOG_CATEGORIES, type BlogCategory, type BlogPost } from "@/lib/blog";
+import { BLOG_CATEGORIES, getBlogMediaType, type BlogCategory, type BlogPost } from "@/lib/blog";
 import { plural } from "@/lib/format";
 import { EmptyState } from "@/components/dashboard/ui";
-import { DashboardThumbnail } from "@/components/dashboard-thumbnail";
+import { BlogMedia } from "@/components/blog-media";
 import { DashboardCard } from "@/components/dashboard-card";
 import { FilterBar, type SortOption, type ViewMode } from "@/components/dashboard/filter-bar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -84,7 +84,13 @@ export function UpdatesDirectory({ posts, initialCategory = "all" }: { posts: Bl
                 <li key={post.slug}>
                   <DashboardCard className="h-full">
                     <Link href={`/dashboard/blog/${post.slug}`} className="group flex h-full flex-col text-foreground no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
-                      <DashboardThumbnail src={post.image} label={post.category} className="h-36 w-full" imageClassName="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]" />
+                      <BlogMedia
+                        src={post.image}
+                        type={getBlogMediaType(post)}
+                        label={post.category}
+                        className="h-36 w-full"
+                        mediaClassName="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
+                      />
                       <div className="flex min-h-[164px] flex-col p-4">
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                           <span className="text-primary">{post.category}</span>

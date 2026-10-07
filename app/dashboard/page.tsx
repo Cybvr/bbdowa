@@ -5,11 +5,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Check, ChevronLeft, ChevronRight, ExternalLink, Plus } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
-import { DashboardThumbnail } from "@/components/dashboard-thumbnail";
+import { BlogMedia } from "@/components/blog-media";
 import { ItemCard, ItemCardList } from "@/components/dashboard/item-card";
 import { JobCard } from "@/components/job-card";
 import { TaskStatusBadge } from "@/components/tasks-view";
-import type { BlogPost } from "@/lib/blog";
+import { getBlogMediaType, type BlogPost } from "@/lib/blog";
 import { formatBlogDate } from "@/lib/blog-dates";
 import { TASK_COLLECTION, formatDate as formatTaskDate, isOverdue, sortTasks, type Task } from "@/lib/creator-tasks";
 import { readJobsFromFirestore, useFirestoreAppraisals, useFirestoreUsers } from "@/lib/firebase/client-content";
@@ -283,7 +283,12 @@ export default function HomePage() {
             <div className="grid gap-6 sm:grid-cols-2">
               {visibleBlogPosts.map((post) => (
                 <Link key={post.slug} href={`/dashboard/blog/${post.slug}`} className="block transition hover:opacity-80">
-                  <DashboardThumbnail src={post.image} label={post.title} className="aspect-video w-full rounded-xl" />
+                  <BlogMedia
+                    src={post.image}
+                    type={getBlogMediaType(post)}
+                    label={post.title}
+                    className="aspect-video w-full rounded-xl"
+                  />
                   <span className="mt-3 block text-[15px] font-semibold text-foreground">{post.title}</span>
                   <span className="mt-0.5 block text-[13px] text-muted-foreground">{post.category} · {formatBlogDate(post.publishedAt)}</span>
                 </Link>

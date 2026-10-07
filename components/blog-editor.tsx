@@ -9,11 +9,11 @@ import { useAuth } from "@/components/auth-provider";
 import { PageHeader } from "@/components/dashboard/ui";
 import { PageLoadingSkeleton } from "@/components/dashboard/loading-skeleton";
 import { LIST_ACTION_CLASS, PRIMARY_ACTION_CLASS } from "@/components/dashboard/list-page-actions";
-import { ImageUploadField } from "@/components/detail-editor";
+import { BlogMediaUpload, deleteManagedBlogMedia } from "@/components/blog-media-upload";
 import { RichTextEditor, richTextHasContent } from "@/components/rich-text-editor";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BLOG_CATEGORIES, type BlogCategory, type BlogPost } from "@/lib/blog";
+import { BLOG_CATEGORIES, getBlogMediaType, type BlogCategory, type BlogMediaType, type BlogPost } from "@/lib/blog";
 import { firebaseDb } from "@/lib/firebase/client";
 import { slugify } from "@/lib/job-records";
 
@@ -29,6 +29,9 @@ export function BlogEditor({ post }: { post?: BlogPost }) {
   const [content, setContent] = React.useState(post?.content ?? post?.excerpt ?? "");
   const [publishedAt, setPublishedAt] = React.useState(post?.publishedAt ?? new Date().toISOString().slice(0, 10));
   const [image, setImage] = React.useState(post?.image ?? "");
+  const [persistedImage, setPersistedImage] = React.useState(post?.image ?? "");
+  const [mediaType, setMediaType] = React.useState<BlogMediaType>(post ? getBlogMediaType(post) : "image");
+  const [mediaUploading, setMediaUploading] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [saved, setSaved] = React.useState(false);
@@ -36,6 +39,10 @@ export function BlogEditor({ post }: { post?: BlogPost }) {
   const save = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!isAdmin || busy) return;
+    if (mediaUploading) {
+      setError("Wait for the cover media to finish uploading.");
+      return;
+    }
     if (!title.trim() || !excerpt.trim() || !richTextHasContent(content) || !publishedAt) {
       setError("Enter a title, excerpt, content and published date.");
       return;
@@ -52,11 +59,19 @@ export function BlogEditor({ post }: { post?: BlogPost }) {
         content,
         publishedAt,
         image: image || null,
+        mediaType,
         updatedAt: serverTimestamp(),
       };
 
       if (post) {
         await updateDoc(doc(firebaseDb, "blogs", post.slug), values);
+        const previousImage = persistedImage;
+        setPersistedImage(image);
+        if (previousImage && previousImage !== image) {
+          deleteManagedBlogMedia(previousImage).catch((cause) => {
+            console.warn("Unable to remove replaced blog media", cause);
+          });
+        }
         setSaved(true);
         router.refresh();
       } else {
@@ -82,6 +97,11 @@ export function BlogEditor({ post }: { post?: BlogPost }) {
     setError(null);
     try {
       await deleteDoc(doc(firebaseDb, "blogs", post.slug));
+      if (image) {
+        deleteManagedBlogMedia(image).catch((cause) => {
+          console.warn("Unable to remove deleted post media", cause);
+        });
+      }
       router.push("/admin/blog");
       router.refresh();
     } catch (cause) {
@@ -112,7 +132,17 @@ export function BlogEditor({ post }: { post?: BlogPost }) {
           </div>
 
           <aside className="min-w-0 space-y-6" aria-label="Post details">
-            <ImageUploadField label="Cover image" value={image} onChange={setImage} uploadPath="blog/images" disabled={busy} />
+            <BlogMediaUpload
+              value={image}
+              persistedValue={persistedImage}
+              type={mediaType}
+              onChange={(value, type) => {
+                setImage(value);
+                setMediaType(type);
+              }}
+              onUploadingChange={setMediaUploading}
+              disabled={busy}
+            />
 
             <div>
               <label htmlFor="blog-title" className={FIELD_LABEL}>Title</label>
@@ -145,7 +175,7 @@ export function BlogEditor({ post }: { post?: BlogPost }) {
         {saved ? <p role="status" className="m-0 text-sm text-muted-foreground">Changes saved.</p> : null}
 
         <div className="flex flex-wrap items-center gap-3 border-t border-border pt-5">
-          <button type="submit" disabled={busy} className={PRIMARY_ACTION_CLASS}>{busy ? "Saving…" : post ? "Save changes" : "Create post"}</button>
+          <button type="submit" disabled={busy || mediaUploading} className={PRIMARY_ACTION_CLASS}>{busy ? "Saving…" : mediaUploading ? "Uploading media…" : post ? "Save changes" : "Create post"}</button>
           <Link href="/admin/blog" className={LIST_ACTION_CLASS}>Cancel</Link>
           {post ? <button type="button" onClick={() => void remove()} disabled={busy} className="ml-auto inline-flex h-9 items-center gap-2 text-sm font-medium text-destructive hover:underline disabled:opacity-50"><Trash2 aria-hidden="true" className="h-4 w-4" />Delete post</button> : null}
         </div>

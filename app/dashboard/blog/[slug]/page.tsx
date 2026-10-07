@@ -3,9 +3,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { BlogActions } from "@/components/blog-actions";
+import { BlogMedia } from "@/components/blog-media";
 import { PageHeader } from "@/components/dashboard/ui";
 import { RichTextContent } from "@/components/rich-text-editor";
 import { formatBlogDate } from "@/lib/blog-dates";
+import { getBlogMediaType } from "@/lib/blog";
 import { getBlogPostBySlug } from "@/lib/firebase/content";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -34,8 +36,14 @@ export default async function BlogEntryPage({ params }: Props) {
         </p>
         <BlogActions post={post} />
         {post.image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={post.image} alt="" className="mt-8 block h-auto max-h-[560px] w-full object-cover" />
+          <BlogMedia
+            src={post.image}
+            type={getBlogMediaType(post)}
+            alt={`${post.title} cover`}
+            className="mt-8 max-h-[560px] w-full"
+            mediaClassName="max-h-[560px] w-full object-cover"
+            controls={getBlogMediaType(post) === "video"}
+          />
         ) : null}
         <article className="mt-8 max-w-[70ch] text-[16px] leading-[1.7] text-foreground">
           <RichTextContent value={post.content || post.excerpt} />
