@@ -12,11 +12,11 @@ import {
 } from "@/lib/appraisals";
 import type { User } from "@/lib/users";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { AppraisalStatus } from "@/components/appraisal-status";
 import { MobileHeaderActions, MobileHeaderTitle } from "@/components/dashboard/mobile-header";
 
-const SELECT_CLASS = "h-10 w-full rounded-sm border border-input bg-transparent px-2 text-[14px] focus-visible:outline-none disabled:opacity-60";
 const LABEL_CLASS = "mb-1.5 block text-[13px] font-semibold";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -126,10 +126,13 @@ export function AppraisalEditor({ appraisal, user, users }: { appraisal?: Apprai
     <Part title="Employee">
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Employee account">
-          <select value={employeeUid} onChange={(event) => pickEmployee(event.target.value)} className={SELECT_CLASS}>
-            <option value="">Choose a person</option>
-            {people.map((person) => <option key={person.uid as string} value={person.uid as string}>{person.name}</option>)}
-          </select>
+          <Select value={employeeUid || "__none__"} onValueChange={(value) => pickEmployee(value === "__none__" ? "" : value)}>
+            <SelectTrigger><SelectValue placeholder="Choose a person" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__">Choose a person</SelectItem>
+              {people.map((person) => <SelectItem key={person.uid as string} value={person.uid as string}>{person.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
         </Field>
         <Field label="Review period"><Input value={period} onChange={(event) => setPeriod(event.target.value)} placeholder="e.g. January – June 2026" /></Field>
         <Field label="Employee’s name"><Input value={employeeName} onChange={(event) => setEmployeeName(event.target.value)} /></Field>
@@ -154,16 +157,22 @@ export function AppraisalEditor({ appraisal, user, users }: { appraisal?: Apprai
               return <div key={item.id} className="grid gap-3 px-4 py-3 md:grid-cols-[1fr_190px_160px_56px] md:items-end">
                 <p className="m-0 text-[14px]">{item.label}</p>
                 <Field label="Job relevance">
-                  <select value={rating?.job ?? ""} onChange={(event) => setRating(item.id, "job", event.target.value)} className={SELECT_CLASS}>
-                    <option value="">Not applicable</option>
-                    {JOB_RELEVANCE_SCALE.map((option) => <option key={option.value} value={option.value}>{option.value} · {option.label}</option>)}
-                  </select>
+                  <Select value={rating?.job ? String(rating.job) : "__none__"} onValueChange={(value) => setRating(item.id, "job", value === "__none__" ? "" : value)}>
+                    <SelectTrigger><SelectValue placeholder="Not applicable" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">Not applicable</SelectItem>
+                      {JOB_RELEVANCE_SCALE.map((option) => <SelectItem key={option.value} value={String(option.value)}>{option.value} · {option.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                 </Field>
                 <Field label="Performance">
-                  <select value={rating?.performance ?? ""} onChange={(event) => setRating(item.id, "performance", event.target.value)} className={SELECT_CLASS}>
-                    <option value="">Not applicable</option>
-                    {PERFORMANCE_SCALE.map((option) => <option key={option.value} value={option.value}>{option.value} · {option.label}</option>)}
-                  </select>
+                  <Select value={rating?.performance ? String(rating.performance) : "__none__"} onValueChange={(value) => setRating(item.id, "performance", value === "__none__" ? "" : value)}>
+                    <SelectTrigger><SelectValue placeholder="Not applicable" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">Not applicable</SelectItem>
+                      {PERFORMANCE_SCALE.map((option) => <SelectItem key={option.value} value={String(option.value)}>{option.value} · {option.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                 </Field>
                 <div><span className={LABEL_CLASS}>Score</span><p className="m-0 flex h-10 items-center text-[14px] font-semibold">{value ?? "—"}</p></div>
               </div>;
