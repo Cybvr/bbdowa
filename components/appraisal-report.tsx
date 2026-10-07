@@ -40,7 +40,7 @@ export function AppraisalReport({ appraisal }: { appraisal: Appraisal }) {
               const rating = appraisal.ratings[item.id];
               return <tr key={item.id} className="border-b border-border last:border-b-0">
                 <td className="px-4 py-3">{item.label}</td>
-                <td className="px-4 py-3">{rating?.job ? `${rating.job} · ${labelFor(JOB_RELEVANCE_SCALE, rating.job)}` : "—"}</td>
+                <td className="px-4 py-3">{rating?.job === 0 ? "N/A" : rating?.job ? `${rating.job} · ${labelFor(JOB_RELEVANCE_SCALE, rating.job)}` : "—"}</td>
                 <td className="px-4 py-3">{rating?.performance ? `${rating.performance} · ${labelFor(PERFORMANCE_SCALE, rating.performance)}` : "—"}</td>
                 <td className="px-4 py-3 font-semibold">{itemScore(rating) ?? "—"}</td>
               </tr>;

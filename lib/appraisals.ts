@@ -4,11 +4,11 @@ export type AppraisalStatus = "assigned" | "submitted";
 
 /** Job relevance: how much an item matters to the role. */
 export const JOB_RELEVANCE_SCALE = [
-  { value: 5, label: "Critical" },
-  { value: 4, label: "Very important" },
-  { value: 3, label: "Average importance" },
-  { value: 2, label: "Somewhat important" },
-  { value: 1, label: "Of minimal importance" },
+  { value: 5, label: "High" },
+  { value: 4, label: "High" },
+  { value: 3, label: "Medium" },
+  { value: 2, label: "Low" },
+  { value: 1, label: "Low" },
 ] as const;
 
 /** Performance: how well the person does it. */

@@ -5,12 +5,10 @@ import { useRouter } from "next/navigation";
 import { doc, updateDoc } from "firebase/firestore";
 import { Save, Send } from "lucide-react";
 import { AppraisalStatus } from "@/components/appraisal-status";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
   APPRAISAL_COLLECTION,
   APPRAISAL_SECTIONS,
-  JOB_RELEVANCE_SCALE,
   PERFORMANCE_SCALE,
   QUALITATIVE_QUESTIONS,
   formatOverall,
@@ -32,6 +30,43 @@ function Part({ title, children }: { title: string; children: React.ReactNode })
   return <section className="space-y-5"><h2 className="m-0 border-b border-border pb-2 text-[17px] font-bold">{title}</h2>{children}</section>;
 }
 
+const JOB_RELEVANCE_CHOICES = [
+  { value: 0, label: "N/A" },
+  { value: 1, label: "Low" },
+  { value: 3, label: "Medium" },
+  { value: 5, label: "High" },
+] as const;
+
+const PERFORMANCE_CHOICES = PERFORMANCE_SCALE.map((option) => ({ value: option.value, label: String(option.value) }));
+
+function SegmentedRating({ label, value, options, disabled, onChange }: {
+  label: string;
+  value: number | null;
+  options: readonly { value: number | null; label: string }[];
+  disabled: boolean;
+  onChange: (value: number | null) => void;
+}) {
+  return <fieldset className="m-0 min-w-0 border-0 p-0">
+    <legend className="mb-2 text-[13px] font-medium text-muted-foreground">{label}</legend>
+    <div role="radiogroup" aria-label={label} className="grid divide-x divide-border overflow-hidden rounded-xl border border-border" style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}>
+      {options.map((option) => {
+        const selected = value === option.value;
+        return <button
+          key={`${option.label}-${option.value ?? "none"}`}
+          type="button"
+          role="radio"
+          aria-checked={selected}
+          disabled={disabled}
+          onClick={() => onChange(option.value)}
+          className={`min-h-12 border-0 px-2 py-2 text-[14px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${selected ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+        >
+          {option.label}
+        </button>;
+      })}
+    </div>
+  </fieldset>;
+}
+
 export function AppraisalResponseForm({ appraisal }: { appraisal: Appraisal }) {
   const router = useRouter();
   const [ratings, setRatings] = React.useState<Record<string, AppraisalRating>>(appraisal.ratings);
@@ -42,13 +77,13 @@ export function AppraisalResponseForm({ appraisal }: { appraisal: Appraisal }) {
   const [failed, setFailed] = React.useState(false);
   const score = scoreAppraisal(ratings);
 
-  const setRating = (itemId: string, key: keyof AppraisalRating, raw: string) => {
+  const setRating = (itemId: string, key: keyof AppraisalRating, value: number | null) => {
     setRatings((current) => ({
       ...current,
       [itemId]: {
         job: current[itemId]?.job ?? null,
         performance: current[itemId]?.performance ?? null,
-        [key]: raw ? Number(raw) : null,
+        [key]: value,
       },
     }));
   };
@@ -99,39 +134,25 @@ export function AppraisalResponseForm({ appraisal }: { appraisal: Appraisal }) {
       {APPRAISAL_SECTIONS.map((section) => {
         const sectionScore = score.sections[section.id];
         return <div key={section.id} className="rounded-xl border border-border">
-          <div className="flex items-baseline justify-between gap-3 border-b border-border px-4 py-3">
-            <h3 className="m-0 text-[15px] font-semibold">{section.title}</h3>
-            <span className="text-[13px] text-muted-foreground">Score {sectionScore.performanceTotal}</span>
+          <div className="flex items-baseline justify-between gap-4 border-b border-border px-5 py-4 sm:px-6">
+            <h3 className="m-0 text-[17px] font-semibold">{section.title}</h3>
+            <span className="shrink-0 text-[13px] text-muted-foreground">Score <strong className="ml-1 text-[22px] text-foreground">{sectionScore.performanceTotal}</strong></span>
           </div>
           <div className="divide-y divide-border">
             {section.items.map((item) => {
               const rating = ratings[item.id];
               const value = itemScore(rating);
-              return <div key={item.id} className="grid gap-3 px-4 py-3 md:grid-cols-[1fr_190px_160px_56px] md:items-end">
-                <p className="m-0 text-[14px]">{item.label}</p>
-                <Field label="Job relevance">
-                  <Select value={rating?.job ? String(rating.job) : "__none__"} onValueChange={(selected) => setRating(item.id, "job", selected === "__none__" ? "" : selected)} disabled={Boolean(busy)}>
-                    <SelectTrigger><SelectValue placeholder="Not applicable" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none__">Not applicable</SelectItem>
-                      {JOB_RELEVANCE_SCALE.map((option) => <SelectItem key={option.value} value={String(option.value)}>{option.value} · {option.label}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </Field>
-                <Field label="Performance">
-                  <Select value={rating?.performance ? String(rating.performance) : "__none__"} onValueChange={(selected) => setRating(item.id, "performance", selected === "__none__" ? "" : selected)} disabled={Boolean(busy)}>
-                    <SelectTrigger><SelectValue placeholder="Not applicable" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none__">Not applicable</SelectItem>
-                      {PERFORMANCE_SCALE.map((option) => <SelectItem key={option.value} value={String(option.value)}>{option.value} · {option.label}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </Field>
-                <div><span className={LABEL_CLASS}>Score</span><p className="m-0 flex h-10 items-center text-[14px] font-semibold">{value ?? "—"}</p></div>
+              return <div key={item.id} className="space-y-5 px-5 py-5 sm:px-6 sm:py-6">
+                <div className="flex items-start justify-between gap-4">
+                  <p className="m-0 text-[15px] font-medium leading-relaxed">{item.label}</p>
+                  <span aria-label={`Score ${value ?? "not available"}`} className="shrink-0 text-[16px] font-semibold text-muted-foreground">{value ?? "—"}</span>
+                </div>
+                <SegmentedRating label="Job relevance" value={rating?.job ?? null} options={JOB_RELEVANCE_CHOICES} disabled={Boolean(busy)} onChange={(selected) => setRating(item.id, "job", selected)} />
+                <SegmentedRating label="Performance" value={rating?.performance ?? null} options={PERFORMANCE_CHOICES} disabled={Boolean(busy)} onChange={(selected) => setRating(item.id, "performance", selected)} />
               </div>;
             })}
           </div>
-          <div className="border-t border-border px-4 py-3">
+          <div className="border-t border-border px-5 py-4 sm:px-6">
             <Field label="Comments"><Textarea rows={3} value={comments[section.id] ?? ""} onChange={(event) => setComments((current) => ({ ...current, [section.id]: event.target.value }))} disabled={Boolean(busy)} /></Field>
           </div>
         </div>;
