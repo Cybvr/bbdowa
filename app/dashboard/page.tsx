@@ -16,7 +16,7 @@ import { readJobsFromFirestore, useFirestoreAppraisals, useFirestoreUsers } from
 import { firebaseDb } from "@/lib/firebase/client";
 import { readMyJobIds } from "@/lib/firebase/job-team";
 import { byLastModified, type Job } from "@/lib/jobs";
-import { ACTIVITY_COLLECTION, elapsedMs, formatClockFull, startOfToday, startOfWeek, type ActivityEntry } from "@/lib/time-tracking";
+import { ACTIVITY_COLLECTION, elapsedMs, formatClockFull, startOfWeek, type ActivityEntry } from "@/lib/time-tracking";
 import type { User } from "@/lib/users";
 import { appraisalNeedsCompletion } from "@/lib/appraisals";
 
@@ -169,14 +169,20 @@ export default function HomePage() {
   const weeklyHours = activities
     .filter((entry) => Date.parse(entry.startedAt) >= weekStart)
     .reduce((total, entry) => total + elapsedMs(entry, now), 0);
-  const todayStart = startOfToday();
-  const todayHours = activities
-    .filter((entry) => Date.parse(entry.startedAt) >= todayStart)
-    .reduce((total, entry) => total + elapsedMs(entry, now), 0);
-  const hoursLabel = (ms: number) => hoursLoading ? "…" : hoursUnavailable ? "—" : `${Math.floor(ms / 3600000)}h ${String(Math.floor((ms % 3600000) / 60000)).padStart(2, "0")}m`;
+  const todayIndex = (new Date().getDay() + 6) % 7;
+  const dayTotals = [0, 0, 0, 0, 0, 0, 0];
+  activities.forEach((entry) => {
+    const startedAt = Date.parse(entry.startedAt);
+    if (startedAt < weekStart) return;
+    dayTotals[(new Date(startedAt).getDay() + 6) % 7] += elapsedMs(entry, now);
+  });
+  const hoursKnown = !hoursLoading && !hoursUnavailable;
+  const hoursEmpty = hoursKnown && weeklyHours < 1000;
+  const weeklyLabel = hoursLoading ? "…" : hoursUnavailable ? "—" : `${Math.floor(weeklyHours / 3600000)}h ${String(Math.floor((weeklyHours % 3600000) / 60000)).padStart(2, "0")}m`;
+  const maxDay = Math.max(...dayTotals, 8 * 3600000);
   const facts = [
     { label: PROFILE_FIELDS[0], value: availabilityLabel(profile, usersLoading) },
-    { label: PROFILE_FIELDS[1], value: hoursLoading ? "Loading…" : hoursUnavailable ? "Unavailable" : formatClockFull(weeklyHours) },
+    { label: PROFILE_FIELDS[1], value: hoursLoading ? "Loading…" : hoursUnavailable ? "Unavailable" : formatClockFull(weeklyHours), alert: hoursEmpty },
     { label: PROFILE_FIELDS[2], value: usersLoading ? "Loading…" : profile?.title || "—" },
     { label: PROFILE_FIELDS[3], value: usersLoading ? "Loading…" : profile?.location || "—" },
   ];
@@ -308,15 +314,22 @@ export default function HomePage() {
         </div>
 
         <aside aria-labelledby="profile-overview-heading" className="min-w-0 lg:col-start-2 lg:row-start-1 lg:border-l lg:border-border lg:pl-7">
-          <Link href="/dashboard/tracker" aria-label="Hours logged, open tracker" className="mb-8 flex items-center justify-between gap-4 rounded-xl border border-border p-4 transition hover:border-foreground">
-            <span className="min-w-0">
-              <span className="block text-sm text-muted-foreground">Hours logged</span>
-              <span className="mt-1 block text-2xl font-bold leading-none tracking-tight text-foreground">{hoursLabel(weeklyHours)}</span>
-              <span className="mt-1 block text-[13px] text-muted-foreground">this week</span>
-            </span>
-            <span className="shrink-0 text-right">
-              <span className="block text-lg font-semibold leading-none text-foreground">{hoursLabel(todayHours)}</span>
-              <span className="mt-1 block text-[13px] text-muted-foreground">today</span>
+          <Link href="/dashboard/tracker" aria-label="Hours logged this week, open tracker" className="mb-8 block rounded-3xl border border-border bg-card p-5 transition hover:border-foreground">
+            <span className="block text-sm text-muted-foreground">Hours logged this week</span>
+            <span className={`mt-2 block text-4xl font-bold leading-none tracking-tight ${hoursEmpty ? "text-primary" : "text-foreground"}`}>{weeklyLabel}</span>
+            <span className="mt-10 grid grid-cols-7 gap-2" aria-hidden="true">
+              {["M", "T", "W", "T", "F", "S", "S"].map((day, index) => {
+                const isToday = index === todayIndex;
+                const fill = Math.min(1, dayTotals[index] / maxDay);
+                return (
+                  <span key={index} className="flex flex-col items-center gap-2">
+                    <span className="relative h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                      <span className={`absolute inset-y-0 left-0 rounded-full ${isToday ? "bg-primary" : "bg-foreground"}`} style={{ width: isToday && fill === 0 ? "100%" : `${fill * 100}%` }} />
+                    </span>
+                    <span className={`text-sm ${isToday ? "font-bold text-foreground" : "text-muted-foreground"}`}>{day}</span>
+                  </span>
+                );
+              })}
             </span>
           </Link>
           <div className="mb-2 flex items-center justify-between gap-3">
@@ -328,7 +341,7 @@ export default function HomePage() {
               <div key={fact.label} className="flex min-h-12 items-center justify-between gap-4 py-3">
                 <dt className="text-sm text-muted-foreground">{fact.label}</dt>
                 <dd className="m-0 flex min-w-0 items-center justify-end gap-1.5 truncate text-right text-sm font-medium text-foreground">
-                  <span className="truncate">{fact.value}</span>
+                  <span className={`truncate ${"alert" in fact && fact.alert ? "text-primary" : ""}`}>{fact.value}</span>
                   {fact.label === "Availability" && fact.value === "Busy" ? <span aria-hidden="true" className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-emerald-500"><Check className="h-3 w-3 text-white" strokeWidth={3} /></span> : null}
                 </dd>
               </div>
