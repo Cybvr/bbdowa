@@ -19,6 +19,10 @@ export type Task = {
   /** Firebase uid of the creator this task is assigned to. */
   assignedTo: string;
   assignedToName: string | null;
+  /** Everyone the task is assigned to. `assignedTo` is the first of these. */
+  assignees?: { uid: string; name: string }[];
+  /** Just the uids of `assignees`, so tasks can be queried by person. */
+  assigneeUids?: string[];
   /** Firebase uid of the admin/manager who assigned it. */
   createdBy: string;
   createdByName: string | null;
@@ -66,4 +70,33 @@ export function formatDate(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "—";
   return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric" }).format(date);
+}
+
+export type TaskAssignee = { uid: string; name: string };
+
+/** Everyone a task is assigned to, falling back to the single assignee on older tasks. */
+export function taskAssignees(task: Pick<Task, "assignedTo" | "assignedToName" | "assignees">): TaskAssignee[] {
+  if (task.assignees?.length) return task.assignees;
+  return task.assignedTo ? [{ uid: task.assignedTo, name: task.assignedToName ?? "Assignee" }] : [];
+}
+
+export function isTaskAssignee(task: Pick<Task, "assignedTo" | "assignedToName" | "assignees">, uid: string | null | undefined): boolean {
+  return Boolean(uid) && taskAssignees(task).some((person) => person.uid === uid);
+}
+
+/** "Ada, Tunde and Ife" for display. */
+export function taskAssigneeNames(task: Pick<Task, "assignedTo" | "assignedToName" | "assignees">): string {
+  const names = taskAssignees(task).map((person) => person.name).filter(Boolean);
+  if (names.length < 2) return names[0] ?? "";
+  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+}
+
+/** The fields to store for a set of assignees. `assignedTo` stays the first person so older code keeps working. */
+export function taskAssigneeFields(people: TaskAssignee[]) {
+  return {
+    assignedTo: people[0]?.uid ?? "",
+    assignedToName: people[0]?.name ?? null,
+    assignees: people,
+    assigneeUids: people.map((person) => person.uid),
+  };
 }

@@ -10,6 +10,7 @@ import { readJobsFromFirestore, useClientOptions } from "@/lib/firebase/client-c
 import { INVOICES_COLLECTION, nextInvoiceNumber, type Invoice, type InvoiceStatus } from "@/lib/invoices";
 import { jobTitle, type Job } from "@/lib/jobs";
 import type { PaymentCurrency } from "@/lib/payments";
+import { confirmDialog } from "@/components/confirm-dialog";
 
 const FIELD = "block space-y-1.5 text-sm font-medium";
 const SELECT = "h-10 w-full rounded-md border border-input bg-background px-3 text-sm";
@@ -107,7 +108,7 @@ export function InvoiceDialog({
   };
 
   const remove = async () => {
-    if (!invoice || saving || !window.confirm(`Delete invoice ${invoice.number}? This can't be undone.`)) return;
+    if (!invoice || saving || !await confirmDialog(`Delete invoice ${invoice.number}? This can't be undone.`)) return;
     setSaving(true);
     try {
       await deleteDoc(doc(firebaseDb, INVOICES_COLLECTION, invoice.id));

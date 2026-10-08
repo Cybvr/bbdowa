@@ -187,7 +187,7 @@ service cloud.firestore {
     }
     match /blogs/{id} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin() || isManager();
     }
     // Careers openings (stored in `jobs` before the migration).
     match /openings/{id} {
@@ -264,6 +264,10 @@ service cloud.firestore {
     // Tasks are public to read for creator profiles. Admins and managers manage all task fields;
     // assignees can edit their tasks, and enabled share links can edit task details.
     match /creatorTasks/{id} {
+      function isTaskAssignee() {
+        return resource.data.assignedTo == request.auth.uid
+          || ("assigneeUids" in resource.data && request.auth.uid in resource.data.assigneeUids);
+      }
       allow read: if true;
       allow create: if (isAdmin() || isManager()) && request.resource.data.createdBy == request.auth.uid;
       allow update: if (isAdmin() || isManager())
@@ -277,14 +281,14 @@ service cloud.firestore {
             "clientId", "clientName", "jobId", "jobName", "updatedAt"
           ]))
         || (signedIn()
-          && resource.data.assignedTo == request.auth.uid
+          && isTaskAssignee()
           && request.resource.data.status in ["todo", "in_progress", "done"]
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
             "title", "description", "content", "status", "dueDate",
             "clientId", "clientName", "jobId", "jobName", "updatedAt", "shareEnabled"
           ]));
       allow delete: if (isAdmin() || isManager())
-        || (signedIn() && resource.data.assignedTo == request.auth.uid);
+        || (signedIn() && isTaskAssignee());
     }
 
     // Payments owed to people. Admins and managers record and settle them; each payee

@@ -17,6 +17,7 @@ import {
 import { useOptionalAuth } from "@/components/auth-provider";
 import { createGlyphAvatarDataUri } from "@/lib/avatar";
 import { firebaseDb } from "@/lib/firebase/client";
+import { isSuperAdminEmail } from "@/lib/job-migration";
 
 const THEME_STORAGE_KEY = "bbdowa-theme";
 const THEME_CHANGE_EVENT = "bbdowa-theme-change";
@@ -138,11 +139,14 @@ export function ProfileNav({
     try { window.localStorage.setItem(THEME_STORAGE_KEY, enabled ? "dark" : "light"); } catch { /* Storage may be unavailable. */ }
     window.dispatchEvent(new Event(THEME_CHANGE_EVENT));
   };
-  const roleLabel = role ? role.charAt(0).toUpperCase() + role.slice(1) : null;
   const isAdmin = auth?.isAdmin ?? false;
+  const accountEmail = email ?? user?.email;
+  const isSuperAdmin = isAdmin && isSuperAdminEmail(accountEmail);
+  const roleLabel = isSuperAdmin ? "Super Admin" : role ? role.charAt(0).toUpperCase() + role.slice(1) : null;
+  const isStaff = isAdmin || role === "manager";
   const menuItems: readonly ProfileNavItem[] = [
     ...(auth?.isViewingAs ? [{ label: "Exit view as", onSelect: auth.stopViewingAs }] : []),
-    ...(isAdmin ? [{ label: "Admin", href: "/admin", icon: <AdminIcon /> }] : []),
+    ...(isAdmin || (showAdminForStaff && isStaff) ? [{ label: "Admin", href: "/admin", icon: <AdminIcon /> }] : []),
     ...items,
   ];
   const displayName = name ?? user?.name ?? user?.email?.split("@")[0] ?? "BBDO User";

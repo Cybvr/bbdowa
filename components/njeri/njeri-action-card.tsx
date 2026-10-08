@@ -5,6 +5,7 @@ import { collection, deleteDoc, doc, getDoc, getDocs, limit, query, serverTimest
 import { firebaseDb } from "@/lib/firebase/client";
 import { jobsCollection } from "@/lib/firebase/job-collections";
 import { TASK_COLLECTION } from "@/lib/creator-tasks";
+import { readUsersFromFirestore } from "@/lib/firebase/client-content";
 import type { NjeriActionProposal } from "./types";
 import { CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 
@@ -48,11 +49,7 @@ export async function executeNjeriAction(
       const assignee = await userProfileForUid(action.record.assignedTo);
       const job = action.record.jobId ? await getDoc(doc(firebaseDb, await jobsCollection(), action.record.jobId)) : null;
       const client = action.record.clientId ? await getDoc(doc(firebaseDb, "clients", action.record.clientId)) : null;
-      if (!assignee?.exists() || !action.record.assignedTo) throw new Error("I couldn't match that assignee to an account. Choose a creator who has signed in.");
-      const assigneeData = assignee.data();
-      if (assigneeData.role !== "creator" && !(Array.isArray(assigneeData.roles) && assigneeData.roles.includes("creator"))) {
-        throw new Error("Tasks can only be assigned to creators.");
-      }
+      if (!assignee?.exists() || !action.record.assignedTo) throw new Error("I couldn't match that assignee to an account. Choose someone who has signed in.");
       if (job && !job.exists()) throw new Error("That job is no longer in the workspace. Refresh and try again.");
       if (client && !client.exists()) throw new Error("That client is no longer in the workspace. Refresh and try again.");
       const now = new Date().toISOString();
@@ -87,7 +84,6 @@ export async function executeNjeriAction(
         const assignee = await userProfileForUid(changes.assignedTo);
         if (!assignee?.exists()) throw new Error("I couldn't match that assignee to an account. Refresh and try again.");
         const data = assignee.data();
-        if (data.role !== "creator" && !(Array.isArray(data.roles) && data.roles.includes("creator"))) throw new Error("Tasks can only be assigned to creators.");
         changes.assignedToName = typeof data.name === "string" ? data.name : changes.assignedToName;
       }
       if (typeof changes.clientId === "string" && !(await getDoc(doc(firebaseDb, "clients", changes.clientId))).exists()) {
@@ -223,6 +219,79 @@ export async function executeNjeriAction(
   }
 }
 
+function actionSummary(action: NjeriActionProposal): string {
+  switch (action.type) {
+    case "create_task":
+      return [action.record.title, action.record.assignedToName, action.record.dueDate].filter(Boolean).join(" · ");
+    case "create_creator":
+    case "create_client":
+    case "create_job":
+      return action.record.name;
+    default:
+      return action.label;
+  }
+}
+
+function batchVerb(actions: NjeriActionProposal[]): string {
+  const types = new Set(actions.map((action) => action.type));
+  if (types.size === 1) {
+    const [type] = [...types];
+    if (type === "create_task") return `Create ${actions.length} tasks`;
+    if (type === "create_creator") return `Add ${actions.length} creators`;
+    if (type === "create_client") return `Add ${actions.length} clients`;
+    if (type === "create_job") return `Add ${actions.length} jobs`;
+    if (type === "delete_task" || type === "delete_record") return `Delete ${actions.length} records`;
+  }
+  return `Confirm ${actions.length} changes`;
+}
+
+/** One summary and one button for a batch, instead of a form per record. */
+export function BatchActionCard({ actions, onConfirmAll }: { actions: NjeriActionProposal[]; onConfirmAll: () => void }) {
+  const saved = actions.filter((action) => action.status === "saved").length;
+  const failed = actions.filter((action) => action.status === "failed").length;
+  const running = actions.some((action) => action.status === "saving");
+  const remaining = actions.length - saved;
+  return (
+    <div className="mt-3 rounded-xl border border-primary/25 bg-background/95 p-3.5 text-xs shadow-sm backdrop-blur">
+      <div className="flex items-center justify-between gap-3">
+        <strong className="text-sm font-semibold text-foreground">{actions.length} items</strong>
+        {running ? (
+          <span className="inline-flex items-center gap-1 font-medium text-muted-foreground"><Loader2 className="h-3.5 w-3.5 animate-spin" />Saving {saved + 1} of {actions.length}...</span>
+        ) : saved === actions.length ? (
+          <span className="inline-flex items-center gap-1 font-semibold text-green-600 dark:text-green-400"><CheckCircle2 className="h-3.5 w-3.5" />All saved</span>
+        ) : saved ? (
+          <span className="font-medium text-muted-foreground">{saved} saved</span>
+        ) : null}
+      </div>
+      <ul className="m-0 mt-2 max-h-60 list-none space-y-1 overflow-y-auto p-0">
+        {actions.map((action, index) => (
+          <li key={index} className="flex items-start gap-2 rounded-lg bg-muted/50 px-2.5 py-1.5">
+            <span className="mt-0.5 shrink-0">
+              {action.status === "saved" ? <CheckCircle2 className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+                : action.status === "failed" ? <AlertCircle className="h-3.5 w-3.5 text-destructive" />
+                : action.status === "saving" ? <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                : <span className="block h-3.5 w-3.5 rounded-full border border-border" />}
+            </span>
+            <span className="min-w-0 text-foreground">
+              {actionSummary(action)}
+              {action.status === "failed" && action.error ? <span className="block text-destructive">{action.error}</span> : null}
+            </span>
+          </li>
+        ))}
+      </ul>
+      {!running && remaining > 0 ? (
+        <button
+          type="button"
+          onClick={onConfirmAll}
+          className="mt-3 inline-flex items-center justify-center rounded-lg bg-primary px-3.5 py-2 font-medium text-primary-foreground transition hover:opacity-90 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+        >
+          {failed ? `Retry ${failed} failed` : saved ? `Save remaining ${remaining}` : batchVerb(actions)}
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
 export function ActionCard({
   action,
   onConfirm,
@@ -248,6 +317,18 @@ export function ActionCard({
   const jobRecord = draft.type === "create_job" ? draft.record : null;
   const clientRecord = draft.type === "create_client" ? draft.record : null;
   const status = draft.status ?? "pending";
+  const [creators, setCreators] = React.useState<{ uid: string; name: string }[]>([]);
+  React.useEffect(() => {
+    if (!isTaskCreate) return;
+    let cancelled = false;
+    readUsersFromFirestore()
+      .then((users) => {
+        if (cancelled) return;
+        setCreators(users.flatMap((user) => user.uid ? [{ uid: user.uid, name: user.name }] : []).sort((a, b) => a.name.localeCompare(b.name)));
+      })
+      .catch((cause) => console.warn("Unable to load creators for task assignment", cause));
+    return () => { cancelled = true; };
+  }, [isTaskCreate]);
   const updateTask = (field: string, value: string) => {
     setDraft((current) => {
       if (current.type === "create_task") {
@@ -319,7 +400,22 @@ export function ActionCard({
         <div className="mt-2 grid gap-2">
           <label className="grid gap-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Title<input value={draft.record.title} onChange={(event) => updateTask("title", event.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium normal-case tracking-normal text-foreground outline-none focus:border-primary" /></label>
           <label className="grid gap-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Description<textarea value={draft.record.description} onChange={(event) => updateTask("description", event.target.value)} rows={3} className="rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium normal-case tracking-normal text-foreground outline-none focus:border-primary" /></label>
-          <p className="m-0 text-xs text-muted-foreground">For {draft.record.assignedToName}{draft.record.clientName ? ` · ${draft.record.clientName}` : ""}{draft.record.jobName ? ` · ${draft.record.jobName}` : ""}</p>
+          <label className="grid gap-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Assign to
+            <select
+              value={draft.record.assignedTo}
+              onChange={(event) => {
+                const creator = creators.find((item) => item.uid === event.target.value);
+                setDraft((current) => current.type === "create_task"
+                  ? { ...current, record: { ...current.record, assignedTo: creator?.uid ?? "", assignedToName: creator?.name ?? "" }, status: "pending", error: undefined }
+                  : current);
+              }}
+              className="rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium normal-case tracking-normal text-foreground outline-none focus:border-primary"
+            >
+              {creators.some((item) => item.uid === draft.record.assignedTo) ? null : <option value={draft.record.assignedTo}>Choose a person</option>}
+              {creators.map((item) => <option key={item.uid} value={item.uid}>{item.name}</option>)}
+            </select>
+          </label>
+          {draft.record.clientName || draft.record.jobName ? <p className="m-0 text-xs text-muted-foreground">{[draft.record.clientName, draft.record.jobName].filter(Boolean).join(" · ")}</p> : null}
           <label className="grid gap-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Due date<input type="date" value={draft.record.dueDate ?? ""} onChange={(event) => updateTask("dueDate", event.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium normal-case tracking-normal text-foreground outline-none focus:border-primary" /></label>
         </div>
       ) : (

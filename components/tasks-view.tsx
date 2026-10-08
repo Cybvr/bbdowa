@@ -1,9 +1,12 @@
 "use client";
 
 import * as React from "react";
+import { confirmDialog } from "@/components/confirm-dialog";
 import { addDoc, collection, deleteDoc, doc, getDocs, query, updateDoc, where } from "firebase/firestore";
 import { Check, CheckSquare, Copy, Plus, Share2, Trash2 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { CreatorMultiPicker } from "@/components/creator-picker";
 import { firebaseDb } from "@/lib/firebase/client";
 import { EmptyState } from "@/components/dashboard/ui";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,6 +18,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { ItemCard, ItemCardList } from "@/components/dashboard/item-card";
 import { TaskClientJobFields, useTaskLinkOptions } from "@/components/task-link-fields";
 import { jobHref } from "@/lib/jobs";
+import { readTasksAssignedTo } from "@/lib/firebase/task-queries";
 import {
   TASK_COLLECTION,
   TASK_STATUSES,
@@ -22,6 +26,9 @@ import {
   formatDate,
   isOverdue,
   sortTasks,
+  taskAssigneeFields,
+  taskAssigneeNames,
+  taskAssignees,
   type Task,
   type TaskStatus,
 } from "@/lib/creator-tasks";
@@ -205,13 +212,14 @@ export function TaskDetailPage({ task, canEdit, canDelete, assignees, onChanged,
   const [dueDate, setDueDate] = React.useState("");
   const [clientId, setClientId] = React.useState<string | null>(null);
   const [jobId, setJobId] = React.useState<string | null>(null);
-  const [assignedTo, setAssignedTo] = React.useState("");
+  const [assigneeUids, setAssigneeUids] = React.useState<string[]>([]);
+  const router = useRouter();
   const [shareOpen, setShareOpen] = React.useState(false);
   const [shareUrl, setShareUrl] = React.useState("");
   const [shareMessage, setShareMessage] = React.useState<string | null>(null);
   const { clients, jobs, loading: linksLoading } = useTaskLinkOptions();
   const assigneeOptions = assignees
-    ? [...(task && !assignees.some((item) => item.uid === task.assignedTo) ? [{ uid: task.assignedTo, name: task.assignedToName ?? "Current assignee" }] : []), ...assignees]
+    ? [...taskAssignees(task).filter((person) => !assignees.some((item) => item.uid === person.uid)), ...assignees]
     : [];
 
   React.useEffect(() => {
@@ -223,7 +231,7 @@ export function TaskDetailPage({ task, canEdit, canDelete, assignees, onChanged,
     setDueDate(task.dueDate ?? "");
     setClientId(task.clientId ?? null);
     setJobId(task.jobId ?? null);
-    setAssignedTo(task.assignedTo);
+    setAssigneeUids(taskAssignees(task).map((person) => person.uid));
     setError(null);
     setShareOpen(false);
     setShareUrl("");
@@ -267,7 +275,6 @@ export function TaskDetailPage({ task, canEdit, canDelete, assignees, onChanged,
     try {
       const client = clients.find((item) => item.slug === clientId);
       const job = jobs.find((item) => item.slug === jobId && item.clientId === clientId);
-      const assignee = assignees?.find((item) => item.uid === assignedTo);
       await updateDoc(doc(firebaseDb, TASK_COLLECTION, task.id), {
         title: title.trim(),
         description: description.trim(),
@@ -278,7 +285,7 @@ export function TaskDetailPage({ task, canEdit, canDelete, assignees, onChanged,
         clientName: client?.name ?? null,
         jobId: job?.slug ?? null,
         jobName: job?.name ?? null,
-        ...(assignees ? { assignedTo: assignee?.uid ?? task.assignedTo, assignedToName: assignee?.name ?? task.assignedToName } : {}),
+        ...(assignees && assigneeUids.length ? taskAssigneeFields(assigneeUids.flatMap((uid) => { const person = assigneeOptions.find((item) => item.uid === uid); return person ? [person] : []; })) : {}),
         updatedAt: new Date().toISOString(),
       });
       onChanged();
@@ -291,7 +298,7 @@ export function TaskDetailPage({ task, canEdit, canDelete, assignees, onChanged,
   };
 
   const removeTask = async () => {
-    if (!window.confirm("Delete this task? This can’t be undone.")) return;
+    if (!await confirmDialog("Delete this task? This can’t be undone.")) return;
     setBusy(true);
     setError(null);
     try {
@@ -307,7 +314,7 @@ export function TaskDetailPage({ task, canEdit, canDelete, assignees, onChanged,
 
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-5 pb-16 pt-6 sm:px-8">
-      <Link href={task.jobId ? jobHref(task.jobId) : "/dashboard/work"} className="inline-flex min-h-9 items-center text-sm font-medium text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">← Back to {task.jobId ? "job" : "tasks"}</Link>
+      <button type="button" onClick={() => (window.history.length > 1 ? router.back() : router.push(task.jobId ? jobHref(task.jobId) : "/dashboard/work"))} className="inline-flex min-h-9 items-center text-sm font-medium text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">← Back</button>
       <div className="mt-5 flex flex-wrap items-start justify-between gap-4 border-b border-border pb-6">
         <div className="min-w-0 space-y-3">
           <h1 className="m-0 break-words text-page-title font-bold leading-tight tracking-tight sm:text-page-title-lg">{task.title}</h1>
@@ -337,12 +344,9 @@ export function TaskDetailPage({ task, canEdit, canDelete, assignees, onChanged,
                   <h2 id="task-assignment-heading" className="m-0 text-lg font-semibold">Assignment and schedule</h2>
                   <div className="grid grid-cols-1 items-start gap-x-4 gap-y-2.5 min-[480px]:grid-cols-2">
                     {assignees ? (
-                      <div className="min-w-0 space-y-1">
-                        <label htmlFor="edit-task-assignee" className="block text-[13px] text-muted-foreground">Assigned to</label>
-                        <Select value={assignedTo} onValueChange={setAssignedTo} disabled={busy}>
-                          <SelectTrigger id="edit-task-assignee" className="min-w-0 rounded-md border border-input bg-background"><SelectValue /></SelectTrigger>
-                          <SelectContent>{assigneeOptions.map((assignee) => <SelectItem key={assignee.uid} value={assignee.uid}>{assignee.name}</SelectItem>)}</SelectContent>
-                        </Select>
+                      <div className="min-w-0 space-y-1 min-[480px]:col-span-2">
+                        <span className="block text-[13px] text-muted-foreground">Assigned to</span>
+                        <CreatorMultiPicker options={assigneeOptions.map((person) => ({ value: person.uid, label: person.name }))} values={assigneeUids} onChange={setAssigneeUids} disabled={busy} />
                       </div>
                     ) : null}
                     <div className="min-w-0 space-y-1">
@@ -384,7 +388,7 @@ export function TaskDetailPage({ task, canEdit, canDelete, assignees, onChanged,
         <aside aria-label="Task information" className="space-y-7 border-t border-border pt-5 text-sm lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
           <section className="space-y-4">
             <h2 className="m-0 text-base font-semibold">Assignment</h2>
-            <div><span className="block text-xs font-medium text-muted-foreground">Assigned to</span><p className="mt-1 font-medium">{task.assignedToName || "Unassigned"}</p></div>
+            <div><span className="block text-xs font-medium text-muted-foreground">Assigned to</span><p className="mt-1 font-medium">{taskAssigneeNames(task) || "Unassigned"}</p></div>
             {task.createdByName ? <div><span className="block text-xs font-medium text-muted-foreground">Created by</span><p className="mt-1 font-medium">{task.createdByName}</p></div> : null}
             {task.clientName ? <div><span className="block text-xs font-medium text-muted-foreground">Client</span><p className="mt-1 font-medium">{task.clientName}</p></div> : null}
             {task.jobId ? <div><span className="block text-xs font-medium text-muted-foreground">Job</span><Link href={jobHref(task.jobId)} className="mt-1 block font-medium text-primary hover:underline">{task.jobName || "View job"}</Link></div> : null}
@@ -427,9 +431,7 @@ export function CreatorTasksPanel({ creatorUid, creatorName, viewer, refreshSign
   const [error, setError] = React.useState<string | null>(null);
 
   const load = React.useCallback(async (uid: string) => {
-    const snapshot = await getDocs(query(collection(firebaseDb, TASK_COLLECTION), where("assignedTo", "==", uid)));
-    const rows = snapshot.docs.map((document) => ({ id: document.id, ...(document.data() as Omit<Task, "id">) }));
-    setTasks(sortTasks(rows));
+    setTasks(sortTasks(await readTasksAssignedTo(uid)));
   }, []);
 
   React.useEffect(() => {

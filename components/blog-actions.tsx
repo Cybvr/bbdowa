@@ -7,8 +7,8 @@ import { LIST_ACTION_CLASS } from "@/components/dashboard/list-page-actions";
 import type { BlogPost } from "@/lib/blog";
 
 export function BlogActions({ post }: { post: BlogPost }) {
-  const { isAdmin } = useAuth();
-  if (!isAdmin) return null;
+  const { isAdmin, role } = useAuth();
+  if (!isAdmin && role !== "manager") return null;
 
   return (
     <div className="mt-8">

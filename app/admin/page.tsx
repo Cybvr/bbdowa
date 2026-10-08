@@ -75,7 +75,7 @@ export default function AdminPage() {
   const [entries, setEntries] = React.useState<ActivityEntry[]>([]);
 
   React.useEffect(() => {
-    if (role !== "admin") return;
+    if (role !== "admin" && role !== "manager") return;
     readJobsFromFirestore().then(setJobs).catch((cause) => console.error("Unable to load jobs", cause));
     getDocs(collection(firebaseDb, PAYMENTS_COLLECTION))
       .then((snapshot) => setPayments(snapshot.docs.map((item) => ({ id: item.id, ...item.data() }) as Payment)))
@@ -88,7 +88,8 @@ export default function AdminPage() {
       .catch((cause) => console.error("Unable to load time", cause));
   }, [role]);
 
-  const firstName = user?.name?.trim().split(/\s+/)[0] || "Admin";
+  const firstName = user?.name?.trim().split(/\s+/)[0] || "there";
+  const peopleHref = role === "admin" ? "/admin/users" : "/dashboard/people";
   const today = new Intl.DateTimeFormat("en-GB", { weekday: "long", day: "numeric", month: "long" }).format(new Date());
 
   // People: anyone in the directory who hasn't signed in yet hasn't joined.
@@ -122,7 +123,7 @@ export default function AdminPage() {
   const needs = [
     unpaid.length ? { key: "pay", icon: <CreditCard className="h-5 w-5 text-primary" />, tone: "bg-primary/10", title: `${formatTotals(unpaid)} unpaid`, detail: `${plural(unpaid.length, "payment")} waiting`, href: "/dashboard/payments", action: "Pay" } : null,
     invoicesDue.length ? { key: "invoices", icon: <Receipt className="h-5 w-5 text-sky-700" />, tone: "bg-sky-100", title: `${invoiceTotals(invoicesDue)} to collect`, detail: `${plural(invoicesDue.length, "invoice")} due${invoicesOverdue ? `, ${invoicesOverdue} overdue` : ""}`, href: "/admin/invoices" } : null,
-    people.length - joined > 0 ? { key: "join", icon: <UserPlus className="h-5 w-5 text-amber-700" />, tone: "bg-amber-100", title: `${people.length - joined} people haven’t joined`, detail: `Only ${joined} of ${people.length} ${joined === 1 ? "has" : "have"} signed up`, href: "/admin/users" } : null,
+    people.length - joined > 0 ? { key: "join", icon: <UserPlus className="h-5 w-5 text-amber-700" />, tone: "bg-amber-100", title: `${people.length - joined} people haven’t joined`, detail: `Only ${joined} of ${people.length} ${joined === 1 ? "has" : "have"} signed up`, href: peopleHref } : null,
     openTasks.length ? { key: "tasks", icon: <ListChecks className="h-5 w-5 text-emerald-700" />, tone: "bg-emerald-100", title: `${plural(openTasks.length, "task")} open`, detail: `${doneTasks} already done`, href: "/admin/tasks" } : null,
     toSign ? { key: "sign", icon: <FileSignature className="h-5 w-5 text-violet-700" />, tone: "bg-violet-100", title: `${plural(toSign, "document")} to sign`, detail: "Waiting on people", href: "/admin/documents" } : null,
   ].filter((item): item is NonNullable<typeof item> => Boolean(item));
@@ -177,7 +178,7 @@ export default function AdminPage() {
         </section>
 
         <div className="mt-3 grid grid-cols-2 gap-3">
-          <Link href="/admin/users" className={`${CARD} text-foreground no-underline`}>
+          <Link href={peopleHref} className={`${CARD} text-foreground no-underline`}>
             <p className="m-0 text-sm text-muted-foreground">People</p>
             <p className="m-0 mt-1 text-hero-stat font-bold tabular-nums">{people.length}</p>
             <p className="m-0 mt-1 text-sm text-muted-foreground">{creators} creators</p>

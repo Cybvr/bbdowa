@@ -4,14 +4,15 @@ import React, { useEffect, useRef, useState } from "react";
 import { Send, Copy, Check, PanelLeft } from "lucide-react";
 import { PERSONAL_QUICK_PROMPTS, QUICK_PROMPTS, STAFF_QUICK_PROMPTS } from "@/lib/njeri-assistant";
 import { FormattedContent } from "./njeri-formatted-content";
-import { ActionCard } from "./njeri-action-card";
+import { ActionCard, BatchActionCard } from "./njeri-action-card";
 import type { ChatMessage, NjeriActionProposal, NjeriConversation } from "./types";
 
 interface NjeriChatViewProps {
   conversation: NjeriConversation | null;
   isTyping: boolean;
   onSendMessage: (text: string) => Promise<void>;
-  onConfirmAction?: (messageId: string | number, action: NjeriActionProposal) => Promise<void>;
+  onConfirmAction?: (messageId: string | number, action: NjeriActionProposal, index?: number) => Promise<void>;
+  onConfirmAll?: (messageId: string | number) => Promise<void>;
   onToggleHistory?: () => void;
   headerActions?: React.ReactNode;
   mode?: "page" | "widget";
@@ -24,6 +25,7 @@ export function NjeriChatView({
   isTyping,
   onSendMessage,
   onConfirmAction,
+  onConfirmAll,
   onToggleHistory,
   headerActions,
   mode = "page",
@@ -145,12 +147,19 @@ export function NjeriChatView({
               >
                 <FormattedContent text={message.text} isUser={isUser} />
 
-                {message.role === "assistant" && message.action && onConfirmAction ? (
-                  <ActionCard
-                    action={message.action}
-                    onConfirm={(action) => void onConfirmAction(message.id, action)}
-                  />
-                ) : null}
+                {message.role === "assistant" && onConfirmAction ? (() => {
+                  const actions = message.actions ?? (message.action ? [message.action] : []);
+                  if (actions.length > 1 && onConfirmAll) {
+                    return <BatchActionCard actions={actions} onConfirmAll={() => void onConfirmAll(message.id)} />;
+                  }
+                  return actions.map((action, index) => (
+                    <ActionCard
+                      key={index}
+                      action={action}
+                      onConfirm={(confirmed) => void onConfirmAction(message.id, confirmed, index)}
+                    />
+                  ));
+                })() : null}
 
                 {/* Copy button */}
                 <button

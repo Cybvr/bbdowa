@@ -71,6 +71,8 @@ export type ManagedCollection = "users" | "clients" | "jobs";
 export type NjeriWorkspaceContext = {
   clients: Array<{ name: string; slug: string; industry: string; description: string; targetAudience: string }>;
   creators: Array<{ name: string; slug: string; uid: string; category: string; title: string; instagram: string; niche: string; followerCount: string; availability: string; referralSource: string; clearance: string; vetted: boolean; workedOn: string[]; workHistory: CreatorWorkHistoryDraft[]; dayRate: string; rateMin: number | null; rateCurrency: string; yearsActive: number | null; craftNote: string }>;
+  /** Everyone who has signed in (staff included), so tasks can be assigned to any user. */
+  team?: Array<{ name: string; uid: string; role: string }>;
   jobs: Array<{ name: string; slug: string; clientName: string; category: string; status: string; summary: string }>;
   tasks: Array<{ id: string; title: string; description: string; assignedTo: string; assignedToName: string; clientName: string; jobName: string; status: string; dueDate: string }>;
   documents: Array<{ id: string; title: string; status: string; assignedTo: string; assignedToName: string; createdAt: string; signedAt: string; signedName: string; body?: string }>;
@@ -148,4 +150,5 @@ export type NjeriActionProposal =
 export type NjeriResponse = {
   answer: string;
   action?: NjeriActionProposal | null;
+  actions?: NjeriActionProposal[];
 };

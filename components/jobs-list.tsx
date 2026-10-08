@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 import { useAuth } from "@/components/auth-provider";
 import { DashboardListPage } from "@/components/dashboard/list-page";
@@ -8,6 +9,8 @@ import { Search } from "lucide-react";
 import { useSavedJobs } from "@/lib/firebase/saved-jobs";
 import { PageLoadingSkeleton } from "@/components/dashboard/loading-skeleton";
 import { JobCard } from "@/components/job-card";
+import { CreatorTasksPanel } from "@/components/tasks-view";
+import TasksManagementPage from "@/components/tasks-management-page";
 import { firebaseDb } from "@/lib/firebase/client";
 import { jobsCollection } from "@/lib/firebase/job-collections";
 import { readJobsFromFirestore } from "@/lib/firebase/client-content";
@@ -16,6 +19,7 @@ import { byLastModified, jobTitle, normalizeJob, type Job } from "@/lib/jobs";
 import { readMyJobIds } from "@/lib/firebase/job-team";
 import { ACTIVITY_COLLECTION } from "@/lib/time-tracking";
 import { PAYMENTS_COLLECTION } from "@/lib/payments";
+import { readTasksAssignedTo } from "@/lib/firebase/task-queries";
 
 const filters = ["active", "completed", "archive", "saved"] as const;
 type JobFilter = (typeof filters)[number];
@@ -28,8 +32,8 @@ function matchesFilter(job: Job, filter: JobFilter, saved: string[]) {
 }
 
 /** The shared jobs directory can show every job or only the signed-in person's jobs. */
-export function JobsList({ assignedOnly = false }: { assignedOnly?: boolean }) {
-  const { user, loading: authLoading } = useAuth();
+export function JobsList({ assignedOnly = false, tab = "jobs" }: { assignedOnly?: boolean; tab?: "jobs" | "tasks" }) {
+  const { user, role, isAdmin, loading: authLoading } = useAuth();
   const [jobs, setJobs] = React.useState<Job[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -52,12 +56,12 @@ export function JobsList({ assignedOnly = false }: { assignedOnly?: boolean }) {
         const [jobsName, myJobIds, taskSnapshot, timeSnapshot, paymentSnapshot] = await Promise.all([
           jobsCollection(),
           readMyJobIds(user.uid, user.email),
-          getDocs(query(collection(firebaseDb, TASK_COLLECTION), where("assignedTo", "==", user.uid))),
+          readTasksAssignedTo(user.uid),
           getDocs(query(collection(firebaseDb, ACTIVITY_COLLECTION), where("uid", "==", user.uid))),
           getDocs(query(collection(firebaseDb, PAYMENTS_COLLECTION), where("payeeUid", "==", user.uid))),
         ]);
         const assignedJobIds = new Set<string>(myJobIds);
-        taskSnapshot.docs.forEach((item) => { const jobId = item.data().jobId; if (typeof jobId === "string" && jobId) assignedJobIds.add(jobId); });
+        taskSnapshot.forEach((item) => { const jobId = item.jobId; if (typeof jobId === "string" && jobId) assignedJobIds.add(jobId); });
         timeSnapshot.docs.forEach((item) => { const jobId = item.data().jobId; if (typeof jobId === "string" && jobId) assignedJobIds.add(jobId); });
         paymentSnapshot.docs.forEach((item) => { const jobId = item.data().jobId; if (typeof jobId === "string" && jobId) assignedJobIds.add(jobId); });
         const snapshots = await Promise.all([...assignedJobIds].map((jobId) => getDoc(doc(firebaseDb, jobsName, jobId))));
@@ -86,6 +90,12 @@ export function JobsList({ assignedOnly = false }: { assignedOnly?: boolean }) {
   });
 
   return <DashboardListPage title={assignedOnly ? "My jobs" : "Jobs"}>
+    {assignedOnly ? <div className="mt-5 flex gap-6 border-b border-border" role="tablist" aria-label="My work">
+      {(["jobs", "tasks"] as const).map((value) => <Link key={value} href={value === "jobs" ? "/dashboard/my-jobs" : "/dashboard/my-jobs/tasks"} role="tab" aria-selected={tab === value} className={`border-b-2 px-1 pb-3 text-sm font-semibold ${tab === value ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>{value === "jobs" ? "Jobs" : "Tasks"}</Link>)}
+    </div> : null}
+    {assignedOnly && tab === "tasks" ? (isAdmin ? <div className="mt-2"><TasksManagementPage /></div> : user ? <div className="mt-6">
+      <CreatorTasksPanel creatorUid={user.uid} creatorName={user.name ?? "You"} viewer={{ uid: user.uid, name: user.name ?? user.email ?? null, isStaff: role === "admin" || role === "manager" }} />
+    </div> : null) : <>
     {/* A plain search box, always on the page, so it's easy to find on phones too. */}
     <div className="mt-5 flex items-center gap-3">
       <label className="relative min-w-0 flex-1">
@@ -102,5 +112,6 @@ export function JobsList({ assignedOnly = false }: { assignedOnly?: boolean }) {
     {visible.length ? <ul className="mt-6 grid list-none gap-3 p-0 sm:grid-cols-2 lg:grid-cols-3">
       {visible.map((job) => <li key={job.slug}><JobCard job={job} myJobs={assignedOnly} /></li>)}
     </ul> : <div className="py-14 text-center"><h2 className="text-lg font-semibold">{filter === "saved" && !search.trim() ? "No saved jobs yet" : jobs.length ? "No jobs match" : "No jobs yet"}</h2><p className="text-sm text-muted-foreground">{filter === "saved" ? "Tap the bookmark on a job to save it here." : jobs.length ? "Choose another status." : assignedOnly ? "Jobs assigned to you will appear here." : "Jobs will appear here when they are added."}</p></div>}
+    </>}
   </DashboardListPage>;
 }

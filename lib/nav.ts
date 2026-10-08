@@ -53,7 +53,7 @@ export const NAV_ITEMS: NavItem[] = [
       { label: "Appraisals", href: "/dashboard/appraisals" },
     ],
   },
-  { kind: "link", label: "Admin", href: "/admin", requiresAuth: true, requiresAdmin: true, hideInSidebar: true },
+  { kind: "link", label: "Admin", href: "/admin", requiresAuth: true, requiresStaff: true },
 ];
 
 export const ADMIN_NAV_ITEMS: NavItem[] = [
@@ -64,7 +64,7 @@ export const ADMIN_NAV_ITEMS: NavItem[] = [
   { kind: "link", label: "Invoices", href: "/admin/invoices" },
   { kind: "link", label: "Documents", href: "/admin/documents" },
   { kind: "link", label: "Appraisals", href: "/admin/appraisals" },
-  { kind: "link", label: "Blog", href: "/admin/blog", requiresAdmin: true },
+  { kind: "link", label: "Blog", href: "/admin/blog" },
   { kind: "link", label: "Tasks", href: "/admin/tasks" },
   { kind: "link", label: "Dashboard", href: "/dashboard" },
 ];

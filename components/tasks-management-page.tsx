@@ -18,14 +18,15 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { RichTextEditor } from "@/components/rich-text-editor";
-import { CreatorPicker } from "@/components/creator-picker";
+import { CreatorMultiPicker } from "@/components/creator-picker";
 import { TaskStatusBadge } from "@/components/tasks-view";
 import { TaskClientJobFields, useTaskLinkOptions } from "@/components/task-link-fields";
 import { useFirestoreTasks, useFirestoreUsers } from "@/lib/firebase/client-content";
-import { TASK_COLLECTION, TASK_STATUSES, TASK_STATUS_LABELS, formatDate, isOverdue, type Task, type TaskStatus } from "@/lib/creator-tasks";
+import { TASK_COLLECTION, TASK_STATUSES, TASK_STATUS_LABELS, formatDate, isOverdue, isTaskAssignee, taskAssigneeFields, taskAssigneeNames, taskAssignees, type Task, type TaskStatus } from "@/lib/creator-tasks";
 import { firebaseDb } from "@/lib/firebase/client";
 import { plural } from "@/lib/format";
 import { isCreatorUser } from "@/lib/users";
+import { confirmDialog } from "@/components/confirm-dialog";
 
 export type AssigneeOption = { uid: string; name: string; slug: string; isCreator: boolean; hint: string };
 
@@ -49,7 +50,7 @@ export function NewTaskDialog({ assignees, createdBy, createdByName, initialClie
   onCreated: () => void;
 }) {
   const [open, setOpen] = React.useState(false);
-  const [assignedTo, setAssignedTo] = React.useState("");
+  const [assigneeUids, setAssigneeUids] = React.useState<string[]>([]);
   const [title, setTitle] = React.useState("");
   const [description, setDescription] = React.useState("");
   const [content, setContent] = React.useState("");
@@ -60,10 +61,10 @@ export function NewTaskDialog({ assignees, createdBy, createdByName, initialClie
   const [error, setError] = React.useState<string | null>(null);
   const { clients, jobs, loading: linksLoading } = useTaskLinkOptions();
 
-  const reset = () => { setAssignedTo(""); setTitle(""); setDescription(""); setContent(""); setDueDate(""); setClientId(initialClientId); setJobId(null); setError(null); };
+  const reset = () => { setAssigneeUids([]); setTitle(""); setDescription(""); setContent(""); setDueDate(""); setClientId(initialClientId); setJobId(null); setError(null); };
   const handleOpenChange = (next: boolean) => { setOpen(next); if (!next) reset(); };
   // Tasks belong to jobs, so picking a client means picking one of its jobs too.
-  const canSave = title.trim().length > 0 && assignedTo.length > 0 && (!clientId || Boolean(jobId)) && !busy;
+  const canSave = title.trim().length > 0 && assigneeUids.length > 0 && (!clientId || Boolean(jobId)) && !busy;
 
   const save = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -71,7 +72,7 @@ export function NewTaskDialog({ assignees, createdBy, createdByName, initialClie
     setBusy(true);
     setError(null);
     try {
-      const assignee = assignees.find((candidate) => candidate.uid === assignedTo);
+      const people = assigneeUids.flatMap((uid) => { const person = assignees.find((candidate) => candidate.uid === uid); return person ? [{ uid, name: person.name.replace(/ (you)$/, "") }] : []; });
       const now = new Date().toISOString();
       await addDoc(collection(firebaseDb, TASK_COLLECTION), {
         title: title.trim(),
@@ -81,8 +82,7 @@ export function NewTaskDialog({ assignees, createdBy, createdByName, initialClie
         clientName: clients.find((client) => client.slug === clientId)?.name ?? null,
         jobId,
         jobName: jobs.find((job) => job.slug === jobId)?.name ?? null,
-        assignedTo,
-        assignedToName: assignee?.name ?? null,
+        ...taskAssigneeFields(people),
         createdBy,
         createdByName,
         status: "todo",
@@ -117,10 +117,10 @@ export function NewTaskDialog({ assignees, createdBy, createdByName, initialClie
           <form onSubmit={save} className="space-y-4">
             <div className="space-y-1.5">
               <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Assign to</span>
-              <CreatorPicker
+              <CreatorMultiPicker
                 options={assignees.map((a) => ({ value: a.uid, label: a.hint ? `${a.name} · ${a.hint}` : a.name }))}
-                value={assignedTo}
-                onChange={setAssignedTo}
+                values={assigneeUids}
+                onChange={setAssigneeUids}
                 placeholder="Search people"
                 emptyText="No people found."
                 autoFocus={false}
@@ -205,9 +205,9 @@ export default function TasksPage() {
   ], [tasks]);
   const visible = tasks.filter((task) => {
     if (status !== "all" && task.status !== status) return false;
-    if (assigneeId !== "all" && task.assignedTo !== assigneeId) return false;
+    if (assigneeId !== "all" && !isTaskAssignee(task, assigneeId)) return false;
     if (jobId !== "all" && task.jobId !== jobId) return false;
-    return [task.title, task.description, task.content, task.assignedToName, task.clientName, task.jobName].filter(Boolean).join(" ").toLowerCase().includes(search.trim().toLowerCase());
+    return [task.title, task.description, task.content, taskAssigneeNames(task), task.clientName, task.jobName].filter(Boolean).join(" ").toLowerCase().includes(search.trim().toLowerCase());
   }).sort((a, b) => {
     if (sort === "title") return a.title.localeCompare(b.title);
     if (sort === "due") return (a.dueDate || "9999").localeCompare(b.dueDate || "9999");
@@ -224,7 +224,7 @@ export default function TasksPage() {
         title: `${task.title} (Copy)`, description: task.description, content: task.content ?? "",
         clientId: task.clientId ?? null, clientName: task.clientName ?? null,
         jobId: task.jobId ?? null, jobName: task.jobName ?? null,
-        assignedTo: task.assignedTo, assignedToName: task.assignedToName,
+        ...taskAssigneeFields(taskAssignees(task)),
         createdBy: user!.uid, createdByName: user!.name ?? user!.email,
         status: "todo", dueDate: task.dueDate, createdAt: now, updatedAt: now,
       });
@@ -237,7 +237,7 @@ export default function TasksPage() {
   };
 
   const remove = async (id: string, title: string) => {
-    if (!window.confirm(`Delete “${title}”? This can’t be undone.`)) return;
+    if (!await confirmDialog(`Delete “${title}”? This can’t be undone.`)) return;
     setBusyId(id);
     setActionError(null);
     try {
@@ -278,8 +278,8 @@ export default function TasksPage() {
     {error || actionError ? <p className="mb-4 text-[13px] text-destructive">{error ?? actionError}</p> : null}
     <section className="mt-4 overflow-x-auto">
       {view === "cards" ? visible.length ? <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2 lg:grid-cols-3">{visible.map((task) => {
-        const assignee = assignees.find((candidate) => candidate.uid === task.assignedTo);
-        const name = task.assignedToName ?? assignee?.name ?? "—";
+        const assignee = taskAssignees(task).length === 1 ? assignees.find((candidate) => candidate.uid === task.assignedTo) : undefined;
+        const name = taskAssigneeNames(task) || assignee?.name || "—";
         return <li key={task.id}><DashboardCard className="h-full"><button type="button" onClick={() => router.push(`/dashboard/work/${encodeURIComponent(task.id)}`)} className="flex min-h-40 w-full flex-col p-4 pr-14 text-left text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
           <span className="self-start"><TaskStatusBadge status={task.status} overdue={isOverdue(task)} /></span>
           <span className="mt-4 line-clamp-1 font-semibold leading-tight">{task.clientName || name}</span>
@@ -288,8 +288,8 @@ export default function TasksPage() {
         </button><div className="absolute right-2 top-2"><DropdownMenu><DropdownMenuTrigger asChild><button type="button" aria-label={`Actions for ${task.title}`} disabled={busyId === task.id} className="grid h-9 w-9 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-50"><MoreHorizontal className="h-4 w-4" aria-hidden="true" /></button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-40"><DropdownMenuItem onSelect={() => void duplicate(task)}><Copy className="h-4 w-4" />Duplicate</DropdownMenuItem>{role === "admin" ? <DropdownMenuItem variant="destructive" onSelect={() => void remove(task.id, task.title)}><Trash2 className="h-4 w-4" />Delete</DropdownMenuItem> : null}</DropdownMenuContent></DropdownMenu></div></DashboardCard></li>;
       })}</ul> : <div className="px-5 py-12 text-center"><p className="m-0 text-[15px] font-semibold">{tasks.length ? "No tasks match" : "No tasks yet"}</p><p className="mb-0 mt-1 text-sm text-muted-foreground">{tasks.length ? "Try another search or filter." : "Create a task and assign it to a creator."}</p></div> :
       visible.length ? <Table className="w-full min-w-[680px] table-fixed border-collapse"><TableHeader><TableRow><TableHead className="px-4 py-3">Task</TableHead><TableHead className="w-28 px-4 py-3">Created</TableHead><TableHead className="w-28 px-4 py-3">Due</TableHead><TableHead className="w-20 px-4 py-3 text-right">Actions</TableHead></TableRow></TableHeader><TableBody>{visible.map((task) => {
-        const assignee = assignees.find((candidate) => candidate.uid === task.assignedTo);
-        const name = task.assignedToName ?? assignee?.name ?? "—";
+        const assignee = taskAssignees(task).length === 1 ? assignees.find((candidate) => candidate.uid === task.assignedTo) : undefined;
+        const name = taskAssigneeNames(task) || assignee?.name || "—";
         return <ClickableTableRow key={task.id} label={`Open task ${task.title}`} onActivate={() => router.push(`/dashboard/work/${encodeURIComponent(task.id)}`)} className="align-middle">
           <TableCell className="px-4 py-3">
             <Link href={`/dashboard/work/${encodeURIComponent(task.id)}`} className="m-0 block max-w-full truncate text-left font-semibold text-foreground hover:text-primary">{task.title}</Link>

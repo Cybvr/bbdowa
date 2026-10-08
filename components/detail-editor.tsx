@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { useAuth } from "@/components/auth-provider";
 import { firebaseStorage } from "@/lib/firebase/client";
+import { confirmDialog } from "@/components/confirm-dialog";
 
 /**
  * Shared editing kit for the dashboard detail pages. Each entity page renders
@@ -429,7 +430,7 @@ export function EditSheet({
 
   const remove = async () => {
     if (!onDelete) return;
-    if (!window.confirm(deleteConfirm)) return;
+    if (!await confirmDialog(deleteConfirm)) return;
     setBusy("delete");
     setError(null);
     try {

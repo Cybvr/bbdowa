@@ -20,6 +20,7 @@ export function NjeriPageView() {
     renameChat,
     sendMessage,
     confirmAction,
+    confirmAll,
   } = useNjeri();
 
   const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
@@ -55,6 +56,7 @@ export function NjeriPageView() {
           canManageRecords={canManageRecords}
           onSendMessage={sendMessage}
           onConfirmAction={confirmAction}
+          onConfirmAll={confirmAll}
           onToggleHistory={() => setMobileHistoryOpen(true)}
           className="h-full flex-1"
         />

@@ -9,6 +9,7 @@ import { usePortalClient } from "@/components/portal-shell";
 import { firebaseDb } from "@/lib/firebase/client";
 import { useFirestoreUsers } from "@/lib/firebase/client-content";
 import { CLIENT_INVITES_COLLECTION, CLIENT_TIMEZONES, TEAM_SIZE_RANGES, teamSizeLabel, type Client, type ClientInvite } from "@/lib/clients";
+import { confirmDialog } from "@/components/confirm-dialog";
 
 const FIELD = "block space-y-1.5 text-sm font-medium";
 const INPUT = "h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary/40";
@@ -77,7 +78,7 @@ export function PortalCompany() {
             <li key={invite.email} className="flex min-w-0 items-center gap-3 text-body">
               <CreatorThumbnail avatarSeed={invite.name} className="h-8 w-8 shrink-0" />
               <span className="min-w-0 flex-1 truncate font-medium">{invite.name}<span className="ml-2 text-sm font-normal text-muted-foreground">{invite.email}</span></span>
-              <button type="button" onClick={() => { if (window.confirm(`Remove ${invite.name}?`)) void deleteDoc(doc(firebaseDb, CLIENT_INVITES_COLLECTION, invite.email)); }} className="shrink-0 text-xs font-semibold text-destructive hover:underline">Remove</button>
+              <button type="button" onClick={async () => { if (await confirmDialog(`Remove ${invite.name}?`)) void deleteDoc(doc(firebaseDb, CLIENT_INVITES_COLLECTION, invite.email)); }} className="shrink-0 text-xs font-semibold text-destructive hover:underline">Remove</button>
             </li>
           )) : null}
         </ul>

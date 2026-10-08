@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from "@/components/ui/input";
 import { firebaseDb } from "@/lib/firebase/client";
 import { PAYMENTS_COLLECTION, type Payment, type PaymentCurrency, type PaymentStatus } from "@/lib/payments";
+import { confirmDialog } from "@/components/confirm-dialog";
 
 const FIELD = "block space-y-1.5 text-sm font-medium";
 
@@ -68,7 +69,7 @@ export function EditPaymentDialog({
   };
 
   const remove = async () => {
-    if (!payment || saving || !window.confirm("Delete this payment? This can't be undone.")) return;
+    if (!payment || saving || !await confirmDialog("Delete this payment? This can't be undone.")) return;
     setSaving(true);
     setError(null);
     try {

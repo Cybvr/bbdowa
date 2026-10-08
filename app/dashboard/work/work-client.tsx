@@ -16,6 +16,7 @@ import { PageLoadingSkeleton } from "@/components/dashboard/loading-skeleton";
 import { firebaseDb } from "@/lib/firebase/client";
 import { TASK_COLLECTION, formatDate, isOverdue, sortTasks, type Task, type TaskStatus, TASK_STATUSES, TASK_STATUS_LABELS } from "@/lib/creator-tasks";
 import { plural } from "@/lib/format";
+import { readTasksAssignedTo } from "@/lib/firebase/task-queries";
 
 const TASK_STATUS_TABS: FilterTab<TaskStatus | "all">[] = [
   { key: "all", label: "All" },
@@ -45,8 +46,7 @@ function MyTasksPage() {
       setTasks([]);
       return;
     }
-    const snapshot = await getDocs(query(collection(firebaseDb, TASK_COLLECTION), where("assignedTo", "==", uid)));
-    setTasks(sortTasks(snapshot.docs.map((task) => ({ id: task.id, ...(task.data() as Omit<Task, "id">) }))));
+    setTasks(sortTasks(await readTasksAssignedTo(uid)));
   }, [user?.uid]);
 
   React.useEffect(() => {

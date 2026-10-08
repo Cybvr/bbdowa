@@ -24,6 +24,7 @@ import { ImageUploadField } from "@/components/detail-editor";
 import { firebaseDb } from "@/lib/firebase/client";
 import { jobsCollection } from "@/lib/firebase/job-collections";
 import type { JobMedia } from "@/lib/jobs";
+import { confirmDialog } from "@/components/confirm-dialog";
 
 export function JobMediaAddAction({
   jobSlug,
@@ -139,7 +140,7 @@ export function JobMediaDeleteAction({
 
   const remove = async () => {
     const media = mediaItems[mediaIndex];
-    if (!media || busy || !window.confirm(`Delete this media from ${jobName}? This can’t be undone.`)) return;
+    if (!media || busy || !await confirmDialog(`Delete this media from ${jobName}? This can’t be undone.`)) return;
 
     setBusy(true);
     try {

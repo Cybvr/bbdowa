@@ -16,13 +16,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { BLOG_CATEGORIES, getBlogMediaType, type BlogCategory, type BlogMediaType, type BlogPost } from "@/lib/blog";
 import { firebaseDb } from "@/lib/firebase/client";
 import { slugify } from "@/lib/job-records";
+import { confirmDialog } from "@/components/confirm-dialog";
 
 const FIELD_LABEL = "block text-sm font-medium text-foreground";
 const FIELD = "mt-2 w-full border-input bg-background text-foreground";
 
 export function BlogEditor({ post }: { post?: BlogPost }) {
   const router = useRouter();
-  const { isAdmin, loading: authLoading } = useAuth();
+  const { isAdmin, role, loading: authLoading } = useAuth();
+  const canManageBlog = isAdmin || role === "manager";
   const [title, setTitle] = React.useState(post?.title ?? "");
   const [category, setCategory] = React.useState<BlogCategory>(post?.category ?? "News");
   const [excerpt, setExcerpt] = React.useState(post?.excerpt ?? "");
@@ -38,7 +40,7 @@ export function BlogEditor({ post }: { post?: BlogPost }) {
 
   const save = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!isAdmin || busy) return;
+    if (!canManageBlog || busy) return;
     if (mediaUploading) {
       setError("Wait for the cover media to finish uploading.");
       return;
@@ -91,8 +93,8 @@ export function BlogEditor({ post }: { post?: BlogPost }) {
   };
 
   const remove = async () => {
-    if (!post || !isAdmin || busy) return;
-    if (!window.confirm(`Delete “${post.title}”? This can’t be undone.`)) return;
+    if (!post || !canManageBlog || busy) return;
+    if (!await confirmDialog(`Delete “${post.title}”? This can’t be undone.`)) return;
     setBusy(true);
     setError(null);
     try {
@@ -112,7 +114,7 @@ export function BlogEditor({ post }: { post?: BlogPost }) {
   };
 
   if (authLoading) return <PageLoadingSkeleton titleWidth="w-40" />;
-  if (!isAdmin) return <><PageHeader title="Blog" /><p className="mt-6 text-sm text-muted-foreground">An admin account is required to manage blog posts.</p></>;
+  if (!canManageBlog) return <><PageHeader title="Blog" /><p className="mt-6 text-sm text-muted-foreground">A staff account is required to manage blog posts.</p></>;
 
   return (
     <>

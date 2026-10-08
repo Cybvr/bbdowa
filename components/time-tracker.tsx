@@ -2,17 +2,17 @@
 
 import * as React from "react";
 import { addDoc, collection, doc, getDocs, query, updateDoc, where } from "firebase/firestore";
-import { LuArrowUpRight, LuCheck, LuPause, LuPlay, LuPlus, LuSquare } from "react-icons/lu";
+import { LuArrowUpRight, LuPause, LuPlay, LuPlus, LuSquare } from "react-icons/lu";
 import { useAuth } from "@/components/auth-provider";
 import { firebaseDb } from "@/lib/firebase/client";
 import { jobsCollection } from "@/lib/firebase/job-collections";
+import { readMyJobIds } from "@/lib/firebase/job-team";
 import { jobTitle, normalizeJob } from "@/lib/jobs";
 import { EmptyState, PageHeader } from "@/components/dashboard/ui";
 import { DashboardCard } from "@/components/dashboard-card";
 import { FilterBar, type FilterTab, type SortOption, type ViewMode } from "@/components/dashboard/filter-bar";
 import { LIST_ACTION_CLASS } from "@/components/dashboard/list-page-actions";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import {
   Select,
   SelectContent,
@@ -92,7 +92,7 @@ function durationValueFromMinutes(minutes: number): string {
 
 /** `jobSlug` scopes the tracker to one job: only its entries show and new trackers are logged against it. */
 export function TimeTracker({ compact = false, jobSlug }: { compact?: boolean; jobSlug?: string }) {
-  const { user, loading: authLoading } = useAuth();
+  const { user, role, loading: authLoading } = useAuth();
   const [entries, setEntries] = React.useState<ActivityEntry[]>([]);
   const [jobs, setJobs] = React.useState<JobOption[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -112,6 +112,9 @@ export function TimeTracker({ compact = false, jobSlug }: { compact?: boolean; j
   const [activity, setActivity] = React.useState("");
   const [jobId, setJobId] = React.useState<string>(jobSlug ?? NO_JOB);
   const [duration, setDuration] = React.useState("");
+  const isStaff = role === "admin" || role === "manager";
+  const userId = user?.uid;
+  const userEmail = user?.email;
 
   const load = React.useCallback(async (uid: string) => {
     const snapshot = await getDocs(
@@ -146,14 +149,32 @@ export function TimeTracker({ compact = false, jobSlug }: { compact?: boolean; j
   }, [authLoading, user, load]);
 
   React.useEffect(() => {
+    if (authLoading) return;
+    if (!userId) {
+      setJobs([]);
+      return;
+    }
+
     let active = true;
-    jobsCollection().then((name) => getDocs(collection(firebaseDb, name)))
-      .then((snapshot) => {
+    Promise.all([
+      jobsCollection(),
+      isStaff ? Promise.resolve<Set<string> | null>(null) : readMyJobIds(userId, userEmail),
+    ])
+      .then(async ([name, assignedJobIds]) => ({
+        snapshot: await getDocs(collection(firebaseDb, name)),
+        assignedJobIds,
+      }))
+      .then(({ snapshot, assignedJobIds }) => {
         if (!active) return;
         const rows = snapshot.docs
-          .map((document) => normalizeJob(document.data(), document.id))
-          .filter((job) => job.status === "active")
-          .map((job) => ({ slug: job.slug, name: jobTitle(job) }))
+          .map((document) => ({ documentId: document.id, job: normalizeJob(document.data(), document.id) }))
+          .filter(({ documentId, job }) =>
+            job.status === "active"
+            && (isStaff
+              || assignedJobIds?.has(documentId)
+              || assignedJobIds?.has(job.slug)),
+          )
+          .map(({ job }) => ({ slug: job.slug, name: jobTitle(job) }))
           .sort((a, b) => a.name.localeCompare(b.name));
         setJobs(rows);
       })
@@ -161,7 +182,7 @@ export function TimeTracker({ compact = false, jobSlug }: { compact?: boolean; j
     return () => {
       active = false;
     };
-  }, []);
+  }, [authLoading, isStaff, userEmail, userId]);
 
   // The single open (not-yet-stopped) activity, whether running or paused.
   // Compact mode can have several open at once; full mode only ever starts one.
@@ -598,7 +619,7 @@ export function TimeTracker({ compact = false, jobSlug }: { compact?: boolean; j
       </Dialog>
 
       <Dialog open={trackerOpen} onOpenChange={(open) => { setTrackerOpen(open); if (!open) resetForm(); }}>
-        <DialogContent className="gap-5 p-5 sm:max-w-md sm:p-6">
+        <DialogContent className="max-h-[92vh] gap-5 overflow-y-auto overflow-x-hidden p-5 sm:max-w-md sm:p-6">
           <DialogHeader className="pr-12">
             <DialogTitle>Add tracker</DialogTitle>
             <DialogDescription className="sr-only">Start a timer or log time you have already spent.</DialogDescription>
@@ -627,21 +648,10 @@ export function TimeTracker({ compact = false, jobSlug }: { compact?: boolean; j
             <div><label htmlFor="tracker-activity" className="sr-only">Activity</label><Input id="tracker-activity" value={activity} onChange={(event) => setActivity(event.target.value)} disabled={busy} placeholder="What are you working on?" required className="h-12 rounded-xl border-0 bg-muted px-4 text-base" /></div>
             <div className="space-y-2">
               <span className="text-sm font-medium">Job</span>
-              <Command className="rounded-xl border border-border bg-background">
-                <CommandInput disabled={busy} placeholder={`Search ${jobs.length} active job${jobs.length === 1 ? "" : "s"}`} className="h-11" />
-                <CommandList className="max-h-52">
-                  <CommandEmpty>No active jobs found.</CommandEmpty>
-                  <CommandGroup heading="Active jobs">
-                    {jobs.map((option) => (
-                      <CommandItem key={option.slug} value={`${option.name} ${option.slug}`} onSelect={() => setJobId(option.slug)} className="min-h-10">
-                        <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400" aria-hidden="true" />
-                        <span className="min-w-0 flex-1 truncate">{option.name}</span>
-                        {jobId === option.slug ? <LuCheck className="h-4 w-4 shrink-0 text-primary" aria-label="Selected" /> : null}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
+              <Select value={jobId === NO_JOB ? "" : jobId} onValueChange={setJobId} disabled={busy}>
+                <SelectTrigger className="h-11 w-full min-w-0 rounded-xl text-sm"><SelectValue placeholder={jobs.length ? "Select a job" : isStaff ? "No active jobs" : "No assigned jobs"} /></SelectTrigger>
+                <SelectContent>{jobs.map((option) => <SelectItem key={option.slug} value={option.slug}>{option.name}</SelectItem>)}</SelectContent>
+              </Select>
             </div>
             <div className="flex flex-col gap-2 pt-1">
               <button type="submit" disabled={busy || (mode === "timer" ? !canStart : !canLog)} className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50">{mode === "timer" ? <LuPlay className="h-4 w-4" aria-hidden="true" /> : null}{busy ? "Saving…" : mode === "timer" ? "Start tracker" : "Log time"}</button>

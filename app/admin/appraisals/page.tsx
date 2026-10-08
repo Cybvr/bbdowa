@@ -18,6 +18,7 @@ import { APPRAISAL_COLLECTION, formatOverall, scoreAppraisal } from "@/lib/appra
 import { formatDocumentDate } from "@/lib/documents";
 import { firebaseDb } from "@/lib/firebase/client";
 import { plural } from "@/lib/format";
+import { confirmDialog } from "@/components/confirm-dialog";
 
 export default function AppraisalsAdminPage() {
   const { role, loading: authLoading } = useAuth();
@@ -32,7 +33,7 @@ export default function AppraisalsAdminPage() {
   );
 
   const remove = async (id: string, name: string) => {
-    if (!window.confirm(`Delete the appraisal for “${name}”? This can’t be undone.`)) return;
+    if (!await confirmDialog(`Delete the appraisal for “${name}”? This can’t be undone.`)) return;
     setBusyId(id);
     setActionError(null);
     try {

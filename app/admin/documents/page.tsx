@@ -19,6 +19,7 @@ import { DOCUMENT_COLLECTION, type DocumentStatus as Status } from "@/lib/docume
 import { firebaseDb } from "@/lib/firebase/client";
 import { plural } from "@/lib/format";
 import { isCreatorUser } from "@/lib/users";
+import { confirmDialog } from "@/components/confirm-dialog";
 
 export default function DocumentsPage() {
   const { user, role, loading: authLoading } = useAuth();
@@ -56,7 +57,7 @@ export default function DocumentsPage() {
   };
 
   const remove = async (id: string, title: string) => {
-    if (!window.confirm(`Delete “${title}”? This can’t be undone.`)) return;
+    if (!await confirmDialog(`Delete “${title}”? This can’t be undone.`)) return;
     setBusyId(id);
     setActionError(null);
     try {

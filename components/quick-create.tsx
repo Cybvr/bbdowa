@@ -69,7 +69,7 @@ const TEXTAREA =
 
 export function QuickCreate({ type, iconOnly = false }: { type: CreateType; iconOnly?: boolean }) {
   const router = useRouter();
-  const { isAdmin } = useAuth();
+  const { isAdmin, role } = useAuth();
   const [open, setOpen] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
   const [loadingClients, setLoadingClients] = React.useState(false);
@@ -136,7 +136,8 @@ export function QuickCreate({ type, iconOnly = false }: { type: CreateType; icon
     };
   }, [open, type]);
 
-  if (!isAdmin) return null;
+  const canCreate = isAdmin || (role === "manager" && type === "update");
+  if (!canCreate) return null;
 
   const reset = () => {
     setTitle("");

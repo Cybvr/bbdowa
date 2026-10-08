@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Outfit, Roboto_Mono } from "next/font/google";
 import { PwaRegister } from "@/components/pwa-register";
 import Njeri from "@/components/njeri";
+import { ConfirmHost } from "@/components/confirm-dialog";
 import { AuthProvider } from "@/components/auth-provider";
 import { SITE_DESCRIPTION, SITE_LOGO, SITE_NAME } from "@/lib/metadata";
 import "./globals.css";
@@ -62,6 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AuthProvider>
           {children}
           <Njeri />
+          <ConfirmHost />
         </AuthProvider>
       </body>
     </html>

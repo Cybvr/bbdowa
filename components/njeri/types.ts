@@ -8,6 +8,7 @@ export type ChatMessage = {
   text: string;
   timestamp?: number;
   action?: NjeriActionProposal | null;
+  actions?: NjeriActionProposal[];
 };
 
 export type NjeriConversation = {

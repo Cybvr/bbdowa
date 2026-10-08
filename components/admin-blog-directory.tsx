@@ -13,6 +13,7 @@ import { BLOG_CATEGORIES, type BlogCategory, type BlogPost } from "@/lib/blog";
 import { formatBlogDate } from "@/lib/blog-dates";
 import { firebaseDb } from "@/lib/firebase/client";
 import { plural } from "@/lib/format";
+import { confirmDialog } from "@/components/confirm-dialog";
 
 const CATEGORIES: { value: BlogCategory | "all"; label: string }[] = [
   { value: "all", label: "All categories" },
@@ -25,7 +26,8 @@ const SORTS: SortOption<"recent" | "title">[] = [
 
 export function AdminBlogDirectory({ posts }: { posts: BlogPost[] }) {
   const router = useRouter();
-  const { isAdmin, loading: authLoading } = useAuth();
+  const { isAdmin, role, loading: authLoading } = useAuth();
+  const canManageBlog = isAdmin || role === "manager";
   const [search, setSearch] = React.useState("");
   const [category, setCategory] = React.useState<BlogCategory | "all">("all");
   const [sort, setSort] = React.useState<"recent" | "title">("recent");
@@ -43,8 +45,8 @@ export function AdminBlogDirectory({ posts }: { posts: BlogPost[] }) {
       : b.publishedAt.localeCompare(a.publishedAt)), [posts, removed, category, search, sort]);
 
   const remove = async (post: BlogPost) => {
-    if (!isAdmin || busySlug) return;
-    if (!window.confirm(`Delete “${post.title}”? This can’t be undone.`)) return;
+    if (!canManageBlog || busySlug) return;
+    if (!await confirmDialog(`Delete “${post.title}”? This can’t be undone.`)) return;
     setBusySlug(post.slug);
     setError(null);
     try {
@@ -60,7 +62,7 @@ export function AdminBlogDirectory({ posts }: { posts: BlogPost[] }) {
   };
 
   if (authLoading) return <p className="mt-6 text-sm text-muted-foreground">Loading blog posts…</p>;
-  if (!isAdmin) return <p className="mt-6 text-sm text-muted-foreground">An admin account is required to manage blog posts.</p>;
+  if (!canManageBlog) return <p className="mt-6 text-sm text-muted-foreground">A staff account is required to manage blog posts.</p>;
 
   return (
     <>

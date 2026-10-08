@@ -12,6 +12,7 @@ import { TASK_COLLECTION, sortTasks, type Task } from "@/lib/creator-tasks";
 import { jobsCollection } from "@/lib/firebase/job-collections";
 import { ACTIVITY_COLLECTION, type ActivityEntry } from "@/lib/time-tracking";
 import { normalizeUser, type User } from "@/lib/users";
+import { readTasksAssignedTo } from "@/lib/firebase/task-queries";
 
 async function readCollection<T>(name: string): Promise<T[]> {
   const snapshot = await getDocs(collection(firebaseDb, name));
@@ -78,10 +79,8 @@ export function readTimeEntriesForUser(uid: string) {
 }
 
 export function readTasksForNjeri(uid: string, isStaff: boolean) {
-  const tasksQuery = isStaff
-    ? collection(firebaseDb, TASK_COLLECTION)
-    : query(collection(firebaseDb, TASK_COLLECTION), where("assignedTo", "==", uid));
-  return getDocs(tasksQuery).then((snapshot) =>
+  if (!isStaff) return readTasksAssignedTo(uid);
+  return getDocs(collection(firebaseDb, TASK_COLLECTION)).then((snapshot) =>
     snapshot.docs.map((task) => ({ id: task.id, ...(task.data() as Omit<Task, "id">) })),
   );
 }

@@ -13,6 +13,7 @@ import { useFirestoreUsers } from "@/lib/firebase/client-content";
 import { creatorCategoryOptions, isCreatorUser, isTeamUser, userHref, userRoles, type User, type UserRole } from "@/lib/users";
 import { UsersTableSkeleton } from "@/components/dashboard/loading-skeleton";
 import { plural } from "@/lib/format";
+import { isSuperAdminEmail } from "@/lib/job-migration";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 
@@ -25,10 +26,11 @@ const ROLE_LABELS: Record<UserRole, string> = {
   client: "Client",
 };
 
-function RoleBadge({ role }: { role: UserRole }) {
+function RoleBadge({ role, email }: { role: UserRole; email?: string | null }) {
+  const label = role === "admin" && isSuperAdminEmail(email) ? "Super Admin" : ROLE_LABELS[role];
   return (
     <span className={`inline-flex items-center rounded-full px-2 py-1 font-semibold uppercase tracking-[0.06em] ${role === "admin" ? "bg-foreground text-background" : role === "creator" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
-      {ROLE_LABELS[role]}
+      {label}
     </span>
   );
 }
@@ -60,7 +62,7 @@ function UserRow({ user, categoryOptions }: { user: User; categoryOptions: strin
         <div className="min-w-0">
           <strong className="block truncate font-semibold text-foreground">{user.name}</strong>
           <div className="mt-1 flex min-w-0 items-center gap-2 overflow-hidden whitespace-nowrap text-sm text-muted-foreground">
-            {user.role === "pending" && !userRoles(user).length ? <PendingBadge /> : userRoles(user).map((role) => <RoleBadge key={role} role={role} />)}
+            {user.role === "pending" && !userRoles(user).length ? <PendingBadge /> : userRoles(user).map((role) => <RoleBadge key={role} role={role} email={user.email} />)}
             <span className="hidden truncate sm:inline">{user.email ?? "No email added"}</span>
             {user.title ? <span className="hidden truncate lg:inline">· {user.title}</span> : null}
           </div>

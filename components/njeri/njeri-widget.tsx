@@ -19,6 +19,7 @@ export function NjeriWidget() {
     canManageRecords,
     sendMessage,
     confirmAction,
+    confirmAll,
     newChat,
   } = useNjeri();
 
@@ -69,6 +70,7 @@ export function NjeriWidget() {
         canManageRecords={canManageRecords}
         onSendMessage={sendMessage}
         onConfirmAction={confirmAction}
+        onConfirmAll={confirmAll}
         headerActions={
           <div className="flex items-center gap-1">
             <button

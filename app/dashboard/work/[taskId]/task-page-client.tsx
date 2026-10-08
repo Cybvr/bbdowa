@@ -9,7 +9,7 @@ import { PageLoadingSkeleton } from "@/components/dashboard/loading-skeleton";
 import { TaskDetailPage } from "@/components/tasks-view";
 import { useFirestoreUsers } from "@/lib/firebase/client-content";
 import { firebaseDb } from "@/lib/firebase/client";
-import { TASK_COLLECTION, type Task } from "@/lib/creator-tasks";
+import { TASK_COLLECTION, isTaskAssignee, type Task } from "@/lib/creator-tasks";
 
 export default function TaskPageClient({ taskId }: { taskId: string }) {
   const router = useRouter();
@@ -44,7 +44,7 @@ export default function TaskPageClient({ taskId }: { taskId: string }) {
   if (error || !task) return <main className="mx-auto w-full max-w-6xl flex-1 px-5 pt-8 sm:px-8"><Link href="/dashboard/work" className="text-sm text-primary hover:underline">← Back to work</Link><h1 className="mt-8 text-page-title font-bold">{error ? "Task unavailable" : "Task not found"}</h1><p className="text-muted-foreground">{error || "This task may have been removed."}</p></main>;
 
   const isStaff = role === "admin" || role === "manager";
-  const isAssignee = Boolean(user?.uid) && task.assignedTo === user?.uid;
+  const isAssignee = isTaskAssignee(task, user?.uid);
   const sharedEdit = searchParams.get("shared") === "1" && task.shareEnabled === true;
   const assignees = isStaff
     ? users.filter((candidate) => candidate.uid).map((candidate) => ({ uid: candidate.uid!, name: candidate.name }))
@@ -56,6 +56,6 @@ export default function TaskPageClient({ taskId }: { taskId: string }) {
     canDelete={isStaff || isAssignee}
     assignees={assignees}
     onChanged={() => void load()}
-    onDeleted={() => router.push("/dashboard/work")}
+    onDeleted={() => (window.history.length > 1 ? router.back() : router.push("/dashboard/work"))}
   />;
 }

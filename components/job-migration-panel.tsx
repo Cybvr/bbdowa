@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { confirmDialog } from "@/components/confirm-dialog";
 import { useAuth } from "@/components/auth-provider";
 import { isSuperAdminEmail, type MigrationState } from "@/lib/job-migration";
 import {
@@ -90,8 +91,8 @@ export function JobMigrationPanel() {
 
     {state?.done && legacyCount ? <div className="mt-5 border-t border-border pt-4">
       <p className="m-0 text-sm text-muted-foreground">{legacyCount} old campaign {legacyCount === 1 ? "record is" : "records are"} still kept as a backup. Delete them once you’ve checked the jobs look right.</p>
-      <button type="button" disabled={Boolean(busy)} onClick={() => {
-        if (!window.confirm(`Delete ${legacyCount} old campaign records? This can’t be undone.`)) return;
+      <button type="button" disabled={Boolean(busy)} onClick={async () => {
+        if (!await confirmDialog(`Delete ${legacyCount} old campaign records? This can’t be undone.`)) return;
         void run("delete", async () => { const removed = await deleteLegacyCampaigns(); setMessage(`Deleted ${removed} old campaign records.`); await refresh(); });
       }} className={`${BUTTON} mt-3 border border-destructive text-destructive hover:bg-destructive/10`}>
         {busy === "delete" ? "Deleting…" : "Delete old campaigns"}

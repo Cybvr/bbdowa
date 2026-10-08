@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useOptionalAuth } from "@/components/auth-provider";
 import { getAnswer } from "@/lib/njeri-assistant";
 import { readJobsFromFirestore, readClientsFromFirestore, readDocumentsForNjeri, readTasksForNjeri, readTimeEntriesForNjeri, readUserForNjeri, readUsersFromFirestore } from "@/lib/firebase/client-content";
-import { isCreatorUser } from "@/lib/users";
+import { isCreatorUser, userRoles } from "@/lib/users";
 import { elapsedMs } from "@/lib/time-tracking";
 import type { NjeriActionProposal, NjeriResponse, NjeriWorkspaceContext } from "@/lib/njeri-actions";
 import type { ChatMessage, NjeriConversation } from "./types";
@@ -146,7 +146,7 @@ export function useNjeri() {
       }));
 
       let responseText: string;
-      let responseAction: NjeriActionProposal | null | undefined;
+      let responseActions: NjeriActionProposal[] | undefined;
       let workspaceContext: NjeriWorkspaceContext | null = null;
       let workspaceContextUnavailable = false;
       const canManage = auth?.role === "admin" || auth?.role === "manager";
@@ -182,6 +182,7 @@ export function useNjeri() {
                 availability: availability ?? "unconfirmed", referralSource: referralSource ?? "", clearance: clearance ?? "pending", vetted: vetted ?? false,
                 workedOn: workedOn ?? [], workHistory: workHistory ?? [], dayRate: hideRate ? "" : dayRate ?? "", rateMin: hideRate ? null : rateMin ?? null, rateCurrency: rateCurrency ?? "NGN", yearsActive: yearsActive ?? null, craftNote: craftNote ?? "",
               })),
+              team: users.flatMap((user) => user.uid ? [{ name: user.name, uid: user.uid, role: `${userRoles(user).join(", ")}${user.uid === auth?.user?.uid ? " (current user)" : ""}` }] : []).slice(0, 200),
               jobs: jobs.slice(0, 60).map(({ name, slug, clientName, category, status, summary }) => ({
                 name: name || "", slug, clientName: clientName || "", category: category || "", status: status || "", summary: summary || "",
               })),
@@ -221,13 +222,18 @@ export function useNjeri() {
         }
 
         responseText = data.answer;
-        const proposedAction = (data as NjeriResponse).action;
-        const ownTaskAction = proposedAction?.type === "delete_task"
-          || (proposedAction?.type === "update_task" && !("assignedTo" in proposedAction.changes) && !("assignedToName" in proposedAction.changes));
-        if (proposedAction && (canManage || ownTaskAction)) {
-          responseAction = proposedAction;
-        } else if (proposedAction) {
-          responseText = proposedAction.type === "create_task" || proposedAction.type === "update_task"
+        const { action: singleAction, actions: proposedActions } = data as NjeriResponse;
+        const proposals = proposedActions ?? (singleAction ? [singleAction] : []);
+        const isAllowed = (proposed: NjeriActionProposal) => canManage
+          || proposed.type === "delete_task"
+          || (proposed.type === "update_task" && !("assignedTo" in proposed.changes) && !("assignedToName" in proposed.changes));
+        const allowed = proposals.filter(isAllowed).map((proposed) => proposed.type === "create_task" && !proposed.record.assignedTo && auth?.user?.uid
+          ? { ...proposed, record: { ...proposed.record, assignedTo: auth.user.uid, assignedToName: auth.user.name ?? "" } }
+          : proposed);
+        if (allowed.length) {
+          responseActions = allowed;
+        } else if (proposals.length) {
+          responseText = proposals[0].type === "create_task" || proposals[0].type === "update_task"
             ? "Admins and managers can create tasks and reassign them. You can update or delete tasks assigned to you."
             : "Only admins and managers can change shared workspace records in Njeri.";
         }
@@ -243,7 +249,7 @@ export function useNjeri() {
         role: "assistant",
         text: responseText,
         timestamp: Date.now(),
-        action: responseAction,
+        actions: responseActions,
       };
 
       const finalConv: NjeriConversation = {
@@ -260,13 +266,15 @@ export function useNjeri() {
   );
 
   const confirmAction = useCallback(
-    async (messageId: string | number, action: NjeriActionProposal) => {
+    async (messageId: string | number, action: NjeriActionProposal, index = 0) => {
       if (!activeConversation) return;
 
       const updateMessageAction = (act: NjeriActionProposal) => {
-        const nextMessages = activeConversation.messages.map((m) =>
-          m.id === messageId ? { ...m, action: act } : m,
-        );
+        const nextMessages = activeConversation.messages.map((m) => {
+          if (m.id !== messageId) return m;
+          const list = m.actions ?? (m.action ? [m.action] : []);
+          return { ...m, action: undefined, actions: list.map((item, i) => (i === index ? act : item)) };
+        });
         const nextConv = { ...activeConversation, messages: nextMessages };
         saveConversation(nextConv);
         setConversations((prev) => prev.map((c) => (c.id === nextConv.id ? nextConv : c)));
@@ -289,6 +297,38 @@ export function useNjeri() {
     [activeConversation, auth?.isAdmin, auth?.role, auth?.user],
   );
 
+  // Runs every unsaved action in a message one after another off a single local
+  // copy of the list, so a batch of N records is one click and never clobbers itself.
+  const confirmAll = useCallback(
+    async (messageId: string | number) => {
+      if (!activeConversation) return;
+      const message = activeConversation.messages.find((m) => m.id === messageId);
+      if (!message) return;
+      const list = [...(message.actions ?? (message.action ? [message.action] : []))];
+      const persist = () => {
+        const nextConv = {
+          ...activeConversation,
+          messages: activeConversation.messages.map((m) => (m.id === messageId ? { ...m, action: undefined, actions: [...list] } : m)),
+        };
+        saveConversation(nextConv);
+        setConversations((prev) => prev.map((c) => (c.id === nextConv.id ? nextConv : c)));
+      };
+      const actor = auth?.user ? { uid: auth.user.uid, name: auth.user.name, canManage: auth.isAdmin || auth.role === "manager" } : null;
+
+      for (let i = 0; i < list.length; i++) {
+        if (list[i].status === "saved") continue;
+        const action = list[i];
+        list[i] = { ...action, status: "saving", error: undefined };
+        persist();
+        const result = await executeNjeriAction(action, actor);
+        list[i] = result.success ? { ...action, status: "saved", error: undefined } : { ...action, status: "failed", error: result.error };
+        persist();
+      }
+      workspaceContextCache.current = null;
+    },
+    [activeConversation, auth?.isAdmin, auth?.role, auth?.user],
+  );
+
   return {
     conversations,
     activeConversation,
@@ -302,5 +342,6 @@ export function useNjeri() {
     clearAllChats,
     sendMessage,
     confirmAction,
+    confirmAll,
   };
 }

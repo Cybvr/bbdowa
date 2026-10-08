@@ -19,6 +19,7 @@ import { byLastModified, type Job } from "@/lib/jobs";
 import { ACTIVITY_COLLECTION, elapsedMs, formatClockFull, startOfWeek, type ActivityEntry } from "@/lib/time-tracking";
 import type { User } from "@/lib/users";
 import { appraisalNeedsCompletion } from "@/lib/appraisals";
+import { readTasksAssignedTo } from "@/lib/firebase/task-queries";
 
 const PROFILE_FIELDS = ["Availability", "Hours this week", "Title", "Location"] as const;
 const TEAM_CHAT_URL = "https://teams.microsoft.com/l/team/19%3AFC6ZMVMFoEbe1WWMY555j6wfpeaN-olxhL1bmLmnkHg1%40thread.tacv2/conversations?groupId=863aed4a-20d5-4a27-a83b-38c7a6e0dedb&tenantId=6aa7a9a2-4b93-43c4-8311-ec14d3acf30c";
@@ -56,9 +57,7 @@ export default function HomePage() {
       setMyTasks([]);
       return;
     }
-    const snapshot = await getDocs(query(collection(firebaseDb, TASK_COLLECTION), where("assignedTo", "==", uid)));
-    const rows = snapshot.docs.map((task) => ({ id: task.id, ...(task.data() as Omit<Task, "id">) }));
-    setMyTasks(sortTasks(rows).slice(0, 4));
+    setMyTasks(sortTasks(await readTasksAssignedTo(uid)).slice(0, 4));
   }, [user?.uid]);
 
   useEffect(() => {
