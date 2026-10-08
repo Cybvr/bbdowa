@@ -280,15 +280,17 @@ export default function HomePage() {
           ) : blogUnavailable ? (
             <p className="py-5 text-sm text-muted-foreground">Digest is unavailable right now.</p>
           ) : visibleBlogPosts.length ? (
-            <div className="grid gap-6 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
               {visibleBlogPosts.map((post) => (
-                <Link key={post.slug} href={`/dashboard/blog/${post.slug}`} className="block transition hover:opacity-80">
-                  <BlogMedia
-                    src={post.image}
-                    type={getBlogMediaType(post)}
-                    label={post.title}
-                    className="aspect-video w-full rounded-xl"
-                  />
+                <Link key={post.slug} href={`/dashboard/blog/${post.slug}`} className="block min-w-0 transition hover:opacity-80">
+                  <div className="aspect-video w-full overflow-hidden rounded-xl bg-muted">
+                    <BlogMedia
+                      src={post.image}
+                      type={getBlogMediaType(post)}
+                      label={post.title}
+                      className="h-full w-full"
+                    />
+                  </div>
                   <span className="mt-3 block text-[15px] font-semibold text-foreground">{post.title}</span>
                   <span className="mt-0.5 block text-[13px] text-muted-foreground">{post.category} · {formatBlogDate(post.publishedAt)}</span>
                 </Link>
