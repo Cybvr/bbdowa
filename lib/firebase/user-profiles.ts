@@ -39,10 +39,15 @@ export async function upsertUserProfile(user: FirebaseUser, intent: AuthIntent) 
       userData.name = userData.name ?? (typeof inviteData.name === "string" ? inviteData.name : null);
       userData.title = typeof inviteData.title === "string" ? inviteData.title : "";
     } else {
-      userData.role = "pending";
+      userData.role = intent === "creator" ? "creator" : "pending";
+      userData.roles = intent === "creator" ? ["creator"] : [];
       userData.type = intent === "creator" ? "creator" : "team";
     }
     userData.createdAt = serverTimestamp();
+  } else if (existing.role === "pending" && existing.type === "creator") {
+    // Promote creator accounts made under the old approval flow when they next sign in.
+    userData.role = "creator";
+    userData.roles = ["creator"];
   }
 
   await setDoc(userRef, userData, { merge: true });
@@ -51,11 +56,15 @@ export async function upsertUserProfile(user: FirebaseUser, intent: AuthIntent) 
     void sendSystemMessage(user.uid, user.displayName, welcomeMessage(user.displayName));
   }
 
+  const resolvedRole = userData.role ?? existing.role;
+
   return {
     isNewUser: !existingSnapshot.exists(),
-    role: typeof existing.role === "string" ? existing.role : typeof userData.role === "string" ? userData.role : null,
-    // New sign-ups and anyone still pending go through onboarding until they finish it once.
-    // Clients skip the agency onboarding and go straight to their portal.
-    needsOnboarding: (existing.role ?? userData.role) === "client" ? false : needsOnboarding({ ...existing, role: existing.role ?? userData.role }, !existingSnapshot.exists()),
+    role: typeof resolvedRole === "string" ? resolvedRole : null,
+    // Public creator sign-ups enter the dashboard immediately. Pending legacy
+    // members still onboard, and admins can explicitly require onboarding.
+    needsOnboarding: resolvedRole === "client"
+      ? false
+      : needsOnboarding({ ...existing, role: resolvedRole }, resolvedRole === "pending" && !existingSnapshot.exists()),
   };
 }

@@ -120,6 +120,12 @@ export function LoginForm({
     const needsOnboarding = profileState.needsOnboarding;
     setSuccessMessage(needsOnboarding ? "Account ready. Opening your onboarding..." : "Welcome back. Opening Bantaba...");
     onSuccess?.();
+    if (profileState.role === "creator" && !needsOnboarding) {
+      // Reload after profile creation or migration so the dashboard receives
+      // the active creator role immediately from AuthProvider.
+      window.location.assign(destination);
+      return;
+    }
     router.replace(needsOnboarding ? "/onboarding" : destination);
     router.refresh();
   };

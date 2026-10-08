@@ -58,6 +58,12 @@ service cloud.firestore {
         || (isSelf(userId)
           && request.resource.data.uid == userId
           && request.resource.data.role == "pending")
+        // Public creator sign-ups become active creators immediately.
+        || (isSelf(userId)
+          && request.resource.data.uid == userId
+          && request.resource.data.role == "creator"
+          && request.resource.data.roles == ["creator"]
+          && request.resource.data.type == "creator")
         // A client who signed up and created a company becomes its owner.
         || (isSelf(userId)
           && request.resource.data.uid == userId
@@ -90,7 +96,19 @@ service cloud.firestore {
           && resource.data.uid == userId
           && request.resource.data.uid == userId
           && request.resource.data.role == resource.data.role
-          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(["roles", "clientId"]));
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(["roles", "clientId"]))
+        // Creator accounts from the previous approval flow self-migrate on sign-in.
+        || (isSelf(userId)
+          && resource.data.uid == userId
+          && resource.data.role == "pending"
+          && resource.data.type == "creator"
+          && request.resource.data.uid == userId
+          && request.resource.data.role == "creator"
+          && request.resource.data.roles == ["creator"]
+          && request.resource.data.type == "creator"
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            "name", "email", "picture", "updatedAt", "role", "roles"
+          ]));
       allow delete: if (isAdmin() && userId != request.auth.uid)
         || (isManager() && isCreatorProfile());
     }
