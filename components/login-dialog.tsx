@@ -14,6 +14,7 @@ export interface LoginDialogProps {
   onOpenChange: (open: boolean) => void;
   initialMode?: LoginFormMode;
   onSuccess?: () => void;
+  redirectTo?: string;
 }
 
 export function LoginDialog({
@@ -21,6 +22,7 @@ export function LoginDialog({
   onOpenChange,
   initialMode = "signin",
   onSuccess,
+  redirectTo,
 }: LoginDialogProps) {
   const handleSuccess = () => {
     if (onSuccess) {
@@ -42,6 +44,7 @@ export function LoginDialog({
         <LoginForm
           initialMode={initialMode}
           isModal={true}
+          redirectTo={redirectTo}
           onSuccess={handleSuccess}
         />
       </DialogContent>

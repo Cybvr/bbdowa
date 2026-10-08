@@ -187,12 +187,10 @@ export function LoginForm({
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/bbdo-west-africa.png" alt="BBDO West Africa" className="mb-5 h-8 w-auto object-contain dark:invert" />
         <h2 className="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
-          {mode === "signin" ? "Welcome back" : "Create your creator profile"}
+          {mode === "signin" ? "Welcome back" : "Hi Creator 👋"}
         </h2>
         <p className="mt-1.5 max-w-sm text-xs text-muted-foreground sm:text-sm">
-          {mode === "signin"
-            ? "Sign in with email, Google or Microsoft to access Bantaba."
-            : "Start with email, Google or Microsoft, then complete your creator onboarding."}
+          {mode === "signin" ? "Sign in to access Bantaba." : "Sign up to join Bantaba."}
         </p>
       </div>
 
@@ -217,7 +215,7 @@ export function LoginForm({
           }}
           className={cn("rounded-lg py-2.5 transition-all", mode === "signup" ? "bg-background text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground")}
         >
-          Start as a creator
+          Sign up
         </button>
       </div>
 
@@ -264,7 +262,7 @@ export function LoginForm({
         <button
           type="button"
           onClick={() => handleSocialSignIn("microsoft")}
-          disabled={isLoading}
+          disabled
           className="inline-flex h-12 w-full cursor-pointer items-center justify-center gap-3 rounded-xl border border-border bg-background px-3 text-sm font-semibold text-foreground transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <MicrosoftMark />}
@@ -278,9 +276,7 @@ export function LoginForm({
           <input type="checkbox" checked={rememberMe} onChange={(event) => setRememberMe(event.target.checked)} className="h-4 w-4 rounded border-border text-primary focus:ring-primary/30" />
           Remember this device for 14 days
         </label>
-      ) : (
-        <p className="mt-5 text-center text-xs leading-relaxed text-muted-foreground">New creators complete their profile, craft and portfolio details after sign-in.</p>
-      )}
+      ) : null}
 
       <p className="mt-6 text-center text-[11px] leading-relaxed text-muted-foreground">
         By continuing, you agree to BBDO West Africa&apos;s{" "}
