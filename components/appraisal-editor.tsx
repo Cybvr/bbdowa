@@ -32,6 +32,8 @@ export function AppraisalEditor({ appraisal, user, users }: { appraisal?: Apprai
 
   const people = users
     .filter((candidate) => candidate.uid && candidate.role !== "client")
+    .map((candidate) => ({ ...candidate, name: candidate.name || candidate.email || "Unnamed user" }))
+    .filter((candidate, index, all) => all.findIndex((other) => other.uid === candidate.uid) === index)
     .sort((a, b) => a.name.localeCompare(b.name));
   const valid = assignedTo.length > 0 && assignedToName.trim().length > 0 && period.trim().length > 0;
   const submitted = appraisal?.status === "submitted";
