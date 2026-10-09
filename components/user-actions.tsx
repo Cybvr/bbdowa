@@ -44,6 +44,8 @@ export function UserActions({
   includeEditAction = false,
   categoryOptions = [],
   onMutated,
+  editOpen,
+  onEditOpenChange,
 }: {
   user: User;
   variant: "team" | "creator";
@@ -53,6 +55,8 @@ export function UserActions({
   includeEditAction?: boolean;
   categoryOptions?: string[];
   onMutated?: () => void;
+  editOpen?: boolean;
+  onEditOpenChange?: (open: boolean) => void;
 }) {
   const router = useRouter();
   const { isAdmin, role } = useAuth();
@@ -126,6 +130,8 @@ export function UserActions({
 
   return (
     <EditSheet
+      open={editOpen}
+      onOpenChange={onEditOpenChange}
       title={variant === "creator" ? "Edit creator" : "Edit profile"}
       description={user.name}
       onSave={save}

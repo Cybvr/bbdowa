@@ -390,6 +390,8 @@ export function EditSheet({
   onDelete,
   canEdit,
   trigger,
+  open: openProp,
+  onOpenChange,
   children,
 }: {
   title: string;
@@ -401,10 +403,15 @@ export function EditSheet({
   onDelete?: () => Promise<void>;
   canEdit?: boolean;
   trigger?: (open: () => void, remove: () => void) => React.ReactNode;
+  /** Set both to control the sheet from outside, for example to open it from a table row. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   children: React.ReactNode;
 }) {
   const { isAdmin } = useAuth();
-  const [open, setOpen] = React.useState(false);
+  const [innerOpen, setInnerOpen] = React.useState(false);
+  const open = openProp ?? innerOpen;
+  const setOpen = (next: boolean) => { setInnerOpen(next); onOpenChange?.(next); };
   const [busy, setBusy] = React.useState<null | "save" | "delete">(null);
   const [error, setError] = React.useState<string | null>(null);
 

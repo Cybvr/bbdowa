@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { Eye } from "lucide-react";
 import { UserCreateAction } from "@/components/user-create-action";
 import { UserActions } from "@/components/user-actions";
@@ -56,11 +57,12 @@ function UserRow({ user, categoryOptions }: { user: User; categoryOptions: strin
   const { actualUser, startViewingAs } = useAuth();
   const variant = isCreatorUser(user) && !isTeamUser(user) ? "creator" : "team";
   const targetUid = user.uid;
+  const [editOpen, setEditOpen] = React.useState(false);
   return (
-    <ClickableTableRow href={user.slug || user.uid ? userHref(user, variant) : undefined} label={`Open user ${user.name}`} className="align-middle">
+    <ClickableTableRow onActivate={() => setEditOpen(true)} label={`Edit user ${user.name}`} className="align-middle">
       <TableCell className="px-4 py-3.5 sm:px-5">
         <div className="min-w-0">
-          <strong className="block truncate font-semibold text-foreground">{user.name}</strong>
+          {user.slug || user.uid ? <Link href={userHref(user, variant)} onClick={(event) => event.stopPropagation()} className="block truncate font-semibold text-foreground hover:text-primary">{user.name}</Link> : <strong className="block truncate font-semibold text-foreground">{user.name}</strong>}
           <div className="mt-1 flex min-w-0 items-center gap-2 overflow-hidden whitespace-nowrap text-sm text-muted-foreground">
             {user.role === "pending" && !userRoles(user).length ? <PendingBadge /> : userRoles(user).map((role) => <RoleBadge key={role} role={role} email={user.email} />)}
             <span className="hidden truncate sm:inline">{user.email ?? "No email added"}</span>
@@ -90,6 +92,8 @@ function UserRow({ user, categoryOptions }: { user: User; categoryOptions: strin
             variant={variant}
             listHref="/admin/users"
             compactMenu
+            editOpen={editOpen}
+            onEditOpenChange={setEditOpen}
             includeEditAction
             categoryOptions={categoryOptions}
             onMutated={() => window.location.reload()}
