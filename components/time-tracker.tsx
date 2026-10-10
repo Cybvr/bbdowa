@@ -91,7 +91,24 @@ function durationValueFromMinutes(minutes: number): string {
 }
 
 /** `jobSlug` scopes the tracker to one job: only its entries show and new trackers are logged against it. */
-export function TimeTracker({ compact = false, jobSlug }: { compact?: boolean; jobSlug?: string }) {
+// Fired after an entry is saved, so other mounted trackers (e.g. the page
+// list behind the header's add-tracker modal) reload.
+const TRACKER_CHANGED_EVENT = "tracker:changed";
+
+export function TimeTracker({
+  compact = false,
+  jobSlug,
+  dialogOnly = false,
+  open,
+  onOpenChange,
+}: {
+  compact?: boolean;
+  jobSlug?: string;
+  /** Render only the "Add tracker" modal (used by the mobile header). */
+  dialogOnly?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}) {
   const { user, role, loading: authLoading } = useAuth();
   const [entries, setEntries] = React.useState<ActivityEntry[]>([]);
   const [jobs, setJobs] = React.useState<JobOption[]>([]);
@@ -101,7 +118,12 @@ export function TimeTracker({ compact = false, jobSlug }: { compact?: boolean; j
   const [now, setNow] = React.useState(() => Date.now());
 
   const [mode, setMode] = React.useState<"timer" | "manual">("timer");
-  const [trackerOpen, setTrackerOpen] = React.useState(false);
+  const [localTrackerOpen, setLocalTrackerOpen] = React.useState(false);
+  const trackerOpen = open ?? localTrackerOpen;
+  const setTrackerOpen = (next: boolean) => {
+    setLocalTrackerOpen(next);
+    onOpenChange?.(next);
+  };
   const [addingTimer, setAddingTimer] = React.useState(false);
   const [search, setSearch] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<"all" | "running" | "paused" | "completed">("all");
@@ -147,6 +169,13 @@ export function TimeTracker({ compact = false, jobSlug }: { compact?: boolean; j
       active = false;
     };
   }, [authLoading, user, load]);
+
+  React.useEffect(() => {
+    if (!userId) return;
+    const reload = () => { void load(userId).catch(() => {}); };
+    window.addEventListener(TRACKER_CHANGED_EVENT, reload);
+    return () => window.removeEventListener(TRACKER_CHANGED_EVENT, reload);
+  }, [userId, load]);
 
   React.useEffect(() => {
     if (authLoading) return;
@@ -241,7 +270,7 @@ export function TimeTracker({ compact = false, jobSlug }: { compact?: boolean; j
       resetForm();
       setAddingTimer(false);
       setTrackerOpen(false);
-      await load(user.uid);
+      window.dispatchEvent(new Event(TRACKER_CHANGED_EVENT));
     } catch (cause) {
       console.error("Unable to start activity", cause);
       setError("Couldn’t start that. Try again.");
@@ -297,7 +326,7 @@ export function TimeTracker({ compact = false, jobSlug }: { compact?: boolean; j
       });
       resetForm();
       setTrackerOpen(false);
-      await load(user.uid);
+      window.dispatchEvent(new Event(TRACKER_CHANGED_EVENT));
     } catch (cause) {
       console.error("Unable to log activity", cause);
       setError("Couldn’t log that. Try again.");
@@ -346,6 +375,7 @@ export function TimeTracker({ compact = false, jobSlug }: { compact?: boolean; j
   };
 
   if (!authLoading && !user) {
+    if (dialogOnly) return null;
     return (
       <div className={compact ? "mt-2" : "space-y-4"}>
         {!compact ? <PageHeader title="Tracker" /> : null}
@@ -374,6 +404,53 @@ export function TimeTracker({ compact = false, jobSlug }: { compact?: boolean; j
     return b.startedAt.localeCompare(a.startedAt);
   });
   const selectedEntry = entries.find((entry) => entry.id === selectedEntryId) ?? null;
+
+  const addTrackerDialog = (
+      <Dialog open={trackerOpen} onOpenChange={(open) => { setTrackerOpen(open); if (!open) resetForm(); }}>
+        <DialogContent className="max-h-[92vh] gap-5 overflow-y-auto overflow-x-hidden p-5 sm:max-w-md sm:p-6">
+          <DialogHeader className="pr-12">
+            <DialogTitle>Add tracker</DialogTitle>
+            <DialogDescription className="sr-only">Start a timer or log time you have already spent.</DialogDescription>
+          </DialogHeader>
+          <div role="group" aria-label="Entry type" className="grid grid-cols-2 gap-1 rounded-xl bg-muted p-1">
+            <button type="button" onClick={() => setMode("timer")} aria-pressed={mode === "timer"} className={`h-10 rounded-lg text-sm font-semibold transition-colors ${mode === "timer" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>Timer</button>
+            <button type="button" onClick={() => setMode("manual")} aria-pressed={mode === "manual"} className={`h-10 rounded-lg text-sm font-semibold transition-colors ${mode === "manual" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>Manual</button>
+          </div>
+          {mode === "timer" ? <div className="py-2 text-center font-mono text-[clamp(2.75rem,10vw,4rem)] font-semibold leading-none tracking-tight tabular-nums" aria-label="Timer at zero hours, zero minutes, zero seconds">00:00:00</div> : (
+            <div className="space-y-5 py-1">
+              <div className="flex items-baseline justify-center gap-2 font-mono tabular-nums" aria-label={`${displayedManualMinutes} minutes selected`}>
+                <span className="text-[clamp(2.75rem,10vw,4rem)] font-semibold leading-none tracking-tight">{manualHoursLabel}</span>
+                <span className="text-lg text-muted-foreground">h</span>
+                <span className="text-[clamp(2.75rem,10vw,4rem)] font-semibold leading-none tracking-tight">{manualMinutesLabel}</span>
+                <span className="text-lg text-muted-foreground">m</span>
+              </div>
+              <div role="group" aria-label="Adjust time spent" className="flex flex-wrap justify-center gap-2">
+                {[{ label: "+15m", minutes: 15 }, { label: "+30m", minutes: 30 }, { label: "+1h", minutes: 60 }, { label: "+2h", minutes: 120 }].map((option) => (
+                  <button key={option.label} type="button" onClick={() => addManualMinutes(option.minutes)} disabled={busy} className="h-9 rounded-full border border-border px-4 text-sm text-muted-foreground transition-colors hover:border-muted-foreground hover:text-foreground disabled:opacity-50">{option.label}</button>
+                ))}
+                <button type="button" onClick={() => setDuration("")} disabled={busy || displayedManualMinutes === 0} className="h-9 rounded-full border border-border px-4 text-sm text-muted-foreground transition-colors hover:border-muted-foreground hover:text-foreground disabled:opacity-50">Reset</button>
+              </div>
+            </div>
+          )}
+          <form onSubmit={(event) => { event.preventDefault(); void (mode === "timer" ? startActivity() : logActivity()); }} className="space-y-5">
+            <div><label htmlFor="tracker-activity" className="sr-only">Activity</label><Input id="tracker-activity" value={activity} onChange={(event) => setActivity(event.target.value)} disabled={busy} placeholder="What are you working on?" required className="h-12 rounded-xl border-0 bg-muted px-4 text-base" /></div>
+            <div className="space-y-2">
+              <span className="text-sm font-medium">Job</span>
+              <Select value={jobId === NO_JOB ? "" : jobId} onValueChange={setJobId} disabled={busy}>
+                <SelectTrigger className="h-11 w-full min-w-0 rounded-xl text-sm"><SelectValue placeholder={jobs.length ? "Select a job" : isStaff ? "No active jobs" : "No assigned jobs"} /></SelectTrigger>
+                <SelectContent>{jobs.map((option) => <SelectItem key={option.slug} value={option.slug}>{option.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-2 pt-1">
+              <button type="submit" disabled={busy || (mode === "timer" ? !canStart : !canLog)} className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50">{mode === "timer" ? <LuPlay className="h-4 w-4" aria-hidden="true" /> : null}{busy ? "Saving…" : mode === "timer" ? "Start tracker" : "Log time"}</button>
+              <button type="button" onClick={() => setTrackerOpen(false)} disabled={busy} className="h-10 self-center rounded-md px-4 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">Cancel</button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+  );
+
+  if (dialogOnly) return addTrackerDialog;
 
   if (compact) {
     // Today's history: anything still open, plus anything already stopped
@@ -618,48 +695,7 @@ export function TimeTracker({ compact = false, jobSlug }: { compact?: boolean; j
         </DialogContent>
       </Dialog>
 
-      <Dialog open={trackerOpen} onOpenChange={(open) => { setTrackerOpen(open); if (!open) resetForm(); }}>
-        <DialogContent className="max-h-[92vh] gap-5 overflow-y-auto overflow-x-hidden p-5 sm:max-w-md sm:p-6">
-          <DialogHeader className="pr-12">
-            <DialogTitle>Add tracker</DialogTitle>
-            <DialogDescription className="sr-only">Start a timer or log time you have already spent.</DialogDescription>
-          </DialogHeader>
-          <div role="group" aria-label="Entry type" className="grid grid-cols-2 gap-1 rounded-xl bg-muted p-1">
-            <button type="button" onClick={() => setMode("timer")} aria-pressed={mode === "timer"} className={`h-10 rounded-lg text-sm font-semibold transition-colors ${mode === "timer" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>Timer</button>
-            <button type="button" onClick={() => setMode("manual")} aria-pressed={mode === "manual"} className={`h-10 rounded-lg text-sm font-semibold transition-colors ${mode === "manual" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>Manual</button>
-          </div>
-          {mode === "timer" ? <div className="py-2 text-center font-mono text-[clamp(2.75rem,10vw,4rem)] font-semibold leading-none tracking-tight tabular-nums" aria-label="Timer at zero hours, zero minutes, zero seconds">00:00:00</div> : (
-            <div className="space-y-5 py-1">
-              <div className="flex items-baseline justify-center gap-2 font-mono tabular-nums" aria-label={`${displayedManualMinutes} minutes selected`}>
-                <span className="text-[clamp(2.75rem,10vw,4rem)] font-semibold leading-none tracking-tight">{manualHoursLabel}</span>
-                <span className="text-lg text-muted-foreground">h</span>
-                <span className="text-[clamp(2.75rem,10vw,4rem)] font-semibold leading-none tracking-tight">{manualMinutesLabel}</span>
-                <span className="text-lg text-muted-foreground">m</span>
-              </div>
-              <div role="group" aria-label="Adjust time spent" className="flex flex-wrap justify-center gap-2">
-                {[{ label: "+15m", minutes: 15 }, { label: "+30m", minutes: 30 }, { label: "+1h", minutes: 60 }, { label: "+2h", minutes: 120 }].map((option) => (
-                  <button key={option.label} type="button" onClick={() => addManualMinutes(option.minutes)} disabled={busy} className="h-9 rounded-full border border-border px-4 text-sm text-muted-foreground transition-colors hover:border-muted-foreground hover:text-foreground disabled:opacity-50">{option.label}</button>
-                ))}
-                <button type="button" onClick={() => setDuration("")} disabled={busy || displayedManualMinutes === 0} className="h-9 rounded-full border border-border px-4 text-sm text-muted-foreground transition-colors hover:border-muted-foreground hover:text-foreground disabled:opacity-50">Reset</button>
-              </div>
-            </div>
-          )}
-          <form onSubmit={(event) => { event.preventDefault(); void (mode === "timer" ? startActivity() : logActivity()); }} className="space-y-5">
-            <div><label htmlFor="tracker-activity" className="sr-only">Activity</label><Input id="tracker-activity" value={activity} onChange={(event) => setActivity(event.target.value)} disabled={busy} placeholder="What are you working on?" required className="h-12 rounded-xl border-0 bg-muted px-4 text-base" /></div>
-            <div className="space-y-2">
-              <span className="text-sm font-medium">Job</span>
-              <Select value={jobId === NO_JOB ? "" : jobId} onValueChange={setJobId} disabled={busy}>
-                <SelectTrigger className="h-11 w-full min-w-0 rounded-xl text-sm"><SelectValue placeholder={jobs.length ? "Select a job" : isStaff ? "No active jobs" : "No assigned jobs"} /></SelectTrigger>
-                <SelectContent>{jobs.map((option) => <SelectItem key={option.slug} value={option.slug}>{option.name}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-col gap-2 pt-1">
-              <button type="submit" disabled={busy || (mode === "timer" ? !canStart : !canLog)} className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50">{mode === "timer" ? <LuPlay className="h-4 w-4" aria-hidden="true" /> : null}{busy ? "Saving…" : mode === "timer" ? "Start tracker" : "Log time"}</button>
-              <button type="button" onClick={() => setTrackerOpen(false)} disabled={busy} className="h-10 self-center rounded-md px-4 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">Cancel</button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+      {addTrackerDialog}
     </div>
   );
 }

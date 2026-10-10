@@ -10,14 +10,6 @@ import { useMobileHeader } from "@/components/dashboard/mobile-header";
 import { useProfileImage } from "@/components/profile-nav";
 import { NAV_ITEMS, type NavItem } from "@/lib/nav";
 import { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 
 export function DashboardHeader({
   hideMobile = false,
@@ -90,24 +82,15 @@ export function DashboardHeader({
               Exit view
             </button>
           ) : null}
-          <Dialog open={trackerOpen} onOpenChange={setTrackerOpen}>
-            <DialogTrigger asChild>
-              <button
-                type="button"
-                aria-label="Open tracker"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-              >
-                <TrackerIcon className="h-5 w-5" />
-              </button>
-            </DialogTrigger>
-            <DialogContent className="max-h-[calc(100dvh-2rem)] max-w-xl overflow-x-hidden overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Tracker</DialogTitle>
-                <DialogDescription>Start a timer or log time from your phone.</DialogDescription>
-              </DialogHeader>
-              <TimeTracker compact />
-            </DialogContent>
-          </Dialog>
+          <button
+            type="button"
+            aria-label="New tracker"
+            onClick={() => setTrackerOpen(true)}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          >
+            <TrackerIcon className="h-5 w-5" />
+          </button>
+          <TimeTracker dialogOnly open={trackerOpen} onOpenChange={setTrackerOpen} />
         </div>
       </div>
     </>
