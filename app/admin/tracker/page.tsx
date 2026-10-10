@@ -200,11 +200,11 @@ export default function AdminTimePage() {
   };
 
   if (authLoading || (isStaff && (loading || usersLoading))) return <UsersTableSkeleton />;
-  if (!isStaff) return <main className="mx-auto w-full max-w-6xl flex-1 px-5 pb-16 pt-8 sm:px-8"><PageHeader title="Time" /><p className="mt-8 text-sm text-muted-foreground">A staff account is required to see tracked time.</p></main>;
+  if (!isStaff) return <main className="mx-auto w-full max-w-6xl flex-1 px-5 pb-16 pt-8 sm:px-8"><PageHeader title="Tracker" /><p className="mt-8 text-sm text-muted-foreground">A staff account is required to see tracked time.</p></main>;
 
   return (
     <DashboardListPage
-      title="Time"
+      title="Tracker"
       actions={isAdmin ? <button type="button" onClick={() => { setFormError(null); setForm({ ...EMPTY_FORM, startedAt: toLocalInput(new Date().toISOString()) }); }} className={LIST_ACTION_CLASS}><Plus aria-hidden="true" className="h-3.5 w-3.5" />Add time</button> : null}
       toolbar={<FilterBar
         panelId="admin-time-filter"

@@ -246,7 +246,7 @@ service cloud.firestore {
 
     // Clock in / clock out. Each shift belongs to the person who created it:
     // they read and write only their own; managers can read everyone's and
-    // admins can add, edit and delete anyone's (Admin → Time).
+    // admins can add, edit and delete anyone's (Admin → Tracker).
     match /timeEntries/{id} {
       allow read: if (isAdmin() || isManager())
         || (signedIn() && resource.data.uid == request.auth.uid);
