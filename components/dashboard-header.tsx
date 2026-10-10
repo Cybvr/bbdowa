@@ -6,6 +6,7 @@ import { DashboardSidebarContent, DashboardSidebarSheet } from "@/components/das
 import { TrackerIcon } from "@/components/nav-icons";
 import { createGlyphAvatarDataUri } from "@/lib/avatar";
 import { TimeTracker } from "@/components/time-tracker";
+import { NotificationsBell } from "@/components/notifications-bell";
 import { useMobileHeader } from "@/components/dashboard/mobile-header";
 import { useProfileImage } from "@/components/profile-nav";
 import { NAV_ITEMS, type NavItem } from "@/lib/nav";
@@ -82,6 +83,7 @@ export function DashboardHeader({
               Exit view
             </button>
           ) : null}
+          <NotificationsBell />
           <button
             type="button"
             aria-label="New tracker"

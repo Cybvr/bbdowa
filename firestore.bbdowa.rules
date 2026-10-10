@@ -229,6 +229,24 @@ service cloud.firestore {
     // Clock in / clock out. Each shift belongs to the person who created it:
     // they read and write only their own; managers can read everyone's and
     // admins can add, edit and delete anyone's (Admin → Time).
+    // Reminder settings (Admin → Notifications). Read by the hourly
+    // reminders job with a service account, which bypasses these rules.
+    match /settings/{id} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    // In-app notifications, written by the hourly reminders job. Each person
+    // reads their own, marks them read, and can delete them.
+    match /notifications/{id} {
+      allow read: if signedIn() && resource.data.uid == request.auth.uid;
+      allow update: if signedIn()
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["readAt"]);
+      allow delete: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow create: if isAdmin();
+    }
+
     match /timeEntries/{id} {
       allow read: if (isAdmin() || isManager())
         || (signedIn() && resource.data.uid == request.auth.uid);

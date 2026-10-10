@@ -11,6 +11,7 @@ import { ProfileNav } from "@/components/profile-nav";
 import { useOptionalAuth } from "@/components/auth-provider";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { firebaseDb } from "@/lib/firebase/client";
+import { NotificationsBell } from "@/components/notifications-bell";
 import { ACTIVITY_COLLECTION, elapsedMs, formatClock, isPaused, runningEntry, type ActivityEntry } from "@/lib/time-tracking";
 
 export const NAV_TEXT =
@@ -298,6 +299,8 @@ export function DashboardSidebarContent({
           <DashboardLogo onNavigate={onNavigate} />
         </div>
         {showCollapseToggle && onToggleCollapse ? (
+          <div className="flex shrink-0 items-center gap-0.5">
+          {!collapsed ? <NotificationsBell align="start" /> : null}
           <button
             type="button"
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -307,6 +310,7 @@ export function DashboardSidebarContent({
           >
             {collapsed ? <LuChevronRight aria-hidden="true" className="h-4 w-4" /> : <LuChevronLeft aria-hidden="true" className="h-4 w-4" />}
           </button>
+          </div>
         ) : null}
       </div>
       <SidebarProfileNav onNavigate={onNavigate} collapsed={collapsed} />
