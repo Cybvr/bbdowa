@@ -6,6 +6,7 @@ import { Copy, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { deleteDoc, doc, getDoc, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 import { useAuth } from "@/components/auth-provider";
 import { firebaseDb } from "@/lib/firebase/client";
+import { sendAppEmail } from "@/lib/app-email";
 import { jobsCollection } from "@/lib/firebase/job-collections";
 import { TagInput } from "@/components/tag-input";
 import { useClientOptions, useFirestoreUsers } from "@/lib/firebase/client-content";
@@ -142,6 +143,9 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
         workdayOverlap: workdayOverlap.trim() || null,
         updatedAt: new Date().toISOString(),
       } satisfies JobTerms);
+      const before = new Set([terms.assignedTo, ...(terms.teamUids ?? [])].filter(Boolean));
+      const added = teamUids.filter((uid) => !before.has(uid));
+      if (added.length) void sendAppEmail({ type: "job", jobSlug: job.slug, uids: added });
     }
     router.refresh();
     onSaved?.();

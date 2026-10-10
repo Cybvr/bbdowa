@@ -24,6 +24,7 @@ import { TaskClientJobFields, useTaskLinkOptions } from "@/components/task-link-
 import { useFirestoreTasks, useFirestoreUsers } from "@/lib/firebase/client-content";
 import { TASK_COLLECTION, TASK_STATUSES, TASK_STATUS_LABELS, formatDate, isOverdue, isTaskAssignee, taskAssigneeFields, taskAssigneeNames, taskAssignees, type Task, type TaskStatus } from "@/lib/creator-tasks";
 import { firebaseDb } from "@/lib/firebase/client";
+import { sendAppEmail } from "@/lib/app-email";
 import { plural } from "@/lib/format";
 import { isCreatorUser } from "@/lib/users";
 import { confirmDialog } from "@/components/confirm-dialog";
@@ -74,7 +75,7 @@ export function NewTaskDialog({ assignees, createdBy, createdByName, initialClie
     try {
       const people = assigneeUids.flatMap((uid) => { const person = assignees.find((candidate) => candidate.uid === uid); return person ? [{ uid, name: person.name.replace(/ (you)$/, "") }] : []; });
       const now = new Date().toISOString();
-      await addDoc(collection(firebaseDb, TASK_COLLECTION), {
+      const created = await addDoc(collection(firebaseDb, TASK_COLLECTION), {
         title: title.trim(),
         description: description.trim(),
         content,
@@ -90,6 +91,7 @@ export function NewTaskDialog({ assignees, createdBy, createdByName, initialClie
         createdAt: now,
         updatedAt: now,
       });
+      await sendAppEmail({ type: "task", taskId: created.id });
       onCreated();
       setOpen(false);
       reset();

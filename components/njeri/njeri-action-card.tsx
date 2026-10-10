@@ -3,6 +3,7 @@
 import React from "react";
 import { collection, deleteDoc, doc, getDoc, getDocs, limit, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore";
 import { firebaseDb } from "@/lib/firebase/client";
+import { sendAppEmail } from "@/lib/app-email";
 import { jobsCollection } from "@/lib/firebase/job-collections";
 import { TASK_COLLECTION } from "@/lib/creator-tasks";
 import { readUsersFromFirestore } from "@/lib/firebase/client-content";
@@ -53,13 +54,15 @@ export async function executeNjeriAction(
       if (job && !job.exists()) throw new Error("That job is no longer in the workspace. Refresh and try again.");
       if (client && !client.exists()) throw new Error("That client is no longer in the workspace. Refresh and try again.");
       const now = new Date().toISOString();
-      await setDoc(doc(collection(firebaseDb, TASK_COLLECTION)), {
+      const taskRef = doc(collection(firebaseDb, TASK_COLLECTION));
+      await setDoc(taskRef, {
         ...action.record,
         createdBy: user.uid,
         createdByName: user.name ?? null,
         createdAt: now,
         updatedAt: now,
       });
+      void sendAppEmail({ type: "task", taskId: taskRef.id });
       return { success: true };
     }
 

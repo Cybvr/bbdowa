@@ -7,6 +7,7 @@ import { Badge, PageHeader, StatItem, StatRow } from "@/components/dashboard/ui"
 import { LIST_ACTION_CLASS } from "@/components/dashboard/list-page-actions";
 import { InvoiceDialog } from "@/components/invoice-dialog";
 import { firebaseDb } from "@/lib/firebase/client";
+import { sendAppEmail } from "@/lib/app-email";
 import { longDate, plural } from "@/lib/format";
 import { INVOICES_COLLECTION, INVOICE_STATUS_LABELS, invoiceTotals, isInvoiceOverdue, type Invoice, type InvoiceStatus } from "@/lib/invoices";
 import { formatAmount } from "@/lib/payments";
@@ -42,6 +43,7 @@ export default function AdminInvoicesPage() {
 
   const setStatus = (invoice: Invoice, status: InvoiceStatus) =>
     updateDoc(doc(firebaseDb, INVOICES_COLLECTION, invoice.id), { status, paidAt: status === "paid" ? new Date().toISOString() : null })
+      .then(() => { if (status === "sent" && invoice.status !== "sent") void sendAppEmail({ type: "invoice", invoiceId: invoice.id }); })
       .catch((cause) => console.error("Unable to update invoice", cause));
 
   return (

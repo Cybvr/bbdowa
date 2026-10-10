@@ -7,6 +7,7 @@ import { EditSheet, FormValidationError } from "@/components/detail-editor";
 import { profileDraftFrom, profileDraftToFirestore, type ProfileDraft } from "@/components/profile-fields";
 import { UserEditorFields, type UserAccountStatus } from "@/components/user-editor-fields";
 import { firebaseDb } from "@/lib/firebase/client";
+import { sendAppEmail } from "@/lib/app-email";
 import { type UserRole } from "@/lib/users";
 import { LIST_ACTION_CLASS } from "@/components/dashboard/list-page-actions";
 
@@ -64,6 +65,8 @@ export function UserCreateAction({
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
+    const inviteEmail = draft.email.trim().toLowerCase();
+    if (inviteEmail && status !== "pending") await sendAppEmail({ type: "invite", email: inviteEmail });
 
     onCreated?.();
     window.location.reload();

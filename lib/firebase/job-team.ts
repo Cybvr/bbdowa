@@ -2,6 +2,7 @@
 
 import { collection, doc, getDoc, getDocs, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore";
 import { firebaseDb } from "@/lib/firebase/client";
+import { sendAppEmail } from "@/lib/app-email";
 import { jobsCollection } from "@/lib/firebase/job-collections";
 import { JOB_TERMS_COLLECTION } from "@/lib/job-terms";
 import { matchesJobTeamKey, type User } from "@/lib/users";
@@ -18,14 +19,19 @@ export function teamUidsFor(slugs: string[], users: Pick<User, "slug" | "uid">[]
  */
 export async function saveJobTeam(jobSlug: string, slugs: string[], users: Pick<User, "slug" | "uid">[]) {
   const cleanSlugs = [...new Set(slugs.filter(Boolean))];
+  const previous = await getDoc(doc(firebaseDb, JOB_TERMS_COLLECTION, jobSlug)).catch(() => null);
+  const before = new Set<string>(previous?.exists() ? [previous.data().assignedTo, ...(previous.data().teamUids ?? [])].filter(Boolean) : []);
+  const teamUids = teamUidsFor(cleanSlugs, users);
   await updateDoc(doc(firebaseDb, await jobsCollection(), jobSlug), {
     creatorSlugs: cleanSlugs,
     updatedAt: serverTimestamp(),
   });
   await setDoc(doc(firebaseDb, JOB_TERMS_COLLECTION, jobSlug), {
-    teamUids: teamUidsFor(cleanSlugs, users),
+    teamUids,
     updatedAt: new Date().toISOString(),
   }, { merge: true });
+  const added = teamUids.filter((uid) => !before.has(uid));
+  if (added.length) void sendAppEmail({ type: "job", jobSlug, uids: added });
   return cleanSlugs;
 }
 

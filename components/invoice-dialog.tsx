@@ -6,6 +6,7 @@ import { useAuth } from "@/components/auth-provider";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { firebaseDb } from "@/lib/firebase/client";
+import { sendAppEmail } from "@/lib/app-email";
 import { readJobsFromFirestore, useClientOptions } from "@/lib/firebase/client-content";
 import { INVOICES_COLLECTION, nextInvoiceNumber, type Invoice, type InvoiceStatus } from "@/lib/invoices";
 import { jobTitle, type Job } from "@/lib/jobs";
@@ -90,13 +91,15 @@ export function InvoiceDialog({
     try {
       if (invoice) {
         await updateDoc(doc(firebaseDb, INVOICES_COLLECTION, invoice.id), fields);
+        if (status === "sent" && invoice.status !== "sent") void sendAppEmail({ type: "invoice", invoiceId: invoice.id });
       } else {
-        await addDoc(collection(firebaseDb, INVOICES_COLLECTION), {
+        const created = await addDoc(collection(firebaseDb, INVOICES_COLLECTION), {
           ...fields,
           number: nextInvoiceNumber(existing),
           createdBy: user?.uid ?? "",
           createdAt: new Date().toISOString(),
         });
+        if (status === "sent") void sendAppEmail({ type: "invoice", invoiceId: created.id });
       }
       onOpenChange(false);
     } catch (cause) {

@@ -7,6 +7,7 @@ import { ImageUploadField } from "@/components/detail-editor";
 import { CreatorThumbnail } from "@/components/creator-thumbnail";
 import { usePortalClient } from "@/components/portal-shell";
 import { firebaseDb } from "@/lib/firebase/client";
+import { sendAppEmail } from "@/lib/app-email";
 import { useFirestoreUsers } from "@/lib/firebase/client-content";
 import { CLIENT_INVITES_COLLECTION, CLIENT_TIMEZONES, TEAM_SIZE_RANGES, teamSizeLabel, type Client, type ClientInvite } from "@/lib/clients";
 import { confirmDialog } from "@/components/confirm-dialog";
@@ -111,6 +112,7 @@ function AddColleague({ company }: { company: Client }) {
         invitedBy: user?.uid ?? null,
         invitedAt: new Date().toISOString(),
       } satisfies ClientInvite);
+      void sendAppEmail({ type: "invite", email: cleanEmail });
       setName("");
       setEmail("");
     } catch (cause) {

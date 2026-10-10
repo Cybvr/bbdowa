@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { addDoc, collection, doc, updateDoc } from "firebase/firestore";
 import { ArrowLeft, Save, Share2, Users } from "lucide-react";
 import { firebaseDb } from "@/lib/firebase/client";
+import { sendAppEmail } from "@/lib/app-email";
 import { DOCUMENT_COLLECTION, type AgencyDocument } from "@/lib/documents";
 import { type User } from "@/lib/users";
 import { RichTextContent, RichTextEditor, richTextHasContent } from "@/components/rich-text-editor";
@@ -48,13 +49,17 @@ export function DocumentEditor({ document, user, users, initialAssignee }: { doc
           assignedTo: send ? selectedPerson!.uid : null,
           assignedToName: send ? selectedPerson!.name : null,
         });
+        if (send && (document.status !== "pending_signature" || document.assignedTo !== selectedPerson!.uid)) {
+          void sendAppEmail({ type: "document", documentId: document.id });
+        }
       } else {
-        await addDoc(collection(firebaseDb, DOCUMENT_COLLECTION), {
+        const created = await addDoc(collection(firebaseDb, DOCUMENT_COLLECTION), {
           title: title.trim(), body: body.trim(), status: send ? "pending_signature" : "draft",
           createdBy: user.uid, createdByName: user.name, createdAt: now, updatedAt: now,
           assignedTo: send ? selectedPerson!.uid : null, assignedToName: send ? selectedPerson!.name : null,
           signedAt: null, signedName: null, sourceDocumentId: null,
         });
+        if (send) void sendAppEmail({ type: "document", documentId: created.id });
       }
       router.push("/admin/documents");
       router.refresh();
@@ -73,6 +78,7 @@ export function DocumentEditor({ document, user, users, initialAssignee }: { doc
       await updateDoc(doc(firebaseDb, DOCUMENT_COLLECTION, document.id), {
         assignedTo: selectedPerson.uid, assignedToName: selectedPerson.name, updatedAt: new Date().toISOString(),
       });
+      if (selectedPerson.uid !== document.assignedTo) void sendAppEmail({ type: "document", documentId: document.id });
       router.push("/admin/documents");
       router.refresh();
     } catch (cause) {

@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CreatorMultiPicker } from "@/components/creator-picker";
 import { firebaseDb } from "@/lib/firebase/client";
+import { sendAppEmail } from "@/lib/app-email";
 import { EmptyState } from "@/components/dashboard/ui";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
@@ -109,7 +110,7 @@ export function NewTaskSheet({ creatorUid, creatorName, createdBy, createdByName
     setError(null);
     try {
       const now = new Date().toISOString();
-      await addDoc(collection(firebaseDb, TASK_COLLECTION), {
+      const created = await addDoc(collection(firebaseDb, TASK_COLLECTION), {
         title: title.trim(),
         description: description.trim(),
         content,
@@ -126,6 +127,7 @@ export function NewTaskSheet({ creatorUid, creatorName, createdBy, createdByName
         createdAt: now,
         updatedAt: now,
       });
+      void sendAppEmail({ type: "task", taskId: created.id });
       onCreated();
       setOpen(false);
       reset();
@@ -288,6 +290,11 @@ export function TaskDetailPage({ task, canEdit, canDelete, assignees, onChanged,
         ...(assignees && assigneeUids.length ? taskAssigneeFields(assigneeUids.flatMap((uid) => { const person = assigneeOptions.find((item) => item.uid === uid); return person ? [person] : []; })) : {}),
         updatedAt: new Date().toISOString(),
       });
+      if (assignees && assigneeUids.length) {
+        const before = new Set([...(task.assigneeUids ?? []), task.assignedTo].filter(Boolean));
+        const added = assigneeUids.filter((uid) => !before.has(uid));
+        if (added.length) void sendAppEmail({ type: "task", taskId: task.id, uids: added });
+      }
       onChanged();
     } catch (cause) {
       console.error("Unable to update task", cause);
