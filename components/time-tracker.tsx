@@ -130,6 +130,10 @@ export function TimeTracker({
   const [jobFilter, setJobFilter] = React.useState(jobSlug ?? "all");
   const [sort, setSort] = React.useState<"recent" | "oldest" | "activity" | "duration">("recent");
   const [view, setView] = React.useState<ViewMode>("table");
+  // Phones start in card view; the table is cramped at that width.
+  React.useEffect(() => {
+    if (window.matchMedia("(max-width: 767px)").matches) setView("cards");
+  }, []);
   const [selectedEntryId, setSelectedEntryId] = React.useState<string | null>(null);
   const [activity, setActivity] = React.useState("");
   const [jobId, setJobId] = React.useState<string>(jobSlug ?? NO_JOB);
