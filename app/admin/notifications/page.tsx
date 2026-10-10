@@ -8,7 +8,7 @@ import { UsersTableSkeleton } from "@/components/dashboard/loading-skeleton";
 import { firebaseDb } from "@/lib/firebase/client";
 import {
   DIGESTS,
-  INSTANT_EMAILS,
+  TRANSACTIONAL_EMAILS,
   NOTIFICATION_SETTINGS_DOC,
   SECTIONS,
   withDefaults,
@@ -75,7 +75,7 @@ export default function NotificationSettingsPage() {
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-5 pb-16 pt-2 sm:px-8">
       <PageHeader title="Notifications" />
-      <p className="mt-2 text-sm text-muted-foreground">People get one summary a week and one a month, plus instant emails only for things they need to act on. Times are Lagos time.</p>
+      <p className="mt-2 text-sm text-muted-foreground">Reminders go out as one summary a week and one a month. Times are Lagos time.</p>
 
       <section aria-labelledby="summaries" className="mt-6">
         <div className="flex items-end justify-between gap-4 border-b border-border pb-2">
@@ -117,20 +117,20 @@ export default function NotificationSettingsPage() {
         </ul>
       </section>
 
-      <section aria-labelledby="instant" className="mt-8">
-        <h2 id="instant" className="m-0 border-b border-border pb-2 text-[15px] font-semibold">Instant emails</h2>
-        <p className="m-0 mt-2 text-[13px] text-muted-foreground">Sent straight away, only for things someone needs to act on.</p>
+      <section aria-labelledby="transactional" className="mt-8">
+        <h2 id="transactional" className="m-0 border-b border-border pb-2 text-[15px] font-semibold">Transactional emails</h2>
+        <p className="m-0 mt-2 text-[13px] text-muted-foreground">Sent when something happens, such as a new task or an invite.</p>
         <ul className="m-0 list-none divide-y divide-border p-0">
-          {INSTANT_EMAILS.map((item) => (
+          {TRANSACTIONAL_EMAILS.map((item) => (
             <li key={item.key} className="flex items-center justify-between gap-4 py-3">
               <div className="min-w-0">
                 <p className="m-0 text-[14px] font-semibold">{item.label}</p>
                 <p className="m-0 mt-0.5 text-[13px] text-muted-foreground">{item.description}</p>
               </div>
               <Switch
-                checked={settings.instant[item.key]}
+                checked={settings.transactional[item.key]}
                 label={`${item.label} email`}
-                onChange={(value) => { setMessage(null); setSettings({ ...settings, instant: { ...settings.instant, [item.key]: value } }); }}
+                onChange={(value) => { setMessage(null); setSettings({ ...settings, transactional: { ...settings.transactional, [item.key]: value } }); }}
               />
             </li>
           ))}

@@ -4,6 +4,7 @@ import { firebaseDb } from "@/lib/firebase/client";
 import { needsOnboarding } from "@/lib/onboarding";
 import { CLIENT_INVITES_COLLECTION } from "@/lib/clients";
 import { sendSystemMessage, welcomeMessage } from "@/lib/firebase/system-messages";
+import { sendAppEmail } from "@/lib/app-email";
 
 export type AuthIntent = "member" | "creator";
 
@@ -51,6 +52,7 @@ export async function upsertUserProfile(user: FirebaseUser, intent: AuthIntent) 
   }
 
   await setDoc(userRef, userData, { merge: true });
+  if (!existingSnapshot.exists()) await sendAppEmail({ type: "welcome" });
   if (!existingSnapshot.exists() && userData.role !== "client") {
     // Not awaited: the welcome note must never slow down or block sign-in.
     void sendSystemMessage(user.uid, user.displayName, welcomeMessage(user.displayName));

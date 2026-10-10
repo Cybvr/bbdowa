@@ -7,6 +7,7 @@ import { GoogleAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndP
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { useAuth } from "@/components/auth-provider";
 import { firebaseAuth, firebaseDb } from "@/lib/firebase/client";
+import { sendAppEmail } from "@/lib/app-email";
 import { CLIENT_INVITES_COLLECTION, CLIENT_TIMEZONES, TEAM_SIZE_RANGES } from "@/lib/clients";
 
 const FIELD = "block space-y-1.5 text-sm font-medium";
@@ -64,6 +65,7 @@ async function routeAfterSignIn(user: User): Promise<string | null> {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
+      await sendAppEmail({ type: "welcome" });
       return "/portal";
     }
   }
@@ -204,6 +206,7 @@ export function CompanySetup() {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
+      await sendAppEmail({ type: "welcome" });
       window.location.assign("/portal");
     } catch (cause) {
       console.error("Unable to set up company", cause);

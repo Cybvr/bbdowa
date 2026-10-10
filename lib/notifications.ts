@@ -1,5 +1,5 @@
 // Notifications: a weekly and a monthly summary per person, plus a few
-// instant emails for things people need to act on (a new task, a document to
+// transactional emails for things people need to act on (a new task, a document to
 // sign, …), sent by app/api/email.
 //
 // Admins choose which summaries go out, how (in-app, email) and what they
@@ -17,17 +17,18 @@ export type DigestKey = "weekly" | "monthly";
 export type DigestSection = "tasks" | "jobs" | "tracker";
 export type Channels = { inApp: boolean; email: boolean };
 /** Emails the app sends straight away when something happens (app/api/email). */
-export type InstantEmailKey = "task" | "job" | "document" | "invoice" | "invite";
+export type TransactionalEmailKey = "welcome" | "task" | "job" | "document" | "invoice" | "invite";
 
 export type NotificationSettings = {
   digests: Record<DigestKey, Channels>;
   /** What the summaries cover. */
   sections: Record<DigestSection, boolean>;
-  /** Which instant emails are on. */
-  instant: Record<InstantEmailKey, boolean>;
+  /** Which transactional emails are on. */
+  transactional: Record<TransactionalEmailKey, boolean>;
 };
 
-export const INSTANT_EMAILS: { key: InstantEmailKey; label: string; description: string }[] = [
+export const TRANSACTIONAL_EMAILS: { key: TransactionalEmailKey; label: string; description: string }[] = [
+  { key: "welcome", label: "Welcome", description: "To someone the first time they sign up." },
   { key: "task", label: "New task", description: "To the people a task is given to." },
   { key: "job", label: "Added to a job", description: "To people added to a job's team." },
   { key: "document", label: "Document to sign", description: "To the person a document is sent to." },
@@ -52,7 +53,7 @@ export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
     monthly: { inApp: true, email: true },
   },
   sections: { tasks: true, jobs: true, tracker: true },
-  instant: { task: true, job: true, document: true, invoice: true, invite: true },
+  transactional: { welcome: true, task: true, job: true, document: true, invoice: true, invite: true },
 };
 
 /** Stored settings merged over the defaults. */
@@ -63,7 +64,7 @@ export function withDefaults(stored: Partial<NotificationSettings> | undefined |
       monthly: { ...DEFAULT_NOTIFICATION_SETTINGS.digests.monthly, ...(stored?.digests?.monthly ?? {}) },
     },
     sections: { ...DEFAULT_NOTIFICATION_SETTINGS.sections, ...(stored?.sections ?? {}) },
-    instant: { ...DEFAULT_NOTIFICATION_SETTINGS.instant, ...(stored?.instant ?? {}) },
+    transactional: { ...DEFAULT_NOTIFICATION_SETTINGS.transactional, ...(stored?.transactional ?? {}) },
   };
 }
 

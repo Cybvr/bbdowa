@@ -9,7 +9,7 @@
 // Env: RESEND_API_KEY, EMAIL_FROM, optional SITE_URL (links), plus the
 // NEXT_PUBLIC_FIREBASE_* values the app already uses.
 import { NextResponse } from "next/server";
-import { DEFAULT_NOTIFICATION_SETTINGS, type InstantEmailKey } from "@/lib/notifications";
+import { DEFAULT_NOTIFICATION_SETTINGS, type TransactionalEmailKey } from "@/lib/notifications";
 
 export const runtime = "nodejs";
 
@@ -72,8 +72,8 @@ function firestoreAs(idToken: string) {
   };
 }
 
-/** The uid behind a valid Firebase ID token, or null. */
-async function verifyIdToken(idToken: string): Promise<string | null> {
+/** The account behind a valid Firebase ID token, or null. */
+async function verifyIdToken(idToken: string): Promise<{ uid: string; email: string | null } | null> {
   const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${API_KEY}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -81,8 +81,9 @@ async function verifyIdToken(idToken: string): Promise<string | null> {
     cache: "no-store",
   });
   if (!response.ok) return null;
-  const data = (await response.json()) as { users?: { localId: string }[] };
-  return data.users?.[0]?.localId ?? null;
+  const data = (await response.json()) as { users?: { localId: string; email?: string }[] };
+  const account = data.users?.[0];
+  return account ? { uid: account.localId, email: account.email ?? null } : null;
 }
 
 const escapeHtml = (text: string) =>
@@ -108,6 +109,7 @@ const str = (value: unknown) => (typeof value === "string" ? value : "");
 const strings = (value: unknown) => (Array.isArray(value) ? value.filter((item): item is string => typeof item === "string" && Boolean(item)) : []);
 
 type Body =
+  | { type: "welcome" }
   | { type: "task"; taskId: string; uids?: string[] }
   | { type: "job"; jobSlug: string; uids: string[] }
   | { type: "document"; documentId: string }
@@ -117,7 +119,8 @@ type Body =
 export async function POST(request: Request) {
   if (!process.env.RESEND_API_KEY || !process.env.EMAIL_FROM) return NextResponse.json({ sent: 0, reason: "Email is not set up." });
   const idToken = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ?? "";
-  const callerUid = idToken ? await verifyIdToken(idToken) : null;
+  const account = idToken ? await verifyIdToken(idToken) : null;
+  const callerUid = account?.uid ?? null;
   if (!callerUid) return NextResponse.json({ error: "Sign in required." }, { status: 401 });
 
   let body: Body;
@@ -129,8 +132,8 @@ export async function POST(request: Request) {
 
   const db = firestoreAs(idToken);
   const settings = await db.get("settings/notifications");
-  const instant = { ...DEFAULT_NOTIFICATION_SETTINGS.instant, ...((settings?.instant as Partial<Record<InstantEmailKey, boolean>> | undefined) ?? {}) };
-  if (!instant[body.type]) return NextResponse.json({ sent: 0, reason: "Turned off in settings." });
+  const enabled = { ...DEFAULT_NOTIFICATION_SETTINGS.transactional, ...((settings?.transactional as Partial<Record<TransactionalEmailKey, boolean>> | undefined) ?? {}) };
+  if (!enabled[body.type]) return NextResponse.json({ sent: 0, reason: "Turned off in settings." });
 
   const callerProfile = (await db.get(`users/${callerUid}`)) ?? (await db.where("users", [["uid", callerUid]]))[0] ?? null;
   const callerRole = str(callerProfile?.role);
@@ -208,6 +211,24 @@ export async function POST(request: Request) {
         ],
         href: "/portal/payments",
         action: "View invoice",
+      };
+    }
+  } else if (body.type === "welcome") {
+    // Only to the person signing up, and only for a profile made in the last hour.
+    const createdAt = Date.parse(str(callerProfile?.createdAt));
+    if (account?.email && Number.isFinite(createdAt) && Date.now() - createdAt < 3_600_000) {
+      const firstName = (str(callerProfile?.preferredName) || str(callerProfile?.name)).split(/\s+/)[0];
+      const lines = callerRole === "client"
+        ? ["Your company's Bantaba portal is ready. You can see your jobs, invoices and messages there."]
+        : callerRole === "creator"
+          ? ["Your Bantaba account is ready. Browse jobs, track your time and keep your profile up to date."]
+          : ["Thanks for signing up to Bantaba, BBDO West Africa's workspace.", "An admin will confirm your access shortly. We'll be in touch."];
+      email = {
+        to: [account.email.toLowerCase()],
+        subject: `Welcome to Bantaba${firstName ? `, ${firstName}` : ""}`,
+        lines,
+        href: callerRole === "client" ? "/portal" : "/dashboard",
+        action: callerRole === "client" ? "Open the portal" : "Open Bantaba",
       };
     }
   } else if (body.type === "invite") {
