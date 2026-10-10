@@ -66,5 +66,6 @@ export const ADMIN_NAV_ITEMS: NavItem[] = [
   { kind: "link", label: "Appraisals", href: "/admin/appraisals" },
   { kind: "link", label: "Blog", href: "/admin/blog" },
   { kind: "link", label: "Tasks", href: "/admin/tasks" },
+  { kind: "link", label: "Time", href: "/admin/time" },
   { kind: "link", label: "Dashboard", href: "/dashboard" },
 ];

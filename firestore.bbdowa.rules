@@ -227,19 +227,17 @@ service cloud.firestore {
     }
 
     // Clock in / clock out. Each shift belongs to the person who created it:
-    // they read and write only their own; admins and managers can read everyone's.
+    // they read and write only their own; managers can read everyone's and
+    // admins can add, edit and delete anyone's (Admin → Time).
     match /timeEntries/{id} {
       allow read: if (isAdmin() || isManager())
         || (signedIn() && resource.data.uid == request.auth.uid);
-      allow create: if signedIn()
-        && request.resource.data.uid == request.auth.uid;
-      allow update: if (signedIn()
-        && resource.data.uid == request.auth.uid
-        && request.resource.data.uid == request.auth.uid)
-        || (isAdmin()
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-            "jobId", "jobName", "campaignSlug", "campaignName"
-          ]));
+      allow create: if isAdmin()
+        || (signedIn() && request.resource.data.uid == request.auth.uid);
+      allow update: if isAdmin()
+        || (signedIn()
+          && resource.data.uid == request.auth.uid
+          && request.resource.data.uid == request.auth.uid);
       allow delete: if isAdmin()
         || (signedIn() && resource.data.uid == request.auth.uid);
     }
