@@ -68,10 +68,36 @@ export function withDefaults(stored: Partial<NotificationSettings> | undefined |
   };
 }
 
+/** Who a message from Admin → Send message goes to. */
+export type MessageAudience = "everyone" | "team" | "creators" | "clients" | "people";
+
+export const MESSAGE_AUDIENCES: { key: MessageAudience; label: string }[] = [
+  { key: "everyone", label: "Everyone" },
+  { key: "team", label: "Team (admins and managers)" },
+  { key: "creators", label: "Creators" },
+  { key: "clients", label: "Clients" },
+  { key: "people", label: "Chosen people" },
+];
+
+export const SENT_MESSAGES_COLLECTION = "sentMessages";
+
+export type SentMessage = {
+  id: string;
+  subject: string;
+  message: string;
+  audience: MessageAudience;
+  sentBy: string;
+  sentByName: string;
+  createdAt: string;
+  people: number;
+  emailed: number;
+  notified: number;
+};
+
 export type AppNotification = {
   id: string;
   uid: string;
-  type: DigestKey;
+  type: DigestKey | "message";
   title: string;
   /** One line per point, separated by newlines. */
   body: string;

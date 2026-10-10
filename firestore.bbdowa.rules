@@ -233,7 +233,8 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // In-app notifications (weekly and monthly summaries), written by the job. Each person
+    // In-app notifications: weekly and monthly summaries written by the job,
+    // and messages sent by admins and managers from Admin → Send message. Each person
     // reads their own, marks them read, and can delete them.
     match /notifications/{id} {
       allow read: if signedIn() && resource.data.uid == request.auth.uid;
@@ -241,7 +242,12 @@ service cloud.firestore {
         && resource.data.uid == request.auth.uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["readAt"]);
       allow delete: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
-      allow create: if isAdmin();
+      allow create: if isAdmin() || isManager();
+    }
+
+    // Messages sent from Admin → Send message, kept as a record.
+    match /sentMessages/{id} {
+      allow read, create: if isAdmin() || isManager();
     }
 
     // Clock in / clock out. Each shift belongs to the person who created it:
