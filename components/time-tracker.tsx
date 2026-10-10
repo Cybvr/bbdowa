@@ -639,7 +639,32 @@ export function TimeTracker({
             })}
           </ul>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          <ul className="m-0 list-none divide-y divide-border p-0 md:hidden">
+            {visibleEntries.map((entry) => {
+              const open = !entry.endedAt;
+              const paused = open && isPaused(entry);
+              return (
+                <li key={entry.id} className="flex items-center gap-3 py-3">
+                  <button type="button" onClick={() => setSelectedEntryId(entry.id)} className="min-w-0 flex-1 text-left text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
+                    <span className="block truncate text-[15px] font-semibold">{entry.activity || "Untitled activity"}</span>
+                    <span className="mt-0.5 block truncate text-[13px] text-muted-foreground">{entry.jobName ?? "No job"}</span>
+                    <span className="mt-1 flex items-center gap-1.5 text-[12px] text-muted-foreground">
+                      <span className={open && !paused ? "text-primary" : ""}>{open ? (paused ? "Paused" : "Running") : "Completed"}</span>
+                      <span aria-hidden="true">·</span>
+                      <span className="truncate">{formatTimestamp(entry.startedAt)}</span>
+                    </span>
+                  </button>
+                  <span className="shrink-0 font-mono text-[14px] font-semibold tabular-nums">{formatClockFull(elapsedMs(entry, now))}</span>
+                  {open ? <div className="flex shrink-0 items-center">
+                    <button type="button" onClick={() => void toggleEntry(entry)} disabled={busy} aria-label={`${paused ? "Play" : "Pause"} ${entry.activity}`} title={paused ? "Play" : "Pause"} className="grid h-9 w-9 place-items-center rounded-md text-foreground transition hover:bg-muted disabled:opacity-50">{paused ? <LuPlay className="h-4 w-4" aria-hidden="true" /> : <LuPause className="h-4 w-4" aria-hidden="true" />}</button>
+                    <button type="button" onClick={() => void stopEntry(entry)} disabled={busy} aria-label={`Stop ${entry.activity}`} title="Stop" className="grid h-9 w-9 place-items-center rounded-md text-primary transition hover:bg-primary/10 disabled:opacity-50"><LuSquare className="h-4 w-4" aria-hidden="true" /></button>
+                  </div> : <button type="button" onClick={() => void restartActivity(entry)} disabled={busy} aria-label={`Continue ${entry.activity}`} title="Continue" className="grid h-9 w-9 shrink-0 place-items-center rounded-md text-foreground transition hover:bg-muted disabled:opacity-50"><LuPlay className="h-4 w-4" aria-hidden="true" /></button>}
+                </li>
+              );
+            })}
+          </ul>
+          <div className="hidden overflow-x-auto md:block">
             <Table className="min-w-[700px] w-full border-collapse">
               <TableHeader>
                 <TableRow className="text-left font-semibold uppercase text-muted-foreground">
@@ -677,6 +702,7 @@ export function TimeTracker({
               </TableBody>
             </Table>
           </div>
+          </>
         )}
       </section>
 
