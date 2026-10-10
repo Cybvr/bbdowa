@@ -5,15 +5,15 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { useAuth } from "@/components/auth-provider";
 import { PageHeader } from "@/components/dashboard/ui";
 import { UsersTableSkeleton } from "@/components/dashboard/loading-skeleton";
-import { Input } from "@/components/ui/input";
 import { firebaseDb } from "@/lib/firebase/client";
 import {
+  DIGESTS,
   NOTIFICATION_SETTINGS_DOC,
-  REMINDER_GROUPS,
+  SECTIONS,
   withDefaults,
+  type Channels,
+  type DigestKey,
   type NotificationSettings,
-  type ReminderChannels,
-  type ReminderKey,
 } from "@/lib/notifications";
 
 function Switch({ checked, label, onChange }: { checked: boolean; label: string; onChange: (next: boolean) => void }) {
@@ -31,19 +31,12 @@ function Switch({ checked, label, onChange }: { checked: boolean; label: string;
   );
 }
 
-const NUMBER_FIELDS: Partial<Record<ReminderKey, { field: keyof NotificationSettings; label: string; min: number; max: number }>> = {
-  taskDueSoon: { field: "taskDueSoonDays", label: "Days before", min: 1, max: 30 },
-  jobEndingSoon: { field: "jobEndingSoonDays", label: "Days before", min: 1, max: 60 },
-  trackerRunningLong: { field: "trackerRunningHours", label: "After hours", min: 1, max: 24 },
-};
-
 export default function NotificationSettingsPage() {
   const { role, loading: authLoading } = useAuth();
   const [settings, setSettings] = React.useState<NotificationSettings | null>(null);
   const [saving, setSaving] = React.useState(false);
   const [message, setMessage] = React.useState<{ tone: "ok" | "error"; text: string } | null>(null);
   const isAdmin = role === "admin";
-  const ref = doc(firebaseDb, NOTIFICATION_SETTINGS_DOC.collection, NOTIFICATION_SETTINGS_DOC.id);
 
   React.useEffect(() => {
     if (authLoading || !isAdmin) return;
@@ -59,16 +52,16 @@ export default function NotificationSettingsPage() {
   if (authLoading || (isAdmin && !settings)) return <UsersTableSkeleton />;
   if (!isAdmin || !settings) return <main className="mx-auto w-full max-w-3xl flex-1 px-5 pb-16 pt-8 sm:px-8"><PageHeader title="Notifications" /><p className="mt-8 text-sm text-muted-foreground">Only admins can change notification settings.</p></main>;
 
-  const setChannel = (key: ReminderKey, channel: keyof ReminderChannels, value: boolean) => {
+  const setChannel = (key: DigestKey, channel: keyof Channels, value: boolean) => {
     setMessage(null);
-    setSettings({ ...settings, reminders: { ...settings.reminders, [key]: { ...settings.reminders[key], [channel]: value } } });
+    setSettings({ ...settings, digests: { ...settings.digests, [key]: { ...settings.digests[key], [channel]: value } } });
   };
 
   const save = async () => {
     setSaving(true);
     setMessage(null);
     try {
-      await setDoc(ref, { ...settings, updatedAt: new Date().toISOString() });
+      await setDoc(doc(firebaseDb, NOTIFICATION_SETTINGS_DOC.collection, NOTIFICATION_SETTINGS_DOC.id), { ...settings, updatedAt: new Date().toISOString() });
       setMessage({ tone: "ok", text: "Saved." });
     } catch (cause) {
       console.error("Unable to save notification settings", cause);
@@ -81,56 +74,47 @@ export default function NotificationSettingsPage() {
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-5 pb-16 pt-2 sm:px-8">
       <PageHeader title="Notifications" />
-      <p className="mt-2 text-sm text-muted-foreground">Choose which reminders go out and how. Checks run at 9am and 5pm (Lagos time).</p>
+      <p className="mt-2 text-sm text-muted-foreground">People get one summary a week and one a month. Nothing else. Times are Lagos time.</p>
 
-      <div className="mt-6 space-y-8">
-        {REMINDER_GROUPS.map((group) => (
-          <section key={group.title} aria-labelledby={`group-${group.title}`}>
-            <div className="flex items-end justify-between gap-4 border-b border-border pb-2">
-              <h2 id={`group-${group.title}`} className="m-0 text-[15px] font-semibold">{group.title}</h2>
-              <div className="flex gap-4 text-[12px] font-medium text-muted-foreground">
-                <span className="w-9 text-center">In-app</span>
-                <span className="w-9 text-center">Email</span>
+      <section aria-labelledby="summaries" className="mt-6">
+        <div className="flex items-end justify-between gap-4 border-b border-border pb-2">
+          <h2 id="summaries" className="m-0 text-[15px] font-semibold">Summaries</h2>
+          <div className="flex gap-4 text-[12px] font-medium text-muted-foreground">
+            <span className="w-9 text-center">In-app</span>
+            <span className="w-9 text-center">Email</span>
+          </div>
+        </div>
+        <ul className="m-0 list-none divide-y divide-border p-0">
+          {DIGESTS.map((digest) => (
+            <li key={digest.key} className="flex items-center justify-between gap-4 py-3">
+              <div className="min-w-0">
+                <p className="m-0 text-[14px] font-semibold">{digest.label}</p>
+                <p className="m-0 mt-0.5 text-[13px] text-muted-foreground">{digest.description}</p>
               </div>
-            </div>
-            <ul className="m-0 list-none divide-y divide-border p-0">
-              {group.items.map((item) => {
-                const channels = settings.reminders[item.key];
-                const number = NUMBER_FIELDS[item.key];
-                return (
-                  <li key={item.key} className="flex items-center justify-between gap-4 py-3">
-                    <div className="min-w-0">
-                      <p className="m-0 text-[14px] font-semibold">{item.label}</p>
-                      <p className="m-0 mt-0.5 text-[13px] text-muted-foreground">{item.description}</p>
-                      {number ? (
-                        <label className="mt-2 flex items-center gap-2 text-[13px] text-muted-foreground">
-                          {number.label}
-                          <Input
-                            type="number"
-                            min={number.min}
-                            max={number.max}
-                            value={String(settings[number.field])}
-                            onChange={(event) => {
-                              const next = Math.min(number.max, Math.max(number.min, Math.round(Number(event.target.value) || number.min)));
-                              setMessage(null);
-                              setSettings({ ...settings, [number.field]: next });
-                            }}
-                            className="h-8 w-20 text-sm"
-                          />
-                        </label>
-                      ) : null}
-                    </div>
-                    <div className="flex shrink-0 gap-4">
-                      <Switch checked={channels.inApp} label={`${item.label} in-app`} onChange={(value) => setChannel(item.key, "inApp", value)} />
-                      <Switch checked={channels.email} label={`${item.label} email`} onChange={(value) => setChannel(item.key, "email", value)} />
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-        ))}
-      </div>
+              <div className="flex shrink-0 gap-4">
+                <Switch checked={settings.digests[digest.key].inApp} label={`${digest.label} in-app`} onChange={(value) => setChannel(digest.key, "inApp", value)} />
+                <Switch checked={settings.digests[digest.key].email} label={`${digest.label} email`} onChange={(value) => setChannel(digest.key, "email", value)} />
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section aria-labelledby="sections" className="mt-8">
+        <h2 id="sections" className="m-0 border-b border-border pb-2 text-[15px] font-semibold">What summaries cover</h2>
+        <ul className="m-0 list-none divide-y divide-border p-0">
+          {SECTIONS.map((section) => (
+            <li key={section.key} className="flex items-center justify-between gap-4 py-3">
+              <p className="m-0 text-[14px] font-semibold">{section.label}</p>
+              <Switch
+                checked={settings.sections[section.key]}
+                label={`Include ${section.label}`}
+                onChange={(value) => { setMessage(null); setSettings({ ...settings, sections: { ...settings.sections, [section.key]: value } }); }}
+              />
+            </li>
+          ))}
+        </ul>
+      </section>
 
       <div className="mt-8 flex items-center gap-3">
         <button type="button" onClick={() => void save()} disabled={saving} className="h-10 rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50">{saving ? "Saving…" : "Save"}</button>

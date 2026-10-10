@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/compon
 import { firebaseDb } from "@/lib/firebase/client";
 import { NOTIFICATION_COLLECTION, type AppNotification } from "@/lib/notifications";
 
-function timeAgo(iso: string): string {
+export function timeAgo(iso: string): string {
   const minutes = Math.floor((Date.now() - Date.parse(iso)) / 60_000);
   if (!Number.isFinite(minutes) || minutes < 1) return "Just now";
   if (minutes < 60) return `${minutes}m ago`;
@@ -18,14 +18,17 @@ function timeAgo(iso: string): string {
   return `${Math.floor(hours / 24)}d ago`;
 }
 
-export function NotificationsBell({ align = "end" }: { align?: "start" | "end" }) {
+/** The signed-in person's notifications, newest first, kept live. */
+export function useMyNotifications() {
   const auth = useOptionalAuth();
   const uid = auth?.user?.uid ?? null;
   const [items, setItems] = React.useState<AppNotification[]>([]);
+  const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
     if (!uid) {
       setItems([]);
+      setLoading(auth?.loading ?? false);
       return;
     }
     return onSnapshot(
@@ -33,14 +36,16 @@ export function NotificationsBell({ align = "end" }: { align?: "start" | "end" }
       (snapshot) => {
         setItems(snapshot.docs
           .map((document) => ({ id: document.id, ...(document.data() as Omit<AppNotification, "id">) }))
-          .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-          .slice(0, 30));
+          .sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+        setLoading(false);
       },
-      (cause) => console.error("Unable to load notifications", cause),
+      (cause) => {
+        console.error("Unable to load notifications", cause);
+        setLoading(false);
+      },
     );
-  }, [uid]);
+  }, [uid, auth?.loading]);
 
-  if (!uid) return null;
   const unread = items.filter((item) => !item.readAt);
 
   const markRead = (item: AppNotification) => {
@@ -56,6 +61,14 @@ export function NotificationsBell({ align = "end" }: { align?: "start" | "end" }
     for (const item of unread) batch.update(doc(firebaseDb, NOTIFICATION_COLLECTION, item.id), { readAt: now });
     void batch.commit().catch((cause) => console.error("Unable to mark notifications read", cause));
   };
+
+  return { uid, items, unread, loading, markRead, markAllRead };
+}
+
+export function NotificationsBell({ align = "end" }: { align?: "start" | "end" }) {
+  const { uid, items: all, unread, markRead, markAllRead } = useMyNotifications();
+  if (!uid) return null;
+  const items = all.slice(0, 10);
 
   return (
     <DropdownMenu>
@@ -89,7 +102,7 @@ export function NotificationsBell({ align = "end" }: { align?: "start" | "end" }
                     <span className={`text-[13px] ${item.readAt ? "font-medium text-muted-foreground" : "font-semibold text-foreground"}`}>{item.title}</span>
                     {!item.readAt ? <span aria-label="Unread" className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" /> : null}
                   </span>
-                  {item.body ? <span className="mt-0.5 block text-[12px] text-muted-foreground">{item.body}</span> : null}
+                  {item.body ? <span className="mt-0.5 block whitespace-pre-line text-[12px] text-muted-foreground">{item.body}</span> : null}
                   <span className="mt-1 block text-[11px] text-muted-foreground">{timeAgo(item.createdAt)}</span>
                 </>
               );
@@ -108,6 +121,7 @@ export function NotificationsBell({ align = "end" }: { align?: "start" | "end" }
         ) : (
           <p className="m-0 px-4 py-8 text-center text-[13px] text-muted-foreground">You’re all caught up.</p>
         )}
+        <Link href="/dashboard/notifications" className="block border-t border-border px-4 py-3 text-center text-[13px] font-semibold text-primary hover:bg-muted">See all notifications</Link>
       </DropdownMenuContent>
     </DropdownMenu>
   );

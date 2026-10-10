@@ -226,14 +226,14 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Reminder settings (Admin → Notifications). Read by the
-    // reminders job with a service account, which bypasses these rules.
+    // Notification settings (Admin → Notifications). Read by the
+    // summaries job with a service account, which bypasses these rules.
     match /settings/{id} {
       allow read: if signedIn();
       allow write: if isAdmin();
     }
 
-    // In-app notifications, written by the reminders job. Each person
+    // In-app notifications (weekly and monthly summaries), written by the job. Each person
     // reads their own, marks them read, and can delete them.
     match /notifications/{id} {
       allow read: if signedIn() && resource.data.uid == request.auth.uid;
