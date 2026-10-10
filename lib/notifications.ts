@@ -1,8 +1,8 @@
 // Reminders and notifications.
 //
 // Admins choose which reminders go out and how (Admin → Notifications). The
-// settings live in `settings/notifications`. An hourly job
-// (scripts/send-reminders.mjs, run by GitHub Actions) checks tasks, jobs and
+// settings live in `settings/notifications`. A job that runs at
+// 9am and 5pm Lagos time (scripts/send-reminders.mjs, GitHub Actions) checks tasks, jobs and
 // the tracker, writes in-app notifications to `notifications` and sends
 // emails. Each person reads and marks their own notifications as read.
 //
@@ -54,7 +54,7 @@ export const REMINDER_GROUPS: { title: string; items: { key: ReminderKey; label:
     title: "Tracker",
     items: [
       { key: "trackerRunningLong", label: "Timer still running", description: "When a timer has run for a long time." },
-      { key: "trackerNoTimeToday", label: "No time logged", description: "Weekdays, for people who track time but logged nothing today." },
+      { key: "trackerNoTimeToday", label: "No time logged", description: "Weekdays at 5pm, for people who track time but logged nothing today." },
     ],
   },
 ];

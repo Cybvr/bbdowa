@@ -35,7 +35,6 @@ const NUMBER_FIELDS: Partial<Record<ReminderKey, { field: keyof NotificationSett
   taskDueSoon: { field: "taskDueSoonDays", label: "Days before", min: 1, max: 30 },
   jobEndingSoon: { field: "jobEndingSoonDays", label: "Days before", min: 1, max: 60 },
   trackerRunningLong: { field: "trackerRunningHours", label: "After hours", min: 1, max: 24 },
-  trackerNoTimeToday: { field: "trackerNoTimeHour", label: "At hour (0–23)", min: 0, max: 23 },
 };
 
 export default function NotificationSettingsPage() {
@@ -82,7 +81,7 @@ export default function NotificationSettingsPage() {
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-5 pb-16 pt-2 sm:px-8">
       <PageHeader title="Notifications" />
-      <p className="mt-2 text-sm text-muted-foreground">Choose which reminders go out and how. Checks run every hour.</p>
+      <p className="mt-2 text-sm text-muted-foreground">Choose which reminders go out and how. Checks run at 9am and 5pm (Lagos time).</p>
 
       <div className="mt-6 space-y-8">
         {REMINDER_GROUPS.map((group) => (

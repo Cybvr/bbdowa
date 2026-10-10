@@ -1,4 +1,4 @@
-// Hourly reminders job, run by .github/workflows/reminders.yml.
+// Reminders job, run at 9am and 5pm Lagos time by .github/workflows/reminders.yml.
 //
 // Reads tasks, jobs and tracked time, works out who needs a reminder, then
 // writes in-app notifications and sends emails according to the admin

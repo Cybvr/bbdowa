@@ -1,11 +1,11 @@
-# Sends task, job and tracker reminders every hour (see scripts/send-reminders.mjs).
+# Sends task, job and tracker reminders at 9am and 5pm Lagos time (see scripts/send-reminders.mjs).
 # Needs repository secrets: FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL,
 # FIREBASE_PRIVATE_KEY, and for email RESEND_API_KEY, EMAIL_FROM, SITE_URL.
 name: Reminders
 
 on:
   schedule:
-    - cron: "7 * * * *"
+    - cron: "0 8,16 * * *"
   workflow_dispatch:
 
 concurrency:
