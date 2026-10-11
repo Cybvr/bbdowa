@@ -407,11 +407,11 @@ export default function SendMessagePage() {
           {status ? <p role="status" className={`m-0 mt-3 text-sm ${status.tone === "ok" ? "text-muted-foreground" : "text-destructive"}`}>{status.text}</p> : null}
         </>
       ) : (
-        <section aria-label="Sent messages" className="rounded-2xl border border-border bg-card text-card-foreground shadow-sm">
+        <section aria-label="Sent messages" className="text-foreground">
           {history.length ? (
-            <ul className="m-0 list-none divide-y divide-border p-0">
+            <ul className="m-0 list-none p-0">
               {history.map((item) => (
-                <li key={item.id} className="px-5 py-4">
+                <li key={item.id} className="border-b border-border py-5">
                   <div className="flex items-start justify-between gap-3">
                     <p className="m-0 text-[15px] font-semibold">{item.subject}</p>
                     <span className="shrink-0 text-xs text-muted-foreground">{dateLabel(item.createdAt)}</span>
@@ -425,7 +425,7 @@ export default function SendMessagePage() {
               ))}
             </ul>
           ) : (
-            <p className="m-0 px-5 py-10 text-center text-sm text-muted-foreground">Nothing sent yet.</p>
+            <p className="m-0 border-b border-border py-10 text-center text-sm text-muted-foreground">Nothing sent yet.</p>
           )}
         </section>
       )}

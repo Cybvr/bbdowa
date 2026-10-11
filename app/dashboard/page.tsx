@@ -32,6 +32,13 @@ function availabilityLabel(user: User | undefined, loading: boolean): string {
   return "—";
 }
 
+function compactDuration(ms: number): string {
+  const totalMinutes = Math.floor(ms / 60_000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return hours ? `${hours}h${String(minutes).padStart(2, "0")}m` : `${minutes}m`;
+}
+
 export default function HomePage() {
   const { user, isAdmin, isViewingAs } = useAuth();
   const { users, loading: usersLoading } = useFirestoreUsers();
@@ -177,8 +184,11 @@ export default function HomePage() {
   });
   const hoursKnown = !hoursLoading && !hoursUnavailable;
   const hoursEmpty = hoursKnown && weeklyHours < 1000;
-  const weeklyLabel = hoursLoading ? "…" : hoursUnavailable ? "—" : `${Math.floor(weeklyHours / 3600000)}h ${String(Math.floor((weeklyHours % 3600000) / 60000)).padStart(2, "0")}m`;
-  const maxDay = Math.max(...dayTotals, 8 * 3600000);
+  const weeklyWholeHours = Math.floor(weeklyHours / 3_600_000);
+  const weeklyMinutes = Math.floor((weeklyHours % 3_600_000) / 60_000);
+  const weeklyLabel = hoursLoading ? "…" : hoursUnavailable ? "—" : `${weeklyWholeHours}h ${String(weeklyMinutes).padStart(2, "0")}m`;
+  const trackedDays = dayTotals.filter((total) => total > 0).length;
+  const maxDay = Math.max(...dayTotals, 1);
   const facts = [
     { label: PROFILE_FIELDS[0], value: availabilityLabel(profile, usersLoading) },
     { label: PROFILE_FIELDS[1], value: hoursLoading ? "Loading…" : hoursUnavailable ? "Unavailable" : formatClockFull(weeklyHours), alert: hoursEmpty },
@@ -313,19 +323,31 @@ export default function HomePage() {
         </div>
 
         <aside aria-labelledby="profile-overview-heading" className="min-w-0 lg:col-start-2 lg:row-start-1 lg:border-l lg:border-border lg:pl-7">
-          <Link href="/dashboard/tracker" aria-label="Hours logged this week, open tracker" className="mb-8 block rounded-3xl border border-border bg-card p-5 transition hover:border-foreground">
-            <span className="block text-sm text-muted-foreground">Hours logged this week</span>
-            <span className={`mt-2 block text-4xl font-bold leading-none tracking-tight ${hoursEmpty ? "text-primary" : "text-foreground"}`}>{weeklyLabel}</span>
-            <span className="mt-10 grid grid-cols-7 gap-2" aria-hidden="true">
+          <Link href="/dashboard/tracker" aria-label={`Hours logged this week: ${weeklyLabel}. Open tracker`} className="mb-6 block rounded-2xl bg-card p-5 text-foreground shadow-[0_8px_24px_rgba(15,23,42,0.08)] transition hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(15,23,42,0.11)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 dark:ring-1 dark:ring-border">
+            <span className="flex items-center justify-between gap-3">
+              <span className="text-sm text-muted-foreground">Hours logged this week</span>
+              <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1.5 text-xs font-semibold text-primary">{trackedDays} {trackedDays === 1 ? "day" : "days"}</span>
+            </span>
+            <span className={`mt-1.5 flex items-baseline leading-none tracking-tight ${hoursEmpty ? "text-primary" : "text-foreground"}`}>
+              {hoursKnown ? <>
+                <span className="text-4xl font-bold tabular-nums">{weeklyWholeHours}</span>
+                <span className="ml-0.5 text-xl font-semibold text-muted-foreground">h</span>
+                <span className="ml-1.5 text-4xl font-bold tabular-nums">{String(weeklyMinutes).padStart(2, "0")}</span>
+                <span className="ml-0.5 text-xl font-semibold text-muted-foreground">m</span>
+              </> : <span className="text-4xl font-bold">{weeklyLabel}</span>}
+            </span>
+            <span className="mt-5 grid grid-cols-7 gap-1" aria-hidden="true">
               {["M", "T", "W", "T", "F", "S", "S"].map((day, index) => {
+                const total = dayTotals[index];
                 const isToday = index === todayIndex;
-                const fill = Math.min(1, dayTotals[index] / maxDay);
+                const barHeight = total ? Math.max(14, Math.round((total / maxDay) * 76)) : 5;
                 return (
-                  <span key={index} className="flex flex-col items-center gap-2">
-                    <span className="relative h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                      <span className={`absolute inset-y-0 left-0 rounded-full ${isToday ? "bg-primary" : "bg-foreground"}`} style={{ width: isToday && fill === 0 ? "100%" : `${fill * 100}%` }} />
+                  <span key={index} className="flex min-w-0 flex-col items-center">
+                    <span className="flex h-28 w-full flex-col items-center justify-end">
+                      {total ? <span className={`mb-1.5 whitespace-nowrap text-[10px] font-semibold tabular-nums ${isToday ? "text-primary" : "text-muted-foreground"}`}>{compactDuration(total)}</span> : null}
+                      <span className={`w-full max-w-9 ${total ? "rounded-lg" : "rounded-full"} ${isToday ? "bg-primary" : total ? "bg-primary/20 dark:bg-primary/35" : "bg-muted"}`} style={{ height: `${barHeight}px` }} />
                     </span>
-                    <span className={`text-sm ${isToday ? "font-bold text-foreground" : "text-muted-foreground"}`}>{day}</span>
+                    <span className={`mt-2 text-xs ${isToday ? "font-bold text-foreground" : "text-muted-foreground"}`}>{day}</span>
                   </span>
                 );
               })}

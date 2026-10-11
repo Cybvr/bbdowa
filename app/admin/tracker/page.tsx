@@ -1,8 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { addDoc, collection, deleteDoc, doc, getDocs, updateDoc } from "firebase/firestore";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { addDoc, collection, deleteDoc, doc, getDocs, runTransaction, updateDoc } from "firebase/firestore";
+import { Pencil, Plus, Square, Trash2 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { PageHeader } from "@/components/dashboard/ui";
 import { DashboardListPage } from "@/components/dashboard/list-page";
@@ -199,6 +199,37 @@ export default function AdminTimePage() {
     }
   };
 
+  const stop = async (entry: ActivityEntry) => {
+    if (entry.endedAt || busy) return;
+    const personName = nameOf(entry.uid);
+    if (!await confirmDialog(`Stop “${entry.activity}” for ${personName} now?`, "Stop tracker")) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const entryRef = doc(firebaseDb, ACTIVITY_COLLECTION, entry.id);
+      await runTransaction(firebaseDb, async (transaction) => {
+        const snapshot = await transaction.get(entryRef);
+        if (!snapshot.exists()) throw new Error("Time entry no longer exists.");
+        const current = snapshot.data() as Omit<ActivityEntry, "id">;
+        if (current.endedAt) return;
+        const endedAt = new Date();
+        const pauseStartedAt = current.pausedAt ? Date.parse(current.pausedAt) : Number.NaN;
+        const currentPause = Number.isNaN(pauseStartedAt) ? 0 : Math.max(0, endedAt.getTime() - pauseStartedAt);
+        transaction.update(entryRef, {
+          endedAt: endedAt.toISOString(),
+          pausedAt: null,
+          pausedMs: Math.max(0, current.pausedMs ?? 0) + currentPause,
+        });
+      });
+      await load();
+    } catch (cause) {
+      console.error("Unable to stop tracker", cause);
+      setError("Couldn’t stop that tracker. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   if (authLoading || (isStaff && (loading || usersLoading))) return <UsersTableSkeleton />;
   if (!isStaff) return <main className="mx-auto w-full max-w-6xl flex-1 px-5 pb-16 pt-8 sm:px-8"><PageHeader title="Tracker" /><p className="mt-8 text-sm text-muted-foreground">A staff account is required to see tracked time.</p></main>;
 
@@ -236,7 +267,7 @@ export default function AdminTimePage() {
                 <TableHead className="hidden px-4 py-3 md:table-cell">Person</TableHead>
                 <TableHead className="hidden px-4 py-3 md:table-cell">Started</TableHead>
                 <TableHead className="px-4 py-3 text-right">Time</TableHead>
-                {isAdmin ? <TableHead className="w-24 px-4 py-3 text-right"><span className="sr-only">Actions</span></TableHead> : null}
+                {isAdmin ? <TableHead className="w-40 px-4 py-3 text-right"><span className="sr-only">Actions</span></TableHead> : null}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -260,6 +291,7 @@ export default function AdminTimePage() {
                     {isAdmin ? (
                       <TableCell className="px-4 py-3">
                         <div className="flex justify-end gap-1">
+                          {!entry.endedAt ? <button type="button" onClick={(event) => { event.stopPropagation(); void stop(entry); }} disabled={busy} aria-label={`Stop ${entry.activity} for ${nameOf(entry.uid)}`} title="Stop tracker" className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-xs font-semibold text-foreground hover:bg-muted disabled:opacity-50"><Square className="h-3.5 w-3.5 fill-current" />Stop</button> : null}
                           <button type="button" onClick={(event) => { event.stopPropagation(); openEdit(entry); }} aria-label={`Edit ${entry.activity}`} className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:text-foreground"><Pencil className="h-4 w-4" /></button>
                           <button type="button" onClick={(event) => { event.stopPropagation(); void remove(entry); }} disabled={busy} aria-label={`Delete ${entry.activity}`} className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:text-destructive disabled:opacity-50"><Trash2 className="h-4 w-4" /></button>
                         </div>
