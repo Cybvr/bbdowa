@@ -16,6 +16,7 @@ import { ArrowLeft, Plus, Send, X } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { firebaseDb } from "@/lib/firebase/client";
 import { createGlyphAvatarDataUri } from "@/lib/avatar";
+import { notify } from "@/lib/email/notify";
 import {
   CONVERSATIONS_COLLECTION,
   conversationId,
@@ -172,6 +173,7 @@ export function MessagesView() {
         text,
         createdAt: now,
       });
+      void notify({ event: "message.sent", id: activeId });
     } catch {
       setDraft(text);
     } finally {

@@ -22,6 +22,7 @@ import { CreatorMultiPicker } from "@/components/creator-picker";
 import { TaskStatusBadge } from "@/components/tasks-view";
 import { TaskClientJobFields, useTaskLinkOptions } from "@/components/task-link-fields";
 import { useFirestoreTasks, useFirestoreUsers } from "@/lib/firebase/client-content";
+import { notify } from "@/lib/email/notify";
 import { TASK_COLLECTION, TASK_STATUSES, TASK_STATUS_LABELS, formatDate, isOverdue, isTaskAssignee, taskAssigneeFields, taskAssigneeNames, taskAssignees, type Task, type TaskStatus } from "@/lib/creator-tasks";
 import { firebaseDb } from "@/lib/firebase/client";
 import { sendAppEmail } from "@/lib/app-email";
@@ -73,7 +74,7 @@ export function NewTaskDialog({ assignees, createdBy, createdByName, initialClie
     setBusy(true);
     setError(null);
     try {
-      const people = assigneeUids.flatMap((uid) => { const person = assignees.find((candidate) => candidate.uid === uid); return person ? [{ uid, name: person.name.replace(/ (you)$/, "") }] : []; });
+      const people = assigneeUids.flatMap((uid) => { const person = assignees.find((candidate) => candidate.uid === uid); return person ? [{ uid, name: person.name.replace(/ \(you\)$/, "") }] : []; });
       const now = new Date().toISOString();
       const created = await addDoc(collection(firebaseDb, TASK_COLLECTION), {
         title: title.trim(),
@@ -92,6 +93,7 @@ export function NewTaskDialog({ assignees, createdBy, createdByName, initialClie
         updatedAt: now,
       });
       await sendAppEmail({ type: "task", taskId: created.id });
+      void notify({ event: "task.assigned", id: created.id });
       onCreated();
       setOpen(false);
       reset();

@@ -6,6 +6,7 @@ import { firebaseDb } from "@/lib/firebase/client";
 import { sendAppEmail } from "@/lib/app-email";
 import { jobsCollection } from "@/lib/firebase/job-collections";
 import { TASK_COLLECTION } from "@/lib/creator-tasks";
+import { notify } from "@/lib/email/notify";
 import { readUsersFromFirestore } from "@/lib/firebase/client-content";
 import type { NjeriActionProposal } from "./types";
 import { CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
@@ -63,6 +64,7 @@ export async function executeNjeriAction(
         updatedAt: now,
       });
       void sendAppEmail({ type: "task", taskId: taskRef.id });
+      void notify({ event: "task.assigned", id: taskRef.id });
       return { success: true };
     }
 

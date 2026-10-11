@@ -7,6 +7,8 @@
 import { NextResponse } from "next/server";
 import { firestoreAs, sendMany, verifyIdToken } from "@/lib/server/email";
 import { MESSAGE_GROUPS, type MessageGroup } from "@/lib/notifications";
+import { pushConfigured, sendPush } from "@/lib/push/send";
+import { buildMessageHtml, extractMessageCta, messageHtmlToPlainText, stripMessageCta } from "@/lib/message-html";
 
 export const runtime = "nodejs";
 
@@ -23,9 +25,11 @@ type Body = {
   message?: string;
   email?: boolean;
   inApp?: boolean;
+  push?: boolean;
 };
 
-const MAX_MESSAGE = 1200;
+const MAX_MESSAGE_HTML = 20000;
+const MAX_MESSAGE_TEXT = 5000;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const str = (value: unknown) => (typeof value === "string" ? value : "");
 const list = (value: unknown) => (Array.isArray(value) ? value.map(str).filter(Boolean) : []);
@@ -85,11 +89,20 @@ export async function POST(request: Request) {
   if (body.preview) return NextResponse.json({ people: recipients.length + extraAddresses.length });
 
   const subject = str(body.subject).trim().slice(0, 200);
-  const message = str(body.message).trim().slice(0, MAX_MESSAGE);
-  if (!subject || !message) return NextResponse.json({ error: "Add a subject and a message." }, { status: 400 });
+  const rawMessage = str(body.message).trim().slice(0, MAX_MESSAGE_HTML);
+  const embeddedAction = extractMessageCta(rawMessage);
+  const actionLabel = embeddedAction?.label.trim().slice(0, 80) || "";
+  const actionHref = embeddedAction?.href.trim().slice(0, 500) || "";
+  const plainMessage = messageHtmlToPlainText(rawMessage).slice(0, MAX_MESSAGE_TEXT);
+  if (!subject || !plainMessage) return NextResponse.json({ error: "Add a subject and a message." }, { status: 400 });
+  if (embeddedAction && (!actionLabel || !actionHref.startsWith("/") || actionHref.startsWith("//"))) return NextResponse.json({ error: "Complete the message button and use a Bantaba link beginning with /." }, { status: 400 });
+  const messageHtml = buildMessageHtml(stripMessageCta(rawMessage), actionLabel, actionHref);
+  const destination = actionHref || "/dashboard/notifications";
+  const action = actionLabel || "Open Bantaba";
   const sendEmail = Boolean(body.email) || extraAddresses.length > 0;
   const sendInApp = Boolean(body.inApp);
-  if (!body.email && !sendInApp) return NextResponse.json({ error: "Choose email, in-app or both." }, { status: 400 });
+  const sendBrowserPush = Boolean(body.push);
+  if (!body.email && !sendInApp && !sendBrowserPush) return NextResponse.json({ error: "Choose email, in-app, push or a combination." }, { status: 400 });
   if (!recipients.length && !extraAddresses.length) return NextResponse.json({ error: "Add at least one person." }, { status: 400 });
 
   const emails = [...new Set([...(body.email ? recipientEmails : []), ...extraAddresses])];
@@ -97,12 +110,13 @@ export async function POST(request: Request) {
   const createdAt = new Date().toISOString();
   let emailed = 0;
   let notified = 0;
+  let pushed = 0;
   const problems: string[] = [];
 
   if (sendInApp && recipients.length) {
     try {
       await db.addMany("notifications", recipients.map((person) => ({
-        uid: person.uid, type: "message", title: subject, body: message, href: null, createdAt, readAt: null,
+        uid: person.uid, type: "message", title: subject, body: plainMessage, href: destination, createdAt, readAt: null,
       })));
       notified = recipients.length;
     } catch (cause) {
@@ -121,7 +135,7 @@ export async function POST(request: Request) {
       problems.push("None of these people have an email address.");
     } else {
       try {
-        await sendMany({ to: emails, subject, lines: [message, `From ${senderName}`], href: "/dashboard/notifications", action: "Open Bantaba" });
+        await sendMany({ to: emails, subject, lines: [plainMessage, `From ${senderName}`], messageHtml, href: destination, action });
         emailed = emails.length;
       } catch (cause) {
         console.error("Unable to send email", cause);
@@ -130,7 +144,24 @@ export async function POST(request: Request) {
     }
   }
 
-  if ((notified || emailed) && !body.test) {
+  if (sendBrowserPush && recipients.length) {
+    if (!pushConfigured()) {
+      problems.push("Push notifications aren’t set up yet.");
+    } else {
+      const results = await Promise.all(recipients.map((person) => sendPush(person.uid, {
+        title: subject,
+        body: plainMessage.slice(0, 240),
+        url: destination,
+        tag: "admin-message",
+      })));
+      pushed = results.reduce((total, result) => total + result.sent, 0);
+      const failed = results.reduce((total, result) => total + result.failed, 0);
+      if (failed) problems.push(`${failed} push ${failed === 1 ? "notification" : "notifications"} didn’t go through.`);
+      else if (!pushed) problems.push("No recipients have push notifications enabled yet.");
+    }
+  }
+
+  if ((notified || emailed || pushed) && !body.test) {
     const names = recipients.filter((person) => chosen.has(person.uid)).map((person) => person.name || person.email);
     const toLabel = [
       ...MESSAGE_GROUPS.filter((item) => groups.has(item.key)).map((item) => item.label),
@@ -138,14 +169,14 @@ export async function POST(request: Request) {
       ...typed,
     ];
     await db.add("sentMessages", {
-      subject, message, toLabel: toLabel.length > 4 ? `${toLabel.slice(0, 4).join(", ")} and ${toLabel.length - 4} more` : toLabel.join(", "),
+      subject, message: messageHtml, toLabel: toLabel.length > 4 ? `${toLabel.slice(0, 4).join(", ")} and ${toLabel.length - 4} more` : toLabel.join(", "),
       sentBy: account.uid, sentByName: senderName, createdAt,
-      people: recipients.length + extraAddresses.length, emailed, notified,
+      people: recipients.length + extraAddresses.length, emailed, notified, pushed,
     }).catch((cause) => console.error("Unable to record sent message", cause));
   }
 
-  if (problems.length) return NextResponse.json({ error: problems.join(" "), notified, emailed }, { status: notified || emailed ? 207 : 502 });
-  return NextResponse.json({ notified, emailed });
+  if (problems.length) return NextResponse.json({ error: problems.join(" "), notified, emailed, pushed }, { status: notified || emailed || pushed ? 207 : 502 });
+  return NextResponse.json({ notified, emailed, pushed });
 }
 
 /** Resend's own explanation, e.g. an unverified domain, in plain words. */

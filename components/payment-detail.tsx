@@ -13,6 +13,7 @@ import { jobsCollection } from "@/lib/firebase/job-collections";
 import { longDate } from "@/lib/format";
 import { JOB_STATUS_LABELS, jobHref, jobTitle, normalizeJob, type Job } from "@/lib/jobs";
 import { PAYMENTS_COLLECTION, formatAmount, type Payment } from "@/lib/payments";
+import { notify } from "@/lib/email/notify";
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -77,6 +78,7 @@ export function PaymentDetail({ paymentId }: { paymentId: string }) {
       doc(firebaseDb, PAYMENTS_COLLECTION, payment.id),
       payment.status === "paid" ? { status: "pending", paidAt: null } : { status: "paid", paidAt: new Date().toISOString() },
     );
+    if (payment.status !== "paid") void notify({ event: "payment.paid", id: payment.id });
   };
 
   if (authLoading || (user && state === "loading")) {

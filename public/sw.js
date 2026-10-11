@@ -1,4 +1,4 @@
-const CACHE_NAME = "bbdowa-v1";
+const CACHE_NAME = "bbdowa-v2";
 const OFFLINE_URL = "/offline.html";
 const PRECACHE_URLS = ["/", OFFLINE_URL, "/manifest.webmanifest", "/pwa/icon-192.png", "/pwa/icon-512.png"];
 
@@ -54,16 +54,23 @@ self.addEventListener("fetch", (event) => {
   }
 });
 
-// This makes the worker ready for Web Push once the app adds a subscription
-// flow and a server-side sender. A service worker alone cannot send pushes.
 self.addEventListener("push", (event) => {
-  const data = event.data ? event.data.json() : {};
+  let data = {};
+  if (event.data) {
+    try {
+      data = event.data.json();
+    } catch {
+      data = { body: event.data.text() };
+    }
+  }
   const title = data.title || "BBDO West Africa";
   const options = {
     body: data.body || "You have a new update.",
     icon: "/pwa/icon-192.png",
     badge: "/pwa/icon-192.png",
     data: { url: data.url || "/" },
+    tag: data.tag || undefined,
+    renotify: Boolean(data.tag),
   };
 
   event.waitUntil(self.registration.showNotification(title, options));

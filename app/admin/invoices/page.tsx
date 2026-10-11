@@ -11,6 +11,7 @@ import { sendAppEmail } from "@/lib/app-email";
 import { longDate, plural } from "@/lib/format";
 import { INVOICES_COLLECTION, INVOICE_STATUS_LABELS, invoiceTotals, isInvoiceOverdue, type Invoice, type InvoiceStatus } from "@/lib/invoices";
 import { formatAmount } from "@/lib/payments";
+import { notify } from "@/lib/email/notify";
 
 const TABS: { key: "all" | InvoiceStatus; label: string }[] = [
   { key: "all", label: "All" },
@@ -43,7 +44,11 @@ export default function AdminInvoicesPage() {
 
   const setStatus = (invoice: Invoice, status: InvoiceStatus) =>
     updateDoc(doc(firebaseDb, INVOICES_COLLECTION, invoice.id), { status, paidAt: status === "paid" ? new Date().toISOString() : null })
-      .then(() => { if (status === "sent" && invoice.status !== "sent") void sendAppEmail({ type: "invoice", invoiceId: invoice.id }); })
+      .then(() => {
+        if (status !== "sent" || invoice.status === "sent") return;
+        void sendAppEmail({ type: "invoice", invoiceId: invoice.id });
+        void notify({ event: "invoice.sent", id: invoice.id });
+      })
       .catch((cause) => console.error("Unable to update invoice", cause));
 
   return (

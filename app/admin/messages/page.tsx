@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { collection, getDocs } from "firebase/firestore";
 import { LuCheck, LuChevronDown, LuSend, LuUsers, LuX } from "react-icons/lu";
 import { useAuth } from "@/components/auth-provider";
@@ -8,17 +9,20 @@ import { confirmDialog } from "@/components/confirm-dialog";
 import { UsersTableSkeleton } from "@/components/dashboard/loading-skeleton";
 import { MobileHeaderTitle } from "@/components/dashboard/mobile-header";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { RichTextContent, RichTextEditor, richTextHasContent } from "@/components/rich-text-editor";
 import { firebaseAuth, firebaseDb } from "@/lib/firebase/client";
 import { useFirestoreUsers } from "@/lib/firebase/client-content";
+import { loadTemplates } from "@/lib/email/template-store";
+import { MESSAGE_TEMPLATES as DEFAULT_MESSAGE_TEMPLATES, type MessageTemplate } from "@/lib/message-templates";
+import { extractMessageCta, messageHtmlToPlainText } from "@/lib/message-html";
 import {
   MESSAGE_GROUPS,
-  MESSAGE_TEMPLATES,
   SENT_MESSAGES_COLLECTION,
   type MessageGroup,
   type SentMessage,
 } from "@/lib/notifications";
 
-const MAX_MESSAGE = 1200;
+const MAX_MESSAGE = 5000;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type Recipient =
@@ -40,7 +44,7 @@ async function postMessage(body: Record<string, unknown>) {
     headers: { Authorization: `Bearer ${token ?? ""}`, "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  const data = (await response.json().catch(() => ({}))) as { error?: string; people?: number; notified?: number; emailed?: number };
+  const data = (await response.json().catch(() => ({}))) as { error?: string; people?: number; notified?: number; emailed?: number; pushed?: number };
   if (!response.ok) throw new Error(data.error || "Couldn’t send the message.");
   return data;
 }
@@ -77,6 +81,8 @@ export default function SendMessagePage() {
   const [message, setMessage] = React.useState("");
   const [byEmail, setByEmail] = React.useState(true);
   const [inApp, setInApp] = React.useState(true);
+  const [byPush, setByPush] = React.useState(true);
+  const [messageTemplates, setMessageTemplates] = React.useState<MessageTemplate[]>(DEFAULT_MESSAGE_TEMPLATES);
   const [reach, setReach] = React.useState<number | null>(null);
   const [previewOpen, setPreviewOpen] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
@@ -96,6 +102,13 @@ export default function SendMessagePage() {
   React.useEffect(() => {
     if (!authLoading && isStaff) loadHistory();
   }, [authLoading, isStaff, loadHistory]);
+
+  React.useEffect(() => {
+    if (authLoading || !isStaff) return;
+    loadTemplates()
+      .then((rows) => setMessageTemplates(rows.filter((row) => row.kind === "message" && row.published)))
+      .catch(() => setStatus({ tone: "error", text: "Templates couldn’t load. Refresh the page to try again." }));
+  }, [authLoading, isStaff]);
 
   // Close the people list when tapping elsewhere.
   React.useEffect(() => {
@@ -162,22 +175,34 @@ export default function SendMessagePage() {
   };
 
   const applyTemplate = (key: string) => {
-    const template = MESSAGE_TEMPLATES.find((item) => item.key === key);
     setTemplateKey(key);
+    if (key === "blank") {
+      setSubject("");
+      setMessage("");
+      setStatus(null);
+      return;
+    }
+    const template = messageTemplates.find((item) => item.key === key);
     if (!template) return;
     setSubject(template.subject);
     setMessage(template.message);
+    setByEmail(template.email);
+    setInApp(template.inApp);
+    setByPush(template.push);
     setStatus(null);
   };
 
-  const template = MESSAGE_TEMPLATES.find((item) => item.key === templateKey);
-  const hasMessage = Boolean(subject.trim() && message.trim());
-  const canSend = hasMessage && recipients.length > 0 && (byEmail || inApp) && !busy;
+  const template = messageTemplates.find((item) => item.key === templateKey);
+  const messageAction = extractMessageCta(message);
+  const hasValidAction = !messageAction || Boolean(messageAction.label && messageAction.href.startsWith("/") && !messageAction.href.startsWith("//"));
+  const hasMessage = Boolean(subject.trim() && richTextHasContent(message));
+  const canSend = hasMessage && hasValidAction && recipients.length > 0 && (byEmail || inApp || byPush) && !busy;
 
   const showResult = (result: Awaited<ReturnType<typeof postMessage>>, test: boolean) => {
     const parts = [
       result.notified ? `${result.notified} in-app` : null,
       result.emailed ? `${result.emailed} ${result.emailed === 1 ? "email" : "emails"}` : null,
+      result.pushed ? `${result.pushed} push` : null,
     ].filter(Boolean);
     if (result.error) {
       setStatus({ tone: "error", text: parts.length ? `Sent ${parts.join(", ")}. ${result.error}` : result.error });
@@ -194,7 +219,7 @@ export default function SendMessagePage() {
     setBusy(true);
     setStatus(null);
     try {
-      const ok = showResult(await postMessage({ groups, uids, addresses, subject, message, email: byEmail, inApp }), false);
+      const ok = showResult(await postMessage({ groups, uids, addresses, subject, message, email: byEmail, inApp, push: byPush }), false);
       if (ok) {
         setRecipients([]);
         setSubject("");
@@ -210,11 +235,11 @@ export default function SendMessagePage() {
   };
 
   const sendTest = async () => {
-    if (!hasMessage || busy) return;
+    if (!hasMessage || !hasValidAction || busy) return;
     setBusy(true);
     setStatus(null);
     try {
-      showResult(await postMessage({ test: true, subject, message, email: byEmail, inApp }), true);
+      showResult(await postMessage({ test: true, subject, message, email: byEmail, inApp, push: byPush }), true);
     } catch (cause) {
       setStatus({ tone: "error", text: cause instanceof Error ? cause.message : "Couldn’t send the test." });
     } finally {
@@ -230,7 +255,9 @@ export default function SendMessagePage() {
       <MobileHeaderTitle title="Send message" />
       <div className="mb-5 flex items-center justify-between gap-4">
         <h1 className="m-0 text-page-title font-bold max-nav:hidden">Send message</h1>
-        <div role="tablist" aria-label="Messages" className="inline-flex rounded-xl bg-muted p-1 max-nav:ml-auto">
+        <div className="flex flex-wrap items-center gap-3 max-nav:ml-auto">
+          {role === "admin" ? <Link href="/admin/messages/designer" className="inline-flex h-10 items-center rounded-xl border border-border px-4 text-sm font-semibold hover:bg-muted">Message Designer</Link> : null}
+          <div role="tablist" aria-label="Messages" className="inline-flex rounded-xl bg-muted p-1">
           {(["new", "sent"] as const).map((key) => (
             <button
               key={key}
@@ -243,6 +270,7 @@ export default function SendMessagePage() {
               {key === "new" ? "New" : <>Sent <span className="ml-1 font-normal text-muted-foreground">{history.length}</span></>}
             </button>
           ))}
+          </div>
         </div>
       </div>
 
@@ -263,7 +291,8 @@ export default function SendMessagePage() {
                     disabled={busy}
                     className="h-11 appearance-none rounded-xl border border-border bg-background pl-4 pr-10 text-[15px] font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                   >
-                    {MESSAGE_TEMPLATES.map((item) => <option key={item.key} value={item.key}>{item.label}</option>)}
+                    <option value="blank">Blank</option>
+                    {messageTemplates.map((item) => <option key={item.key} value={item.key}>{item.label}</option>)}
                   </select>
                   <LuChevronDown aria-hidden="true" className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground" />
                 </div>
@@ -352,18 +381,10 @@ export default function SendMessagePage() {
               />
             </div>
 
-            <div className="relative border-b border-border">
-              <label htmlFor="message-body" className="sr-only">Message</label>
-              <textarea
-                id="message-body"
-                value={message}
-                onChange={(event) => setMessage(event.target.value.slice(0, MAX_MESSAGE))}
-                maxLength={MAX_MESSAGE}
-                rows={9}
-                disabled={busy}
-                className="block min-h-56 w-full resize-y bg-transparent px-5 pb-10 pt-5 text-[15px] leading-relaxed text-foreground outline-none"
-              />
-              <span className="pointer-events-none absolute bottom-3 right-5 text-xs tabular-nums text-muted-foreground">{message.length} / {MAX_MESSAGE}</span>
+            <div className="relative border-b border-border p-5">
+              <RichTextEditor hideLabel label="Message" value={message} onChange={setMessage} disabled={busy} allowMessageButton placeholder="Write your message…" />
+              <span className="mt-2 block text-right text-xs tabular-nums text-muted-foreground">{messageHtmlToPlainText(message).length} / {MAX_MESSAGE}</span>
+              {!hasValidAction ? <p role="alert" className="m-0 mt-2 text-sm text-destructive">Complete the button text and use a Bantaba link beginning with /.</p> : null}
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-4">
@@ -371,10 +392,11 @@ export default function SendMessagePage() {
                 <span className="mr-1 text-sm text-muted-foreground">Send as</span>
                 <ChannelChip checked={byEmail} label="Email" onChange={setByEmail} />
                 <ChannelChip checked={inApp} label="In-app" onChange={setInApp} />
+                <ChannelChip checked={byPush} label="Push" onChange={setByPush} />
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <button type="button" onClick={() => setPreviewOpen(true)} disabled={!hasMessage} className="h-11 rounded-xl px-4 text-sm font-semibold text-muted-foreground hover:text-foreground disabled:opacity-50">Preview</button>
-                <button type="button" onClick={() => void sendTest()} disabled={!hasMessage || busy || (!byEmail && !inApp)} className="h-11 rounded-xl border border-border bg-background px-5 text-sm font-semibold text-foreground hover:border-foreground disabled:opacity-50">Send me a test</button>
+                <button type="button" onClick={() => void sendTest()} disabled={!hasMessage || !hasValidAction || busy || (!byEmail && !inApp && !byPush)} className="h-11 rounded-xl border border-border bg-background px-5 text-sm font-semibold text-foreground hover:border-foreground disabled:opacity-50">Send me a test</button>
                 <button type="submit" disabled={!canSend} className="inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-6 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
                   <LuSend aria-hidden="true" className="h-4 w-4" />
                   {busy ? "Sending…" : "Send"}
@@ -394,10 +416,10 @@ export default function SendMessagePage() {
                     <p className="m-0 text-[15px] font-semibold">{item.subject}</p>
                     <span className="shrink-0 text-xs text-muted-foreground">{dateLabel(item.createdAt)}</span>
                   </div>
-                  <p className="m-0 mt-1 line-clamp-2 whitespace-pre-line text-sm text-muted-foreground">{item.message}</p>
+                  <p className="m-0 mt-1 line-clamp-2 whitespace-pre-line text-sm text-muted-foreground">{messageHtmlToPlainText(item.message)}</p>
                   <p className="m-0 mt-2 text-xs text-muted-foreground">
                     To {item.toLabel || "—"} · {item.people} {item.people === 1 ? "person" : "people"}
-                    {item.emailed ? ` · ${item.emailed} emailed` : ""}{item.notified ? " · in-app" : ""} · by {item.sentByName}
+                    {item.emailed ? ` · ${item.emailed} emailed` : ""}{item.notified ? " · in-app" : ""}{item.pushed ? ` · ${item.pushed} pushed` : ""} · by {item.sentByName}
                   </p>
                 </li>
               ))}
@@ -416,8 +438,7 @@ export default function SendMessagePage() {
           </DialogHeader>
           <div className="rounded-xl border border-border bg-background p-5">
             <p className="m-0 text-[15px] font-semibold">{subject || "No subject"}</p>
-            <p className="m-0 mt-3 whitespace-pre-line text-[15px] leading-relaxed">{message}</p>
-            <span className="mt-5 inline-flex h-10 items-center rounded-lg bg-foreground px-4 text-sm font-semibold text-background">Open Bantaba</span>
+            <RichTextContent value={message} className="mt-3 text-[15px] leading-relaxed [&_a[data-message-button]]:inline-flex [&_a[data-message-button]]:min-h-10 [&_a[data-message-button]]:items-center [&_a[data-message-button]]:rounded-lg [&_a[data-message-button]]:bg-primary [&_a[data-message-button]]:px-4 [&_a[data-message-button]]:font-semibold [&_a[data-message-button]]:text-primary-foreground [&_a[data-message-button]]:no-underline" />
           </div>
         </DialogContent>
       </Dialog>

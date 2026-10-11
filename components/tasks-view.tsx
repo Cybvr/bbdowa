@@ -20,6 +20,7 @@ import { ItemCard, ItemCardList } from "@/components/dashboard/item-card";
 import { TaskClientJobFields, useTaskLinkOptions } from "@/components/task-link-fields";
 import { jobHref } from "@/lib/jobs";
 import { readTasksAssignedTo } from "@/lib/firebase/task-queries";
+import { notify } from "@/lib/email/notify";
 import {
   TASK_COLLECTION,
   TASK_STATUSES,
@@ -128,6 +129,7 @@ export function NewTaskSheet({ creatorUid, creatorName, createdBy, createdByName
         updatedAt: now,
       });
       void sendAppEmail({ type: "task", taskId: created.id });
+      void notify({ event: "task.assigned", id: created.id });
       onCreated();
       setOpen(false);
       reset();
@@ -293,7 +295,10 @@ export function TaskDetailPage({ task, canEdit, canDelete, assignees, onChanged,
       if (assignees && assigneeUids.length) {
         const before = new Set([...(task.assigneeUids ?? []), task.assignedTo].filter(Boolean));
         const added = assigneeUids.filter((uid) => !before.has(uid));
-        if (added.length) void sendAppEmail({ type: "task", taskId: task.id, uids: added });
+        if (added.length) {
+          void sendAppEmail({ type: "task", taskId: task.id, uids: added });
+          void notify({ event: "task.assigned", id: task.id, uids: added });
+        }
       }
       onChanged();
     } catch (cause) {

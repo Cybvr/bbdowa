@@ -13,6 +13,7 @@ import { CreatorPicker } from "@/components/creator-picker";
 import { DocumentStatus } from "@/components/document-status";
 import { MobileHeaderActions, MobileHeaderTitle } from "@/components/dashboard/mobile-header";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { notify } from "@/lib/email/notify";
 
 export function DocumentEditor({ document, user, users, initialAssignee }: { document?: AgencyDocument; user: { uid: string; name: string | null }; users: User[]; initialAssignee?: string }) {
   const router = useRouter();
@@ -42,6 +43,7 @@ export function DocumentEditor({ document, user, users, initialAssignee }: { doc
     setError(null);
     const now = new Date().toISOString();
     try {
+      let savedId = document?.id ?? "";
       if (document) {
         await updateDoc(doc(firebaseDb, DOCUMENT_COLLECTION, document.id), {
           title: title.trim(), body: body.trim(), updatedAt: now,
@@ -60,7 +62,10 @@ export function DocumentEditor({ document, user, users, initialAssignee }: { doc
           signedAt: null, signedName: null, sourceDocumentId: null,
         });
         if (send) void sendAppEmail({ type: "document", documentId: created.id });
+        savedId = created.id;
       }
+      const alreadySent = document?.status === "pending_signature" && document.assignedTo === selectedPerson?.uid;
+      if (send && savedId && !alreadySent) void notify({ event: "document.sent", id: savedId });
       router.push("/admin/documents");
       router.refresh();
     } catch (cause) {
@@ -79,6 +84,7 @@ export function DocumentEditor({ document, user, users, initialAssignee }: { doc
         assignedTo: selectedPerson.uid, assignedToName: selectedPerson.name, updatedAt: new Date().toISOString(),
       });
       if (selectedPerson.uid !== document.assignedTo) void sendAppEmail({ type: "document", documentId: document.id });
+      void notify({ event: "document.sent", id: document.id });
       router.push("/admin/documents");
       router.refresh();
     } catch (cause) {

@@ -2,7 +2,7 @@
 // transactional emails for things people need to act on (a new task, a document to
 // sign, …), sent by app/api/email.
 //
-// Admins choose which summaries go out, how (in-app, email) and what they
+// Admins choose which summaries go out, how (in-app, email, browser push) and what they
 // cover (Admin → Notifications). Settings live in `settings/notifications`.
 // A daily job (scripts/send-reminders.mjs, GitHub Actions, 9am Lagos time)
 // sends the weekly summary on Mondays and the monthly one on the 1st. In-app
@@ -15,7 +15,7 @@ export const NOTIFICATION_SETTINGS_DOC = { collection: "settings", id: "notifica
 
 export type DigestKey = "weekly" | "monthly";
 export type DigestSection = "tasks" | "jobs" | "tracker";
-export type Channels = { inApp: boolean; email: boolean };
+export type Channels = { inApp: boolean; email: boolean; push: boolean };
 /** Emails the app sends straight away when something happens (app/api/email). */
 export type TransactionalEmailKey = "welcome" | "task" | "job" | "document" | "invoice" | "invite";
 
@@ -49,8 +49,8 @@ export const SECTIONS: { key: DigestSection; label: string }[] = [
 
 export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
   digests: {
-    weekly: { inApp: true, email: true },
-    monthly: { inApp: true, email: true },
+    weekly: { inApp: true, email: true, push: true },
+    monthly: { inApp: true, email: true, push: true },
   },
   sections: { tasks: true, jobs: true, tracker: true },
   transactional: { welcome: true, task: true, job: true, document: true, invoice: true, invite: true },
@@ -125,6 +125,7 @@ export type SentMessage = {
   people: number;
   emailed: number;
   notified: number;
+  pushed?: number;
 };
 
 export type AppNotification = {

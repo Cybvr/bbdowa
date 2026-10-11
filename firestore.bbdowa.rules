@@ -246,8 +246,46 @@ service cloud.firestore {
     }
 
     // Messages sent from Admin → Send message, kept as a record.
+    match /messageTemplates/{id} {
+      allow read: if isAdmin() || isManager() || (signedIn() && resource.data.published == true);
+      allow create, update: if isAdmin()
+        && request.resource.data.key == id
+        && request.resource.data.kind in ["message", "transactional"]
+        && request.resource.data.label is string
+        && request.resource.data.label.size() > 0
+        && request.resource.data.subject is string
+        && request.resource.data.subject.size() > 0
+        && request.resource.data.subject.size() <= 200
+        && request.resource.data.heading is string
+        && request.resource.data.heading.size() <= 200
+        && request.resource.data.message is string
+        && request.resource.data.message.size() > 0
+        && request.resource.data.message.size() <= 5000
+        && request.resource.data.variables is list
+        && request.resource.data.published is bool
+        && request.resource.data.audience in ["everyone", "team", "people", "emails", "clients", "creators"]
+        && request.resource.data.email is bool
+        && request.resource.data.inApp is bool
+        && request.resource.data.push is bool;
+      allow delete: if isAdmin();
+    }
+
     match /sentMessages/{id} {
       allow read, create: if isAdmin() || isManager();
+    }
+
+    // A browser push subscription belongs to one signed-in person and one
+    // browser profile. Delivery is performed by the server service account.
+    match /pushSubscriptions/{id} {
+      allow read: if signedIn() && resource.data.uid == request.auth.uid;
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.endpoint is string
+        && request.resource.data.keys is map;
+      allow update: if signedIn()
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.uid == request.auth.uid;
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
     }
 
     // Clock in / clock out. Each shift belongs to the person who created it:

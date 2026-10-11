@@ -2,6 +2,7 @@
 // checking a Firebase ID token, reading and writing Firestore as the signed-in
 // person (so security rules still apply), and sending email through Resend.
 import "server-only";
+import { renderMessageEmail } from "@/lib/email/brand";
 import { createVerify } from "node:crypto";
 
 const PROJECT_ID = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
@@ -147,12 +148,12 @@ export async function verifyIdToken(idToken: string): Promise<{ uid: string; ema
 export const escapeHtml = (text: string) =>
   text.replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char] ?? char);
 
-export type Email = { to: string[]; subject: string; lines: string[]; href: string; action: string };
+export type Email = { to: string[]; subject: string; lines: string[]; href: string; action: string; messageHtml?: string; templateKey?: string; variables?: Record<string, string>; heading?: string; templateDetails?: string[] };
 
 export function emailHtml(email: Email): string {
-  const site = (process.env.SITE_URL || "").replace(/\/$/, "");
-  const link = site && email.href ? `<p><a href="${escapeHtml(site + email.href)}" style="display:inline-block;background:#111;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none">${escapeHtml(email.action)}</a></p>` : "";
-  return `<div style="font-family:system-ui,sans-serif;font-size:15px;line-height:1.5;color:#111"><p><strong>${escapeHtml(email.subject)}</strong></p>${email.lines.map((line) => `<p>${escapeHtml(line).replace(/\n/g, "<br>")}</p>`).join("")}${link}<p style="color:#888;font-size:12px">Sent by Bantaba.</p></div>`;
+  const site = (process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://bbdowa.com").replace(/\/$/, "");
+  const actionUrl = email.href ? new URL(email.href, `${site}/`).toString() : "";
+  return renderMessageEmail(email.subject, email.messageHtml || email.lines.join("\n\n"), site, email.messageHtml ? undefined : actionUrl ? { label: email.action, url: actionUrl } : undefined, email.heading);
 }
 
 export async function send(email: Email) {

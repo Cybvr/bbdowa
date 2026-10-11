@@ -12,6 +12,7 @@
 // --dry-run prints what would be sent without writing anything.
 // --weekly / --monthly sends that summary today regardless of the date.
 import { createSign } from "node:crypto";
+import webPush from "web-push";
 
 const DRY_RUN = process.argv.includes("--dry-run");
 const projectId = process.env.FIREBASE_PROJECT_ID;
@@ -21,6 +22,9 @@ const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
 const resendKey = process.env.RESEND_API_KEY;
 const emailFrom = process.env.EMAIL_FROM;
 const siteUrl = (process.env.SITE_URL || "").replace(/\/$/, "");
+const pushPublicKey = process.env.NEXT_PUBLIC_WEB_PUSH_PUBLIC_KEY;
+const pushPrivateKey = process.env.WEB_PUSH_PRIVATE_KEY;
+const pushSubject = process.env.WEB_PUSH_SUBJECT || `mailto:${process.env.EMAIL_REPLY_TO || "notifications@bbdowa.com"}`;
 if (!projectId || !clientEmail || !privateKey) throw new Error("Set FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL and FIREBASE_PRIVATE_KEY.");
 
 const TIME_ZONE = "Africa/Lagos";
@@ -28,7 +32,7 @@ const DAY_MS = 86_400_000;
 
 // Keep in step with lib/notifications.ts.
 const DEFAULTS = {
-  digests: { weekly: { inApp: true, email: true }, monthly: { inApp: true, email: true } },
+  digests: { weekly: { inApp: true, email: true, push: true }, monthly: { inApp: true, email: true, push: true } },
   sections: { tasks: true, jobs: true, tracker: true },
 };
 
@@ -142,6 +146,23 @@ async function sendEmail(to, title, body, href) {
   if (!response.ok) throw new Error(`Email to ${to} failed: ${response.status} ${await response.text()}`);
 }
 
+async function sendBrowserPush(subscription, title, body, href, tag) {
+  if (!pushPublicKey || !pushPrivateKey) return false;
+  webPush.setVapidDetails(pushSubject, pushPublicKey, pushPrivateKey);
+  try {
+    await webPush.sendNotification(
+      { endpoint: subscription.endpoint, keys: subscription.keys },
+      JSON.stringify({ title, body, url: href, tag }),
+      { TTL: 60 * 60 * 24, urgency: "normal" },
+    );
+    return true;
+  } catch (cause) {
+    if (cause?.statusCode === 404 || cause?.statusCode === 410) await deleteDocument(`pushSubscriptions/${encodeURIComponent(subscription.id)}`);
+    else throw cause;
+    return false;
+  }
+}
+
 // --- Dates (Lagos time) --------------------------------------------------
 
 const now = Date.now();
@@ -192,11 +213,16 @@ const settings = {
 
 const migration = await readDocument("migrations/campaignsToJobs");
 const jobsCollectionName = migration?.done === true ? "jobs" : "campaigns";
-const [users, tasks, jobs, jobTerms, timeEntries] = await Promise.all([
+const [users, tasks, jobs, jobTerms, timeEntries, pushSubscriptions] = await Promise.all([
   readCollection("users"), readCollection("creatorTasks"), readCollection(jobsCollectionName),
-  readCollection("jobTerms"), readCollection("timeEntries"),
+  readCollection("jobTerms"), readCollection("timeEntries"), readCollection("pushSubscriptions"),
 ]);
 const emailByUid = new Map(users.filter((user) => user.uid && user.email).map((user) => [user.uid, user.email]));
+const pushByUid = new Map();
+for (const subscription of pushSubscriptions) {
+  if (!subscription.uid || !subscription.endpoint || !subscription.keys?.auth || !subscription.keys?.p256dh) continue;
+  pushByUid.set(subscription.uid, [...(pushByUid.get(subscription.uid) ?? []), subscription]);
+}
 
 const tasksByUid = new Map();
 for (const task of tasks) {
@@ -265,11 +291,11 @@ function monthlyLines(uid) {
 
 const summaries = [];
 for (const uid of everyone) {
-  if (runWeekly && (settings.digests.weekly.inApp || settings.digests.weekly.email)) {
+  if (runWeekly && (settings.digests.weekly.inApp || settings.digests.weekly.email || settings.digests.weekly.push)) {
     const lines = weeklyLines(uid);
     if (lines.length) summaries.push({ type: "weekly", key: `weekly--${uid}--${today}`, uid, title: "Your week ahead", body: lines.join("\n") });
   }
-  if (runMonthly && (settings.digests.monthly.inApp || settings.digests.monthly.email)) {
+  if (runMonthly && (settings.digests.monthly.inApp || settings.digests.monthly.email || settings.digests.monthly.push)) {
     const lines = monthlyLines(uid);
     if (lines.length) summaries.push({ type: "monthly", key: `monthly--${uid}--${lastMonthKey}`, uid, title: `Your ${lastMonthName} summary`, body: lines.join("\n") });
   }
@@ -279,13 +305,15 @@ for (const uid of everyone) {
 
 let sentInApp = 0;
 let sentEmail = 0;
+let sentPush = 0;
 let skipped = 0;
 const failures = [];
 for (const summary of summaries) {
   const channels = settings.digests[summary.type];
   const email = channels.email && resendKey && emailFrom ? emailByUid.get(summary.uid) : null;
+  const subscriptions = channels.push && pushPublicKey && pushPrivateKey ? pushByUid.get(summary.uid) ?? [] : [];
   if (DRY_RUN) {
-    console.log(`[dry run] ${summary.key}${channels.inApp ? " in-app" : ""}${email ? ` email:${email}` : ""}\n  ${summary.title}\n  ${summary.body.replace(/\n/g, "\n  ")}`);
+    console.log(`[dry run] ${summary.key}${channels.inApp ? " in-app" : ""}${email ? ` email:${email}` : ""}${subscriptions.length ? ` push:${subscriptions.length}` : ""}\n  ${summary.title}\n  ${summary.body.replace(/\n/g, "\n  ")}`);
     continue;
   }
   const createdAt = new Date().toISOString();
@@ -302,6 +330,9 @@ for (const summary of summaries) {
       await sendEmail(email, summary.title, summary.body, "/dashboard/notifications");
       sentEmail++;
     }
+    for (const subscription of subscriptions) {
+      if (await sendBrowserPush(subscription, summary.title, summary.body, "/dashboard/notifications", summary.type)) sentPush++;
+    }
   } catch (cause) {
     failures.push(`${summary.key}: ${cause.message}`);
   }
@@ -316,7 +347,8 @@ if (!DRY_RUN) {
 }
 
 if (!resendKey || !emailFrom) console.log("Email is not set up (RESEND_API_KEY / EMAIL_FROM missing); only in-app summaries were sent.");
-console.log(`Summaries: ${summaries.length} due, ${sentInApp} in-app, ${sentEmail} emails, ${skipped} already sent.`);
+if (!pushPublicKey || !pushPrivateKey) console.log("Browser push is not set up (NEXT_PUBLIC_WEB_PUSH_PUBLIC_KEY / WEB_PUSH_PRIVATE_KEY missing)." );
+console.log(`Summaries: ${summaries.length} due, ${sentInApp} in-app, ${sentEmail} emails, ${sentPush} pushes, ${skipped} already sent.`);
 if (failures.length) {
   console.error(`Failed:\n${failures.join("\n")}`);
   process.exit(1);

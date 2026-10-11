@@ -4,9 +4,11 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 import { useAuth } from "@/components/auth-provider";
+import { notify } from "@/lib/email/notify";
 import { useFirestoreUsers, useOwnUser } from "@/lib/firebase/client-content";
 import { firebaseDb } from "@/lib/firebase/client";
 import { PageHeader } from "@/components/dashboard/ui";
+import { PushNotificationSettings } from "@/components/push-notification-settings";
 import { PageLoadingSkeleton } from "@/components/dashboard/loading-skeleton";
 import { Field, ImageUploadField, TextField } from "@/components/detail-editor";
 import {
@@ -40,7 +42,7 @@ function labelFor(key: SectionKey) {
 }
 
 export default function SettingsPage() {
-  const { user: authUser, loading: authLoading } = useAuth();
+  const { user: authUser, actualUser, isAdmin, loading: authLoading } = useAuth();
   const { user: own, loading: ownLoading, error } = useOwnUser();
   const { users } = useFirestoreUsers();
 
@@ -48,6 +50,8 @@ export default function SettingsPage() {
   const [draft, setDraft] = useState<ProfileDraft>(() => profileDraftFrom({}));
   const [hr, setHr] = useState<HrRecord>(() => emptyHrRecord(""));
   const [profileImage, setProfileImage] = useState("");
+  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [testResult, setTestResult] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -72,6 +76,7 @@ export default function SettingsPage() {
     if (!own) return;
     setDraft(profileDraftFrom(own));
     setProfileImage(own.profileImage ?? "");
+    setEmailNotifications((own as { emailNotifications?: boolean }).emailNotifications !== false);
   }, [own]);
 
   useEffect(() => {
@@ -118,6 +123,7 @@ export default function SettingsPage() {
       await updateDoc(doc(firebaseDb, "users", authUser.uid), {
         ...profileDraftToFirestore(draft),
         profileImage: profileImage.trim() || null,
+        emailNotifications,
         updatedAt: serverTimestamp(),
       });
       await setDoc(doc(firebaseDb, HR_COLLECTION, authUser.uid), {
@@ -195,6 +201,26 @@ export default function SettingsPage() {
                 </p>
               </Field>
               <ProfileFields draft={draft} onChange={setDraft} categoryOptions={creatorCategoryOptions(users)} section="profile" />
+              <div className="space-y-3 border-t border-border pt-5">
+                <h3 className="m-0 text-[13px] font-semibold">Email</h3>
+                <label className="flex items-start gap-2.5 text-[14px]">
+                  <input type="checkbox" checked={emailNotifications} onChange={(event) => setEmailNotifications(event.target.checked)} disabled={busy} className="mt-1 h-4 w-4 accent-[var(--primary)]" />
+                  <span>Email me about tasks, documents, appraisals, payments and jobs<span className="block text-[13px] text-muted-foreground">Turn this off and you will only see these in the dashboard.</span></span>
+                </label>
+                {isAdmin ? (
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => { setTestResult("Sending…"); void notify({ event: "test" }).then((result) => setTestResult(result.ok ? "Sent. Check your inbox." : result.error ?? "Couldn’t send.")); }}
+                      className="h-9 rounded-md border border-border px-3 text-[13px] font-semibold text-foreground transition hover:bg-muted"
+                    >
+                      Send a test email
+                    </button>
+                    {testResult ? <span role="status" className="text-[13px] text-muted-foreground">{testResult}</span> : null}
+                  </div>
+                ) : null}
+              </div>
+              {actualUser ? <PushNotificationSettings uid={actualUser.uid} /> : null}
               <div className="space-y-4 border-t border-border pt-5">
                 <h3 className="m-0 text-[13px] font-semibold">Financial details</h3>
                 <TextField label="Bank name" value={hr.bankName} onChange={(value) => setHr({ ...hr, bankName: value })} />

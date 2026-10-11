@@ -83,6 +83,7 @@ export default function NotificationSettingsPage() {
           <div className="flex gap-4 text-[12px] font-medium text-muted-foreground">
             <span className="w-9 text-center">In-app</span>
             <span className="w-9 text-center">Email</span>
+            <span className="w-9 text-center">Push</span>
           </div>
         </div>
         <ul className="m-0 list-none divide-y divide-border p-0">
@@ -95,6 +96,7 @@ export default function NotificationSettingsPage() {
               <div className="flex shrink-0 gap-4">
                 <Switch checked={settings.digests[digest.key].inApp} label={`${digest.label} in-app`} onChange={(value) => setChannel(digest.key, "inApp", value)} />
                 <Switch checked={settings.digests[digest.key].email} label={`${digest.label} email`} onChange={(value) => setChannel(digest.key, "email", value)} />
+                <Switch checked={settings.digests[digest.key].push} label={`${digest.label} browser push`} onChange={(value) => setChannel(digest.key, "push", value)} />
               </div>
             </li>
           ))}

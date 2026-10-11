@@ -7,6 +7,7 @@ import { DOCUMENT_COLLECTION, type AgencyDocument } from "@/lib/documents";
 import { RichTextContent } from "@/components/rich-text-editor";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { notify } from "@/lib/email/notify";
 
 export function DocumentSignDialog({ document, defaultName, onSigned, open: controlledOpen, onOpenChange, hideTrigger = false }: { document: AgencyDocument; defaultName: string; onSigned: () => void; open?: boolean; onOpenChange?: (open: boolean) => void; hideTrigger?: boolean }) {
   const [uncontrolledOpen, setUncontrolledOpen] = React.useState(false);
@@ -27,6 +28,7 @@ export function DocumentSignDialog({ document, defaultName, onSigned, open: cont
       await updateDoc(doc(firebaseDb, DOCUMENT_COLLECTION, document.id), {
         status: "signed", signedAt: now, signedName: name.trim(), updatedAt: now,
       });
+      void notify({ event: "document.signed", id: document.id });
       setOpen(false);
       onSigned();
     } catch (cause) {

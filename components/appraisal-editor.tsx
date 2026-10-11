@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { APPRAISAL_COLLECTION, type Appraisal } from "@/lib/appraisals";
 import { firebaseDb } from "@/lib/firebase/client";
+import { notify } from "@/lib/email/notify";
 import type { User } from "@/lib/users";
 
 const LABEL_CLASS = "mb-1.5 block text-[13px] font-semibold";
@@ -60,10 +61,11 @@ export function AppraisalEditor({ appraisal, user, users }: { appraisal?: Apprai
       updatedAt: now,
     };
     try {
+      let savedId = appraisal?.id ?? "";
       if (appraisal) {
         await updateDoc(doc(firebaseDb, APPRAISAL_COLLECTION, appraisal.id), fields);
       } else {
-        await addDoc(collection(firebaseDb, APPRAISAL_COLLECTION), {
+        const created = await addDoc(collection(firebaseDb, APPRAISAL_COLLECTION), {
           ...fields,
           ratings: {},
           comments: {},
@@ -73,7 +75,10 @@ export function AppraisalEditor({ appraisal, user, users }: { appraisal?: Apprai
           createdByName: user.name,
           createdAt: now,
         });
+        savedId = created.id;
       }
+      // Only email when the person being asked to complete it is new.
+      if (savedId && (!appraisal || appraisal.assignedTo !== assignedTo)) void notify({ event: "appraisal.assigned", id: savedId });
       router.push("/admin/appraisals");
       router.refresh();
     } catch (cause) {

@@ -41,6 +41,7 @@ import { PAYMENTS_COLLECTION, formatAmount, type Payment, type PaymentCurrency }
 import { jobsCollection } from "@/lib/firebase/job-collections";
 import { ACTIVITY_COLLECTION, elapsedMs, formatDuration, type ActivityEntry } from "@/lib/time-tracking";
 import { isCreatorUser, jobTeamKey, matchesJobTeamKey, userHref } from "@/lib/users";
+import { notify } from "@/lib/email/notify";
 
 type JobTab = "overview" | "case-study" | "media" | "team" | "tasks" | "timesheets" | "payments";
 const fieldClass = "block space-y-1.5 text-sm font-medium";
@@ -246,6 +247,7 @@ export function JobDetailContent({ job, adminMode = false, portalMode = false, e
       await updateDoc(doc(firebaseDb, PAYMENTS_COLLECTION, payment.id), payment.status === "paid"
         ? { status: "pending", paidAt: null }
         : { status: "paid", paidAt: new Date().toISOString() });
+      if (payment.status !== "paid") void notify({ event: "payment.paid", id: payment.id });
       await loadRelated();
     } catch (cause) {
       console.error("Unable to update payment", cause);
@@ -434,7 +436,7 @@ function NewJobTaskDialog({ job, defaultAssignee, peopleOptions, createdBy, crea
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   React.useEffect(() => { if (open) setAssignedTo(defaultAssignee); }, [defaultAssignee, open]);
-  const save = async (event: React.FormEvent<HTMLFormElement>) => { event.preventDefault(); if (!title.trim() || saving || !assignedTo) return; setSaving(true); setError(null); try { const now = new Date().toISOString(); const created = await addDoc(collection(firebaseDb, TASK_COLLECTION), { ...jobLink(job), title: title.trim(), description: description.trim(), content: "", assignedTo, assignedToName: peopleOptions.find((person) => person.value === assignedTo)?.label ?? null, createdBy, createdByName, status: "todo", dueDate: dueDate || null, createdAt: now, updatedAt: now }); void sendAppEmail({ type: "task", taskId: created.id }); setTitle(""); setDescription(""); setDueDate(""); onOpenChange(false); onSaved(); } catch (cause) { console.error("Unable to add job task", cause); setError("Couldn’t add this task."); } finally { setSaving(false); } };
+  const save = async (event: React.FormEvent<HTMLFormElement>) => { event.preventDefault(); if (!title.trim() || saving || !assignedTo) return; setSaving(true); setError(null); try { const now = new Date().toISOString(); const created = await addDoc(collection(firebaseDb, TASK_COLLECTION), { ...jobLink(job), title: title.trim(), description: description.trim(), content: "", assignedTo, assignedToName: peopleOptions.find((person) => person.value === assignedTo)?.label ?? null, createdBy, createdByName, status: "todo", dueDate: dueDate || null, createdAt: now, updatedAt: now }); void sendAppEmail({ type: "task", taskId: created.id }); void notify({ event: "task.assigned", id: created.id }); setTitle(""); setDescription(""); setDueDate(""); onOpenChange(false); onSaved(); } catch (cause) { console.error("Unable to add job task", cause); setError("Couldn’t add this task."); } finally { setSaving(false); } };
   return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>New task</DialogTitle><DialogDescription>Assign a task within {jobTitle(job)}.</DialogDescription></DialogHeader><form onSubmit={save} className="space-y-4"><div className={fieldClass}><span>Assign to</span><CreatorPicker options={peopleOptions} value={assignedTo} onChange={setAssignedTo} placeholder="Search people" emptyText="No people found." autoFocus={false} /></div><label className={fieldClass}>Title<Input value={title} onChange={(event) => setTitle(event.target.value)} required /></label><label className={fieldClass}>Description<Input value={description} onChange={(event) => setDescription(event.target.value)} /></label><label className={fieldClass}>Due date<Input type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} /></label>{error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}<div className="flex justify-end"><button type="submit" disabled={saving || !assignedTo || !title.trim()} className="h-9 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-50">{saving ? "Saving…" : "Add task"}</button></div></form></DialogContent></Dialog>;
 }
 

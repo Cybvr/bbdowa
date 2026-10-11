@@ -26,6 +26,7 @@ import {
 } from "@/lib/payments";
 import { JOB_TERMS_COLLECTION, type JobTerms } from "@/lib/job-terms";
 import { jobHref } from "@/lib/jobs";
+import { notify } from "@/lib/email/notify";
 
 type JobOption = { slug: string; name: string; assignedTo: string | null };
 
@@ -89,6 +90,7 @@ export function PaymentsView() {
       doc(firebaseDb, PAYMENTS_COLLECTION, payment.id),
       payment.status === "paid" ? { status: "pending", paidAt: null } : { status: "paid", paidAt: new Date().toISOString() },
     );
+    if (payment.status !== "paid") void notify({ event: "payment.paid", id: payment.id });
   };
 
   return (

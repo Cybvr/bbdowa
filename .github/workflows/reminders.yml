@@ -1,7 +1,8 @@
 # Daily at 9am Lagos time. Sends the weekly summary on Mondays and the monthly
 # one on the 1st; other days it does nothing (see scripts/send-reminders.mjs).
 # Needs repository secrets: FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL,
-# FIREBASE_PRIVATE_KEY, and for email RESEND_API_KEY, EMAIL_FROM, SITE_URL.
+# FIREBASE_PRIVATE_KEY; for email RESEND_API_KEY, EMAIL_FROM, SITE_URL; and
+# for browser push NEXT_PUBLIC_WEB_PUSH_PUBLIC_KEY, WEB_PUSH_PRIVATE_KEY.
 name: Reminders
 
 on:
@@ -30,3 +31,6 @@ jobs:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
           SITE_URL: ${{ secrets.SITE_URL }}
+          NEXT_PUBLIC_WEB_PUSH_PUBLIC_KEY: ${{ secrets.NEXT_PUBLIC_WEB_PUSH_PUBLIC_KEY }}
+          WEB_PUSH_PRIVATE_KEY: ${{ secrets.WEB_PUSH_PRIVATE_KEY }}
+          WEB_PUSH_SUBJECT: ${{ secrets.WEB_PUSH_SUBJECT }}

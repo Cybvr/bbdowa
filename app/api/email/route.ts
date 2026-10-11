@@ -11,6 +11,7 @@
 import { NextResponse } from "next/server";
 import { DEFAULT_NOTIFICATION_SETTINGS, type TransactionalEmailKey } from "@/lib/notifications";
 import { firestoreAs, send, verifyIdToken, type Email } from "@/lib/server/email";
+import { TEMPLATE_DEFAULTS, validTemplate, fillTemplate } from "@/lib/email/template-definitions";
 
 export const runtime = "nodejs";
 
@@ -72,6 +73,9 @@ export async function POST(request: Request) {
         lines: [`${callerName} gave you a task${str(task.jobName) ? ` on ${str(task.jobName)}` : ""}.`, ...(due ? [`Due ${due}.`] : [])],
         href: `/dashboard/work/${encodeURIComponent(body.taskId)}`,
         action: "Open task",
+        templateKey: "taskAssigned",
+        variables: { to: "there", by: callerName, title: str(task.title) || "Untitled task", description: str(task.description) },
+        templateDetails: due ? [`Due ${due}.`] : [],
       };
     }
   } else if (body.type === "job" && isStaff) {
@@ -87,6 +91,8 @@ export async function POST(request: Request) {
       lines: [`${callerName} added you to ${name}${str(job?.clientName) ? ` for ${str(job?.clientName)}` : ""}.`],
       href: `/dashboard/my-jobs/${encodeURIComponent(body.jobSlug)}`,
       action: "Open job",
+      templateKey: "jobAssigned",
+      variables: { to: "there", job: name },
     };
   } else if (body.type === "document" && isStaff) {
     const document = await db.get(`documents/${encodeURIComponent(body.documentId)}`);
@@ -97,6 +103,8 @@ export async function POST(request: Request) {
         lines: [`${callerName} sent you a document to read and sign.`],
         href: `/dashboard/documents/${encodeURIComponent(body.documentId)}`,
         action: "Read and sign",
+        templateKey: "documentSent",
+        variables: { to: "there", by: callerName, title: str(document.title) || "a document" },
       };
     }
   } else if (body.type === "invoice" && isStaff) {
@@ -120,6 +128,12 @@ export async function POST(request: Request) {
         ],
         href: "/portal/payments",
         action: "View invoice",
+        templateKey: "invoiceSent",
+        variables: { to: "there", number: str(invoice.number), client: str(invoice.clientName) || "your company" },
+        templateDetails: [
+          `${amount ? `${amount} ` : ""}${str(invoice.description) ? `for ${str(invoice.description)}` : ""}`.trim(),
+          ...(str(invoice.dueDate) ? [`Due ${str(invoice.dueDate)}.`] : []),
+        ].filter(Boolean),
       };
     }
   } else if (body.type === "welcome") {
@@ -138,6 +152,8 @@ export async function POST(request: Request) {
         lines,
         href: callerRole === "client" ? "/portal" : "/dashboard",
         action: callerRole === "client" ? "Open the portal" : "Open Bantaba",
+        templateKey: "welcome",
+        variables: { to: firstName || "there" },
       };
     }
   } else if (body.type === "invite") {
@@ -151,6 +167,8 @@ export async function POST(request: Request) {
         lines: [`${callerName} added you to Bantaba, BBDO West Africa's workspace.`, "Sign in with this email address to get started."],
         href: "/auth/login",
         action: "Sign in",
+        templateKey: "staffInvite",
+        variables: { to: (str(staffInvite.name) || "there").split(/\s+/)[0], by: callerName },
       };
     } else if (clientInvite) {
       email = {
@@ -159,11 +177,24 @@ export async function POST(request: Request) {
         lines: [`You've been invited to your company's Bantaba portal${str(clientInvite.clientName) ? ` for ${str(clientInvite.clientName)}` : ""}.`, "Sign in with this email address to get started."],
         href: "/portal/login",
         action: "Open the portal",
+        templateKey: "clientInvite",
+        variables: { to: "there", by: callerName, company: str(clientInvite.clientName) || "your company" },
       };
     }
   }
 
   if (!email || !email.to.length) return NextResponse.json({ sent: 0 });
+  // Keep legacy event callers on the same editable collection as /api/notify.
+  try {
+    const templateKey = email.templateKey;
+    const base = TEMPLATE_DEFAULTS.find((row) => row.key === templateKey);
+    const saved = base ? await db.get(`messageTemplates/${base.key}`) : null;
+    if (base && email.variables && validTemplate(saved, base) && saved.published) {
+      const subject = fillTemplate(saved.subject, email.variables).replace(/[\r\n]/g, " ").slice(0, 200);
+      const message = fillTemplate(saved.message, email.variables);
+      email = { ...email, subject, heading: fillTemplate(saved.heading, email.variables), lines: [...message.split(/\n\s*\n/), ...(email.templateDetails ?? [])] };
+    }
+  } catch (cause) { console.warn("Template unavailable; using default", cause); }
   try {
     await send(email);
     return NextResponse.json({ sent: email.to.length });

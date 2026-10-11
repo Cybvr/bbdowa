@@ -12,6 +12,7 @@ import { INVOICES_COLLECTION, nextInvoiceNumber, type Invoice, type InvoiceStatu
 import { jobTitle, type Job } from "@/lib/jobs";
 import type { PaymentCurrency } from "@/lib/payments";
 import { confirmDialog } from "@/components/confirm-dialog";
+import { notify } from "@/lib/email/notify";
 
 const FIELD = "block space-y-1.5 text-sm font-medium";
 const SELECT = "h-10 w-full rounded-md border border-input bg-background px-3 text-sm";
@@ -89,6 +90,7 @@ export function InvoiceDialog({
       paidAt: status === "paid" ? invoice?.paidAt ?? new Date().toISOString() : null,
     };
     try {
+      let savedId = invoice?.id ?? "";
       if (invoice) {
         await updateDoc(doc(firebaseDb, INVOICES_COLLECTION, invoice.id), fields);
         if (status === "sent" && invoice.status !== "sent") void sendAppEmail({ type: "invoice", invoiceId: invoice.id });
@@ -100,7 +102,9 @@ export function InvoiceDialog({
           createdAt: new Date().toISOString(),
         });
         if (status === "sent") void sendAppEmail({ type: "invoice", invoiceId: created.id });
+        savedId = created.id;
       }
+      if (status === "sent" && invoice?.status !== "sent" && savedId) void notify({ event: "invoice.sent", id: savedId });
       onOpenChange(false);
     } catch (cause) {
       console.error("Unable to save invoice", cause);

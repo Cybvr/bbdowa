@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { firebaseDb } from "@/lib/firebase/client";
 import { PAYMENTS_COLLECTION, type Payment, type PaymentCurrency, type PaymentStatus } from "@/lib/payments";
 import { confirmDialog } from "@/components/confirm-dialog";
+import { notify } from "@/lib/email/notify";
 
 const FIELD = "block space-y-1.5 text-sm font-medium";
 
@@ -58,6 +59,7 @@ export function EditPaymentDialog({
         // Keep the original paid date if it was already paid.
         paidAt: status === "paid" ? payment.paidAt ?? new Date().toISOString() : null,
       });
+      if (status === "paid" && payment.status !== "paid") void notify({ event: "payment.paid", id: payment.id });
       onOpenChange(false);
       onSaved();
     } catch (cause) {

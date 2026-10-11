@@ -22,6 +22,7 @@ import {
 import { jobDisplayTitle, jobTitle, type Job } from "@/lib/jobs";
 import { jobTeamKey } from "@/lib/users";
 import { EMPTY_JOB_TERMS, JOB_TERMS_COLLECTION, jobAssignees, type JobTerms } from "@/lib/job-terms";
+import { notify } from "@/lib/email/notify";
 
 const listValue = (value?: string[] | null) => (value ?? []).join(", ");
 const parseList = (value: string) => value.split(",").map((item) => item.trim()).filter(Boolean);
@@ -145,7 +146,10 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
       } satisfies JobTerms);
       const before = new Set([terms.assignedTo, ...(terms.teamUids ?? [])].filter(Boolean));
       const added = teamUids.filter((uid) => !before.has(uid));
-      if (added.length) void sendAppEmail({ type: "job", jobSlug: job.slug, uids: added });
+      if (added.length) {
+        void sendAppEmail({ type: "job", jobSlug: job.slug, uids: added });
+        void notify({ event: "job.assigned", id: job.slug, uids: added });
+      }
     }
     router.refresh();
     onSaved?.();

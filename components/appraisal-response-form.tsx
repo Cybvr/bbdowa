@@ -19,6 +19,7 @@ import {
   type AppraisalRating,
 } from "@/lib/appraisals";
 import { firebaseDb } from "@/lib/firebase/client";
+import { notify } from "@/lib/email/notify";
 
 const LABEL_CLASS = "mb-1.5 block text-[13px] font-semibold";
 
@@ -104,6 +105,7 @@ export function AppraisalResponseForm({ appraisal }: { appraisal: Appraisal }) {
         updatedAt: now,
       });
       if (submit) {
+        void notify({ event: "appraisal.submitted", id: appraisal.id });
         router.push("/dashboard/appraisals");
         router.refresh();
       } else {
