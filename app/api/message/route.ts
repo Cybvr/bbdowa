@@ -43,7 +43,8 @@ export async function POST(request: Request) {
     console.error("Unable to read people", cause);
     return NextResponse.json({ error: "Couldn’t load the list of people. Try again." }, { status: 502 });
   }
-  const sender = users.find((user) => user.uid === account.uid || user.id === account.uid);
+  // Same record the app reads for someone's role: users/{uid}.
+  const sender = users.find((user) => user.id === account.uid) ?? users.find((user) => user.uid === account.uid);
   const senderRole = str(sender?.role);
   if (senderRole !== "admin" && senderRole !== "manager") return NextResponse.json({ error: "Only admins and managers can send messages." }, { status: 403 });
 
@@ -55,7 +56,9 @@ export async function POST(request: Request) {
 
   // Only people who have joined (signed in at least once) get messages.
   const joined = new Map<string, { uid: string; email: string; role: string }>();
-  for (const user of users) {
+  // A person can have more than one record; their main one is users/{uid}.
+  const ordered = [...users].sort((a, b) => Number(b.id === str(b.uid)) - Number(a.id === str(a.uid)));
+  for (const user of ordered) {
     const uid = str(user.uid);
     if (!uid || joined.has(uid)) continue;
     joined.set(uid, { uid, email: str(user.email).toLowerCase(), role: str(user.role) });
