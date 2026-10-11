@@ -42,8 +42,6 @@ export default function SendMessagePage() {
   const [message, setMessage] = React.useState("");
   const [byEmail, setByEmail] = React.useState(true);
   const [inApp, setInApp] = React.useState(true);
-  const [count, setCount] = React.useState<{ people: number; emails: number } | null>(null);
-  const [countError, setCountError] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
   const [status, setStatus] = React.useState<{ tone: "ok" | "error"; text: string } | null>(null);
   const [history, setHistory] = React.useState<SentMessage[]>([]);
@@ -61,21 +59,6 @@ export default function SendMessagePage() {
     if (!authLoading && isStaff) loadHistory();
   }, [authLoading, isStaff, loadHistory]);
 
-  // How many people the current choice reaches, worked out the same way as sending.
-  const chosenKey = chosen.join(",");
-  React.useEffect(() => {
-    if (authLoading || !isStaff) return;
-    let active = true;
-    setCount(null);
-    setCountError(null);
-    const timer = window.setTimeout(() => {
-      postMessage({ audience, uids: chosenKey ? chosenKey.split(",") : [], preview: true })
-        .then((data) => { if (active) setCount({ people: data.people ?? 0, emails: data.emails ?? 0 }); })
-        .catch((cause) => { if (active) setCountError(cause instanceof Error ? cause.message : "Couldn’t check who this goes to."); });
-    }, 300);
-    return () => { active = false; window.clearTimeout(timer); };
-  }, [audience, chosenKey, authLoading, isStaff]);
-
   if (authLoading || usersLoading) return <UsersTableSkeleton />;
   if (!isStaff) return <main className="mx-auto w-full max-w-3xl flex-1 px-5 pb-16 pt-8 sm:px-8"><PageHeader title="Send message" /><p className="mt-8 text-sm text-muted-foreground">Only admins and managers can send messages.</p></main>;
 
@@ -86,12 +69,12 @@ export default function SendMessagePage() {
     .sort((a, b) => a.name.localeCompare(b.name));
   const needle = search.trim().toLowerCase();
   const shownPeople = people.filter((person) => !needle || person.name.toLowerCase().includes(needle));
-  const canSend = Boolean(subject.trim() && message.trim() && (byEmail || inApp) && !busy && (countError || count?.people));
+  const canSend = Boolean(subject.trim() && message.trim() && (byEmail || inApp) && !busy && (audience !== "people" || chosen.length));
 
   const send = async () => {
     if (!canSend) return;
     const how = byEmail && inApp ? "by email and in-app" : byEmail ? "by email" : "in-app";
-    const who = count ? `${count.people} ${count.people === 1 ? "person" : "people"}` : audience === "people" ? "the chosen people" : MESSAGE_AUDIENCES.find((item) => item.key === audience)?.label.toLowerCase();
+    const who = audience === "people" ? `${chosen.length} ${chosen.length === 1 ? "person" : "people"}` : MESSAGE_AUDIENCES.find((item) => item.key === audience)?.label.toLowerCase();
     if (!await confirmDialog(`Send “${subject.trim()}” to ${who} ${how}?`, "Send")) return;
     setBusy(true);
     setStatus(null);
@@ -158,13 +141,6 @@ export default function SendMessagePage() {
               </ul>
             </div>
           ) : null}
-          {countError ? (
-            <p className="m-0 text-[13px] text-destructive">{countError}</p>
-          ) : (
-            <p className="m-0 text-[13px] text-muted-foreground">
-              {count ? `${count.people} ${count.people === 1 ? "person" : "people"}${byEmail ? `, ${count.emails} with an email address` : ""}.` : "Counting…"} Only people who have signed in get messages.
-            </p>
-          )}
         </fieldset>
 
         <label className="block space-y-1.5">
