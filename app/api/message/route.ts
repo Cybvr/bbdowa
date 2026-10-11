@@ -26,7 +26,7 @@ const str = (value: unknown) => (typeof value === "string" ? value : "");
 export async function POST(request: Request) {
   const idToken = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ?? "";
   const account = idToken ? await verifyIdToken(idToken) : null;
-  if (!account) return NextResponse.json({ error: "Sign in required." }, { status: 401 });
+  if (!account) return NextResponse.json({ error: "Your sign-in has expired. Refresh the page and try again." }, { status: 401 });
 
   let body: Body;
   try {
@@ -36,7 +36,13 @@ export async function POST(request: Request) {
   }
 
   const db = firestoreAs(idToken);
-  const users = await db.list("users");
+  let users;
+  try {
+    users = await db.list("users");
+  } catch (cause) {
+    console.error("Unable to read people", cause);
+    return NextResponse.json({ error: "Couldn’t load the list of people. Try again." }, { status: 502 });
+  }
   const sender = users.find((user) => user.uid === account.uid || user.id === account.uid);
   const senderRole = str(sender?.role);
   if (senderRole !== "admin" && senderRole !== "manager") return NextResponse.json({ error: "Only admins and managers can send messages." }, { status: 403 });

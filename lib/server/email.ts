@@ -2,8 +2,8 @@
 // checking a Firebase ID token, reading and writing Firestore as the signed-in
 // person (so security rules still apply), and sending email through Resend.
 import "server-only";
+import { createVerify } from "node:crypto";
 
-const API_KEY = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
 const PROJECT_ID = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 const DATABASE_ID = process.env.NEXT_PUBLIC_FIREBASE_FIRESTORE_DATABASE_ID || "(default)";
 const BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/${DATABASE_ID}/documents`;
@@ -104,17 +104,44 @@ export function firestoreAs(idToken: string) {
 }
 
 /** The account behind a valid Firebase ID token, or null. */
+const CERTS_URL = "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com";
+let certCache: { certs: Record<string, string>; expires: number } | null = null;
+
+async function googleCerts(): Promise<Record<string, string>> {
+  if (certCache && certCache.expires > Date.now()) return certCache.certs;
+  const response = await fetch(CERTS_URL, { cache: "no-store" });
+  if (!response.ok) throw new Error(`Couldn't load sign-in certificates: ${response.status}`);
+  const maxAge = Number(/max-age=(\d+)/.exec(response.headers.get("cache-control") ?? "")?.[1] ?? 3600);
+  certCache = { certs: (await response.json()) as Record<string, string>, expires: Date.now() + maxAge * 1000 };
+  return certCache.certs;
+}
+
+/**
+ * The account behind a valid Firebase ID token, or null. Checks the token's
+ * signature against Google's public certificates, so no API key is needed.
+ */
 export async function verifyIdToken(idToken: string): Promise<{ uid: string; email: string | null } | null> {
-  const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${API_KEY}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ idToken }),
-    cache: "no-store",
-  });
-  if (!response.ok) return null;
-  const data = (await response.json()) as { users?: { localId: string; email?: string }[] };
-  const account = data.users?.[0];
-  return account ? { uid: account.localId, email: account.email ?? null } : null;
+  try {
+    const [headerPart, payloadPart, signaturePart] = idToken.split(".");
+    if (!headerPart || !payloadPart || !signaturePart) return null;
+    const header = JSON.parse(Buffer.from(headerPart, "base64url").toString()) as { alg?: string; kid?: string };
+    const payload = JSON.parse(Buffer.from(payloadPart, "base64url").toString()) as {
+      aud?: string; iss?: string; sub?: string; exp?: number; iat?: number; email?: string;
+    };
+    const now = Math.floor(Date.now() / 1000);
+    if (header.alg !== "RS256" || !header.kid) return null;
+    if (payload.aud !== PROJECT_ID || payload.iss !== `https://securetoken.google.com/${PROJECT_ID}`) return null;
+    if (!payload.sub || !payload.exp || payload.exp < now || (payload.iat ?? 0) > now + 300) return null;
+    const cert = (await googleCerts())[header.kid];
+    if (!cert) return null;
+    const verifier = createVerify("RSA-SHA256");
+    verifier.update(`${headerPart}.${payloadPart}`);
+    if (!verifier.verify(cert, Buffer.from(signaturePart, "base64url"))) return null;
+    return { uid: payload.sub, email: payload.email ?? null };
+  } catch (cause) {
+    console.error("Unable to verify sign-in", cause);
+    return null;
+  }
 }
 
 export const escapeHtml = (text: string) =>
