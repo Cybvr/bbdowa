@@ -12,11 +12,16 @@ import { loadTemplates, saveTemplate } from "@/lib/email/template-store";
 import { TEMPLATE_DEFAULTS, validTemplate, type SavedTemplate } from "@/lib/email/template-definitions";
 import { renderMessageEmail } from "@/lib/email/brand";
 import { templates, applySavedTemplate, type EmailContent } from "@/lib/email/templates";
-import { MESSAGE_AUDIENCES, type MessageAudience } from "@/lib/notifications";
+import { MESSAGE_GROUPS } from "@/lib/notifications";
+import type { MessageTemplateAudience } from "@/lib/message-templates";
 import { extractMessageCta } from "@/lib/message-html";
 
 const sample = { to: "Ada Okafor", by: "Jide Pinheiro", signer: "Ada Okafor", person: "Ada Okafor", from: "Jide Pinheiro", title: "Campaign review", description: "Review the latest campaign assets.", client: "Example client", job: "Example campaign", due: "2026-10-20", signedAt: "2026-10-11", period: "October 2026", message: "Please complete your review.", number: "INV-001", amount: 125000, currency: "NGN", preview: "Can you review the latest update?", company: "Example company", url: "https://bbdowa.com/dashboard" };
 const control = "h-11 rounded-lg border border-border px-4 text-sm font-semibold transition-colors hover:bg-muted disabled:opacity-50";
+const TEMPLATE_AUDIENCES: Array<{ key: MessageTemplateAudience; label: string }> = [
+  ...MESSAGE_GROUPS,
+  { key: "people", label: "Selected people" },
+];
 
 export default function MessageDesigner() {
   const { role, loading: authLoading } = useAuth();
@@ -95,7 +100,7 @@ export default function MessageDesigner() {
             <label className="block space-y-2"><span className="text-sm font-semibold">Message</span><Textarea className="min-h-56" value={selected.message} disabled={busy} maxLength={5000} onChange={(event) => setSelected({ ...selected, message: event.target.value })} /><span className="block text-sm text-muted-foreground">Available placeholders: {selected.variables.map((key) => `{{${key}}}`).join(", ")}</span></label>
           )}
           {kind === "message" && <>
-            <label className="block space-y-2"><span className="text-sm font-semibold">Default audience</span><select className="h-11 w-full rounded-lg border border-input bg-background px-3" value={selected.audience} disabled={busy} onChange={(event) => setSelected({ ...selected, audience: event.target.value as MessageAudience })}>{MESSAGE_AUDIENCES.map((row) => <option key={row.key} value={row.key}>{row.label}</option>)}</select></label>
+            <label className="block space-y-2"><span className="text-sm font-semibold">Default audience</span><select className="h-11 w-full rounded-lg border border-input bg-background px-3" value={selected.audience} disabled={busy} onChange={(event) => setSelected({ ...selected, audience: event.target.value as MessageTemplateAudience })}>{TEMPLATE_AUDIENCES.map((row) => <option key={row.key} value={row.key}>{row.label}</option>)}</select></label>
             <fieldset><legend className="mb-2 text-sm font-semibold">Default delivery</legend><div className="flex flex-wrap gap-5">{(["email", "inApp", "push"] as const).map((key) => <label key={key} className="inline-flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={selected[key]} disabled={busy} onChange={(event) => setSelected({ ...selected, [key]: event.target.checked })} />{key === "inApp" ? "In-app" : key === "email" ? "Email" : "Push"}</label>)}</div></fieldset>
           </>}
           <label className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold"><input type="checkbox" checked={selected.published} disabled={busy} onChange={(event) => setSelected({ ...selected, published: event.target.checked })} />Published</label>

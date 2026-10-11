@@ -1,5 +1,7 @@
-import type { MessageAudience } from "@/lib/notifications";
+import type { MessageGroup } from "@/lib/notifications";
 import { buildMessageHtml } from "@/lib/message-html";
+
+export type MessageTemplateAudience = MessageGroup | "people";
 
 export type MessageTemplate = {
   key: string;
@@ -9,7 +11,7 @@ export type MessageTemplate = {
   message: string;
   actionLabel?: string;
   actionHref?: string;
-  audience: MessageAudience;
+  audience: MessageTemplateAudience;
   email: boolean;
   inApp: boolean;
   push: boolean;
