@@ -69,7 +69,7 @@ export function withDefaults(stored: Partial<NotificationSettings> | undefined |
 }
 
 /** Who a message from Admin → Send message goes to. */
-export type MessageAudience = "everyone" | "team" | "creators" | "clients" | "people";
+export type MessageAudience = "everyone" | "team" | "creators" | "clients" | "people" | "emails";
 
 export const MESSAGE_AUDIENCES: { key: MessageAudience; label: string }[] = [
   { key: "everyone", label: "Everyone" },
@@ -77,6 +77,7 @@ export const MESSAGE_AUDIENCES: { key: MessageAudience; label: string }[] = [
   { key: "creators", label: "Creators" },
   { key: "clients", label: "Clients" },
   { key: "people", label: "Chosen people" },
+  { key: "emails", label: "Email addresses" },
 ];
 
 export const SENT_MESSAGES_COLLECTION = "sentMessages";

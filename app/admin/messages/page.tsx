@@ -24,7 +24,7 @@ async function postMessage(body: Record<string, unknown>) {
     headers: { Authorization: `Bearer ${token ?? ""}`, "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  const data = (await response.json().catch(() => ({}))) as { error?: string; people?: number; emails?: number; notified?: number; emailed?: number };
+  const data = (await response.json().catch(() => ({}))) as { error?: string; notified?: number; emailed?: number };
   if (!response.ok) throw new Error(data.error || "Couldn’t send the message.");
   return data;
 }
@@ -37,6 +37,7 @@ export default function SendMessagePage() {
   const { users, loading: usersLoading } = useFirestoreUsers();
   const [audience, setAudience] = React.useState<MessageAudience>("everyone");
   const [chosen, setChosen] = React.useState<string[]>([]);
+  const [addressText, setAddressText] = React.useState("");
   const [search, setSearch] = React.useState("");
   const [subject, setSubject] = React.useState("");
   const [message, setMessage] = React.useState("");
@@ -69,21 +70,40 @@ export default function SendMessagePage() {
     .sort((a, b) => a.name.localeCompare(b.name));
   const needle = search.trim().toLowerCase();
   const shownPeople = people.filter((person) => !needle || person.name.toLowerCase().includes(needle));
-  const canSend = Boolean(subject.trim() && message.trim() && (byEmail || inApp) && !busy && (audience !== "people" || chosen.length));
+  const addresses = addressText.split(/[\s,;]+/).map((item) => item.trim()).filter(Boolean);
+  const toAddresses = audience === "emails";
+  const hasMessage = Boolean(subject.trim() && message.trim());
+  const canSend = Boolean(hasMessage && !busy
+    && (toAddresses ? addresses.length : (byEmail || inApp))
+    && (audience !== "people" || chosen.length));
+
+  const showResult = (result: Awaited<ReturnType<typeof postMessage>>, test: boolean) => {
+    const parts = [result.notified ? `${result.notified} in-app` : null, result.emailed ? `${result.emailed} ${result.emailed === 1 ? "email" : "emails"}` : null].filter(Boolean);
+    if (result.error) {
+      setStatus({ tone: "error", text: parts.length ? `Sent ${parts.join(", ")}. ${result.error}` : result.error });
+      return;
+    }
+    setStatus({ tone: "ok", text: test ? `Test sent to you: ${parts.join(", ")}.` : `Sent: ${parts.join(", ")}.` });
+  };
 
   const send = async () => {
     if (!canSend) return;
-    const how = byEmail && inApp ? "by email and in-app" : byEmail ? "by email" : "in-app";
-    const who = audience === "people" ? `${chosen.length} ${chosen.length === 1 ? "person" : "people"}` : MESSAGE_AUDIENCES.find((item) => item.key === audience)?.label.toLowerCase();
+    const how = toAddresses ? "by email" : byEmail && inApp ? "by email and in-app" : byEmail ? "by email" : "in-app";
+    const who = audience === "people"
+      ? `${chosen.length} ${chosen.length === 1 ? "person" : "people"}`
+      : toAddresses
+        ? `${addresses.length} ${addresses.length === 1 ? "address" : "addresses"}`
+        : MESSAGE_AUDIENCES.find((item) => item.key === audience)?.label.toLowerCase();
     if (!await confirmDialog(`Send “${subject.trim()}” to ${who} ${how}?`, "Send")) return;
     setBusy(true);
     setStatus(null);
     try {
-      const result = await postMessage({ audience, uids: chosen, subject, message, email: byEmail, inApp });
-      const parts = [result.notified ? `${result.notified} in-app` : null, result.emailed ? `${result.emailed} ${result.emailed === 1 ? "email" : "emails"}` : null].filter(Boolean);
-      setStatus({ tone: "ok", text: `Sent: ${parts.join(", ")}.` });
-      setSubject("");
-      setMessage("");
+      const result = await postMessage({ audience, uids: chosen, addresses, subject, message, email: byEmail, inApp });
+      showResult(result, false);
+      if (!result.error) {
+        setSubject("");
+        setMessage("");
+      }
       loadHistory();
     } catch (cause) {
       setStatus({ tone: "error", text: cause instanceof Error ? cause.message : "Couldn’t send the message." });
@@ -91,6 +111,20 @@ export default function SendMessagePage() {
       setBusy(false);
     }
   };
+
+  const sendTest = async () => {
+    if (!hasMessage || busy) return;
+    setBusy(true);
+    setStatus(null);
+    try {
+      showResult(await postMessage({ test: true, audience, subject, message, email: byEmail || toAddresses, inApp: toAddresses ? true : inApp }), true);
+    } catch (cause) {
+      setStatus({ tone: "error", text: cause instanceof Error ? cause.message : "Couldn’t send the test." });
+    } finally {
+      setBusy(false);
+    }
+  };
+
 
   const audienceLabel = (key: MessageAudience) => MESSAGE_AUDIENCES.find((item) => item.key === key)?.label ?? key;
 
@@ -141,6 +175,16 @@ export default function SendMessagePage() {
               </ul>
             </div>
           ) : null}
+          {toAddresses ? (
+            <Textarea
+              value={addressText}
+              onChange={(event) => setAddressText(event.target.value)}
+              rows={3}
+              disabled={busy}
+              aria-label="Email addresses"
+              className="mt-2"
+            />
+          ) : null}
         </fieldset>
 
         <label className="block space-y-1.5">
@@ -153,16 +197,17 @@ export default function SendMessagePage() {
           <Textarea value={message} onChange={(event) => setMessage(event.target.value)} maxLength={5000} rows={8} disabled={busy} />
         </label>
 
-        <fieldset className="space-y-2">
+        {toAddresses ? null : <fieldset className="space-y-2">
           <legend className="text-sm font-medium">Send as</legend>
           <div className="flex flex-wrap gap-5 text-sm">
             <label className="flex items-center gap-2"><input type="checkbox" checked={byEmail} onChange={(event) => setByEmail(event.target.checked)} className="h-4 w-4 accent-[var(--primary)]" />Email</label>
             <label className="flex items-center gap-2"><input type="checkbox" checked={inApp} onChange={(event) => setInApp(event.target.checked)} className="h-4 w-4 accent-[var(--primary)]" />In-app notification</label>
           </div>
-        </fieldset>
+        </fieldset>}
 
         <div className="flex flex-wrap items-center gap-3">
           <button type="submit" disabled={!canSend} className="h-11 rounded-lg bg-primary px-6 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50">{busy ? "Sending…" : "Send"}</button>
+          <button type="button" onClick={() => void sendTest()} disabled={!hasMessage || busy} className="h-11 rounded-lg border border-border px-5 text-sm font-semibold text-foreground transition-colors hover:border-foreground disabled:opacity-50">Send me a test</button>
           {status ? <p role="status" className={`m-0 text-[13px] ${status.tone === "ok" ? "text-muted-foreground" : "text-destructive"}`}>{status.text}</p> : null}
         </div>
       </form>
