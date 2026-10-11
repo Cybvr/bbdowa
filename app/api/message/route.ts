@@ -1,29 +1,34 @@
 // Messages written by admins and managers (Admin → Send message).
 //
-// Checks the sender is staff, works out who it goes to, then writes in-app
-// notifications and/or sends emails, and keeps a record in `sentMessages`.
-// All Firestore reads and writes are made as the sender, so security rules
-// still apply.
+// Checks the sender is staff, works out who it goes to (groups, chosen people
+// and typed email addresses, combined), then writes in-app notifications
+// and/or sends emails, and keeps a record in `sentMessages`. All Firestore
+// reads and writes are made as the sender, so security rules still apply.
 import { NextResponse } from "next/server";
 import { firestoreAs, sendMany, verifyIdToken } from "@/lib/server/email";
-import { MESSAGE_AUDIENCES, type MessageAudience } from "@/lib/notifications";
+import { MESSAGE_GROUPS, type MessageGroup } from "@/lib/notifications";
 
 export const runtime = "nodejs";
 
 type Body = {
-  audience: MessageAudience;
+  groups?: MessageGroup[];
   uids?: string[];
-  /** For the "Email addresses" choice. */
+  /** Typed email addresses. These can only be emailed. */
   addresses?: string[];
   /** Send only to the sender, as a test. */
   test?: boolean;
-  subject: string;
-  message: string;
-  email: boolean;
-  inApp: boolean;
+  /** Only work out how many it reaches; send nothing. */
+  preview?: boolean;
+  subject?: string;
+  message?: string;
+  email?: boolean;
+  inApp?: boolean;
 };
 
+const MAX_MESSAGE = 1200;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const str = (value: unknown) => (typeof value === "string" ? value : "");
+const list = (value: unknown) => (Array.isArray(value) ? value.map(str).filter(Boolean) : []);
 
 export async function POST(request: Request) {
   const idToken = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ?? "";
@@ -50,52 +55,44 @@ export async function POST(request: Request) {
   const senderRole = str(sender?.role);
   if (senderRole !== "admin" && senderRole !== "manager") return NextResponse.json({ error: "Only admins and managers can send messages." }, { status: 403 });
 
-  const subject = str(body.subject).trim().slice(0, 200);
-  const message = str(body.message).trim().slice(0, 5000);
-  if (!body.test && !MESSAGE_AUDIENCES.some((item) => item.key === body.audience)) return NextResponse.json({ error: "Choose who it goes to." }, { status: 400 });
-  if (!subject || !message) return NextResponse.json({ error: "Add a subject and a message." }, { status: 400 });
-
-  // Typed-in addresses can only be emailed: they have no account to notify.
-  const toAddresses = !body.test && body.audience === "emails";
-  const sendEmail = toAddresses || Boolean(body.email);
-  const sendInApp = !toAddresses && Boolean(body.inApp);
-  if (!sendEmail && !sendInApp) return NextResponse.json({ error: "Choose email, in-app or both." }, { status: 400 });
-
   // People who have joined (signed in at least once). A person can have more
   // than one record; their main one is users/{uid}.
-  const joined = new Map<string, { uid: string; email: string; role: string }>();
+  const joined = new Map<string, { uid: string; email: string; role: string; name: string }>();
   const ordered = [...users].sort((a, b) => Number(b.id === str(b.uid)) - Number(a.id === str(a.uid)));
   for (const user of ordered) {
     const uid = str(user.uid);
     if (!uid || joined.has(uid)) continue;
-    joined.set(uid, { uid, email: str(user.email).toLowerCase(), role: str(user.role) });
+    joined.set(uid, { uid, email: str(user.email).toLowerCase(), role: str(user.role), name: str(user.preferredName) || str(user.name) });
   }
 
-  let recipients: { uid: string; email: string; role: string }[] = [];
-  let emails: string[] = [];
-  if (body.test) {
-    const me = joined.get(account.uid) ?? { uid: account.uid, email: (account.email ?? "").toLowerCase(), role: senderRole };
-    recipients = [me];
-  } else if (toAddresses) {
-    const typed = (Array.isArray(body.addresses) ? body.addresses : []).map((item) => str(item).trim().toLowerCase());
-    const invalid = typed.filter((item) => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(item));
-    if (invalid.length) return NextResponse.json({ error: `Check these addresses: ${invalid.slice(0, 3).join(", ")}` }, { status: 400 });
-    emails = [...new Set(typed)].slice(0, 100);
-    if (!emails.length) return NextResponse.json({ error: "Add at least one email address." }, { status: 400 });
-  } else {
-    const chosen = new Set(Array.isArray(body.uids) ? body.uids : []);
-    recipients = [...joined.values()].filter((person) => {
-      if (person.role === "pending") return false;
-      if (body.audience === "team") return person.role === "admin" || person.role === "manager";
-      if (body.audience === "creators") return person.role === "creator";
-      if (body.audience === "clients") return person.role === "client";
-      if (body.audience === "people") return chosen.has(person.uid);
-      return true;
-    });
-  }
-  if (!toAddresses) emails = [...new Set(recipients.map((person) => person.email).filter(Boolean))];
-  if (!recipients.length && !emails.length) return NextResponse.json({ error: "Nobody matches that choice." }, { status: 400 });
+  const groups = new Set(list(body.groups).filter((group): group is MessageGroup => MESSAGE_GROUPS.some((item) => item.key === group)));
+  const chosen = new Set(list(body.uids));
+  const typed = [...new Set(list(body.addresses).map((item) => item.trim().toLowerCase()))].slice(0, 100);
+  const invalid = typed.filter((item) => !EMAIL_PATTERN.test(item));
+  if (invalid.length) return NextResponse.json({ error: `Check these addresses: ${invalid.slice(0, 3).join(", ")}` }, { status: 400 });
 
+  const inGroup = (person: { role: string }) =>
+    groups.has("everyone")
+    || (groups.has("team") && (person.role === "admin" || person.role === "manager"))
+    || (groups.has("creators") && person.role === "creator")
+    || (groups.has("clients") && person.role === "client");
+  const recipients = body.test
+    ? [joined.get(account.uid) ?? { uid: account.uid, email: (account.email ?? "").toLowerCase(), role: senderRole, name: "" }]
+    : [...joined.values()].filter((person) => person.role !== "pending" && (chosen.has(person.uid) || inGroup(person)));
+  const recipientEmails = new Set(recipients.map((person) => person.email).filter(Boolean));
+  const extraAddresses = body.test ? [] : typed.filter((address) => !recipientEmails.has(address));
+
+  if (body.preview) return NextResponse.json({ people: recipients.length + extraAddresses.length });
+
+  const subject = str(body.subject).trim().slice(0, 200);
+  const message = str(body.message).trim().slice(0, MAX_MESSAGE);
+  if (!subject || !message) return NextResponse.json({ error: "Add a subject and a message." }, { status: 400 });
+  const sendEmail = Boolean(body.email) || extraAddresses.length > 0;
+  const sendInApp = Boolean(body.inApp);
+  if (!body.email && !sendInApp) return NextResponse.json({ error: "Choose email, in-app or both." }, { status: 400 });
+  if (!recipients.length && !extraAddresses.length) return NextResponse.json({ error: "Add at least one person." }, { status: 400 });
+
+  const emails = [...new Set([...(body.email ? recipientEmails : []), ...extraAddresses])];
   const senderName = str(sender?.preferredName) || str(sender?.name) || "Bantaba";
   const createdAt = new Date().toISOString();
   let emailed = 0;
@@ -124,7 +121,7 @@ export async function POST(request: Request) {
       problems.push("None of these people have an email address.");
     } else {
       try {
-        await sendMany({ to: emails, subject, lines: [message, `From ${senderName}`], href: toAddresses ? "" : "/dashboard/notifications", action: "Open Bantaba" });
+        await sendMany({ to: emails, subject, lines: [message, `From ${senderName}`], href: "/dashboard/notifications", action: "Open Bantaba" });
         emailed = emails.length;
       } catch (cause) {
         console.error("Unable to send email", cause);
@@ -134,9 +131,16 @@ export async function POST(request: Request) {
   }
 
   if ((notified || emailed) && !body.test) {
+    const names = recipients.filter((person) => chosen.has(person.uid)).map((person) => person.name || person.email);
+    const toLabel = [
+      ...MESSAGE_GROUPS.filter((item) => groups.has(item.key)).map((item) => item.label),
+      ...names,
+      ...typed,
+    ];
     await db.add("sentMessages", {
-      subject, message, audience: body.audience, sentBy: account.uid, sentByName: senderName,
-      createdAt, people: toAddresses ? emails.length : recipients.length, emailed, notified,
+      subject, message, toLabel: toLabel.length > 4 ? `${toLabel.slice(0, 4).join(", ")} and ${toLabel.length - 4} more` : toLabel.join(", "),
+      sentBy: account.uid, sentByName: senderName, createdAt,
+      people: recipients.length + extraAddresses.length, emailed, notified,
     }).catch((cause) => console.error("Unable to record sent message", cause));
   }
 
@@ -147,9 +151,8 @@ export async function POST(request: Request) {
 /** Resend's own explanation, e.g. an unverified domain, in plain words. */
 function resendReason(cause: unknown): string {
   const text = cause instanceof Error ? cause.message : String(cause);
-  const json = text.slice(text.indexOf("{"));
   try {
-    const parsed = JSON.parse(json) as { message?: string };
+    const parsed = JSON.parse(text.slice(text.indexOf("{"))) as { message?: string };
     if (parsed.message) return parsed.message;
   } catch {
     // Not JSON; fall through.

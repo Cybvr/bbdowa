@@ -68,16 +68,47 @@ export function withDefaults(stored: Partial<NotificationSettings> | undefined |
   };
 }
 
-/** Who a message from Admin → Send message goes to. */
-export type MessageAudience = "everyone" | "team" | "creators" | "clients" | "people" | "emails";
+/** Groups a message from Admin → Send message can go to. */
+export type MessageGroup = "everyone" | "team" | "creators" | "clients";
 
-export const MESSAGE_AUDIENCES: { key: MessageAudience; label: string }[] = [
+export const MESSAGE_GROUPS: { key: MessageGroup; label: string }[] = [
   { key: "everyone", label: "Everyone" },
-  { key: "team", label: "Team (admins and managers)" },
+  { key: "team", label: "Team" },
   { key: "creators", label: "Creators" },
   { key: "clients", label: "Clients" },
-  { key: "people", label: "Chosen people" },
-  { key: "emails", label: "Email addresses" },
+];
+
+/** Ready-made messages for Admin → Send message. */
+export const MESSAGE_TEMPLATES: { key: string; label: string; description: string; subject: string; message: string }[] = [
+  { key: "blank", label: "Blank", description: "Start from scratch", subject: "", message: "" },
+  {
+    key: "deadline",
+    label: "Deadline heads-up",
+    description: "Early warning about upcoming work",
+    subject: "Heads-up: an upcoming deadline needs your attention",
+    message: "An upcoming deadline needs your attention. Please review your assigned work, confirm what is outstanding and flag anything that could affect delivery.",
+  },
+  {
+    key: "timesheet",
+    label: "Log your time",
+    description: "Ask people to update the tracker",
+    subject: "Please log your time",
+    message: "Please make sure your time for this week is logged in the tracker before Friday. Add anything you have missed so we can keep reports accurate.",
+  },
+  {
+    key: "update",
+    label: "Team update",
+    description: "Share news with everyone",
+    subject: "Team update",
+    message: "",
+  },
+  {
+    key: "payment",
+    label: "Payment update",
+    description: "Let people know about payments",
+    subject: "Payment update",
+    message: "Payments for this period are being processed. You will see them in Payments once they are complete.",
+  },
 ];
 
 export const SENT_MESSAGES_COLLECTION = "sentMessages";
@@ -86,7 +117,8 @@ export type SentMessage = {
   id: string;
   subject: string;
   message: string;
-  audience: MessageAudience;
+  /** Who it went to, e.g. "Creators, Jide Pinheiro". */
+  toLabel?: string;
   sentBy: string;
   sentByName: string;
   createdAt: string;
