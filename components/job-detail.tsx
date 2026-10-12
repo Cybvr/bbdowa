@@ -208,7 +208,7 @@ export function JobDetailContent({ job, adminMode = false, portalMode = false, e
   const assigned = Boolean(user?.uid && (terms?.assignedTo === user.uid || (terms ? jobAssignees(terms).some((person) => person.uid === user.uid) : false) || terms?.teamUids?.includes(user.uid) || onTeam || myJobs));
   const canLogTime = Boolean(!portalMode && !isViewingAs && (canManage || (assigned && job.status !== "completed")));
   const peopleOptions = React.useMemo(() => {
-    const options = users.filter((person) => person.uid).map((person) => ({ value: person.uid!, label: person.name }));
+    const options = users.filter((person) => person.uid).map((person) => ({ value: person.uid!, label: person.name || person.email || "Unnamed" }));
     if (terms?.assignedTo && !options.some((person) => person.value === terms.assignedTo)) {
       options.push({ value: terms.assignedTo, label: terms.assignedToName ?? "Current assignee" });
     }
@@ -216,7 +216,7 @@ export function JobDetailContent({ job, adminMode = false, portalMode = false, e
   }, [terms?.assignedTo, terms?.assignedToName, users]);
   const totalMs = entries.reduce((sum, entry) => sum + elapsedMs(entry), 0);
   const provisional = job.placeholder ? "text-muted-foreground" : "";
-  const hasMedia = job.media.length > 0;
+  const hasMedia = (job.media?.length ?? 0) > 0;
   const showSignInGate = !adminMode && !authLoading && !user;
   const jobsBase = adminMode ? "/admin/jobs" : myJobs ? "/dashboard/my-jobs" : "/dashboard/jobs";
   const currentJobHref = jobHref(job, adminMode, myJobs);
@@ -362,12 +362,12 @@ export function JobDetailContent({ job, adminMode = false, portalMode = false, e
 
     {tab === "case-study" ? adminMode ? <InlineJobCaseStudyEditor job={job} /> : <div className="pt-2">
       {([["Challenge", job.challenge], ["Insight", job.insight], ["Strategy", job.strategy]] as const).map(([heading, text]) => <article key={heading} className={SECTION}><SectionHeading>{heading}</SectionHeading><p className={`${BODY} ${provisional}`}>{text}</p></article>)}
-      <article className={SECTION}><SectionHeading>Platform</SectionHeading><ul className="m-0 flex list-none flex-wrap gap-2 p-0">{job.platform.map((channel) => <li key={channel} className="rounded-md border border-border px-2.5 py-1 text-[13px] font-medium">{channel}</li>)}</ul></article>
+      <article className={SECTION}><SectionHeading>Platform</SectionHeading><ul className="m-0 flex list-none flex-wrap gap-2 p-0">{(job.platform ?? []).map((channel) => <li key={channel} className="rounded-md border border-border px-2.5 py-1 text-[13px] font-medium">{channel}</li>)}</ul></article>
       <article className={SECTION}><SectionHeading>Execution</SectionHeading><p className={`${BODY} ${provisional}`}>{job.execution}</p></article>
       <article className={`${SECTION} border-b-0`}><SectionHeading>Outcome</SectionHeading><p className={`${BODY} ${provisional}`}>{job.outcome}</p></article>
     </div> : null}
 
-    {tab === "media" && (hasMedia || canManage || portalMode) ? <JobMediaPanel jobSlug={slug} jobName={title} initialMedia={job.media} canManage={canManage} /> : null}
+    {tab === "media" && (hasMedia || canManage || portalMode) ? <JobMediaPanel jobSlug={slug} jobName={title} initialMedia={job.media ?? []}canManage={canManage} /> : null}
 
     {tab === "team" ? <section className="pt-6"><ClientWorkspaceHeading title="Team" actions={canManage ? <TeamAddAction jobSlug={slug} jobName={title} creators={users} selectedSlugs={teamSlugs} onSaved={(slugs) => { setTeamSlugs(slugs); void loadTerms(); }} /> : null} />{portalMode ? <div className="mt-4 rounded-xl border border-border bg-background p-4 sm:p-5">{lead || teamMembers.length ? <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2 lg:grid-cols-3">{[...(lead ? [lead] : []), ...teamMembers.filter((person) => person.slug !== lead?.slug)].map((person) => <li key={jobTeamKey(person)} className="flex items-center gap-3"><CreatorThumbnail imageSrc={person.profileImage} avatarSeed={person.name} className="h-8 w-8 shrink-0" /><span className="min-w-0 truncate font-medium">{person.name}</span>{person.slug === lead?.slug ? <span className="text-xs text-muted-foreground">Team lead</span> : null}</li>)}</ul> : <p className="m-0 text-sm text-muted-foreground">We’re putting the team together.</p>}</div> : <TeamPanel panelId={`job-${slug}-team-filter`} label={`${title} team`} members={teamMembers} allUsers={users} listHref={currentJobHref} emptyText="No one is on this job's team yet." />}</section> : null}
 

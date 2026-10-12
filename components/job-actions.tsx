@@ -37,7 +37,7 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
   const isStaff = role === "admin" || role === "manager";
   const { users } = useFirestoreUsers();
   const leadOptions = React.useMemo(
-    () => [...users].sort((a, b) => a.name.localeCompare(b.name)),
+    () => [...users].sort((a, b) => (a.name ?? "").localeCompare(b.name ?? "")),
     [users],
   );
 
