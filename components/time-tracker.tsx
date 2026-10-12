@@ -140,6 +140,8 @@ export function TimeTracker({
   const [activity, setActivity] = React.useState("");
   const [jobId, setJobId] = React.useState<string>(jobSlug ?? NO_JOB);
   const [duration, setDuration] = React.useState("");
+  // Time already spent before starting the timer, as HH:MM:SS.
+  const [timerStart, setTimerStart] = React.useState("00:00:00");
   const isStaff = role === "admin" || role === "manager";
   const userId = user?.uid;
   const userEmail = user?.email;
@@ -234,8 +236,6 @@ export function TimeTracker({
   const manualMinutes = parseDurationToMinutes(duration);
   const hasActivity = activity.trim().length > 0;
   const hasJob = jobs.some((job) => job.slug === jobId);
-  const canStart = hasActivity && hasJob;
-  const canLog = hasActivity && hasJob && manualMinutes !== null;
   const displayedManualMinutes = manualMinutes ?? 0;
   const manualHoursLabel = String(Math.floor(displayedManualMinutes / 60)).padStart(2, "0");
   const manualMinutesLabel = String(displayedManualMinutes % 60).padStart(2, "0");
@@ -246,7 +246,15 @@ export function TimeTracker({
     setActivity("");
     setJobId(jobSlug ?? NO_JOB);
     setDuration("");
+    setTimerStart("00:00:00");
   };
+
+  const timerStartMs = (() => {
+    const match = timerStart.trim().match(/^(\d{1,2}):([0-5]\d)(?::([0-5]\d))?$/);
+    return match ? ((Number(match[1]) * 60 + Number(match[2])) * 60 + Number(match[3] ?? 0)) * 1000 : null;
+  })();
+  const startProblem = !hasActivity ? "Add what you're working on." : !hasJob ? "Choose a job." : timerStartMs === null ? "Enter the time as HH:MM:SS." : null;
+  const logProblem = !hasActivity ? "Add what you're working on." : !hasJob ? "Choose a job." : manualMinutes === null ? "Add the time you spent." : null;
 
   const addManualMinutes = (minutes: number) => {
     setDuration(durationValueFromMinutes(displayedManualMinutes + minutes));
@@ -255,7 +263,8 @@ export function TimeTracker({
   // Timer: start now and run until stopped. Pauses whatever else is
   // currently running first, so only one timer ever ticks at a time.
   const startActivity = async () => {
-    if (!user || !canStart || busy) return;
+    if (!user || busy) return;
+    if (startProblem) { setError(startProblem); return; }
     setBusy(true);
     setError(null);
     try {
@@ -268,7 +277,7 @@ export function TimeTracker({
         jobId: chosen?.slug ?? null,
         jobName: chosen?.name ?? null,
         activity: activity.trim(),
-        startedAt: new Date().toISOString(),
+        startedAt: new Date(Date.now() - (timerStartMs ?? 0)).toISOString(),
         endedAt: null,
         pausedAt: null,
         pausedMs: 0,
@@ -314,7 +323,8 @@ export function TimeTracker({
 
   // Manual: log a completed activity ending now with the selected duration.
   const logActivity = async () => {
-    if (!user || manualMinutes === null || !canLog || busy) return;
+    if (!user || busy) return;
+    if (logProblem || manualMinutes === null) { setError(logProblem); return; }
     setBusy(true);
     setError(null);
     try {
@@ -425,7 +435,7 @@ export function TimeTracker({
             <button type="button" onClick={() => setMode("timer")} aria-pressed={mode === "timer"} className={`h-10 rounded-lg text-sm font-semibold transition-colors ${mode === "timer" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>Timer</button>
             <button type="button" onClick={() => setMode("manual")} aria-pressed={mode === "manual"} className={`h-10 rounded-lg text-sm font-semibold transition-colors ${mode === "manual" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>Manual</button>
           </div>
-          {mode === "timer" ? <div className="py-2 text-center font-mono text-[clamp(2.75rem,10vw,4rem)] font-semibold leading-none tracking-tight tabular-nums" aria-label="Timer at zero hours, zero minutes, zero seconds">00:00:00</div> : (
+          {mode === "timer" ? <input value={timerStart} onChange={(event) => setTimerStart(event.target.value)} onFocus={(event) => event.target.select()} inputMode="numeric" aria-label="Time already spent, hours minutes seconds" disabled={busy} className="w-full bg-transparent py-2 text-center font-mono text-[clamp(2.75rem,10vw,4rem)] font-semibold leading-none tracking-tight tabular-nums outline-none focus:text-primary" /> : (
             <div className="space-y-5 py-1">
               <div className="flex items-baseline justify-center gap-2 font-mono tabular-nums" aria-label={`${displayedManualMinutes} minutes selected`}>
                 <span className="text-[clamp(2.75rem,10vw,4rem)] font-semibold leading-none tracking-tight">{manualHoursLabel}</span>
@@ -442,7 +452,7 @@ export function TimeTracker({
             </div>
           )}
           <form onSubmit={(event) => { event.preventDefault(); void (mode === "timer" ? startActivity() : logActivity()); }} className="space-y-5">
-            <div><label htmlFor="tracker-activity" className="sr-only">Activity</label><Input id="tracker-activity" value={activity} onChange={(event) => setActivity(event.target.value)} disabled={busy} placeholder="What are you working on?" required className="h-12 rounded-xl border-0 bg-muted px-4 text-base" /></div>
+            <div><label htmlFor="tracker-activity" className="sr-only">Activity</label><Input id="tracker-activity" autoFocus value={activity} onChange={(event) => setActivity(event.target.value)} disabled={busy} placeholder="What are you working on?" required /></div>
             <div className="space-y-2">
               <span className="text-sm font-medium">Job</span>
               <Select value={jobId === NO_JOB ? "" : jobId} onValueChange={setJobId} disabled={busy}>
@@ -451,7 +461,8 @@ export function TimeTracker({
               </Select>
             </div>
             <div className="flex flex-col gap-2 pt-1">
-              <button type="submit" disabled={busy || (mode === "timer" ? !canStart : !canLog)} className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50">{mode === "timer" ? <LuPlay className="h-4 w-4" aria-hidden="true" /> : null}{busy ? "Saving…" : mode === "timer" ? "Start tracker" : "Log time"}</button>
+              {error ? <p role="alert" className="m-0 text-center text-sm text-destructive">{error}</p> : null}
+              <button type="submit" disabled={busy} className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50">{mode === "timer" ? <LuPlay className="h-4 w-4" aria-hidden="true" /> : null}{busy ? "Saving…" : mode === "timer" ? "Start tracker" : "Log time"}</button>
               <button type="button" onClick={() => setTrackerOpen(false)} disabled={busy} className="h-10 self-center rounded-md px-4 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">Cancel</button>
             </div>
           </form>
@@ -566,7 +577,7 @@ export function TimeTracker({
               </button>
               <button
                 type="submit"
-                disabled={busy || !canStart}
+                disabled={busy}
                 className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-primary text-[13px] font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <LuPlay aria-hidden="true" className="h-3.5 w-3.5" />
