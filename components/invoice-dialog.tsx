@@ -88,6 +88,7 @@ export function InvoiceDialog({
       dueDate: dueDate || null,
       status,
       paidAt: status === "paid" ? invoice?.paidAt ?? new Date().toISOString() : null,
+      updatedAt: new Date().toISOString(),
     };
     try {
       let savedId = invoice?.id ?? "";

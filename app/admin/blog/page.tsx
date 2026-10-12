@@ -17,7 +17,7 @@ export default async function AdminBlogPage() {
   return (
     <DashboardListPage
       title="Blog"
-      actions={<Link href="/admin/blog/new" className={LIST_ACTION_CLASS}><Plus aria-hidden="true" className="h-3.5 w-3.5" />New post</Link>}
+      actions={<Link href="/admin/blog/new" className={LIST_ACTION_CLASS}><Plus aria-hidden="true" className="h-4 w-4" />Add</Link>}
     >
       <AdminBlogDirectory posts={posts} />
     </DashboardListPage>

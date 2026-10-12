@@ -16,6 +16,7 @@ export type BlogPost = {
   /** The cover asset type. Older posts omit this and are treated as images. */
   mediaType?: BlogMediaType;
   sourceUrl?: string;
+  updatedAt?: string;
 };
 
 export function getBlogMediaType(post: Pick<BlogPost, "mediaType">): BlogMediaType {

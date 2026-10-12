@@ -3,14 +3,15 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { JOB_STATUS_LABELS, byLastModified, jobTitle, type Job } from "@/lib/jobs";
-import { jobHref, jobLiveDateLabel } from "@/lib/jobs";
-import { longDate, plural } from "@/lib/format";
+import { jobHref, jobModifiedAt } from "@/lib/jobs";
+import { plural, updatedDate } from "@/lib/format";
 import { Badge, EmptyState } from "@/components/dashboard/ui";
 import { DashboardCardActions } from "@/components/dashboard-card";
-import { JobCard } from "@/components/job-card";
-import { FilterBar, type FilterTab, type SortOption, type ViewMode } from "@/components/dashboard/filter-bar";
+import { CardGrid, ListCard } from "@/components/dashboard/list-card";
+import { FilterBar, useListView, type FilterTab, type SortOption } from "@/components/dashboard/filter-bar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ClickableTableRow } from "@/components/ui/clickable-table-row";
+import { useAuth } from "@/components/auth-provider";
 
 const STATUS_TABS: FilterTab<"all" | "active" | "completed" | "archive">[] = [
   { key: "all", label: "All" },
@@ -41,17 +42,13 @@ function liveTime(job: Job): number {
   return job.liveAt ? Date.parse(`${job.liveAt.date}T00:00:00Z`) : 0;
 }
 
-/** Formats an ISO datetime (e.g. Firestore's updatedAt) using the date-only formatter. */
-function updatedDate(iso: string | null | undefined): string {
-  return longDate(iso?.slice(0, 10));
-}
-
 export function JobsTable({ jobs }: { jobs: Job[] }) {
+  const { isAdmin } = useAuth();
   const [status, setStatus] = useState<StatusKey>("all");
   const [category, setCategory] = useState("all");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortKey>("modified");
-  const [view, setView] = useState<ViewMode>("cards");
+  const [view, setView] = useListView("jobs");
 
   const categoryOptions = useMemo(
     () => [
@@ -111,43 +108,46 @@ export function JobsTable({ jobs }: { jobs: Job[] }) {
       <section id="job-panel" aria-label="Jobs">
         {visible.length > 0 ? (
           view === "cards" ? (
-            <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2 lg:grid-cols-3">
+            <CardGrid>
               {visible.map((job) => (
-                <li key={job.slug}>
-                  <JobCard
-                    job={job}
-                    admin
-                    actions={<DashboardCardActions collection="jobs" slug={job.slug} titleField="title" title={jobTitle(job)} />}
-                  />
-                </li>
+                <ListCard
+                  key={job.slug}
+                  href={jobHref(job, true)}
+                  image={job.image}
+                  title={jobTitle(job)}
+                  subtitle={updatedDate(jobModifiedAt(job))}
+                  menu={<DashboardCardActions collection="jobs" slug={job.slug} titleField="title" title={jobTitle(job)} />}
+                />
               ))}
-            </ul>
+            </CardGrid>
           ) : (
             <div className="overflow-x-auto">
-              <Table className="w-full border-collapse">
+              <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Job</TableHead>
                     <TableHead>Client</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Category</TableHead>
-                    <TableHead>Date</TableHead>
                     <TableHead>Updated</TableHead>
+                    {isAdmin ? <TableHead className="w-[1%] whitespace-nowrap text-right">Actions</TableHead> : null}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {visible.map((job) => (
                     <ClickableTableRow key={job.slug} href={jobHref(job, true)} label={`Open job ${jobTitle(job)}`}>
-                      <TableCell className="px-4 py-4 font-semibold">
+                      <TableCell className="font-semibold">
                         <Link href={jobHref(job, true)} className="text-foreground no-underline hover:text-primary focus-visible:text-primary">
                           {jobTitle(job)}
                         </Link>
                       </TableCell>
-                      <TableCell className="px-4 py-4 text-muted-foreground">{job.clientName}</TableCell>
-                      <TableCell className="px-4 py-4"><Badge tone={job.status === "active" ? "active" : "neutral"}>{JOB_STATUS_LABELS[job.status]}</Badge></TableCell>
-                      <TableCell className="px-4 py-4 text-muted-foreground">{job.category}</TableCell>
-                      <TableCell className="whitespace-nowrap px-4 py-4 text-muted-foreground">{jobLiveDateLabel(job)}</TableCell>
-                      <TableCell className="whitespace-nowrap px-4 py-4 text-muted-foreground">{job.updatedAt ? updatedDate(job.updatedAt) : "—"}</TableCell>
+                      <TableCell className="text-muted-foreground">{job.clientName}</TableCell>
+                      <TableCell><Badge tone={job.status === "active" ? "active" : "neutral"}>{JOB_STATUS_LABELS[job.status]}</Badge></TableCell>
+                      <TableCell className="text-muted-foreground">{job.category}</TableCell>
+                      <TableCell className="whitespace-nowrap text-muted-foreground">{updatedDate(jobModifiedAt(job))}</TableCell>
+                      {isAdmin ? <TableCell className="w-[1%] whitespace-nowrap text-right" onClick={(event) => event.stopPropagation()}>
+                        <DashboardCardActions collection="jobs" slug={job.slug} titleField="title" title={jobTitle(job)} variant="table" />
+                      </TableCell> : null}
                     </ClickableTableRow>
                   ))}
                 </TableBody>

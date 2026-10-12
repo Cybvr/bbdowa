@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Eye, MoreHorizontal, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { TABLE_ACTION_MENU_TRIGGER, TableRowActions } from "@/components/dashboard/table-row-actions";
 import {
   collection,
   deleteDoc,
@@ -40,6 +41,10 @@ export function UserActions({
   variant,
   listHref,
   compactMenu = false,
+  tableActions = false,
+  viewHref,
+  menuTriggerClassName = TABLE_ACTION_MENU_TRIGGER,
+  menuIcon = "vertical",
   iconOnly = false,
   includeEditAction = false,
   categoryOptions = [],
@@ -51,6 +56,10 @@ export function UserActions({
   variant: "team" | "creator";
   listHref: string;
   compactMenu?: boolean;
+  tableActions?: boolean;
+  viewHref?: string;
+  menuTriggerClassName?: string;
+  menuIcon?: "horizontal" | "vertical";
   iconOnly?: boolean;
   includeEditAction?: boolean;
   categoryOptions?: string[];
@@ -149,20 +158,29 @@ export function UserActions({
         >
           <Pencil aria-hidden="true" className="h-5 w-5" />
         </Button>
+      ) : tableActions ? (open, removeFromMenu) => (
+        <TableRowActions
+          primary={[
+            ...(viewHref ? [{ label: "View", icon: <Eye className="h-4 w-4" />, href: viewHref }] : []),
+            ...(canEditUser ? [{ label: "Edit", icon: <Pencil className="h-4 w-4" />, onSelect: open }] : []),
+          ]}
+          items={isAdmin ? [{ label: "Delete", icon: <Trash2 className="h-4 w-4" />, onSelect: removeFromMenu, destructive: true }] : []}
+          label={`More actions for ${user.name}`}
+        />
       ) : compactMenu ? (_open, removeFromMenu) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
               type="button"
               aria-label={`Actions for ${user.name}`}
-              className="grid h-8 w-8 place-items-center rounded-md border-0 bg-transparent text-muted-foreground shadow-none transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              className={menuTriggerClassName}
             >
-              <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+              {menuIcon === "horizontal" ? <MoreHorizontal className="h-4 w-4" aria-hidden="true" /> : <MoreVertical className="h-4 w-4" aria-hidden="true" />}
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-36">
-            {canEditUser && (includeEditAction || role === "manager" || !compactMenu) ? <DropdownMenuItem onSelect={_open}><Pencil className="h-4 w-4" />Edit</DropdownMenuItem> : null}
-            {isAdmin ? <DropdownMenuItem variant="destructive" onSelect={removeFromMenu}><Trash2 className="h-4 w-4" />Delete</DropdownMenuItem> : null}
+            {canEditUser && (includeEditAction || role === "manager" || !compactMenu) ? <DropdownMenuItem className="text-xs" onSelect={_open}><Pencil className="h-4 w-4" />Edit</DropdownMenuItem> : null}
+            {isAdmin ? <DropdownMenuItem className="text-xs" variant="destructive" onSelect={removeFromMenu}><Trash2 className="h-4 w-4" />Delete</DropdownMenuItem> : null}
           </DropdownMenuContent>
         </DropdownMenu>
       ) : undefined}

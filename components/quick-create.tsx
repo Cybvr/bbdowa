@@ -45,13 +45,13 @@ const CREATE_COPY: Record<CreateType, { button: string; title: string; descripti
     description: "Add a resource to the agency library.",
   },
   client: {
-    button: "New client",
+    button: "Add",
     title: "New client",
     description: "Create a client record. You can add more detail from the client workspace.",
   },
   job: {
-    button: "New",
-    title: "New",
+    button: "Add",
+    title: "New job",
     description: "Create a job for a client, then add its details, pay and assignment.",
   },
 };

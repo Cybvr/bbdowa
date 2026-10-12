@@ -15,3 +15,11 @@ export function longDate(iso: string | null | undefined): string {
 export function plural(count: number, singular: string, suffix = "s"): string {
   return `${count} ${singular}${count === 1 ? "" : suffix}`;
 }
+
+/** Last-updated date from an ISO string or a Firestore Timestamp. */
+export function updatedDate(value: unknown): string {
+  const iso = typeof value === "string" ? value
+    : value && typeof value === "object" && "toDate" in value ? (value as { toDate: () => Date }).toDate().toISOString()
+    : "";
+  return longDate(iso.slice(0, 10) || null);
+}

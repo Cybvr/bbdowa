@@ -6,20 +6,33 @@ import { addDoc, collection, deleteDoc, doc } from "firebase/firestore";
 import { Copy, Pencil, Plus, Trash2 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { DocumentStatus } from "@/components/document-status";
-import { PageHeader } from "@/components/dashboard/ui";
+import { EmptyState, PageHeader } from "@/components/dashboard/ui";
 import { DashboardListPage } from "@/components/dashboard/list-page";
-import { FilterBar } from "@/components/dashboard/filter-bar";
+import { FilterBar, useListView, type FilterTab, type SortOption } from "@/components/dashboard/filter-bar";
+import { CardGrid, CardMenu, ListCard } from "@/components/dashboard/list-card";
+import { TableActionsCell } from "@/components/dashboard/table-row-actions";
 import { LIST_ACTION_CLASS } from "@/components/dashboard/list-page-actions";
 import { UsersTableSkeleton } from "@/components/dashboard/loading-skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 import { richTextToPlainText } from "@/components/rich-text-editor";
 import { useFirestoreDocuments, useFirestoreUsers } from "@/lib/firebase/client-content";
-import { DOCUMENT_COLLECTION, type DocumentStatus as Status } from "@/lib/documents";
+import { DOCUMENT_COLLECTION, formatDocumentDate, type DocumentStatus as Status } from "@/lib/documents";
 import { firebaseDb } from "@/lib/firebase/client";
 import { plural } from "@/lib/format";
 import { isCreatorUser } from "@/lib/users";
 import { confirmDialog } from "@/components/confirm-dialog";
+
+const DOCUMENT_TABS: FilterTab<Status | "all">[] = [
+  { key: "all", label: "All" },
+  { key: "draft", label: "Drafts" },
+  { key: "pending_signature", label: "Pending" },
+  { key: "signed", label: "Signed" },
+];
+const DOCUMENT_SORTS: SortOption<"recent" | "title">[] = [
+  { key: "recent", label: "Last updated" },
+  { key: "title", label: "Title (A–Z)" },
+];
 
 export default function DocumentsPage() {
   const { user, role, loading: authLoading } = useAuth();
@@ -27,6 +40,8 @@ export default function DocumentsPage() {
   const { users, loading: usersLoading } = useFirestoreUsers();
   const [search, setSearch] = React.useState("");
   const [status, setStatus] = React.useState<Status | "all">("all");
+  const [sort, setSort] = React.useState<"recent" | "title">("recent");
+  const [view, setView] = useListView("documents");
   const [busyId, setBusyId] = React.useState<string | null>(null);
   const [actionError, setActionError] = React.useState<string | null>(null);
   const isStaff = role === "admin" || role === "manager";
@@ -73,24 +88,39 @@ export default function DocumentsPage() {
   if (authLoading || loading || usersLoading) return <UsersTableSkeleton />;
   if (!isStaff) return <main className="mx-auto w-full max-w-6xl flex-1 px-5 pb-16 pt-8 sm:px-8"><PageHeader title="Documents" /><p className="mt-8 text-sm text-muted-foreground">A staff account is required to manage documents.</p></main>;
 
-  return <DashboardListPage title="Documents" actions={<Link href="/admin/documents/new" className={LIST_ACTION_CLASS}><Plus aria-hidden="true" className="h-3.5 w-3.5" />New document</Link>}
-    toolbar={<div className="space-y-3"><FilterBar panelId="admin-documents-filter" search={search} onSearchChange={setSearch} searchPlaceholder="Search documents" resultCount={plural(visible.length, "document")} /><div className="flex flex-wrap gap-2" aria-label="Document status filter">{(["all", "draft", "pending_signature", "signed"] as const).map((value) => <button key={value} type="button" onClick={() => setStatus(value)} aria-pressed={status === value} className={`rounded-md border px-3 py-1.5 text-[13px] font-medium ${status === value ? "border-primary bg-primary text-primary-foreground" : "border-border text-foreground"}`}>{value === "all" ? "All" : value === "pending_signature" ? "Pending" : value === "draft" ? "Drafts" : "Signed"}</button>)}</div></div>}>
+  const sorted = [...visible].sort((a, b) => sort === "title" ? a.title.localeCompare(b.title) : (b.updatedAt ?? "").localeCompare(a.updatedAt ?? ""));
+  const recipientOf = (document: (typeof documents)[number]) => {
+    const recipient = users.find((candidate) => candidate.uid === document.assignedTo || candidate.slug === document.assignedTo);
+    const creator = recipient?.slug && isCreatorUser(recipient) ? recipient : null;
+    const name = document.assignedToName ?? recipient?.name ?? "Unassigned";
+    return creator ? <Link href={`/dashboard/discover/${creator.slug}`} className="text-foreground underline decoration-border underline-offset-4 hover:text-primary">{name}</Link> : name;
+  };
+  return <DashboardListPage title="Documents" actions={<Link href="/admin/documents/new" className={LIST_ACTION_CLASS}><Plus aria-hidden="true" className="h-4 w-4" />Add</Link>}
+    toolbar={<FilterBar panelId="admin-documents-filter" tabs={DOCUMENT_TABS} activeTab={status} onTabChange={setStatus} search={search} onSearchChange={setSearch} searchPlaceholder="Search documents" sortOptions={DOCUMENT_SORTS} activeSort={sort} onSortChange={setSort} resultCount={plural(visible.length, "document")} view={view} onViewChange={setView} />}>
     {error || actionError ? <p className="mb-4 text-[13px] text-destructive">{error ?? actionError}</p> : null}
-    <section className="mt-4 overflow-x-auto">
-      {visible.length ? <Table className="w-full table-fixed border-collapse"><TableHeader><TableRow><TableHead className="px-4 py-3">Document</TableHead><TableHead className="w-36 px-4 py-3 text-right">Actions</TableHead></TableRow></TableHeader><TableBody>{visible.map((document) => {
-        const recipient = users.find((candidate) =>
-          candidate.uid === document.assignedTo || candidate.slug === document.assignedTo,
-        );
-        const creator = recipient?.slug && isCreatorUser(recipient) ? recipient : null;
-        const recipientName = document.assignedToName ?? recipient?.name ?? "Unassigned";
-        return <ClickableTableRow key={document.id} href={`/dashboard/documents/${document.id}`} label={`Open document ${document.title}`}>
-        <TableCell className="px-4 py-3"><div className="min-w-0"><Link href={`/dashboard/documents/${document.id}`} className="block truncate font-semibold hover:text-primary">{document.title}</Link><div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted-foreground"><span className="hidden sm:inline-flex"><DocumentStatus status={document.status} /></span>{creator ? (
-            <Link href={`/dashboard/discover/${creator.slug}`} className="font-semibold text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary">
-              Sent to {recipientName}
-            </Link>
-          ) : <span>Sent to {recipientName}</span>}</div></div></TableCell>
-        <TableCell className="px-4 py-3"><div className="flex justify-end gap-1.5"><Link href={`/admin/documents/${document.id}/edit`} aria-label={`Open ${document.title}`} className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:text-foreground"><Pencil className="h-4 w-4" /></Link><button type="button" onClick={() => void duplicate(document)} disabled={busyId === document.id} aria-label={`Duplicate ${document.title}`} className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-50"><Copy className="h-4 w-4" /></button>{role === "admin" && <button type="button" onClick={() => void remove(document.id, document.title)} disabled={busyId === document.id} aria-label={`Delete ${document.title}`} className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:text-destructive disabled:opacity-50"><Trash2 className="h-4 w-4" /></button>}</div></TableCell>
-      </ClickableTableRow>})}</TableBody></Table> : <div className="px-5 py-12 text-center"><p className="m-0 text-[15px] font-semibold">{documents.length ? "No documents match" : "No documents yet"}</p><p className="mb-0 mt-1 text-sm text-muted-foreground">{documents.length ? "Try another search or status." : "Create a document to get started."}</p></div>}
+    <section aria-label="Documents">
+      {sorted.length ? view === "cards" ? <CardGrid>{sorted.map((document) => (
+        <ListCard key={document.id} href={`/dashboard/documents/${document.id}`} title={document.title} subtitle={formatDocumentDate(document.updatedAt)} menu={<CardMenu items={[
+          { label: "Edit", icon: <Pencil className="h-4 w-4" />, href: `/admin/documents/${document.id}/edit` },
+          { label: "Duplicate", icon: <Copy className="h-4 w-4" />, onSelect: () => void duplicate(document), disabled: busyId === document.id },
+          ...(role === "admin" ? [{ label: "Delete", icon: <Trash2 className="h-4 w-4" />, onSelect: () => void remove(document.id, document.title), destructive: true, disabled: busyId === document.id }] : []),
+        ]} />} />
+      ))}</CardGrid> : <div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Document</TableHead><TableHead>Sent to</TableHead><TableHead>Status</TableHead><TableHead>Updated</TableHead><TableHead className="w-[1%] whitespace-nowrap text-right">Actions</TableHead></TableRow></TableHeader><TableBody>{sorted.map((document) => (
+        <ClickableTableRow key={document.id} href={`/dashboard/documents/${document.id}`} label={`Open document ${document.title}`}>
+          <TableCell className="font-semibold"><Link href={`/dashboard/documents/${document.id}`} className="text-foreground no-underline hover:text-primary">{document.title}</Link></TableCell>
+          <TableCell className="text-muted-foreground">{recipientOf(document)}</TableCell>
+          <TableCell><DocumentStatus status={document.status} /></TableCell>
+          <TableCell className="whitespace-nowrap text-muted-foreground">{formatDocumentDate(document.updatedAt)}</TableCell>
+          <TableActionsCell
+            primary={[
+              { label: "Edit", icon: <Pencil className="h-4 w-4" />, href: `/admin/documents/${document.id}/edit` },
+              { label: "Duplicate", icon: <Copy className="h-4 w-4" />, onSelect: () => void duplicate(document), disabled: busyId === document.id },
+            ]}
+            items={role === "admin" ? [{ label: "Delete", icon: <Trash2 className="h-4 w-4" />, onSelect: () => void remove(document.id, document.title), destructive: true, disabled: busyId === document.id }] : []}
+            label={`More actions for ${document.title}`}
+          />
+        </ClickableTableRow>
+      ))}</TableBody></Table></div> : <EmptyState title={documents.length ? "No documents match" : "No documents yet"} description={documents.length ? "Try another search or status." : "Create a document to get started."} />}
     </section>
   </DashboardListPage>;
 }

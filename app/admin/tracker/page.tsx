@@ -4,9 +4,11 @@ import * as React from "react";
 import { addDoc, collection, deleteDoc, doc, getDocs, runTransaction, updateDoc } from "firebase/firestore";
 import { Pencil, Plus, Square, Trash2 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
-import { PageHeader } from "@/components/dashboard/ui";
+import { EmptyState, PageHeader } from "@/components/dashboard/ui";
 import { DashboardListPage } from "@/components/dashboard/list-page";
-import { FilterBar, type FilterTab } from "@/components/dashboard/filter-bar";
+import { FilterBar, useListView, type FilterTab, type SortOption } from "@/components/dashboard/filter-bar";
+import { CardGrid, CardMenu, ListCard } from "@/components/dashboard/list-card";
+import { TableActionsCell } from "@/components/dashboard/table-row-actions";
 import { LIST_ACTION_CLASS } from "@/components/dashboard/list-page-actions";
 import { UsersTableSkeleton } from "@/components/dashboard/loading-skeleton";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -17,13 +19,13 @@ import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 import { confirmDialog } from "@/components/confirm-dialog";
 import { useFirestoreUsers } from "@/lib/firebase/client-content";
 import { firebaseDb } from "@/lib/firebase/client";
+import { updatedDate } from "@/lib/format";
 import { jobsCollection } from "@/lib/firebase/job-collections";
 import { jobTitle, normalizeJob } from "@/lib/jobs";
 import {
   ACTIVITY_COLLECTION,
   elapsedMs,
   formatClockFull,
-  formatTimestamp,
   isPaused,
   sortByStartedAt,
   type ActivityEntry,
@@ -32,6 +34,11 @@ import {
 const NO_JOB = "__none";
 
 type StatusKey = "all" | "running" | "paused" | "completed";
+const TRACKER_SORTS: SortOption<"recent" | "longest">[] = [
+  { key: "recent", label: "Last updated" },
+  { key: "longest", label: "Longest" },
+];
+
 const STATUS_TABS: FilterTab<StatusKey>[] = [
   { key: "all", label: "All" },
   { key: "running", label: "Running" },
@@ -72,6 +79,8 @@ export default function AdminTimePage() {
   const [status, setStatus] = React.useState<StatusKey>("all");
   const [person, setPerson] = React.useState("all");
   const [jobFilter, setJobFilter] = React.useState("all");
+  const [sort, setSort] = React.useState<"recent" | "longest">("recent");
+  const [view, setView] = useListView("tracker");
   const [form, setForm] = React.useState<Form | null>(null);
   const [formError, setFormError] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
@@ -166,6 +175,7 @@ export default function AdminTimePage() {
       jobName: job?.name ?? null,
       startedAt,
       endedAt,
+      updatedAt: new Date().toISOString(),
       // New times mean the admin set the duration directly; drop old pauses.
       ...(timesChanged ? { pausedAt: null, pausedMs: 0 } : {}),
     };
@@ -219,6 +229,7 @@ export default function AdminTimePage() {
           endedAt: endedAt.toISOString(),
           pausedAt: null,
           pausedMs: Math.max(0, current.pausedMs ?? 0) + currentPause,
+          updatedAt: endedAt.toISOString(),
         });
       });
       await load();
@@ -233,10 +244,13 @@ export default function AdminTimePage() {
   if (authLoading || (isStaff && (loading || usersLoading))) return <UsersTableSkeleton />;
   if (!isStaff) return <main className="mx-auto w-full max-w-6xl flex-1 px-5 pb-16 pt-8 sm:px-8"><PageHeader title="Tracker" /><p className="mt-8 text-sm text-muted-foreground">A staff account is required to see tracked time.</p></main>;
 
+  const lastChange = (entry: ActivityEntry) => entry.updatedAt ?? entry.endedAt ?? entry.startedAt;
+  const sorted = [...visible].sort((a, b) => sort === "longest" ? elapsedMs(b, now) - elapsedMs(a, now) : lastChange(b).localeCompare(lastChange(a)));
+  const stateLabel = (entry: ActivityEntry) => { const state = statusOf(entry); return <span className={state === "running" ? "text-primary" : "text-muted-foreground"}>{state === "running" ? "Running" : state === "paused" ? "Paused" : "Completed"}</span>; };
   return (
     <DashboardListPage
       title="Tracker"
-      actions={isAdmin ? <button type="button" onClick={() => { setFormError(null); setForm({ ...EMPTY_FORM, startedAt: toLocalInput(new Date().toISOString()) }); }} className={LIST_ACTION_CLASS}><Plus aria-hidden="true" className="h-3.5 w-3.5" />Add time</button> : null}
+      actions={isAdmin ? <button type="button" onClick={() => { setFormError(null); setForm({ ...EMPTY_FORM, startedAt: toLocalInput(new Date().toISOString()) }); }} className={LIST_ACTION_CLASS}><Plus aria-hidden="true" className="h-4 w-4" />Add</button> : null}
       toolbar={<FilterBar
         panelId="admin-time-filter"
         search={search}
@@ -249,59 +263,68 @@ export default function AdminTimePage() {
           { label: "Person", value: person, onChange: setPerson, options: [{ value: "all", label: "Everyone" }, ...people.map((option) => ({ value: option.uid, label: option.name }))] },
           { label: "Job", value: jobFilter, onChange: setJobFilter, options: [{ value: "all", label: "All jobs" }, ...jobs.map((option) => ({ value: option.slug, label: option.name }))] },
         ]}
+        sortOptions={TRACKER_SORTS}
+        activeSort={sort}
+        onSortChange={setSort}
         resultCount={`${visible.length} ${visible.length === 1 ? "entry" : "entries"} · ${formatClockFull(totalMs)}`}
+        view={view}
+        onViewChange={setView}
       />}
     >
       {error ? <p role="alert" className="mb-4 text-[13px] text-destructive">{error}</p> : null}
-      <section aria-label="Tracked time" className="mt-4">
-        {visible.length === 0 ? (
-          <div className="px-5 py-12 text-center">
-            <p className="m-0 text-[15px] font-semibold">{entries.length ? "No entries match" : "No time tracked yet"}</p>
-            <p className="mb-0 mt-1 text-sm text-muted-foreground">{entries.length ? "Try another search or filter." : "Entries appear here when people track time."}</p>
-          </div>
+      <section aria-label="Tracked time">
+        {sorted.length === 0 ? (
+          <EmptyState title={entries.length ? "No entries match" : "No time tracked yet"} description={entries.length ? "Try another search or filter." : "Entries appear here when people track time."} />
+        ) : view === "cards" ? (
+          <CardGrid>
+            {sorted.map((entry) => (
+              <ListCard
+                key={entry.id}
+                onActivate={isAdmin ? () => openEdit(entry) : undefined}
+                title={entry.activity || "Untitled activity"}
+                subtitle={updatedDate(lastChange(entry))}
+                menu={isAdmin ? <CardMenu items={[
+                  ...(!entry.endedAt ? [{ label: "Stop", icon: <Square className="h-4 w-4" />, onSelect: () => void stop(entry), disabled: busy }] : []),
+                  { label: "Edit", icon: <Pencil className="h-4 w-4" />, onSelect: () => openEdit(entry) },
+                  { label: "Delete", icon: <Trash2 className="h-4 w-4" />, onSelect: () => void remove(entry), destructive: true, disabled: busy },
+                ]} /> : null}
+              />
+            ))}
+          </CardGrid>
         ) : (
-          <Table className="w-full border-collapse">
-            <TableHeader>
-              <TableRow>
-                <TableHead className="px-4 py-3">Activity</TableHead>
-                <TableHead className="hidden px-4 py-3 md:table-cell">Person</TableHead>
-                <TableHead className="hidden px-4 py-3 md:table-cell">Started</TableHead>
-                <TableHead className="px-4 py-3 text-right">Time</TableHead>
-                {isAdmin ? <TableHead className="w-40 px-4 py-3 text-right"><span className="sr-only">Actions</span></TableHead> : null}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {visible.map((entry) => {
-                const state = statusOf(entry);
-                return (
-                  <ClickableTableRow key={entry.id} label={`Edit ${entry.activity}`} onActivate={() => { if (isAdmin) openEdit(entry); }} className="align-middle">
-                    <TableCell className="px-4 py-3">
-                      <span className="block font-semibold">{entry.activity || "Untitled activity"}</span>
-                      <span className="mt-0.5 block text-[13px] text-muted-foreground">
-                        <span className="md:hidden">{nameOf(entry.uid)} · </span>{entry.jobName ?? "No job"}
-                      </span>
-                      <span className="mt-0.5 block text-[12px] text-muted-foreground md:hidden">{formatTimestamp(entry.startedAt)}</span>
-                    </TableCell>
-                    <TableCell className="hidden px-4 py-3 md:table-cell">{nameOf(entry.uid)}</TableCell>
-                    <TableCell className="hidden whitespace-nowrap px-4 py-3 md:table-cell">{formatTimestamp(entry.startedAt)}</TableCell>
-                    <TableCell className="whitespace-nowrap px-4 py-3 text-right">
-                      <span className="block font-mono font-semibold tabular-nums">{formatClockFull(elapsedMs(entry, now))}</span>
-                      <span className={`block text-[12px] ${state === "running" ? "text-primary" : "text-muted-foreground"}`}>{state === "running" ? "Running" : state === "paused" ? "Paused" : "Completed"}</span>
-                    </TableCell>
-                    {isAdmin ? (
-                      <TableCell className="px-4 py-3">
-                        <div className="flex justify-end gap-1">
-                          {!entry.endedAt ? <button type="button" onClick={(event) => { event.stopPropagation(); void stop(entry); }} disabled={busy} aria-label={`Stop ${entry.activity} for ${nameOf(entry.uid)}`} title="Stop tracker" className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-xs font-semibold text-foreground hover:bg-muted disabled:opacity-50"><Square className="h-3.5 w-3.5 fill-current" />Stop</button> : null}
-                          <button type="button" onClick={(event) => { event.stopPropagation(); openEdit(entry); }} aria-label={`Edit ${entry.activity}`} className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:text-foreground"><Pencil className="h-4 w-4" /></button>
-                          <button type="button" onClick={(event) => { event.stopPropagation(); void remove(entry); }} disabled={busy} aria-label={`Delete ${entry.activity}`} className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:text-destructive disabled:opacity-50"><Trash2 className="h-4 w-4" /></button>
-                        </div>
-                      </TableCell>
-                    ) : null}
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Activity</TableHead>
+                  <TableHead>Person</TableHead>
+                  <TableHead>Job</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Time</TableHead>
+                  {isAdmin ? <TableHead className="w-[1%] whitespace-nowrap text-right">Actions</TableHead> : null}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sorted.map((entry) => (
+                  <ClickableTableRow key={entry.id} label={`Edit ${entry.activity}`} onActivate={() => { if (isAdmin) openEdit(entry); }}>
+                    <TableCell className="font-semibold">{entry.activity || "Untitled activity"}</TableCell>
+                    <TableCell className="text-muted-foreground">{nameOf(entry.uid)}</TableCell>
+                    <TableCell className="text-muted-foreground">{entry.jobName ?? "No job"}</TableCell>
+                    <TableCell className="text-sm">{stateLabel(entry)}</TableCell>
+                    <TableCell className="whitespace-nowrap text-right font-mono font-semibold tabular-nums">{formatClockFull(elapsedMs(entry, now))}</TableCell>
+                    {isAdmin ? <TableActionsCell
+                      primary={[
+                        ...(!entry.endedAt ? [{ label: "Stop", icon: <Square className="h-3.5 w-3.5 fill-current" />, onSelect: () => void stop(entry), disabled: busy }] : []),
+                        { label: "Edit", icon: <Pencil className="h-4 w-4" />, onSelect: () => openEdit(entry) },
+                      ]}
+                      items={[{ label: "Delete", icon: <Trash2 className="h-4 w-4" />, onSelect: () => void remove(entry), destructive: true, disabled: busy }]}
+                      label={`More actions for ${entry.activity || "activity"}`}
+                    /> : null}
                   </ClickableTableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         )}
       </section>
 

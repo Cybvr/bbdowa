@@ -4,17 +4,17 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { addDoc, collection, deleteDoc, doc } from "firebase/firestore";
-import { Copy, MoreHorizontal, Plus, Trash2 } from "lucide-react";
+import { Copy, Plus, Trash2 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
-import { PageHeader } from "@/components/dashboard/ui";
+import { EmptyState, PageHeader } from "@/components/dashboard/ui";
 import { DashboardListPage } from "@/components/dashboard/list-page";
-import { FilterBar, type FilterTab, type SortOption, type ViewMode } from "@/components/dashboard/filter-bar";
-import { DashboardCard } from "@/components/dashboard-card";
+import { FilterBar, useListView, type FilterTab, type SortOption } from "@/components/dashboard/filter-bar";
+import { CardGrid, CardMenu, ListCard } from "@/components/dashboard/list-card";
+import { TableActionsCell } from "@/components/dashboard/table-row-actions";
 import { UsersTableSkeleton } from "@/components/dashboard/loading-skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { RichTextEditor } from "@/components/rich-text-editor";
@@ -26,7 +26,7 @@ import { notify } from "@/lib/email/notify";
 import { TASK_COLLECTION, TASK_STATUSES, TASK_STATUS_LABELS, formatDate, isOverdue, isTaskAssignee, taskAssigneeFields, taskAssigneeNames, taskAssignees, type Task, type TaskStatus } from "@/lib/creator-tasks";
 import { firebaseDb } from "@/lib/firebase/client";
 import { sendAppEmail } from "@/lib/app-email";
-import { plural } from "@/lib/format";
+import { plural, updatedDate } from "@/lib/format";
 import { isCreatorUser } from "@/lib/users";
 import { confirmDialog } from "@/components/confirm-dialog";
 
@@ -108,7 +108,7 @@ export function NewTaskDialog({ assignees, createdBy, createdByName, initialClie
   return (
     <>
       <Button type="button" onClick={() => setOpen(true)}>
-        <Plus aria-hidden="true" className="h-3.5 w-3.5" />Add
+        <Plus aria-hidden="true" className="h-4 w-4" />Add
       </Button>
 
       <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -177,7 +177,7 @@ export default function TasksPage() {
   const [assigneeId, setAssigneeId] = React.useState("all");
   const [jobId, setJobId] = React.useState("all");
   const [sort, setSort] = React.useState<"recent" | "due" | "title" | "updated">("recent");
-  const [view, setView] = React.useState<ViewMode>("table");
+  const [view, setView] = useListView("tasks");
   const [busyId, setBusyId] = React.useState<string | null>(null);
   const [actionError, setActionError] = React.useState<string | null>(null);
   const isStaff = role === "admin" || role === "manager";
@@ -186,13 +186,19 @@ export default function TasksPage() {
   // task can reach them). Ordered by name and searchable in the picker.
   const assignees: AssigneeOption[] = users
     .filter((candidate) => candidate.uid)
-    .map((candidate) => ({
-      uid: candidate.uid as string,
-      name: candidate.name,
-      slug: candidate.slug,
-      isCreator: isCreatorUser(candidate),
-      hint: isCreatorUser(candidate) ? (candidate.category || "Creator") : (candidate.title || candidate.role || ""),
-    }))
+    .map((candidate) => {
+      const name = [candidate.name, candidate.preferredName, candidate.email, candidate.slug]
+        .find((value) => typeof value === "string" && value.trim())
+        ?.trim() ?? "Unnamed user";
+
+      return {
+        uid: candidate.uid as string,
+        name,
+        slug: candidate.slug || "",
+        isCreator: isCreatorUser(candidate),
+        hint: isCreatorUser(candidate) ? (candidate.category || "Creator") : (candidate.title || candidate.role || ""),
+      };
+    })
     .sort((a, b) => a.name.localeCompare(b.name));
 
   // Always let the signed-in person assign to themselves, even if their own
@@ -281,44 +287,34 @@ export default function TasksPage() {
     />}>
     {error || actionError ? <p className="mb-4 text-[13px] text-destructive">{error ?? actionError}</p> : null}
     <section className="mt-4 overflow-x-auto">
-      {view === "cards" ? visible.length ? <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2 lg:grid-cols-3">{visible.map((task) => {
+      {view === "cards" ? visible.length ? <CardGrid>{visible.map((task) => {
         const assignee = taskAssignees(task).length === 1 ? assignees.find((candidate) => candidate.uid === task.assignedTo) : undefined;
         const name = taskAssigneeNames(task) || assignee?.name || "—";
-        return <li key={task.id}><DashboardCard className="h-full"><button type="button" onClick={() => router.push(`/dashboard/work/${encodeURIComponent(task.id)}`)} className="flex min-h-40 w-full flex-col p-4 pr-14 text-left text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
-          <span className="self-start"><TaskStatusBadge status={task.status} overdue={isOverdue(task)} /></span>
-          <span className="mt-4 line-clamp-1 font-semibold leading-tight">{task.clientName || name}</span>
-          <span className="mt-1 line-clamp-2 text-sm text-muted-foreground">{task.title}</span>
-          <span className="mt-auto pt-4 text-xs text-muted-foreground">{task.createdAt ? `Created ${formatDate(task.createdAt)}` : ""}{task.dueDate ? `${task.createdAt ? " · " : ""}Due ${formatDate(task.dueDate)}` : ""}</span>
-        </button><div className="absolute right-2 top-2"><DropdownMenu><DropdownMenuTrigger asChild><button type="button" aria-label={`Actions for ${task.title}`} disabled={busyId === task.id} className="grid h-9 w-9 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-50"><MoreHorizontal className="h-4 w-4" aria-hidden="true" /></button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-40"><DropdownMenuItem onSelect={() => void duplicate(task)}><Copy className="h-4 w-4" />Duplicate</DropdownMenuItem>{role === "admin" ? <DropdownMenuItem variant="destructive" onSelect={() => void remove(task.id, task.title)}><Trash2 className="h-4 w-4" />Delete</DropdownMenuItem> : null}</DropdownMenuContent></DropdownMenu></div></DashboardCard></li>;
-      })}</ul> : <div className="px-5 py-12 text-center"><p className="m-0 text-[15px] font-semibold">{tasks.length ? "No tasks match" : "No tasks yet"}</p><p className="mb-0 mt-1 text-sm text-muted-foreground">{tasks.length ? "Try another search or filter." : "Create a task and assign it to a creator."}</p></div> :
-      visible.length ? <Table className="w-full min-w-[680px] table-fixed border-collapse"><TableHeader><TableRow><TableHead className="px-4 py-3">Task</TableHead><TableHead className="w-28 px-4 py-3">Created</TableHead><TableHead className="w-28 px-4 py-3">Due</TableHead><TableHead className="w-20 px-4 py-3 text-right">Actions</TableHead></TableRow></TableHeader><TableBody>{visible.map((task) => {
+        return <ListCard key={task.id} href={`/dashboard/work/${encodeURIComponent(task.id)}`} title={task.title} subtitle={updatedDate(task.updatedAt ?? task.createdAt)} menu={<CardMenu items={[
+          { label: "Duplicate", icon: <Copy className="h-4 w-4" />, onSelect: () => void duplicate(task), disabled: busyId === task.id },
+          ...(role === "admin" ? [{ label: "Delete", icon: <Trash2 className="h-4 w-4" />, onSelect: () => void remove(task.id, task.title), destructive: true, disabled: busyId === task.id }] : []),
+        ]} />} />;
+      })}</CardGrid> : <EmptyState title={tasks.length ? "No tasks match" : "No tasks yet"} description={tasks.length ? "Try another search or filter." : "Create a task and assign it to a creator."} /> :
+      visible.length ? <Table className="min-w-[760px] table-fixed"><TableHeader><TableRow><TableHead>Task</TableHead><TableHead className="w-32">Status</TableHead><TableHead className="w-28">Updated</TableHead><TableHead className="w-28">Due</TableHead><TableHead className="w-[1%] whitespace-nowrap text-right">Actions</TableHead></TableRow></TableHeader><TableBody>{visible.map((task) => {
         const assignee = taskAssignees(task).length === 1 ? assignees.find((candidate) => candidate.uid === task.assignedTo) : undefined;
         const name = taskAssigneeNames(task) || assignee?.name || "—";
         return <ClickableTableRow key={task.id} label={`Open task ${task.title}`} onActivate={() => router.push(`/dashboard/work/${encodeURIComponent(task.id)}`)} className="align-middle">
-          <TableCell className="px-4 py-3">
+          <TableCell>
             <Link href={`/dashboard/work/${encodeURIComponent(task.id)}`} className="m-0 block max-w-full truncate text-left font-semibold text-foreground hover:text-primary">{task.title}</Link>
             <div className="mt-1 flex min-w-0 items-center gap-2 overflow-hidden whitespace-nowrap text-[13px] text-muted-foreground">
               {assignee?.isCreator ? <Link href={`/dashboard/discover/${assignee.slug}`} className="max-w-[35%] shrink-0 truncate font-semibold text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary">{name}</Link> : <span className="max-w-[35%] shrink-0 truncate">{name}</span>}
               {task.clientName ? <span className="hidden truncate sm:inline">· {task.clientName}</span> : null}
               {task.jobName ? <span className="hidden truncate lg:inline">· {task.jobName}</span> : null}
-              <span className="ml-auto shrink-0"><TaskStatusBadge status={task.status} overdue={isOverdue(task)} /></span>
             </div>
           </TableCell>
-          <TableCell className="whitespace-nowrap px-4 py-3 text-sm text-muted-foreground">{task.createdAt ? <time dateTime={task.createdAt}>{formatDate(task.createdAt)}</time> : "—"}</TableCell>
-          <TableCell className="whitespace-nowrap px-4 py-3 text-sm text-muted-foreground">{task.dueDate ? <time dateTime={task.dueDate}>{formatDate(task.dueDate)}</time> : "—"}</TableCell>
-          <TableCell className="px-4 py-3">
-            <div className="flex justify-end">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button type="button" aria-label={`Actions for ${task.title}`} disabled={busyId === task.id} className="grid h-9 w-9 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-50"><MoreHorizontal className="h-4 w-4" aria-hidden="true" /></button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-40">
-                  <DropdownMenuItem onSelect={() => void duplicate(task)}><Copy className="h-4 w-4" />Duplicate</DropdownMenuItem>
-                  {role === "admin" ? <DropdownMenuItem variant="destructive" onSelect={() => void remove(task.id, task.title)}><Trash2 className="h-4 w-4" />Delete</DropdownMenuItem> : null}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </TableCell>
+          <TableCell><TaskStatusBadge status={task.status} overdue={isOverdue(task)} /></TableCell>
+          <TableCell className="whitespace-nowrap text-sm text-muted-foreground">{updatedDate(task.updatedAt ?? task.createdAt)}</TableCell>
+          <TableCell className="whitespace-nowrap text-sm text-muted-foreground">{task.dueDate ? <time dateTime={task.dueDate}>{formatDate(task.dueDate)}</time> : "—"}</TableCell>
+          <TableActionsCell
+            primary={{ label: "Duplicate", icon: <Copy className="h-4 w-4" />, onSelect: () => void duplicate(task), disabled: busyId === task.id }}
+            items={role === "admin" ? [{ label: "Delete", icon: <Trash2 className="h-4 w-4" />, onSelect: () => void remove(task.id, task.title), destructive: true, disabled: busyId === task.id }] : []}
+            label={`More actions for ${task.title}`}
+          />
         </ClickableTableRow>;
       })}</TableBody></Table> : <div className="px-5 py-12 text-center"><p className="m-0 text-[15px] font-semibold">{tasks.length ? "No tasks match" : "No tasks yet"}</p><p className="mb-0 mt-1 text-sm text-muted-foreground">{tasks.length ? "Try another search or filter." : "Create a task and assign it to a creator."}</p></div>}
     </section>

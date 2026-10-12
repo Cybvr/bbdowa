@@ -27,6 +27,7 @@ export type Invoice = {
   paidAt: string | null;
   createdBy: string;
   createdAt: string;
+  updatedAt?: string;
 };
 
 export const INVOICE_STATUS_LABELS: Record<InvoiceStatus, string> = { draft: "Draft", sent: "Due", paid: "Paid" };

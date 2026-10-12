@@ -125,6 +125,7 @@ export function JobMediaDeleteAction({
   mediaIndex,
   onSaved,
   onError,
+  triggerClassName,
 }: {
   jobSlug: string;
   jobName: string;
@@ -132,6 +133,7 @@ export function JobMediaDeleteAction({
   mediaIndex: number;
   onSaved: (mediaItems: JobMedia[]) => void;
   onError?: (message: string) => void;
+  triggerClassName?: string;
 }) {
   const { isAdmin } = useAuth();
   const [busy, setBusy] = React.useState(false);
@@ -165,13 +167,13 @@ export function JobMediaDeleteAction({
           type="button"
           aria-label={`Actions for ${mediaItems[mediaIndex]?.alt ?? "media"}`}
           disabled={busy}
-          className="grid h-10 w-10 place-items-center rounded-lg border border-border bg-background/95 text-muted-foreground shadow-sm backdrop-blur transition hover:border-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-wait disabled:opacity-50"
+          className={triggerClassName ?? "grid h-10 w-10 place-items-center rounded-lg border border-border bg-background/95 text-muted-foreground shadow-sm backdrop-blur transition hover:border-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-wait disabled:opacity-50"}
         >
           <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-36">
-        <DropdownMenuItem variant="destructive" onSelect={() => void remove()}>
+        <DropdownMenuItem variant="destructive" className="text-xs" onSelect={() => void remove()}>
           <Trash2 className="h-4 w-4" />Delete
         </DropdownMenuItem>
       </DropdownMenuContent>

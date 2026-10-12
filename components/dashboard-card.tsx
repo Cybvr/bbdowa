@@ -3,7 +3,9 @@
 import type { FormEvent, ReactNode } from "react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Copy, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Copy, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { CARD_MENU_TRIGGER } from "@/components/dashboard/list-card";
+import { TableRowActions } from "@/components/dashboard/table-row-actions";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,6 +50,8 @@ export function DashboardCardActions({
   onMutated,
   showCopy = true,
   copyLabel = "Duplicate",
+  triggerClassName = CARD_MENU_TRIGGER,
+  variant = "card",
 }: {
   collection: ContentCollection;
   slug: string;
@@ -56,6 +60,8 @@ export function DashboardCardActions({
   onMutated?: () => void | Promise<void>;
   showCopy?: boolean;
   copyLabel?: string;
+  triggerClassName?: string;
+  variant?: "card" | "table";
 }) {
   const router = useRouter();
   const { isAdmin } = useAuth();
@@ -109,25 +115,29 @@ export function DashboardCardActions({
 
   return (
     <>
-      <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          aria-label="Card actions"
-          disabled={busy}
-          className="rounded-lg border-0 bg-transparent text-muted-foreground shadow-none hover:bg-muted hover:text-foreground disabled:cursor-wait"
-        >
-          <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-36">
-        <DropdownMenuItem disabled={busy} onSelect={handleRenameOpen}><Pencil className="h-4 w-4" />Rename</DropdownMenuItem>
-        {showCopy ? <DropdownMenuItem disabled={busy} onSelect={handleCopy}><Copy className="h-4 w-4" />{copyLabel}</DropdownMenuItem> : null}
-        <DropdownMenuItem disabled={busy} variant="destructive" onSelect={() => setDeleteOpen(true)}><Trash2 className="h-4 w-4" />Delete</DropdownMenuItem>
-      </DropdownMenuContent>
-      </DropdownMenu>
+      {variant === "table" ? (
+        <TableRowActions
+          primary={[
+            { label: "Rename", icon: <Pencil className="h-4 w-4" />, onSelect: handleRenameOpen, disabled: busy },
+            ...(showCopy ? [{ label: copyLabel, icon: <Copy className="h-4 w-4" />, onSelect: handleCopy, disabled: busy }] : []),
+          ]}
+          items={[{ label: "Delete", icon: <Trash2 className="h-4 w-4" />, onSelect: () => setDeleteOpen(true), destructive: true, disabled: busy }]}
+          label={`More actions for ${title}`}
+        />
+      ) : (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button type="button" aria-label="Item actions" disabled={busy} className={triggerClassName}>
+              <MoreVertical className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-36">
+            <DropdownMenuItem disabled={busy} onSelect={handleRenameOpen}><Pencil className="h-4 w-4" />Rename</DropdownMenuItem>
+            {showCopy ? <DropdownMenuItem disabled={busy} onSelect={handleCopy}><Copy className="h-4 w-4" />{copyLabel}</DropdownMenuItem> : null}
+            <DropdownMenuItem disabled={busy} variant="destructive" onSelect={() => setDeleteOpen(true)}><Trash2 className="h-4 w-4" />Delete</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
 
     <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
       <DialogContent>

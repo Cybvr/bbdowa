@@ -2,13 +2,19 @@
 
 import * as React from "react";
 import { collection, doc, onSnapshot, updateDoc } from "firebase/firestore";
-import { Plus } from "lucide-react";
-import { Badge, PageHeader, StatItem, StatRow } from "@/components/dashboard/ui";
+import { Pencil, Plus } from "lucide-react";
+import { Badge, EmptyState, StatItem, StatRow } from "@/components/dashboard/ui";
+import { DashboardListPage } from "@/components/dashboard/list-page";
+import { CardGrid, CardMenu, ListCard } from "@/components/dashboard/list-card";
+import { TableActionsCell } from "@/components/dashboard/table-row-actions";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 import { LIST_ACTION_CLASS } from "@/components/dashboard/list-page-actions";
 import { InvoiceDialog } from "@/components/invoice-dialog";
+import { FilterBar, useListView, type SortOption } from "@/components/dashboard/filter-bar";
 import { firebaseDb } from "@/lib/firebase/client";
 import { sendAppEmail } from "@/lib/app-email";
-import { longDate, plural } from "@/lib/format";
+import { plural, updatedDate } from "@/lib/format";
 import { INVOICES_COLLECTION, INVOICE_STATUS_LABELS, invoiceTotals, isInvoiceOverdue, type Invoice, type InvoiceStatus } from "@/lib/invoices";
 import { formatAmount } from "@/lib/payments";
 import { notify } from "@/lib/email/notify";
@@ -20,6 +26,12 @@ const TABS: { key: "all" | InvoiceStatus; label: string }[] = [
   { key: "paid", label: "Paid" },
 ];
 
+const INVOICE_SORTS: SortOption<"recent" | "due" | "client">[] = [
+  { key: "recent", label: "Last updated" },
+  { key: "due", label: "Due date" },
+  { key: "client", label: "Client (A–Z)" },
+];
+
 /** Admin: every invoice we've raised to client companies. */
 export default function AdminInvoicesPage() {
   const [invoices, setInvoices] = React.useState<Invoice[]>([]);
@@ -27,6 +39,8 @@ export default function AdminInvoicesPage() {
   const [search, setSearch] = React.useState("");
   const [editing, setEditing] = React.useState<Invoice | null>(null);
   const [creating, setCreating] = React.useState(false);
+  const [sort, setSort] = React.useState<"recent" | "due" | "client">("recent");
+  const [view, setView] = useListView("invoices");
 
   React.useEffect(() => onSnapshot(
     collection(firebaseDb, INVOICES_COLLECTION),
@@ -43,7 +57,7 @@ export default function AdminInvoicesPage() {
   const paidThisYear = invoices.filter((invoice) => invoice.status === "paid" && invoice.paidAt?.startsWith(year));
 
   const setStatus = (invoice: Invoice, status: InvoiceStatus) =>
-    updateDoc(doc(firebaseDb, INVOICES_COLLECTION, invoice.id), { status, paidAt: status === "paid" ? new Date().toISOString() : null })
+    updateDoc(doc(firebaseDb, INVOICES_COLLECTION, invoice.id), { status, paidAt: status === "paid" ? new Date().toISOString() : null, updatedAt: new Date().toISOString() })
       .then(() => {
         if (status !== "sent" || invoice.status === "sent") return;
         void sendAppEmail({ type: "invoice", invoiceId: invoice.id });
@@ -51,60 +65,97 @@ export default function AdminInvoicesPage() {
       })
       .catch((cause) => console.error("Unable to update invoice", cause));
 
+  const sorted = [...visible].sort((a, b) => sort === "client"
+    ? (a.clientName ?? "").localeCompare(b.clientName ?? "")
+    : sort === "due" ? (a.dueDate || "9999").localeCompare(b.dueDate || "9999")
+    : (b.updatedAt ?? b.createdAt).localeCompare(a.updatedAt ?? a.createdAt));
+  const statusBadge = (invoice: Invoice) => <Badge tone={invoice.status === "paid" ? "neutral" : "active"}>{isInvoiceOverdue(invoice) ? "Overdue" : INVOICE_STATUS_LABELS[invoice.status]}</Badge>;
   return (
-    <main className="mx-auto w-full max-w-5xl flex-1 px-5 pb-16 pt-4 sm:px-8">
-      <PageHeader
-        title="Invoices"
-        actions={<button type="button" onClick={() => setCreating(true)} className={LIST_ACTION_CLASS}><Plus aria-hidden="true" className="h-3.5 w-3.5" />New invoice</button>}
-      />
-
-      <div className="mt-4">
-        <StatRow>
-          <StatItem label="Due" value={invoiceTotals(due)} detail={plural(due.length, "invoice")} />
-          <StatItem label="Overdue" value={invoiceTotals(overdue)} detail={plural(overdue.length, "invoice")} />
-          <StatItem label={`Paid in ${year}`} value={invoiceTotals(paidThisYear)} detail={plural(paidThisYear.length, "invoice")} />
-        </StatRow>
-      </div>
-
-      <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search invoices" aria-label="Search invoices" className="mt-5 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary/40" />
-      <div className="mt-4 flex gap-5 overflow-x-auto border-b border-border" role="group" aria-label="Invoice status">
-        {TABS.map((item) => (
-          <button key={item.key} type="button" onClick={() => setTab(item.key)} aria-pressed={tab === item.key} className={`shrink-0 border-b-2 px-1 pb-3 text-sm font-medium ${tab === item.key ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>{item.label}</button>
-        ))}
-      </div>
-
-      {visible.length ? (
-        <ul className="m-0 mt-4 grid list-none gap-2 p-0 sm:grid-cols-2">
-          {visible.map((invoice) => (
-            <li key={invoice.id} onClick={(event) => { if (!(event.target as HTMLElement).closest("button")) setEditing(invoice); }} className="cursor-pointer rounded-xl border border-border bg-background p-4 transition hover:border-foreground/30">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="m-0 truncate text-body font-semibold">{invoice.clientName}</p>
-                  <p className="m-0 truncate text-sm text-muted-foreground">{invoice.number} · {invoice.description}</p>
-                </div>
-                <p className="m-0 shrink-0 text-body font-semibold tabular-nums">{formatAmount(invoice.amount, invoice.currency)}</p>
-              </div>
-              {invoice.jobName ? <p className="m-0 mt-1 truncate text-xs text-muted-foreground">{invoice.jobName}</p> : null}
-              <div className="mt-3 flex items-center justify-between gap-3">
-                <span className="text-xs text-muted-foreground">{invoice.dueDate ? `Due ${longDate(invoice.dueDate)}` : `Issued ${longDate(invoice.issueDate)}`}</span>
-                <Badge tone={invoice.status === "paid" ? "neutral" : "active"}>{isInvoiceOverdue(invoice) ? "Overdue" : INVOICE_STATUS_LABELS[invoice.status]}</Badge>
-              </div>
-              <div className="mt-3 flex gap-4">
-                {invoice.status === "draft" ? <button type="button" onClick={() => void setStatus(invoice, "sent")} className="text-xs font-semibold text-primary hover:underline">Send to client</button> : null}
-                {invoice.status === "sent" ? <button type="button" onClick={() => void setStatus(invoice, "paid")} className="text-xs font-semibold text-primary hover:underline">Mark paid</button> : null}
-                <button type="button" onClick={() => setEditing(invoice)} className="text-xs font-semibold text-foreground hover:underline">Edit</button>
-              </div>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <div className="mt-6 rounded-xl border border-dashed border-border p-10 text-center">
-          <p className="m-0 font-semibold">{invoices.length ? "No invoices match" : "No invoices yet"}</p>
-          <p className="mb-0 mt-1 text-sm text-muted-foreground">{invoices.length ? "Try another search or status." : "Create an invoice to bill a client."}</p>
+    <DashboardListPage
+      title="Invoices"
+      actions={<button type="button" onClick={() => setCreating(true)} className={LIST_ACTION_CLASS}><Plus aria-hidden="true" className="h-4 w-4" />Add</button>}
+      toolbar={<>
+        <div className="mt-4">
+          <StatRow>
+            <StatItem label="Due" value={invoiceTotals(due)} detail={plural(due.length, "invoice")} />
+            <StatItem label="Overdue" value={invoiceTotals(overdue)} detail={plural(overdue.length, "invoice")} />
+            <StatItem label={`Paid in ${year}`} value={invoiceTotals(paidThisYear)} detail={plural(paidThisYear.length, "invoice")} />
+          </StatRow>
         </div>
-      )}
+        <FilterBar
+          panelId="admin-invoices-filter"
+          tabs={TABS}
+          activeTab={tab}
+          onTabChange={setTab}
+          search={search}
+          onSearchChange={setSearch}
+          searchPlaceholder="Search invoices"
+          sortOptions={INVOICE_SORTS}
+          activeSort={sort}
+          onSortChange={setSort}
+          resultCount={plural(visible.length, "invoice")}
+          view={view}
+          onViewChange={setView}
+        />
+      </>}
+    >
+      <section aria-label="Invoices">
+        {sorted.length ? view === "cards" ? (
+          <CardGrid>
+            {sorted.map((invoice) => (
+              <ListCard
+                key={invoice.id}
+                onActivate={() => setEditing(invoice)}
+                title={`${invoice.number} · ${invoice.clientName}`}
+                subtitle={updatedDate(invoice.updatedAt ?? invoice.createdAt)}
+                menu={<CardMenu items={[
+                  ...(invoice.status === "draft" ? [{ label: "Send to client", onSelect: () => void setStatus(invoice, "sent") }] : []),
+                  ...(invoice.status === "sent" ? [{ label: "Mark paid", onSelect: () => void setStatus(invoice, "paid") }] : []),
+                  { label: "Edit", onSelect: () => setEditing(invoice) },
+                ]} />}
+              />
+            ))}
+          </CardGrid>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Client</TableHead>
+                  <TableHead>Job</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Updated</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
+                  <TableHead className="w-[1%] whitespace-nowrap text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sorted.map((invoice) => (
+                  <ClickableTableRow key={invoice.id} onActivate={() => setEditing(invoice)} label={`Edit invoice ${invoice.number}`}>
+                    <TableCell><span className="block font-semibold">{invoice.clientName}</span><span className="mt-1 block text-sm text-muted-foreground">{invoice.number}</span></TableCell>
+                    <TableCell className="text-muted-foreground">{invoice.jobName || "—"}</TableCell>
+                    <TableCell>{statusBadge(invoice)}</TableCell>
+                    <TableCell className="whitespace-nowrap text-muted-foreground">{updatedDate(invoice.updatedAt ?? invoice.createdAt)}</TableCell>
+                    <TableCell className="text-right font-semibold tabular-nums">{formatAmount(invoice.amount, invoice.currency)}</TableCell>
+                    <TableActionsCell
+                      primary={[
+                        ...(invoice.status === "draft" ? [{ label: "Send to client", onSelect: () => void setStatus(invoice, "sent") }] : []),
+                        ...(invoice.status === "sent" ? [{ label: "Mark paid", onSelect: () => void setStatus(invoice, "paid") }] : []),
+                        { label: "Edit", icon: <Pencil className="h-4 w-4" />, onSelect: () => setEditing(invoice) },
+                      ]}
+                      label={`More actions for invoice ${invoice.number}`}
+                    />
+                  </ClickableTableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        ) : (
+          <EmptyState title={invoices.length ? "No invoices match" : "No invoices yet"} description={invoices.length ? "Try another search or status." : "Create an invoice to bill a client."} />
+        )}
+      </section>
 
       <InvoiceDialog open={creating || Boolean(editing)} onOpenChange={(open) => { if (!open) { setCreating(false); setEditing(null); } }} invoice={editing} existing={invoices} />
-    </main>
+    </DashboardListPage>
   );
 }

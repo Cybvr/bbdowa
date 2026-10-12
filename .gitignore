@@ -1,5 +1,6 @@
 node_modules
 .next
+.next-verify/
 out
 next-env.d.ts
 *.tsbuildinfo
@@ -13,6 +14,8 @@ next-env.d.ts
 .next-dev-live*.log
 .next-dev-restart*.log
 firebase-debug.log
+.codex-artifacts/
+.codex-dev.*.log
 
 # pnpm (project uses npm)
 pnpm-lock.yaml

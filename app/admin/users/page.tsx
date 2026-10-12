@@ -2,18 +2,19 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Eye } from "lucide-react";
+import { Eye, Pencil } from "lucide-react";
 import { UserCreateAction } from "@/components/user-create-action";
 import { UserActions } from "@/components/user-actions";
-import { BackfillUidsAction } from "@/components/backfill-uids-action";
 import { useAuth } from "@/components/auth-provider";
-import { PageHeader } from "@/components/dashboard/ui";
+import { EmptyState, PageHeader } from "@/components/dashboard/ui";
 import { DashboardListPage } from "@/components/dashboard/list-page";
-import { FilterBar } from "@/components/dashboard/filter-bar";
+import { FilterBar, useListView, type SortOption, type ViewMode } from "@/components/dashboard/filter-bar";
+import { CARD_MENU_TRIGGER, CardGrid, ListCard } from "@/components/dashboard/list-card";
+import { TableActionsCell } from "@/components/dashboard/table-row-actions";
 import { useFirestoreUsers } from "@/lib/firebase/client-content";
 import { creatorCategoryOptions, isCreatorUser, isTeamUser, userHref, userRoles, type User, type UserRole } from "@/lib/users";
 import { UsersTableSkeleton } from "@/components/dashboard/loading-skeleton";
-import { plural } from "@/lib/format";
+import { longDate, plural } from "@/lib/format";
 import { isSuperAdminEmail } from "@/lib/job-migration";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ClickableTableRow } from "@/components/ui/clickable-table-row";
@@ -53,24 +54,15 @@ function userAddedMs(user: User): number {
   return toMs(record.createdAt) || toMs(user.addedAt) || toMs(record.updatedAt);
 }
 
-function UserRow({ user, categoryOptions }: { user: User; categoryOptions: string[] }) {
+function UserItem({ user, categoryOptions, view }: { user: User; categoryOptions: string[]; view: ViewMode }) {
   const { actualUser, startViewingAs } = useAuth();
   const variant = isCreatorUser(user) && !isTeamUser(user) ? "creator" : "team";
   const targetUid = user.uid;
   const [editOpen, setEditOpen] = React.useState(false);
-  return (
-    <ClickableTableRow onActivate={() => setEditOpen(true)} label={`Edit user ${user.name}`} className="align-middle">
-      <TableCell className="px-4 py-3.5 sm:px-5">
-        <div className="min-w-0">
-          {user.slug || user.uid ? <Link href={userHref(user, variant)} onClick={(event) => event.stopPropagation()} className="block truncate font-semibold text-foreground hover:text-primary">{user.name}</Link> : <strong className="block truncate font-semibold text-foreground">{user.name}</strong>}
-          <div className="mt-1 flex min-w-0 items-center gap-2 overflow-hidden whitespace-nowrap text-sm text-muted-foreground">
-            {user.role === "pending" && !userRoles(user).length ? <PendingBadge /> : userRoles(user).map((role) => <RoleBadge key={role} role={role} email={user.email} />)}
-            <span className="hidden truncate sm:inline">{user.email ?? "No email added"}</span>
-            {user.title ? <span className="hidden truncate lg:inline">· {user.title}</span> : null}
-          </div>
-        </div>
-      </TableCell>
-      <TableCell className="px-4 py-3.5 text-right">
+  const href = user.slug || user.uid ? userHref(user, variant) : undefined;
+  const roles = <div className="flex flex-wrap gap-1.5 text-xs">{user.role === "pending" && !userRoles(user).length ? <PendingBadge /> : userRoles(user).map((role) => <RoleBadge key={role} role={role} email={user.email} />)}</div>;
+  const added = userAddedMs(user) ? longDate(new Date(userAddedMs(user)).toISOString().slice(0, 10)) : "—";
+  const cardActions = (
         <div
           className="flex items-center justify-end gap-2"
           onClick={(event) => event.stopPropagation()}
@@ -82,9 +74,9 @@ function UserRow({ user, categoryOptions }: { user: User; categoryOptions: strin
               onClick={() => startViewingAs({ uid: targetUid, name: user.name, email: user.email, picture: user.profileImage, role: user.role, clientId: user.clientId ?? null })}
               aria-label={`View ${user.name} as this user`}
               title="View as"
-              className="grid h-8 w-8 place-items-center rounded-md border-0 bg-transparent p-0 text-muted-foreground shadow-none transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              className={CARD_MENU_TRIGGER}
             >
-              <Eye aria-hidden="true" className="h-3.5 w-3.5" />
+              <Eye aria-hidden="true" className="h-4 w-4" />
             </button>
           ) : null}
           <UserActions
@@ -92,6 +84,7 @@ function UserRow({ user, categoryOptions }: { user: User; categoryOptions: strin
             variant={variant}
             listHref="/admin/users"
             compactMenu
+            menuTriggerClassName={CARD_MENU_TRIGGER}
             editOpen={editOpen}
             onEditOpenChange={setEditOpen}
             includeEditAction
@@ -99,16 +92,53 @@ function UserRow({ user, categoryOptions }: { user: User; categoryOptions: strin
             onMutated={() => window.location.reload()}
           />
         </div>
+  );
+  if (view === "cards") {
+    return <ListCard onActivate={() => setEditOpen(true)} image={user.profileImage} title={href ? <Link href={href} className="text-foreground no-underline hover:text-primary">{user.name}</Link> : user.name} subtitle={added} menu={cardActions} />;
+  }
+  return (
+    <ClickableTableRow onActivate={() => setEditOpen(true)} label={`Edit user ${user.name}`}>
+      <TableCell className="font-semibold">
+        {href ? <Link href={href} onClick={(event) => event.stopPropagation()} className="text-foreground no-underline hover:text-primary focus-visible:text-primary">{user.name}</Link> : user.name}
       </TableCell>
+      <TableCell className="text-muted-foreground">{user.email || "—"}</TableCell>
+      <TableCell>{roles}</TableCell>
+      <TableCell className="text-muted-foreground">{user.title || "—"}</TableCell>
+      <TableCell className="whitespace-nowrap text-muted-foreground">{added}</TableCell>
+      <TableActionsCell
+        primary={[
+          ...(targetUid && targetUid !== actualUser?.uid ? [{ label: "View as", icon: <Eye className="h-4 w-4" />, onSelect: () => startViewingAs({ uid: targetUid, name: user.name, email: user.email, picture: user.profileImage, role: user.role, clientId: user.clientId ?? null }) }] : []),
+          { label: "Edit", icon: <Pencil className="h-4 w-4" />, onSelect: () => setEditOpen(true) },
+        ]}
+        menu={<UserActions
+          user={user}
+          variant={variant}
+          listHref="/admin/users"
+          compactMenu
+          menuIcon="horizontal"
+          editOpen={editOpen}
+          onEditOpenChange={setEditOpen}
+          categoryOptions={categoryOptions}
+          onMutated={() => window.location.reload()}
+        />}
+        label={`More actions for ${user.name}`}
+      />
     </ClickableTableRow>
   );
 }
+
+const USER_SORTS: SortOption<"recent" | "name">[] = [
+  { key: "recent", label: "Recently added" },
+  { key: "name", label: "Name (A–Z)" },
+];
 
 export default function AdminUsersPage() {
   const { isAdmin, loading: authLoading } = useAuth();
   const { users, loading, error } = useFirestoreUsers();
   const [search, setSearch] = React.useState("");
   const [roleFilter, setRoleFilter] = React.useState<RoleFilter>("all");
+  const [sort, setSort] = React.useState<"recent" | "name">("recent");
+  const [view, setView] = useListView("users");
 
   const visibleUsers = React.useMemo(() => {
     const normalizedQuery = search.trim().toLowerCase();
@@ -119,8 +149,8 @@ export default function AdminUsersPage() {
         const searchable = [user.name, user.email, user.title, user.department, user.location].filter(Boolean).join(" ").toLowerCase();
         return matchesRole && (!normalizedQuery || searchable.includes(normalizedQuery));
       })
-      .sort((a, b) => userAddedMs(b) - userAddedMs(a) || a.name.localeCompare(b.name));
-  }, [roleFilter, search, users]);
+      .sort((a, b) => (sort === "name" ? 0 : userAddedMs(b) - userAddedMs(a)) || (a.name ?? "").localeCompare(b.name ?? ""));
+  }, [roleFilter, search, sort, users]);
 
   const categoryOptions = React.useMemo(() => creatorCategoryOptions(users), [users]);
 
@@ -139,12 +169,7 @@ export default function AdminUsersPage() {
   return (
     <DashboardListPage
         title="Users"
-        actions={
-          <div className="flex items-center gap-2">
-            <BackfillUidsAction users={users} />
-            <UserCreateAction existingSlugs={users.map((user) => user.slug)} categoryOptions={categoryOptions} />
-          </div>
-        }
+        actions={<UserCreateAction existingSlugs={users.map((user) => user.slug)} categoryOptions={categoryOptions} />}
       toolbar={<FilterBar
         panelId="admin-users-filter"
         search={search}
@@ -165,29 +190,39 @@ export default function AdminUsersPage() {
             ],
           },
         ]}
+        sortOptions={USER_SORTS}
+        activeSort={sort}
+        onSortChange={setSort}
         resultCount={plural(visibleUsers.length, "user")}
+        view={view}
+        onViewChange={setView}
       />}>
 
-      <section className="overflow-x-auto">
-        {visibleUsers.length ? (
-          <div>
-            <Table className="w-full table-fixed border-collapse text-left">
-              <TableHeader className="font-semibold uppercase text-muted-foreground">
+      <section aria-label="Users">
+        {visibleUsers.length ? view === "cards" ? (
+          <CardGrid>
+            {visibleUsers.map((user, index) => <UserItem key={`${user.slug || "user"}-${user.email || "record"}-${index}`} user={user} categoryOptions={categoryOptions} view="cards" />)}
+          </CardGrid>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableHead className="px-4 py-3 sm:px-5">User</TableHead>
-                  <TableHead className="w-28 px-4 py-3 text-right sm:px-5">Actions</TableHead>
+                  <TableHead>User</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Title</TableHead>
+                  <TableHead>Added</TableHead>
+                  <TableHead className="w-[1%] whitespace-nowrap text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {visibleUsers.map((user, index) => <UserRow key={`${user.slug || "user"}-${user.email || "record"}-${index}`} user={user} categoryOptions={categoryOptions} />)}
+                {visibleUsers.map((user, index) => <UserItem key={`${user.slug || "user"}-${user.email || "record"}-${index}`} user={user} categoryOptions={categoryOptions} view="table" />)}
               </TableBody>
             </Table>
           </div>
         ) : (
-          <div className="px-5 py-12 text-center">
-            <p className="m-0 font-semibold">No users found</p>
-            <p className="mb-0 mt-1 text-sm text-muted-foreground">Try a different search or role filter.</p>
-          </div>
+          <EmptyState title="No users match" description="Try a different search or role filter." />
         )}
       </section>
     </DashboardListPage>

@@ -46,13 +46,14 @@ import {
 async function pauseEntryDoc(entry: ActivityEntry) {
   await updateDoc(doc(firebaseDb, ACTIVITY_COLLECTION, entry.id), {
     pausedAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   });
 }
 
 async function resumeEntryDoc(entry: ActivityEntry) {
   const pausedMs =
     (entry.pausedMs ?? 0) + (entry.pausedAt ? Math.max(0, Date.now() - Date.parse(entry.pausedAt)) : 0);
-  await updateDoc(doc(firebaseDb, ACTIVITY_COLLECTION, entry.id), { pausedAt: null, pausedMs });
+  await updateDoc(doc(firebaseDb, ACTIVITY_COLLECTION, entry.id), { pausedAt: null, pausedMs, updatedAt: new Date().toISOString() });
 }
 
 async function stopEntryDoc(entry: ActivityEntry) {
@@ -64,6 +65,7 @@ async function stopEntryDoc(entry: ActivityEntry) {
     endedAt: endedAt.toISOString(),
     pausedAt: null,
     pausedMs,
+    updatedAt: new Date().toISOString(),
   });
 }
 
@@ -270,6 +272,7 @@ export function TimeTracker({
         endedAt: null,
         pausedAt: null,
         pausedMs: 0,
+        updatedAt: new Date().toISOString(),
       });
       resetForm();
       setAddingTimer(false);
@@ -298,6 +301,7 @@ export function TimeTracker({
         endedAt: null,
         pausedAt: null,
         pausedMs: (entry.pausedMs ?? 0) + stoppedFor,
+        updatedAt: new Date().toISOString(),
       });
       await load(user.uid);
     } catch (cause) {
@@ -327,6 +331,7 @@ export function TimeTracker({
         endedAt: endedAt.toISOString(),
         pausedAt: null,
         pausedMs: 0,
+        updatedAt: new Date().toISOString(),
       });
       resetForm();
       setTrackerOpen(false);

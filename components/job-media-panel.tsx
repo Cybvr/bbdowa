@@ -6,6 +6,7 @@ import { ImageWithFallback } from "@/components/empty-thumbnail";
 import { DashboardCard } from "@/components/dashboard-card";
 import { ClientWorkspaceHeading } from "@/components/client-workspace-heading";
 import { FilterBar, type SortOption, type ViewMode } from "@/components/dashboard/filter-bar";
+import { TABLE_ACTION_MENU_TRIGGER, TableActionsCell } from "@/components/dashboard/table-row-actions";
 import { JobMediaAddAction, JobMediaDeleteAction } from "@/components/job-media-actions";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { plural } from "@/lib/format";
@@ -43,8 +44,8 @@ export function JobMediaPanel({ jobSlug, jobName, initialMedia, canManage }: { j
     return sort === "name" ? filtered.sort((a, b) => a.media.alt.localeCompare(b.media.alt)) : filtered;
   }, [mediaItems, search, sort]);
 
-  const deleteAction = (mediaIndex: number) => canManage
-    ? <JobMediaDeleteAction jobSlug={jobSlug} jobName={jobName} mediaItems={mediaItems} mediaIndex={mediaIndex} onSaved={setMediaItems} onError={setError} />
+  const deleteAction = (mediaIndex: number, table = false) => canManage
+    ? <JobMediaDeleteAction jobSlug={jobSlug} jobName={jobName} mediaItems={mediaItems} mediaIndex={mediaIndex} onSaved={setMediaItems} onError={setError} triggerClassName={table ? TABLE_ACTION_MENU_TRIGGER : undefined} />
     : null;
   const step = (offset: number) => setSelectedIndex((current) => current === null ? null : (current + offset + mediaItems.length) % mediaItems.length);
   const selected = selectedIndex !== null ? mediaItems[selectedIndex] : null;
@@ -74,13 +75,13 @@ export function JobMediaPanel({ jobSlug, jobName, initialMedia, canManage }: { j
         </DashboardCard>
       ))}
     </div> : <div className="overflow-x-auto">
-      <Table className="w-full border-collapse">
-        <TableHeader><TableRow><TableHead>Media</TableHead><TableHead>Source</TableHead>{canManage ? <TableHead className="w-20 text-right">Action</TableHead> : null}</TableRow></TableHeader>
+      <Table>
+        <TableHeader><TableRow><TableHead>Media</TableHead><TableHead>Source</TableHead>{canManage ? <TableHead className="w-20 text-right">Actions</TableHead> : null}</TableRow></TableHeader>
         <TableBody>
           {visible.map(({ media, mediaIndex }) => <TableRow key={`${media.src}-${mediaIndex}`}>
-            <TableCell className="px-3 py-2"><button type="button" onClick={() => setSelectedIndex(mediaIndex)} className="flex items-center gap-3 text-left font-semibold text-foreground hover:text-primary"><MediaPreview media={media} className="h-12 w-16 rounded-md object-cover" />{media.alt || "Untitled media"}</button></TableCell>
-            <TableCell className="max-w-[320px] truncate px-3 py-2 text-sm text-muted-foreground">{media.src}</TableCell>
-            {canManage ? <TableCell className="px-3 py-2 text-right">{deleteAction(mediaIndex)}</TableCell> : null}
+            <TableCell><button type="button" onClick={() => setSelectedIndex(mediaIndex)} className="flex items-center gap-3 text-left font-semibold text-foreground hover:text-primary"><MediaPreview media={media} className="h-12 w-16 rounded-md object-cover" />{media.alt || "Untitled media"}</button></TableCell>
+            <TableCell className="max-w-[320px] truncate text-sm text-muted-foreground">{media.src}</TableCell>
+            {canManage ? <TableActionsCell label={`Actions for ${media.alt || "media"}`} menu={deleteAction(mediaIndex, true)} /> : null}
           </TableRow>)}
         </TableBody>
       </Table>

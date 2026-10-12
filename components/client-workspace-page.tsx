@@ -931,14 +931,14 @@ function OneUtilityClientWorkspace({
                         </ul>
                       ) : (
                         <div className="overflow-x-auto">
-                          <Table className="w-full border-collapse">
+                          <Table>
                             <TableHeader>
                               <TableRow>
                                 <TableHead>Job</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead>Category</TableHead>
                                 <TableHead>Year</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
+                                <TableHead className="w-[1%] whitespace-nowrap text-right">Actions</TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -946,15 +946,15 @@ function OneUtilityClientWorkspace({
                                 const record = availableJobs.find((item) => item.slug === job.id);
                                 return (
                                   <ClickableTableRow key={job.id} label={`Open job ${job.title}`} onActivate={() => handleOpenJob(job)}>
-                                    <TableCell className="px-4 py-3.5 font-semibold">
+                                    <TableCell className="font-semibold">
                                       <button type="button" onClick={() => handleOpenJob(job)} className="text-left text-foreground hover:text-primary focus-visible:text-primary">
                                         {job.title}
                                       </button>
                                     </TableCell>
-                                    <TableCell className="px-4 py-3.5"><DashboardBadge tone={job.status === "Live" ? "active" : "neutral"}>{job.status}</DashboardBadge></TableCell>
-                                    <TableCell className="px-4 py-3.5 text-muted-foreground">{record?.category ?? "—"}</TableCell>
-                                    <TableCell className="whitespace-nowrap px-4 py-3.5 text-muted-foreground">{record?.year ?? "—"}</TableCell>
-                                    <TableCell className="px-4 py-3.5 text-right">
+                                    <TableCell><DashboardBadge tone={job.status === "Live" ? "active" : "neutral"}>{job.status}</DashboardBadge></TableCell>
+                                    <TableCell className="text-muted-foreground">{record?.category ?? "—"}</TableCell>
+                                    <TableCell className="whitespace-nowrap text-muted-foreground">{record?.year ?? "—"}</TableCell>
+                                    <TableCell className="w-[1%] whitespace-nowrap text-right" onClick={(event) => event.stopPropagation()}>
                                       {record ? (
                                         <span className="inline-flex">
                                           <DashboardCardActions
@@ -963,6 +963,7 @@ function OneUtilityClientWorkspace({
                                             titleField="title"
                                             title={jobDisplayTitle(record)}
                                             copyLabel="Duplicate"
+                                            variant="table"
                                           />
                                         </span>
                                       ) : null}

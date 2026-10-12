@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 import { useAuth } from "@/components/auth-provider";
 import { DashboardListPage } from "@/components/dashboard/list-page";
 import { Search } from "lucide-react";
@@ -11,15 +10,9 @@ import { PageLoadingSkeleton } from "@/components/dashboard/loading-skeleton";
 import { JobCard } from "@/components/job-card";
 import { CreatorTasksPanel } from "@/components/tasks-view";
 import TasksManagementPage from "@/components/tasks-management-page";
-import { firebaseDb } from "@/lib/firebase/client";
-import { jobsCollection } from "@/lib/firebase/job-collections";
 import { readJobsFromFirestore } from "@/lib/firebase/client-content";
-import { TASK_COLLECTION } from "@/lib/creator-tasks";
-import { byLastModified, jobTitle, normalizeJob, type Job } from "@/lib/jobs";
-import { readMyJobIds } from "@/lib/firebase/job-team";
-import { ACTIVITY_COLLECTION } from "@/lib/time-tracking";
-import { PAYMENTS_COLLECTION } from "@/lib/payments";
-import { readTasksAssignedTo } from "@/lib/firebase/task-queries";
+import { byLastModified, jobTitle, type Job } from "@/lib/jobs";
+import { readAssignedJobs } from "@/lib/firebase/my-jobs";
 
 const filters = ["active", "completed", "archive", "saved"] as const;
 type JobFilter = (typeof filters)[number];
@@ -53,19 +46,8 @@ export function JobsList({ assignedOnly = false, tab = "jobs" }: { assignedOnly?
           return;
         }
 
-        const [jobsName, myJobIds, taskSnapshot, timeSnapshot, paymentSnapshot] = await Promise.all([
-          jobsCollection(),
-          readMyJobIds(user.uid, user.email),
-          readTasksAssignedTo(user.uid),
-          getDocs(query(collection(firebaseDb, ACTIVITY_COLLECTION), where("uid", "==", user.uid))),
-          getDocs(query(collection(firebaseDb, PAYMENTS_COLLECTION), where("payeeUid", "==", user.uid))),
-        ]);
-        const assignedJobIds = new Set<string>(myJobIds);
-        taskSnapshot.forEach((item) => { const jobId = item.jobId; if (typeof jobId === "string" && jobId) assignedJobIds.add(jobId); });
-        timeSnapshot.docs.forEach((item) => { const jobId = item.data().jobId; if (typeof jobId === "string" && jobId) assignedJobIds.add(jobId); });
-        paymentSnapshot.docs.forEach((item) => { const jobId = item.data().jobId; if (typeof jobId === "string" && jobId) assignedJobIds.add(jobId); });
-        const snapshots = await Promise.all([...assignedJobIds].map((jobId) => getDoc(doc(firebaseDb, jobsName, jobId))));
-        if (active) setJobs(snapshots.filter((item) => item.exists()).map((item) => normalizeJob(item.data() as Record<string, unknown>, item.id)).sort(byLastModified));
+        const assignedJobs = await readAssignedJobs(user.uid, user.email);
+        if (active) setJobs(assignedJobs);
       } catch (cause) {
         console.error("Unable to load jobs", cause);
         if (active) setError("Couldn’t load jobs. Try again later.");

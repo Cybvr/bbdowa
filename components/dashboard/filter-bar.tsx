@@ -3,14 +3,13 @@
 /**
  * Shared filter bar for dashboard list pages. Desktop keeps the controls
  * visible, while mobile keeps search on one row and moves the refinements into
- * a sheet. When the mobile top bar is shown, search moves into that sheet too
- * and a search icon in the top bar opens it. Each page still owns its own
+ * a sheet. Each page still owns its own
  * controlled state.
  */
 
-import { type ReactNode, useState } from "react";
-import { Filter, Grid2X2, List, Search } from "lucide-react";
-import { MobileHeaderSearch, useMobileHeader } from "@/components/dashboard/mobile-header";
+import { type ReactNode, useEffect, useState } from "react";
+import { Filter, Grid2X2, List } from "lucide-react";
+import { useMobileHeader } from "@/components/dashboard/mobile-header";
 import {
   Sheet,
   SheetClose,
@@ -107,6 +106,23 @@ function SheetSelect({
   );
 }
 
+/** Cards or table for a list page, remembered per page in this browser. */
+export function useListView(key: string, initial: ViewMode = "cards") {
+  const storageKey = `list-view:${key}`;
+  const [view, setView] = useState<ViewMode>(initial);
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(storageKey);
+      if (saved === "cards" || saved === "table") setView(saved);
+    } catch {}
+  }, [storageKey]);
+  const change = (next: ViewMode) => {
+    setView(next);
+    try { window.localStorage.setItem(storageKey, next); } catch {}
+  };
+  return [view, change] as const;
+}
+
 export function ViewToggle({ view, onChange }: { view: ViewMode; onChange: (view: ViewMode) => void }) {
   return (
     <div className="flex items-center rounded-lg border border-border p-0.5" role="group" aria-label="View">
@@ -186,9 +202,7 @@ export function FilterBar<TabKey extends string, SortKey extends string>({
     (filters?.filter((filter) => filter.value !== filter.options[0]?.value).length ?? 0) +
     (hasSort && activeSort !== sortOptions?.[0]?.key ? 1 : 0);
   const inHeader = Boolean(useMobileHeader());
-  const sheetSearch = inHeader && Boolean(onSearchChange);
-  const hasSheet = hasStatus || Boolean(filters?.length) || hasSort || sheetSearch;
-  const sheetTitle = sheetSearch ? "Search and filter" : "Filters";
+  const hasSheet = hasStatus || Boolean(filters?.length) || hasSort;
   const statusOptions = tabs?.map((tab) => ({ value: tab.key, label: tab.label })) ?? [];
 
   const clearFilters = () => {
@@ -202,22 +216,7 @@ export function FilterBar<TabKey extends string, SortKey extends string>({
 
   return (
     <div data-filter-panel={panelId} className={`${className} ${inHeader ? "max-nav:mt-0" : ""} flex flex-wrap items-center gap-2 sm:gap-3`}>
-      {inHeader && hasSheet ? (
-        <MobileHeaderSearch>
-          <button
-            type="button"
-            aria-label={sheetTitle}
-            onClick={() => setMobileFiltersOpen(true)}
-            className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-          >
-            <Search className="h-5 w-5" aria-hidden="true" />
-            {search || activeFilterCount > 0 ? (
-              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary" aria-hidden="true" />
-            ) : null}
-          </button>
-        </MobileHeaderSearch>
-      ) : null}
-      <div className={inHeader ? "hidden nav:contents" : "flex w-full items-center gap-2 sm:contents"}>
+      <div className="flex w-full items-center gap-2 sm:contents">
         {onSearchChange ? (
           <input
             type="search"
@@ -246,19 +245,9 @@ export function FilterBar<TabKey extends string, SortKey extends string>({
             </SheetTrigger>
             <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto p-0">
               <SheetHeader className="border-b border-border pr-12">
-                <SheetTitle>{sheetTitle}</SheetTitle>
+                <SheetTitle>Filters</SheetTitle>
               </SheetHeader>
               <div className="space-y-5 px-4 pb-4">
-                {sheetSearch ? (
-                  <input
-                    type="search"
-                    value={search}
-                    onChange={(event) => onSearchChange!(event.target.value)}
-                    placeholder={searchPlaceholder}
-                    aria-label={searchPlaceholder}
-                    className={`${SEARCH_FIELD} w-full placeholder:text-muted-foreground`}
-                  />
-                ) : null}
                 {hasStatus ? (
                   <SheetSelect
                     label={tabsLabel}

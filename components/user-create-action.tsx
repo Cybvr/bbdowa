@@ -82,8 +82,8 @@ export function UserCreateAction({
           onClick={open}
           className={LIST_ACTION_CLASS}
         >
-          <Plus aria-hidden="true" className="h-3.5 w-3.5" />
-          New user
+          <Plus aria-hidden="true" className="h-4 w-4" />
+          Add
         </button>
       )}
       onSave={save}

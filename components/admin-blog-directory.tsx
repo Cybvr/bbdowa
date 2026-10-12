@@ -6,13 +6,15 @@ import { useRouter } from "next/navigation";
 import { deleteDoc, doc } from "firebase/firestore";
 import { ExternalLink, Pencil, Trash2 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
-import { FilterBar, type SortOption } from "@/components/dashboard/filter-bar";
+import { FilterBar, useListView, type SortOption } from "@/components/dashboard/filter-bar";
+import { CardGrid, CardMenu, ListCard } from "@/components/dashboard/list-card";
+import { TableActionsCell } from "@/components/dashboard/table-row-actions";
+import { EmptyState } from "@/components/dashboard/ui";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 import { BLOG_CATEGORIES, type BlogCategory, type BlogPost } from "@/lib/blog";
-import { formatBlogDate } from "@/lib/blog-dates";
 import { firebaseDb } from "@/lib/firebase/client";
-import { plural } from "@/lib/format";
+import { plural, updatedDate } from "@/lib/format";
 import { confirmDialog } from "@/components/confirm-dialog";
 
 const CATEGORIES: { value: BlogCategory | "all"; label: string }[] = [
@@ -20,7 +22,7 @@ const CATEGORIES: { value: BlogCategory | "all"; label: string }[] = [
   ...BLOG_CATEGORIES.map((value) => ({ value, label: value })),
 ];
 const SORTS: SortOption<"recent" | "title">[] = [
-  { key: "recent", label: "Most recent" },
+  { key: "recent", label: "Last updated" },
   { key: "title", label: "Title (A–Z)" },
 ];
 
@@ -31,6 +33,7 @@ export function AdminBlogDirectory({ posts }: { posts: BlogPost[] }) {
   const [search, setSearch] = React.useState("");
   const [category, setCategory] = React.useState<BlogCategory | "all">("all");
   const [sort, setSort] = React.useState<"recent" | "title">("recent");
+  const [view, setView] = useListView("blog");
   const [removed, setRemoved] = React.useState<string[]>([]);
   const [busySlug, setBusySlug] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
@@ -42,7 +45,7 @@ export function AdminBlogDirectory({ posts }: { posts: BlogPost[] }) {
       .join(" ").toLowerCase().includes(search.trim().toLowerCase()))
     .sort((a, b) => sort === "title"
       ? a.title.localeCompare(b.title)
-      : b.publishedAt.localeCompare(a.publishedAt)), [posts, removed, category, search, sort]);
+      : (b.updatedAt ?? b.publishedAt).localeCompare(a.updatedAt ?? a.publishedAt)), [posts, removed, category, search, sort]);
 
   const remove = async (post: BlogPost) => {
     if (!canManageBlog || busySlug) return;
@@ -76,44 +79,56 @@ export function AdminBlogDirectory({ posts }: { posts: BlogPost[] }) {
         activeSort={sort}
         onSortChange={setSort}
         resultCount={plural(visible.length, "post")}
+        view={view}
+        onViewChange={setView}
       />
 
       {error ? <p role="alert" className="mb-4 text-sm text-destructive">{error}</p> : null}
-      <section id="admin-blog-posts" aria-label="Blog posts" className="mt-4">
-        {visible.length ? (
-          <Table className="w-full border-collapse">
-            <TableHeader>
-              <TableRow>
-                <TableHead className="min-w-56 px-4 py-3">Post</TableHead>
-                <TableHead className="min-w-28 px-4 py-3">Category</TableHead>
-                <TableHead className="min-w-32 px-4 py-3">Published</TableHead>
-                <TableHead className="w-32 px-4 py-3 text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {visible.map((post) => (
-                <ClickableTableRow key={post.slug} href={`/admin/blog/${encodeURIComponent(post.slug)}`} label={`Edit ${post.title}`}>
-                  <TableCell className="px-4 py-4 font-semibold">
-                    <Link href={`/admin/blog/${encodeURIComponent(post.slug)}`} className="block max-w-md truncate text-foreground no-underline hover:text-primary">{post.title}</Link>
-                  </TableCell>
-                  <TableCell className="px-4 py-4 text-muted-foreground">{post.category}</TableCell>
-                  <TableCell className="whitespace-nowrap px-4 py-4 text-muted-foreground">{formatBlogDate(post.publishedAt)}</TableCell>
-                  <TableCell className="px-4 py-4">
-                    <div className="flex justify-end gap-1">
-                      <Link href={`/dashboard/blog/${post.slug}`} aria-label={`View ${post.title}`} className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:text-foreground"><ExternalLink aria-hidden="true" className="h-4 w-4" /></Link>
-                      <Link href={`/admin/blog/${encodeURIComponent(post.slug)}`} aria-label={`Edit ${post.title}`} className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:text-foreground"><Pencil aria-hidden="true" className="h-4 w-4" /></Link>
-                      <button type="button" onClick={() => void remove(post)} disabled={Boolean(busySlug)} aria-label={`Delete ${post.title}`} className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:text-destructive disabled:opacity-50"><Trash2 aria-hidden="true" className="h-4 w-4" /></button>
-                    </div>
-                  </TableCell>
-                </ClickableTableRow>
-              ))}
-            </TableBody>
-          </Table>
+      <section id="admin-blog-posts" aria-label="Blog posts">
+        {visible.length ? view === "cards" ? (
+          <CardGrid>
+            {visible.map((post) => (
+              <ListCard key={post.slug} href={`/admin/blog/${encodeURIComponent(post.slug)}`} image={post.mediaType === "video" ? null : post.image} title={post.title} subtitle={updatedDate(post.updatedAt ?? post.publishedAt)} menu={<CardMenu items={[
+                { label: "View", icon: <ExternalLink className="h-4 w-4" />, href: `/dashboard/blog/${post.slug}` },
+                { label: "Edit", icon: <Pencil className="h-4 w-4" />, href: `/admin/blog/${encodeURIComponent(post.slug)}` },
+                { label: "Delete", icon: <Trash2 className="h-4 w-4" />, onSelect: () => void remove(post), destructive: true, disabled: Boolean(busySlug) },
+              ]} />} />
+            ))}
+          </CardGrid>
         ) : (
-          <div className="px-5 py-12 text-center">
-            <p className="m-0 text-[15px] font-semibold">{posts.length ? "No posts match" : "No posts yet"}</p>
-            <p className="mb-0 mt-1 text-sm text-muted-foreground">{posts.length ? "Try another search or category." : "Create a post to get started."}</p>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Post</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Updated</TableHead>
+                  <TableHead className="w-[1%] whitespace-nowrap text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {visible.map((post) => (
+                  <ClickableTableRow key={post.slug} href={`/admin/blog/${encodeURIComponent(post.slug)}`} label={`Edit ${post.title}`}>
+                    <TableCell className="font-semibold">
+                      <Link href={`/admin/blog/${encodeURIComponent(post.slug)}`} className="text-foreground no-underline hover:text-primary">{post.title}</Link>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">{post.category}</TableCell>
+                    <TableCell className="whitespace-nowrap text-muted-foreground">{updatedDate(post.updatedAt ?? post.publishedAt)}</TableCell>
+                    <TableActionsCell
+                      primary={[
+                        { label: "View", icon: <ExternalLink className="h-4 w-4" />, href: `/dashboard/blog/${post.slug}` },
+                        { label: "Edit", icon: <Pencil className="h-4 w-4" />, href: `/admin/blog/${encodeURIComponent(post.slug)}` },
+                      ]}
+                      items={[{ label: "Delete", icon: <Trash2 className="h-4 w-4" />, onSelect: () => void remove(post), destructive: true, disabled: Boolean(busySlug) }]}
+                      label={`More actions for ${post.title}`}
+                    />
+                  </ClickableTableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
+        ) : (
+          <EmptyState title={posts.length ? "No posts match" : "No posts yet"} description={posts.length ? "Try another search or category." : "Create a post to get started."} />
         )}
       </section>
     </>

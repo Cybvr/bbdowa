@@ -11,8 +11,8 @@ import { ProfileNav } from "@/components/profile-nav";
 import { useOptionalAuth } from "@/components/auth-provider";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { firebaseDb } from "@/lib/firebase/client";
-import { NotificationsBell } from "@/components/notifications-bell";
 import { ACTIVITY_COLLECTION, elapsedMs, formatClock, isPaused, runningEntry, type ActivityEntry } from "@/lib/time-tracking";
+import { readAssignedJobs } from "@/lib/firebase/my-jobs";
 
 export const NAV_TEXT =
   "flex min-h-10 w-full items-center gap-1.5 rounded-lg px-2.5 py-1.5 font-sans text-body font-normal leading-normal text-foreground no-underline transition-colors hover:bg-foreground/10 hover:text-foreground focus-visible:bg-foreground/10 focus-visible:text-foreground focus-visible:outline-none nav:min-h-9 nav:gap-1.5 nav:px-2 nav:py-1.5";
@@ -52,6 +52,7 @@ export function DashboardNavList({ onNavigate, collapsed = false }: { onNavigate
   const [running, setRunning] = useState<ActivityEntry | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [trackerBusy, setTrackerBusy] = useState(false);
+  const [myJobsCount, setMyJobsCount] = useState<number | null>(null);
   const isAdminSection = pathname.startsWith("/admin");
   const navItems = isAdminSection ? ADMIN_NAV_ITEMS : NAV_ITEMS;
   const isStaff = auth?.role === "admin" || auth?.role === "manager";
@@ -61,6 +62,19 @@ export function DashboardNavList({ onNavigate, collapsed = false }: { onNavigate
       (item.kind !== "link" ||
         ((!item.requiresStaff || isStaff) && (!item.requiresAdmin || auth?.role === "admin") && !item.hideInSidebar)),
   );
+
+  useEffect(() => {
+    const uid = auth?.user?.uid;
+    if (!uid || isAdminSection) {
+      setMyJobsCount(null);
+      return;
+    }
+    let active = true;
+    readAssignedJobs(uid, auth?.user?.email)
+      .then((jobs) => { if (active) setMyJobsCount(jobs.length); })
+      .catch((error) => { console.error("Unable to load My Jobs count", error); if (active) setMyJobsCount(null); });
+    return () => { active = false; };
+  }, [auth?.user?.email, auth?.user?.uid, isAdminSection]);
 
   useEffect(() => {
     const uid = auth?.user?.uid;
@@ -95,9 +109,9 @@ export function DashboardNavList({ onNavigate, collapsed = false }: { onNavigate
     try {
       if (isPaused(running) && running.pausedAt) {
         const pausedMs = (running.pausedMs ?? 0) + Math.max(0, Date.now() - Date.parse(running.pausedAt));
-        await updateDoc(doc(firebaseDb, ACTIVITY_COLLECTION, running.id), { pausedAt: null, pausedMs });
+        await updateDoc(doc(firebaseDb, ACTIVITY_COLLECTION, running.id), { pausedAt: null, pausedMs, updatedAt: new Date().toISOString() });
       } else {
-        await updateDoc(doc(firebaseDb, ACTIVITY_COLLECTION, running.id), { pausedAt: new Date().toISOString() });
+        await updateDoc(doc(firebaseDb, ACTIVITY_COLLECTION, running.id), { pausedAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
       }
     } catch (error) {
       console.error("Unable to update tracker status", error);
@@ -117,6 +131,7 @@ export function DashboardNavList({ onNavigate, collapsed = false }: { onNavigate
         endedAt: endedAt.toISOString(),
         pausedAt: null,
         pausedMs,
+        updatedAt: new Date().toISOString(),
       });
     } catch (error) {
       console.error("Unable to stop tracker", error);
@@ -182,6 +197,8 @@ export function DashboardNavList({ onNavigate, collapsed = false }: { onNavigate
                   <span className="ml-auto font-mono text-[11px] font-semibold tabular-nums text-primary">
                     {formatClock(elapsedMs(running, now))}
                   </span>
+                ) : item.label === "My Jobs" && !collapsed && myJobsCount !== null ? (
+                  <span className="ml-auto text-xs font-semibold tabular-nums text-muted-foreground">{myJobsCount}</span>
                 ) : null}
               </Link>
             </li>
@@ -219,7 +236,12 @@ export function DashboardNavList({ onNavigate, collapsed = false }: { onNavigate
               <div className="min-h-0 overflow-hidden">
                 <ul className="m-0 mt-0.5 w-full list-none rounded-lg p-0.5 nav:mt-1 nav:p-1">
                   {item.items
-                    .filter((entry) => !entry.requiresAuth || Boolean(auth?.user))
+                    .filter(
+                      (entry) =>
+                        (!entry.requiresAuth || Boolean(auth?.user)) &&
+                        (!entry.requiresStaff || isStaff) &&
+                        (!entry.requiresAdmin || auth?.role === "admin"),
+                    )
                     .map((entry) => {
                       const current = pathname === entry.href;
                       return (
@@ -300,7 +322,6 @@ export function DashboardSidebarContent({
         </div>
         {showCollapseToggle && onToggleCollapse ? (
           <div className="flex shrink-0 items-center gap-0.5">
-          {!collapsed ? <NotificationsBell align="start" /> : null}
           <button
             type="button"
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}

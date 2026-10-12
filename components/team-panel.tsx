@@ -5,8 +5,11 @@ import Link from "next/link";
 import { Badge as DashboardBadge } from "@/components/dashboard/ui";
 import { ImageWithFallback } from "@/components/empty-thumbnail";
 import { DashboardCard } from "@/components/dashboard-card";
+import { CARD_MENU_TRIGGER } from "@/components/dashboard/list-card";
+import { TableActionsCell } from "@/components/dashboard/table-row-actions";
 import { FilterBar, type SortOption, type ViewMode } from "@/components/dashboard/filter-bar";
 import { UserActions } from "@/components/user-actions";
+import { useAuth } from "@/components/auth-provider";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 import { plural } from "@/lib/format";
@@ -40,6 +43,7 @@ export function TeamPanel({
   const [category, setCategory] = React.useState("all");
   const [sort, setSort] = React.useState<TeamSort>("name");
   const [view, setView] = React.useState<ViewMode>("cards");
+  const { isAdmin } = useAuth();
 
   const categoryOptions = React.useMemo(
     () => [
@@ -96,7 +100,7 @@ export function TeamPanel({
                   <li key={jobTeamKey(member)}>
                     <DashboardCard
                       className="h-full"
-                      actions={<UserActions user={member} variant={isCreatorUser(member) ? "creator" : "team"} listHref={listHref} compactMenu categoryOptions={knownCreatorCategories(allUsers)} />}
+                      actions={<UserActions user={member} variant={isCreatorUser(member) ? "creator" : "team"} listHref={listHref} compactMenu menuTriggerClassName={CARD_MENU_TRIGGER} categoryOptions={knownCreatorCategories(allUsers)} />}
                     >
                       <Link
                         href={userHref(member, isCreatorUser(member) ? "creator" : "team")}
@@ -125,7 +129,7 @@ export function TeamPanel({
               </ul>
             ) : (
               <div className="overflow-x-auto">
-                <Table className="w-full border-collapse">
+                <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Creator</TableHead>
@@ -133,12 +137,13 @@ export function TeamPanel({
                       <TableHead>Availability</TableHead>
                       <TableHead>Location</TableHead>
                       <TableHead>Rate</TableHead>
+                      {isAdmin ? <TableHead className="w-[1%] whitespace-nowrap text-right">Actions</TableHead> : null}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {visible.map((member) => (
                       <ClickableTableRow key={jobTeamKey(member)} href={userHref(member, isCreatorUser(member) ? "creator" : "team")} label={`Open ${member.name}`}>
-                        <TableCell className="px-3 py-2 font-semibold">
+                        <TableCell className="font-semibold">
                           <Link href={userHref(member, isCreatorUser(member) ? "creator" : "team")} className="inline-flex items-center gap-3 text-foreground no-underline hover:text-primary focus-visible:text-primary">
                             <ImageWithFallback
                               src={member.profileImage ?? member.featuredImage}
@@ -150,10 +155,14 @@ export function TeamPanel({
                             {member.name}
                           </Link>
                         </TableCell>
-                        <TableCell className="px-3 py-2 text-muted-foreground">{member.category}</TableCell>
-                        <TableCell className="px-3 py-2"><DashboardBadge tone={member.availability === "open" ? "active" : "neutral"}>{member.availability}</DashboardBadge></TableCell>
-                        <TableCell className="whitespace-nowrap px-3 py-2 text-muted-foreground">{member.location || "—"}</TableCell>
-                        <TableCell className="whitespace-nowrap px-3 py-2 text-muted-foreground">{!member.hideRate && member.rateMin !== null ? member.dayRate : "—"}</TableCell>
+                        <TableCell className="text-muted-foreground">{member.category}</TableCell>
+                        <TableCell><DashboardBadge tone={member.availability === "open" ? "active" : "neutral"}>{member.availability}</DashboardBadge></TableCell>
+                        <TableCell className="whitespace-nowrap text-muted-foreground">{member.location || "—"}</TableCell>
+                        <TableCell className="whitespace-nowrap text-muted-foreground">{!member.hideRate && member.rateMin !== null ? member.dayRate : "—"}</TableCell>
+                        {isAdmin ? <TableActionsCell
+                          menu={<UserActions user={member} variant={isCreatorUser(member) ? "creator" : "team"} listHref={listHref} tableActions viewHref={userHref(member, isCreatorUser(member) ? "creator" : "team")} categoryOptions={knownCreatorCategories(allUsers)} />}
+                          label={`Actions for ${member.name}`}
+                        /> : null}
                       </ClickableTableRow>
                     ))}
                   </TableBody>

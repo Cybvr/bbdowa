@@ -27,6 +27,8 @@ export type ActivityEntry = {
   pausedAt?: string | null;
   /** Total milliseconds spent paused before the current pause, if any. */
   pausedMs?: number;
+  /** ISO timestamp of the last change. */
+  updatedAt?: string;
 };
 
 export const ACTIVITY_COLLECTION = "timeEntries";
