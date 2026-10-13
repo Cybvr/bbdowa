@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { collection, doc, onSnapshot, updateDoc } from "firebase/firestore";
-import { Briefcase, Eye, Pencil, Plus } from "lucide-react";
+import { Briefcase, Check, Eye, Pencil, Plus, Send } from "lucide-react";
 import { Badge, EmptyState, StatItem, StatRow } from "@/components/dashboard/ui";
 import { DashboardListPage } from "@/components/dashboard/list-page";
 import { CardGrid, CardMenu, DesktopTable, ListCard, MobileRow, MobileRows, ROW_ICON_ACTION, type CardMenuItem } from "@/components/dashboard/list-card";
@@ -155,8 +155,8 @@ export default function AdminInvoicesPage() {
                     <TableCell className="text-right font-semibold tabular-nums">{formatAmount(invoice.amount, invoice.currency)}</TableCell>
                     <TableActionsCell
                       primary={[
-                        ...(invoice.status === "draft" ? [{ label: "Send to client", onSelect: () => void setStatus(invoice, "sent") }] : []),
-                        ...(invoice.status === "sent" ? [{ label: "Mark paid", onSelect: () => void setStatus(invoice, "paid") }] : []),
+                        ...(invoice.status === "draft" ? [{ label: "Send to client", icon: <Send className="h-4 w-4" />, onSelect: () => void setStatus(invoice, "sent") }] : []),
+                        ...(invoice.status === "sent" ? [{ label: "Mark paid", icon: <Check className="h-4 w-4" />, onSelect: () => void setStatus(invoice, "paid") }] : []),
                         { label: "Edit", icon: <Pencil className="h-4 w-4" />, onSelect: () => setEditing(invoice) },
                       ]}
                       label={`More actions for invoice ${invoice.number}`}

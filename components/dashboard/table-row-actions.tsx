@@ -22,13 +22,13 @@ export type TableRowAction = {
 };
 
 export const TABLE_PRIMARY_ACTION_CLASS =
-  "inline-flex h-9 items-center gap-1.5 rounded-md px-2.5 text-xs font-semibold text-foreground no-underline transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-wait disabled:opacity-50";
+  "grid h-9 w-9 place-items-center rounded-md text-foreground no-underline transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-wait disabled:opacity-50";
 
 export const TABLE_ACTION_MENU_TRIGGER =
   "grid h-9 w-9 place-items-center rounded-md border-0 bg-transparent text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-wait disabled:opacity-50";
 
 function PrimaryAction({ action }: { action: TableRowAction }) {
-  const content = <>{action.icon}{action.label}</>;
+  const content = action.icon ?? <span className="sr-only">{action.label}</span>;
   if (action.href) {
     return <Link href={action.href} aria-label={action.label} className={TABLE_PRIMARY_ACTION_CLASS}>{content}</Link>;
   }
