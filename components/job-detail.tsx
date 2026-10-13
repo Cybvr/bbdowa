@@ -29,6 +29,7 @@ import { TeamPanel } from "@/components/team-panel";
 import { JobMediaPanel } from "@/components/job-media-panel";
 import { JobOverviewEditor } from "@/components/job-overview-editor";
 import { JobApplicantsPanel } from "@/components/job-applicants-panel";
+import { JOB_POSTING_LINKS_COLLECTION, postingHref } from "@/lib/job-postings";
 import { PortalJobInvoices } from "@/components/portal-invoices";
 import { firebaseDb } from "@/lib/firebase/client";
 import { sendAppEmail } from "@/lib/app-email";
@@ -202,6 +203,16 @@ export function JobDetailContent({ job, adminMode = false, portalMode = false, e
   const showSignInGate = !adminMode && !authLoading && !user;
   const jobsBase = adminMode ? "/admin/jobs" : myJobs ? "/dashboard/my-jobs" : "/dashboard/jobs";
   const currentJobHref = jobHref(job, adminMode, myJobs);
+  // Share only ever gives out the public, brandless posting link, so it shows once the job has one.
+  const [postingPath, setPostingPath] = React.useState<string | null>(null);
+  React.useEffect(() => {
+    if (!isStaff) return;
+    let active = true;
+    getDoc(doc(firebaseDb, JOB_POSTING_LINKS_COLLECTION, slug))
+      .then((snapshot) => { const id = snapshot.data()?.postingId; if (active) setPostingPath(typeof id === "string" ? postingHref(id) : null); })
+      .catch(() => { if (active) setPostingPath(null); });
+    return () => { active = false; };
+  }, [isStaff, slug, tab]);
   const tabs: { id: JobTab; label: string }[] = [
     { id: "overview", label: "Overview" },
     ...(overviewOnly || myJobs || showSignInGate ? [] : [{ id: "case-study" as const, label: "Case study" }]),
@@ -258,7 +269,7 @@ export function JobDetailContent({ job, adminMode = false, portalMode = false, e
     {!embedded ? <>
       <MobileHeaderTitle title={title} />
       <MobileHeaderActions>
-        <ShareCreatorDialog creatorName={title} path={currentJobHref} kind="job" />
+        {postingPath ? <ShareCreatorDialog creatorName={title} path={postingPath} kind="job" /> : null}
         {!adminMode && role === "admin" ? <JobActions job={job} onSaved={() => void loadTerms()} /> : null}
       </MobileHeaderActions>
     </> : null}
@@ -274,7 +285,7 @@ export function JobDetailContent({ job, adminMode = false, portalMode = false, e
             <p className="m-0 mt-1 truncate text-xs text-muted-foreground">JobId: {jobId(job)}</p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <ShareCreatorDialog creatorName={title} path={currentJobHref} kind="job" showLabel />
+            {postingPath ? <ShareCreatorDialog creatorName={title} path={postingPath} kind="job" showLabel /> : null}
             {!adminMode && role === "admin" ? <JobActions job={job} onSaved={() => void loadTerms()} /> : null}
           </div>
         </div>

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Copy, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { deleteDoc, doc, getDoc, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 import { useAuth } from "@/components/auth-provider";
 import { firebaseDb } from "@/lib/firebase/client";
@@ -12,7 +12,6 @@ import { TagInput } from "@/components/tag-input";
 import { useClientOptions, useFirestoreUsers } from "@/lib/firebase/client-content";
 import { EditSheet, ImageUploadField, SelectField, TextField, TextareaField } from "@/components/detail-editor";
 import { RichTextEditor } from "@/components/rich-text-editor";
-import { copyContent } from "@/lib/firebase/content-mutations";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -59,7 +58,6 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
   const [languages, setLanguages] = React.useState(listValue(job.languages));
   const [desiredStartDate, setDesiredStartDate] = React.useState(job.desiredStartDate ?? "");
   const [requiredSkills, setRequiredSkills] = React.useState<string[]>(job.requiredSkills ?? []);
-  const [duplicating, setDuplicating] = React.useState(false);
 
   // Pay and assignment are private, so they load separately from the public job record.
   const [terms, setTerms] = React.useState<JobTerms | null>(null);
@@ -161,31 +159,8 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
     router.push("/admin/jobs");
   };
 
-  const duplicate = async () => {
-    if (duplicating) return;
-    setDuplicating(true);
-    try {
-      await copyContent("jobs", job.slug, "title", jobTitle(job));
-      router.refresh();
-    } catch (cause) {
-      console.error("Unable to duplicate job", cause);
-    } finally {
-      setDuplicating(false);
-    }
-  };
-
   return (
     <>
-      {!compactMenu && isStaff ? <button
-        type="button"
-        onClick={() => void duplicate()}
-        disabled={duplicating}
-        aria-label={`Duplicate ${jobTitle(job)}`}
-        title="Duplicate job"
-        className="grid h-10 w-10 place-items-center rounded-lg border border-border bg-background/95 text-muted-foreground shadow-sm backdrop-blur transition hover:border-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-wait disabled:opacity-50"
-      >
-        <Copy className="h-4 w-4" aria-hidden="true" />
-      </button> : null}
       <EditSheet
         title="Edit job"
         description={jobDisplayTitle(job)}
