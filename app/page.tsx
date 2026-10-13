@@ -14,7 +14,8 @@ const RECORD = [
 export default async function MarketingHomePage() {
   const jobs = await getJobs();
   const work = sortJobsByLatestLive(
-    jobs.filter((job) => job.status !== "archived"),
+    // Only finished work goes on the public site. Active jobs may be confidential.
+    jobs.filter((job) => job.status === "completed"),
   ).slice(0, 8);
 
   return (

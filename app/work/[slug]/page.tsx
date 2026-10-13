@@ -14,7 +14,8 @@ export default async function WorkPage({ params }: WorkPageProps) {
   const { slug } = await params;
   const job = await getJobBySlug(slug);
 
-  if (!job || job.status === "archived") {
+  // Only finished work is public. Active jobs may be confidential.
+  if (!job || job.status !== "completed") {
     notFound();
   }
 
