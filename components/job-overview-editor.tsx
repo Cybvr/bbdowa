@@ -137,7 +137,7 @@ export function JobOverviewEditor({ job, scope = "staff" }: { job: Job; scope?: 
 
   return <form onSubmit={save} onChangeCapture={() => setSaved(false)} className="space-y-6 pt-6">
     {error ? <p role="alert" className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">{error}</p> : null}
-    <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
+    <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.7fr)]">
       <div className="min-w-0">
         <label className="mb-6 block space-y-1.5 text-sm font-medium">Job title<input value={title} onChange={(event) => setTitle(event.target.value)} className={FIELD} /></label>
         <RichTextEditor label="Description" value={description} onChange={setDescription} placeholder="Describe the job…" tall />
