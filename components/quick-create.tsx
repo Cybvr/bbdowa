@@ -214,7 +214,7 @@ export function QuickCreate({ type, iconOnly = false }: { type: CreateType; icon
         });
         setOpen(false);
         reset();
-        router.push("/dashboard/resources");
+        router.push("/dashboard/help?tab=resources");
       } else if (type === "client") {
         const slug = slugify(clientName);
         await setDoc(doc(firebaseDb, "clients", slug), {

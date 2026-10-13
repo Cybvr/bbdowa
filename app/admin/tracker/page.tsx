@@ -2,12 +2,12 @@
 
 import * as React from "react";
 import { addDoc, collection, deleteDoc, doc, getDocs, runTransaction, updateDoc } from "firebase/firestore";
-import { Pencil, Plus, Square, Trash2 } from "lucide-react";
+import { Briefcase, Pencil, Plus, Square, Trash2 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { EmptyState, PageHeader } from "@/components/dashboard/ui";
 import { DashboardListPage } from "@/components/dashboard/list-page";
 import { FilterBar, useListView, type FilterTab, type SortOption } from "@/components/dashboard/filter-bar";
-import { CardGrid, CardMenu, ListCard } from "@/components/dashboard/list-card";
+import { CardGrid, CardMenu, DesktopTable, ListCard, MobileRow, MobileRows, ROW_ICON_ACTION, type CardMenuItem } from "@/components/dashboard/list-card";
 import { TableActionsCell } from "@/components/dashboard/table-row-actions";
 import { LIST_ACTION_CLASS } from "@/components/dashboard/list-page-actions";
 import { UsersTableSkeleton } from "@/components/dashboard/loading-skeleton";
@@ -247,6 +247,11 @@ export default function AdminTimePage() {
   const lastChange = (entry: ActivityEntry) => entry.updatedAt ?? entry.endedAt ?? entry.startedAt;
   const sorted = [...visible].sort((a, b) => sort === "longest" ? elapsedMs(b, now) - elapsedMs(a, now) : lastChange(b).localeCompare(lastChange(a)));
   const stateLabel = (entry: ActivityEntry) => { const state = statusOf(entry); return <span className={state === "running" ? "text-primary" : "text-muted-foreground"}>{state === "running" ? "Running" : state === "paused" ? "Paused" : "Completed"}</span>; };
+  const menuItems = (entry: ActivityEntry): CardMenuItem[] => [
+    ...(!entry.endedAt ? [{ label: "Stop", icon: <Square className="h-4 w-4" />, onSelect: () => void stop(entry), disabled: busy }] : []),
+    { label: "Edit", icon: <Pencil className="h-4 w-4" />, onSelect: () => openEdit(entry) },
+    { label: "Delete", icon: <Trash2 className="h-4 w-4" />, onSelect: () => void remove(entry), destructive: true, disabled: busy },
+  ];
   return (
     <DashboardListPage
       title="Tracker"
@@ -283,16 +288,27 @@ export default function AdminTimePage() {
                 onActivate={isAdmin ? () => openEdit(entry) : undefined}
                 title={entry.activity || "Untitled activity"}
                 subtitle={updatedDate(lastChange(entry))}
-                menu={isAdmin ? <CardMenu items={[
-                  ...(!entry.endedAt ? [{ label: "Stop", icon: <Square className="h-4 w-4" />, onSelect: () => void stop(entry), disabled: busy }] : []),
-                  { label: "Edit", icon: <Pencil className="h-4 w-4" />, onSelect: () => openEdit(entry) },
-                  { label: "Delete", icon: <Trash2 className="h-4 w-4" />, onSelect: () => void remove(entry), destructive: true, disabled: busy },
-                ]} /> : null}
+                menu={isAdmin ? <CardMenu items={menuItems(entry)} /> : null}
               />
             ))}
           </CardGrid>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          <MobileRows>
+            {sorted.map((entry) => (
+              <MobileRow
+                key={entry.id}
+                onActivate={isAdmin ? () => openEdit(entry) : undefined}
+                title={entry.activity || "Untitled activity"}
+                chip={entry.jobName ?? "No job"}
+                chipIcon={<Briefcase className="h-4 w-4 shrink-0" aria-hidden="true" />}
+                detail={`${nameOf(entry.uid)} · ${formatClockFull(elapsedMs(entry, now))} · ${updatedDate(lastChange(entry))}`}
+                status={<span className="text-sm">{stateLabel(entry)}</span>}
+                menu={isAdmin ? <CardMenu items={menuItems(entry)} triggerClassName={ROW_ICON_ACTION} /> : null}
+              />
+            ))}
+          </MobileRows>
+          <DesktopTable>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -324,7 +340,8 @@ export default function AdminTimePage() {
                 ))}
               </TableBody>
             </Table>
-          </div>
+          </DesktopTable>
+          </>
         )}
       </section>
 

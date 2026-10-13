@@ -2,10 +2,10 @@
 
 import * as React from "react";
 import { collection, doc, onSnapshot, updateDoc } from "firebase/firestore";
-import { Pencil, Plus } from "lucide-react";
+import { Briefcase, Eye, Pencil, Plus } from "lucide-react";
 import { Badge, EmptyState, StatItem, StatRow } from "@/components/dashboard/ui";
 import { DashboardListPage } from "@/components/dashboard/list-page";
-import { CardGrid, CardMenu, ListCard } from "@/components/dashboard/list-card";
+import { CardGrid, CardMenu, DesktopTable, ListCard, MobileRow, MobileRows, ROW_ICON_ACTION, type CardMenuItem } from "@/components/dashboard/list-card";
 import { TableActionsCell } from "@/components/dashboard/table-row-actions";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ClickableTableRow } from "@/components/ui/clickable-table-row";
@@ -70,6 +70,11 @@ export default function AdminInvoicesPage() {
     : sort === "due" ? (a.dueDate || "9999").localeCompare(b.dueDate || "9999")
     : (b.updatedAt ?? b.createdAt).localeCompare(a.updatedAt ?? a.createdAt));
   const statusBadge = (invoice: Invoice) => <Badge tone={invoice.status === "paid" ? "neutral" : "active"}>{isInvoiceOverdue(invoice) ? "Overdue" : INVOICE_STATUS_LABELS[invoice.status]}</Badge>;
+  const menuItems = (invoice: Invoice): CardMenuItem[] => [
+    ...(invoice.status === "draft" ? [{ label: "Send to client", onSelect: () => void setStatus(invoice, "sent") }] : []),
+    ...(invoice.status === "sent" ? [{ label: "Mark paid", onSelect: () => void setStatus(invoice, "paid") }] : []),
+    { label: "Edit", icon: <Pencil className="h-4 w-4" />, onSelect: () => setEditing(invoice) },
+  ];
   return (
     <DashboardListPage
       title="Invoices"
@@ -108,16 +113,27 @@ export default function AdminInvoicesPage() {
                 onActivate={() => setEditing(invoice)}
                 title={`${invoice.number} · ${invoice.clientName}`}
                 subtitle={updatedDate(invoice.updatedAt ?? invoice.createdAt)}
-                menu={<CardMenu items={[
-                  ...(invoice.status === "draft" ? [{ label: "Send to client", onSelect: () => void setStatus(invoice, "sent") }] : []),
-                  ...(invoice.status === "sent" ? [{ label: "Mark paid", onSelect: () => void setStatus(invoice, "paid") }] : []),
-                  { label: "Edit", onSelect: () => setEditing(invoice) },
-                ]} />}
+                menu={<CardMenu items={menuItems(invoice)} />}
               />
             ))}
           </CardGrid>
-        ) : (
-          <div className="overflow-x-auto">
+        ) : (<>
+          <MobileRows>
+            {sorted.map((invoice) => (
+              <MobileRow
+                key={invoice.id}
+                onActivate={() => setEditing(invoice)}
+                title={`${invoice.number} · ${invoice.clientName}`}
+                chip={invoice.jobName || invoice.clientName}
+                chipIcon={<Briefcase className="h-4 w-4 shrink-0" aria-hidden="true" />}
+                detail={`${formatAmount(invoice.amount, invoice.currency)} · ${updatedDate(invoice.updatedAt ?? invoice.createdAt)}`}
+                status={statusBadge(invoice)}
+                actions={<button type="button" onClick={() => setEditing(invoice)} aria-label={`Open ${invoice.number}`} className={ROW_ICON_ACTION}><Eye className="h-5 w-5" aria-hidden="true" /></button>}
+                menu={<CardMenu items={menuItems(invoice)} triggerClassName={ROW_ICON_ACTION} />}
+              />
+            ))}
+          </MobileRows>
+          <DesktopTable>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -149,7 +165,8 @@ export default function AdminInvoicesPage() {
                 ))}
               </TableBody>
             </Table>
-          </div>
+          </DesktopTable>
+        </>
         ) : (
           <EmptyState title={invoices.length ? "No invoices match" : "No invoices yet"} description={invoices.length ? "Try another search or status." : "Create an invoice to bill a client."} />
         )}

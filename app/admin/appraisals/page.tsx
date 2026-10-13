@@ -3,13 +3,13 @@
 import * as React from "react";
 import Link from "next/link";
 import { deleteDoc, doc } from "firebase/firestore";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { CalendarRange, Eye, Pencil, Plus, Trash2 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { AppraisalStatus } from "@/components/appraisal-status";
 import { EmptyState, PageHeader } from "@/components/dashboard/ui";
 import { DashboardListPage } from "@/components/dashboard/list-page";
 import { FilterBar, useListView, type SortOption } from "@/components/dashboard/filter-bar";
-import { CardGrid, CardMenu, ListCard } from "@/components/dashboard/list-card";
+import { CardGrid, CardMenu, DesktopTable, ListCard, MobileRow, MobileRows, ROW_ICON_ACTION, type CardMenuItem } from "@/components/dashboard/list-card";
 import { TableActionsCell } from "@/components/dashboard/table-row-actions";
 import { LIST_ACTION_CLASS } from "@/components/dashboard/list-page-actions";
 import { UsersTableSkeleton } from "@/components/dashboard/loading-skeleton";
@@ -59,16 +59,19 @@ export default function AppraisalsAdminPage() {
   if (!canManage) return <main className="mx-auto w-full max-w-6xl flex-1 px-5 pb-16 pt-8 sm:px-8"><PageHeader title="Appraisals" /><p className="mt-8 text-sm text-muted-foreground">An admin or manager account is required to manage appraisals.</p></main>;
 
   const sorted = [...visible].sort((a, b) => sort === "name" ? (a.assignedToName ?? "").localeCompare(b.assignedToName ?? "") : (b.updatedAt ?? "").localeCompare(a.updatedAt ?? ""));
+  const menuItems = (appraisal: (typeof appraisals)[number]): CardMenuItem[] => [
+    { label: "Edit", icon: <Pencil className="h-4 w-4" />, href: `/admin/appraisals/${appraisal.id}/edit` },
+    ...(role === "admin" ? [{ label: "Delete", icon: <Trash2 className="h-4 w-4" />, onSelect: () => void remove(appraisal.id, appraisal.assignedToName), destructive: true, disabled: busyId === appraisal.id }] : []),
+  ];
   return <DashboardListPage title="Appraisals" actions={<Link href="/admin/appraisals/new" className={LIST_ACTION_CLASS}><Plus aria-hidden="true" className="h-4 w-4" />Add</Link>}
     toolbar={<FilterBar panelId="admin-appraisals-filter" search={search} onSearchChange={setSearch} searchPlaceholder="Search appraisals" sortOptions={APPRAISAL_SORTS} activeSort={sort} onSortChange={setSort} resultCount={plural(visible.length, "appraisal")} view={view} onViewChange={setView} />}>
     {error || actionError ? <p className="mb-4 text-[13px] text-destructive">{error ?? actionError}</p> : null}
     <section aria-label="Appraisals">
       {sorted.length ? view === "cards" ? <CardGrid>{sorted.map((appraisal) => (
-        <ListCard key={appraisal.id} href={`/admin/appraisals/${appraisal.id}/edit`} title={appraisal.assignedToName || "Unnamed"} subtitle={formatDocumentDate(appraisal.updatedAt)} menu={<CardMenu items={[
-          { label: "Edit", icon: <Pencil className="h-4 w-4" />, href: `/admin/appraisals/${appraisal.id}/edit` },
-          ...(role === "admin" ? [{ label: "Delete", icon: <Trash2 className="h-4 w-4" />, onSelect: () => void remove(appraisal.id, appraisal.assignedToName), destructive: true, disabled: busyId === appraisal.id }] : []),
-        ]} />} />
-      ))}</CardGrid> : <div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>User</TableHead><TableHead>Period</TableHead><TableHead>Status</TableHead><TableHead>Score</TableHead><TableHead>Updated</TableHead><TableHead className="w-[1%] whitespace-nowrap text-right">Actions</TableHead></TableRow></TableHeader><TableBody>{sorted.map((appraisal) => (
+        <ListCard key={appraisal.id} href={`/admin/appraisals/${appraisal.id}/edit`} title={appraisal.assignedToName || "Unnamed"} subtitle={formatDocumentDate(appraisal.updatedAt)} menu={<CardMenu items={menuItems(appraisal)} />} />
+      ))}</CardGrid> : <><MobileRows>{sorted.map((appraisal) => (
+        <MobileRow key={appraisal.id} href={`/admin/appraisals/${appraisal.id}/edit`} title={appraisal.assignedToName || "Unnamed"} chip={appraisal.period || "No period"} chipIcon={<CalendarRange className="h-4 w-4 shrink-0" aria-hidden="true" />} detail={`${formatOverall(scoreAppraisal(appraisal.ratings).overall)} · ${formatDocumentDate(appraisal.updatedAt)}`} status={<AppraisalStatus status={appraisal.status} />} actions={<Link href={`/admin/appraisals/${appraisal.id}/edit`} aria-label={`View appraisal for ${appraisal.assignedToName}`} className={ROW_ICON_ACTION}><Eye className="h-5 w-5" aria-hidden="true" /></Link>} menu={<CardMenu items={menuItems(appraisal)} triggerClassName={ROW_ICON_ACTION} />} />
+      ))}</MobileRows><DesktopTable><Table><TableHeader><TableRow><TableHead>User</TableHead><TableHead>Period</TableHead><TableHead>Status</TableHead><TableHead>Score</TableHead><TableHead>Updated</TableHead><TableHead className="w-[1%] whitespace-nowrap text-right">Actions</TableHead></TableRow></TableHeader><TableBody>{sorted.map((appraisal) => (
         <ClickableTableRow key={appraisal.id} href={`/admin/appraisals/${appraisal.id}/edit`} label={`Open appraisal for ${appraisal.assignedToName}`}>
           <TableCell className="font-semibold"><Link href={`/admin/appraisals/${appraisal.id}/edit`} className="text-foreground no-underline hover:text-primary">{appraisal.assignedToName || "Unnamed"}</Link></TableCell>
           <TableCell className="text-muted-foreground">{appraisal.period || "—"}</TableCell>
@@ -81,7 +84,7 @@ export default function AppraisalsAdminPage() {
             label={`More actions for ${appraisal.assignedToName || "appraisal"}`}
           />
         </ClickableTableRow>
-      ))}</TableBody></Table></div> : <EmptyState title={appraisals.length ? "No appraisals match" : "No appraisals yet"} description={appraisals.length ? "Try another search." : "Assign an appraisal to get started."} />}
+      ))}</TableBody></Table></DesktopTable></> : <EmptyState title={appraisals.length ? "No appraisals match" : "No appraisals yet"} description={appraisals.length ? "Try another search." : "Assign an appraisal to get started."} />}
     </section>
   </DashboardListPage>;
 }

@@ -4,10 +4,10 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { deleteDoc, doc } from "firebase/firestore";
-import { ExternalLink, Pencil, Trash2 } from "lucide-react";
+import { ExternalLink, Eye, Pencil, Tag, Trash2 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { FilterBar, useListView, type SortOption } from "@/components/dashboard/filter-bar";
-import { CardGrid, CardMenu, ListCard } from "@/components/dashboard/list-card";
+import { CardGrid, CardMenu, DesktopTable, ListCard, MobileRow, MobileRows, ROW_ICON_ACTION, type CardMenuItem } from "@/components/dashboard/list-card";
 import { TableActionsCell } from "@/components/dashboard/table-row-actions";
 import { EmptyState } from "@/components/dashboard/ui";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -64,6 +64,12 @@ export function AdminBlogDirectory({ posts }: { posts: BlogPost[] }) {
     }
   };
 
+  const menuItems = (post: BlogPost): CardMenuItem[] => [
+    { label: "View", icon: <ExternalLink className="h-4 w-4" />, href: `/dashboard/blog/${post.slug}` },
+    { label: "Edit", icon: <Pencil className="h-4 w-4" />, href: `/admin/blog/${encodeURIComponent(post.slug)}` },
+    { label: "Delete", icon: <Trash2 className="h-4 w-4" />, onSelect: () => void remove(post), destructive: true, disabled: Boolean(busySlug) },
+  ];
+
   if (authLoading) return <p className="mt-6 text-sm text-muted-foreground">Loading blog posts…</p>;
   if (!canManageBlog) return <p className="mt-6 text-sm text-muted-foreground">A staff account is required to manage blog posts.</p>;
 
@@ -88,15 +94,26 @@ export function AdminBlogDirectory({ posts }: { posts: BlogPost[] }) {
         {visible.length ? view === "cards" ? (
           <CardGrid>
             {visible.map((post) => (
-              <ListCard key={post.slug} href={`/admin/blog/${encodeURIComponent(post.slug)}`} image={post.mediaType === "video" ? null : post.image} title={post.title} subtitle={updatedDate(post.updatedAt ?? post.publishedAt)} menu={<CardMenu items={[
-                { label: "View", icon: <ExternalLink className="h-4 w-4" />, href: `/dashboard/blog/${post.slug}` },
-                { label: "Edit", icon: <Pencil className="h-4 w-4" />, href: `/admin/blog/${encodeURIComponent(post.slug)}` },
-                { label: "Delete", icon: <Trash2 className="h-4 w-4" />, onSelect: () => void remove(post), destructive: true, disabled: Boolean(busySlug) },
-              ]} />} />
+              <ListCard key={post.slug} href={`/admin/blog/${encodeURIComponent(post.slug)}`} image={post.mediaType === "video" ? null : post.image} title={post.title} subtitle={updatedDate(post.updatedAt ?? post.publishedAt)} menu={<CardMenu items={menuItems(post)} />} />
             ))}
           </CardGrid>
-        ) : (
-          <div className="overflow-x-auto">
+        ) : (<>
+          <MobileRows>
+            {visible.map((post) => (
+              <MobileRow
+                key={post.slug}
+                href={`/admin/blog/${encodeURIComponent(post.slug)}`}
+                image={post.mediaType === "video" ? null : post.image}
+                title={post.title}
+                chip={post.category}
+                chipIcon={<Tag className="h-4 w-4 shrink-0" aria-hidden="true" />}
+                detail={updatedDate(post.updatedAt ?? post.publishedAt)}
+                actions={<Link href={`/dashboard/blog/${post.slug}`} aria-label={`View ${post.title}`} className={ROW_ICON_ACTION}><Eye className="h-5 w-5" aria-hidden="true" /></Link>}
+                menu={<CardMenu items={menuItems(post)} triggerClassName={ROW_ICON_ACTION} />}
+              />
+            ))}
+          </MobileRows>
+          <DesktopTable>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -126,7 +143,8 @@ export function AdminBlogDirectory({ posts }: { posts: BlogPost[] }) {
                 ))}
               </TableBody>
             </Table>
-          </div>
+          </DesktopTable>
+        </>
         ) : (
           <EmptyState title={posts.length ? "No posts match" : "No posts yet"} description={posts.length ? "Try another search or category." : "Create a post to get started."} />
         )}

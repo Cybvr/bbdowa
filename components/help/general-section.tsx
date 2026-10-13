@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { SectionHeading } from "@/components/dashboard/ui";
 
-const TOPICS = [
+export const HELP_TOPICS = [
   {
     title: "Work",
     href: "/dashboard/work",
@@ -25,7 +25,7 @@ const TOPICS = [
   {
     title: "The Studio",
     href: "/dashboard/discover",
-    body: "Creators, clients, workflows, brand assets and resources, all in one menu in the sidebar.",
+    body: "Creators, workflows, the team and appraisals, all in one menu in the sidebar.",
   },
   {
     title: "Your profile",
@@ -37,15 +37,15 @@ const TOPICS = [
 export function GeneralSection() {
   return (
     <div>
-      <div className="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
-        {TOPICS.map((topic) => (
+      <div className="grid grid-cols-1 gap-y-6">
+        {HELP_TOPICS.map((topic) => (
           <section key={topic.title}>
             <SectionHeading>
               <Link href={topic.href} className="text-inherit no-underline hover:text-primary focus-visible:text-primary">
                 {topic.title}
               </Link>
             </SectionHeading>
-            <p className="m-0 max-w-[42ch] text-[15px] leading-[1.5]">{topic.body}</p>
+            <p className="m-0 max-w-[70ch] text-[15px] leading-[1.5]">{topic.body}</p>
           </section>
         ))}
       </div>

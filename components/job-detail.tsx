@@ -6,12 +6,11 @@ import { useRouter } from "next/navigation";
 import { addDoc, collection, doc, getDoc, getDocs, query, serverTimestamp, updateDoc, where } from "firebase/firestore";
 import { ArrowUpRight, Banknote, CalendarClock, CalendarDays, Flag, Plus } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
-import { SectionHeading } from "@/components/dashboard/ui";
+import { Badge, SectionHeading } from "@/components/dashboard/ui";
 import { DetailBreadcrumb, DetailTabs } from "@/components/dashboard/detail-hero";
 import { FilterBar } from "@/components/dashboard/filter-bar";
 import { TaskStatusBadge } from "@/components/tasks-view";
 import { JobActions } from "@/components/job-actions";
-import { JobCard } from "@/components/job-card";
 import { LoginDialog } from "@/components/login-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -33,7 +32,7 @@ import { PortalJobInvoices } from "@/components/portal-invoices";
 import { firebaseDb } from "@/lib/firebase/client";
 import { sendAppEmail } from "@/lib/app-email";
 import { useFirestoreUsers } from "@/lib/firebase/client-content";
-import { byLastModified, jobHref, jobId, jobTitle, type Job } from "@/lib/jobs";
+import { jobHref, jobId, jobTitle, type Job } from "@/lib/jobs";
 import { teamSizeLabel, type Client } from "@/lib/clients";
 import { TASK_COLLECTION, formatDate, isOverdue, type Task } from "@/lib/creator-tasks";
 import { BILLING_CYCLE_LABELS, JOB_TERMS_COLLECTION, jobAssignees, type JobTerms } from "@/lib/job-terms";
@@ -54,8 +53,10 @@ function localDateValue() {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
-function Detail({ label, children }: { label: string; children: React.ReactNode }) {
-  return <div className="grid min-w-0 grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-4 py-1.5 text-body"><dt className="text-muted-foreground">{label}</dt><dd className="m-0 min-w-0 break-words font-medium">{children}</dd></div>;
+function Detail({ label, children, stacked = false }: { label: string; children: React.ReactNode; stacked?: boolean }) {
+  return stacked
+    ? <div className="min-w-0 py-1 text-sm"><dt className="text-muted-foreground">{label}</dt><dd className="m-0 mt-1 min-w-0 break-words font-medium">{children}</dd></div>
+    : <div className="grid min-w-0 grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-4 py-1.5 text-sm"><dt className="text-muted-foreground">{label}</dt><dd className="m-0 min-w-0 break-words font-medium">{children}</dd></div>;
 }
 
 function JobHeaderFact({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
@@ -64,9 +65,9 @@ function JobHeaderFact({ icon, label, value }: { icon: React.ReactNode; label: s
 
 const DETAIL_LIST = "m-0 mt-3";
 
-/** A white panel on the grey job page. */
-function DetailCard({ title, children }: { title: string; children: React.ReactNode }) {
-  return <section className="rounded-xl border border-border bg-background p-4 sm:p-5"><h2 className="m-0 text-item-title font-semibold">{title}</h2>{children}</section>;
+/** A plain content section in the job overview. */
+function DetailSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return <section className="border-b border-border py-4 last:border-b-0"><h2 className="m-0 text-item-title font-semibold">{title}</h2>{children}</section>;
 }
 
 /** Sums payments per currency, e.g. "₦120,000 · $300". */
@@ -74,26 +75,6 @@ function paymentTotals(items: Payment[]) {
   const totals = new Map<PaymentCurrency, number>();
   items.forEach((payment) => totals.set(payment.currency, (totals.get(payment.currency) ?? 0) + payment.amount));
   return totals.size ? [...totals].map(([currency, amount]) => formatAmount(amount, currency)).join(" · ") : formatAmount(0, "NGN");
-}
-
-function OtherJobsSidebar({ jobs, currentSlug }: { jobs: Job[]; currentSlug: string }) {
-  const otherJobs = jobs
-    .filter((job) => job.slug !== currentSlug && job.status === "active")
-    .sort((a, b) => byLastModified(a, b) || jobTitle(a).localeCompare(jobTitle(b)));
-
-  return (
-    <aside className="hidden space-y-3 lg:block lg:sticky lg:top-6 nav:static nav:h-full nav:overflow-y-auto nav:overscroll-contain nav:pb-16 nav:pr-4">
-      {otherJobs.length ? (
-        <nav aria-label="Other jobs">
-          <ul className="m-0 grid list-none gap-3 p-0">
-            {otherJobs.map((otherJob) => (
-              <li key={otherJob.slug}><JobCard job={otherJob} /></li>
-            ))}
-          </ul>
-        </nav>
-      ) : <p className="border-b border-border py-3 text-sm text-muted-foreground">No other jobs yet.</p>}
-    </aside>
-  );
 }
 
 const INLINE_FIELD = "w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-1 focus:ring-primary/40";
@@ -128,7 +109,7 @@ function InlineJobCaseStudyEditor({ job }: { job: Job }) {
 }
 
 /** Reusable job content: details, case study, media, tasks, time and payments. */
-export function JobDetailContent({ job, adminMode = false, portalMode = false, embedded = false, myJobs = false, overviewOnly = false, otherJobs = [] }: { job: Job; adminMode?: boolean; portalMode?: boolean; embedded?: boolean; myJobs?: boolean; overviewOnly?: boolean; otherJobs?: Job[] }) {
+export function JobDetailContent({ job, adminMode = false, portalMode = false, embedded = false, myJobs = false, overviewOnly = false }: { job: Job; adminMode?: boolean; portalMode?: boolean; embedded?: boolean; myJobs?: boolean; overviewOnly?: boolean }) {
   const { user, actualUser, isViewingAs, role, loading: authLoading } = useAuth();
   const mobileHeader = useMobileHeader();
   const router = useRouter();
@@ -282,8 +263,7 @@ export function JobDetailContent({ job, adminMode = false, portalMode = false, e
     {overviewOnly ? null : <DetailTabs tabs={tabs} active={tab} onChange={setTab} />}
     {actionError ? <p role="alert" className="mt-4 text-sm text-destructive">{actionError}</p> : null}
 
-    {tab === "overview" ? adminMode || portalMode ? <JobOverviewEditor job={job} scope={portalMode ? "client" : "staff"} /> : <div className={overviewOnly ? "grid gap-6 pt-4 lg:grid-cols-[240px_minmax(0,1fr)] lg:items-start nav:min-h-0 nav:flex-1 nav:grid-rows-[minmax(0,1fr)] nav:items-stretch" : "mx-auto grid w-full max-w-3xl pt-4"}>
-      {overviewOnly ? <OtherJobsSidebar jobs={otherJobs} currentSlug={slug} /> : null}
+    {tab === "overview" ? adminMode || portalMode ? <JobOverviewEditor job={job} scope={portalMode ? "client" : "staff"} /> : <div className="mx-auto grid w-full max-w-3xl pt-4">
       <div className={overviewOnly ? "grid min-w-0 content-start gap-3 nav:h-full nav:overflow-y-auto nav:overscroll-contain nav:pb-16 nav:pr-4" : "contents"}>
       <div className="grid min-w-0 content-start gap-3">
         <div className={`flex items-center justify-between gap-3${mobileHeader && !embedded ? " max-nav:hidden" : ""}`}>
@@ -297,7 +277,11 @@ export function JobDetailContent({ job, adminMode = false, portalMode = false, e
           </div>
         </div>
 
-        <dl aria-label="Job dates and fee" className="m-0 flex min-w-0 gap-4 overflow-x-auto pb-1 text-sm">
+        {user ? <section className="border-b border-border py-4">
+          {lead ? <Link href={userHref(lead, isCreatorUser(lead) ? "creator" : "team")} className="flex min-w-0 items-center gap-3 text-foreground no-underline hover:text-primary"><CreatorThumbnail imageSrc={lead.profileImage} avatarSeed={lead.name} className="h-10 w-10 shrink-0" /><div className="min-w-0"><h2 className="m-0 truncate text-item-title font-semibold">Proof of contact</h2><p className="m-0 mt-1 truncate text-sm font-semibold">{lead.name}</p></div></Link> : <><h2 className="m-0 text-item-title font-semibold">Proof of contact</h2><p className="mb-0 mt-3 text-sm text-muted-foreground">To be confirmed</p></>}
+        </section> : null}
+
+        <dl aria-label="Job dates and fee" className="m-0 grid min-w-0 gap-x-8 gap-y-2 text-sm sm:grid-cols-2">
           <JobHeaderFact icon={<CalendarDays aria-hidden="true" className="size-4 shrink-0" />} label="Job posted" value={job.jobPostedAt ? formatDate(job.jobPostedAt) : "—"} />
           <JobHeaderFact icon={<Banknote aria-hidden="true" className="size-4 shrink-0" />} label="Fee" value={job.fee || "—"} />
           <JobHeaderFact icon={<CalendarClock aria-hidden="true" className="size-4 shrink-0" />} label="Start" value={job.startDate ? formatDate(job.startDate) : "—"} />
@@ -306,48 +290,44 @@ export function JobDetailContent({ job, adminMode = false, portalMode = false, e
 
         <div className={showSignInGate ? "relative max-h-[560px] overflow-hidden" : undefined}>
 
-        {user ? <DetailCard title="Point of contact">
-          {lead ? <Link href={userHref(lead, isCreatorUser(lead) ? "creator" : "team")} className="mt-3 flex min-w-0 items-center gap-3 text-foreground no-underline hover:text-primary"><CreatorThumbnail imageSrc={lead.profileImage} avatarSeed={lead.name} className="h-10 w-10 shrink-0" /><div className="min-w-0"><p className="m-0 truncate text-body font-semibold">{lead.name}</p><p className="m-0 truncate text-sm text-muted-foreground">{lead.title || "Team lead"}</p>{lead.email ? <span className="block truncate text-sm text-muted-foreground">{lead.email}</span> : null}</div></Link> : <p className="mb-0 mt-3 text-body text-muted-foreground">To be confirmed</p>}
-        </DetailCard> : null}
-
-        <DetailCard title="About the job">
-          {richTextHasContent(job.summary) ? <RichTextContent value={job.summary} className="mt-3 max-w-[70ch] text-body text-muted-foreground" /> : <p className="mb-0 mt-3 text-body text-muted-foreground">No description added.</p>}
+        <DetailSection title="About the job">
+          {richTextHasContent(job.summary) ? <RichTextContent value={job.summary} className="mt-3 max-w-[70ch] text-body text-foreground" /> : <p className="mb-0 mt-3 text-body text-foreground">No description added.</p>}
           {job.externalLinks?.length ? <ul className="m-0 mt-4 flex list-none flex-wrap gap-2 p-0">
             {job.externalLinks.map((link) => <li key={link.href}><a href={link.href} target="_blank" rel="noreferrer" className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-[13px] font-semibold text-foreground hover:border-primary hover:text-primary">{link.label}<ArrowUpRight aria-hidden="true" className="size-3.5" /></a></li>)}
           </ul> : null}
-        </DetailCard>
+        </DetailSection>
 
-        <DetailCard title="Job details"><dl className={DETAIL_LIST}>
-          <Detail label="Category">{job.category || "—"}</Detail>
-          <Detail label="Work setup">{job.workSetup || "—"}</Detail>
-          <Detail label="Est. length">{job.estimatedLength || "—"}</Detail>
-          <Detail label="Desired start">{job.desiredStartDate ? formatDate(job.desiredStartDate) : "—"}</Detail>
-        </dl></DetailCard>
+        <DetailSection title="Job details"><dl className="m-0 mt-2 grid gap-x-8 gap-y-1 sm:grid-cols-2">
+          <Detail label="Category" stacked>{job.category || "—"}</Detail>
+          <Detail label="Work setup" stacked>{job.workSetup || "—"}</Detail>
+          <Detail label="Est. length" stacked>{job.estimatedLength || "—"}</Detail>
+          <Detail label="Desired start" stacked>{job.desiredStartDate ? formatDate(job.desiredStartDate) : "—"}</Detail>
+        </dl></DetailSection>
 
-        {job.requiredSkills?.length ? <DetailCard title="Tags">
-          <ul className="m-0 mt-3 flex list-none flex-wrap gap-2 p-0">{job.requiredSkills.map((skill) => <li key={skill} className="rounded-full bg-muted px-3 py-1 text-sm font-medium">{skill}</li>)}</ul>
-        </DetailCard> : null}
+        {job.requiredSkills?.length ? <DetailSection title="Tags">
+          <ul className="m-0 mt-3 flex list-none flex-wrap gap-2 p-0">{job.requiredSkills.map((skill) => <li key={skill}><Badge>{skill}</Badge></li>)}</ul>
+        </DetailSection> : null}
 
-        {user ? <DetailCard title="Assigned team">{teamMembers.length ? <ul className="m-0 mt-3 grid list-none gap-2 p-0">
-          {teamMembers.map((member) => <li key={jobTeamKey(member)}><Link href={userHref(member, isCreatorUser(member) ? "creator" : "team")} className="flex min-w-0 items-center gap-3 text-body font-medium text-foreground hover:text-primary"><CreatorThumbnail imageSrc={member.profileImage} avatarSeed={member.name} className="h-8 w-8 shrink-0" /><span className="truncate">{member.name}</span></Link></li>)}
-        </ul> : <p className="mb-0 mt-3 text-body text-muted-foreground">No one is on this job&apos;s team yet.</p>}</DetailCard> : null}
+        {user ? <DetailSection title="Assigned team">{teamMembers.length ? <ul className="m-0 mt-2 grid list-none gap-x-8 gap-y-1 p-0 sm:grid-cols-2">
+          {teamMembers.map((member) => <li key={jobTeamKey(member)}><Link href={userHref(member, isCreatorUser(member) ? "creator" : "team")} className="flex min-w-0 items-center gap-3 text-sm font-medium text-foreground hover:text-primary"><CreatorThumbnail imageSrc={member.profileImage} avatarSeed={member.name} className="h-8 w-8 shrink-0" /><span className="truncate">{member.name}</span></Link></li>)}
+        </ul> : <p className="mb-0 mt-3 text-sm text-muted-foreground">No one is on this job&apos;s team yet.</p>}</DetailSection> : null}
 
-        {terms ? <DetailCard title="Pay"><dl className={DETAIL_LIST}>
-          <Detail label="Rate">{terms.rateAmount != null ? `${formatAmount(terms.rateAmount, terms.rateCurrency)} / ${terms.rateUnit === "fixed" ? "job" : terms.rateUnit}` : "Not set"}</Detail>
-          <Detail label="Billing cycle">{BILLING_CYCLE_LABELS[terms.billingCycle]}</Detail>
-          <Detail label="Commitment">{terms.commitment || "Not set"}</Detail>
-          <Detail label="Workday overlap">{terms.workdayOverlap || "Not set"}</Detail>
-        </dl></DetailCard> : null}
+        {terms ? <DetailSection title="Pay"><dl className="m-0 mt-2 grid gap-x-8 gap-y-1 sm:grid-cols-2">
+          <Detail label="Rate" stacked>{terms.rateAmount != null ? `${formatAmount(terms.rateAmount, terms.rateCurrency)} / ${terms.rateUnit === "fixed" ? "job" : terms.rateUnit}` : "Not set"}</Detail>
+          <Detail label="Billing cycle" stacked>{BILLING_CYCLE_LABELS[terms.billingCycle]}</Detail>
+          <Detail label="Commitment" stacked>{terms.commitment || "Not set"}</Detail>
+          <Detail label="Workday overlap" stacked>{terms.workdayOverlap || "Not set"}</Detail>
+        </dl></DetailSection> : null}
 
-        <DetailCard title="Client"><dl className={DETAIL_LIST}>
+        <DetailSection title="Client"><dl className="m-0 mt-2 grid gap-x-8 gap-y-1 sm:grid-cols-2">
           {/* Client pages live in admin, so only admins get a link. */}
-          <Detail label="Name">{role === "admin" ? <Link href={`/admin/clients/${job.clientId}/overview`} className="text-foreground underline decoration-border underline-offset-4 hover:text-primary">{client?.name ?? job.clientName}</Link> : client?.name ?? job.clientName}</Detail>
-          <Detail label="Industry">{client?.industry || "—"}</Detail>
-          <Detail label="Team size">{teamSizeLabel(client?.teamSize) ?? "—"}</Detail>
-          <Detail label="Year founded">{client?.yearFounded ?? "—"}</Detail>
-          <Detail label="City / Country">{client?.location || "—"}</Detail>
-          <Detail label="Time zone">{client?.timezone || "—"}</Detail>
-        </dl></DetailCard>
+          <Detail label="Name" stacked>{role === "admin" ? <Link href={`/admin/clients/${job.clientId}/overview`} className="text-foreground underline decoration-border underline-offset-4 hover:text-primary">{client?.name ?? job.clientName}</Link> : client?.name ?? job.clientName}</Detail>
+          <Detail label="Industry" stacked>{client?.industry || "—"}</Detail>
+          <Detail label="Team size" stacked>{teamSizeLabel(client?.teamSize) ?? "—"}</Detail>
+          <Detail label="Year founded" stacked>{client?.yearFounded ?? "—"}</Detail>
+          <Detail label="City / Country" stacked>{client?.location || "—"}</Detail>
+          <Detail label="Time zone" stacked>{client?.timezone || "—"}</Detail>
+        </dl></DetailSection>
 
         {showSignInGate ? <div className="pointer-events-none absolute inset-x-0 bottom-0 h-64 bg-gradient-to-b from-background/0 via-background/85 to-background" /> : null}
         {showSignInGate ? <div className="pointer-events-auto absolute inset-x-4 bottom-5 z-10 rounded-xl border border-border bg-background/95 p-5 text-center shadow-sm">
@@ -397,8 +377,8 @@ export function JobDetailContent({ job, adminMode = false, portalMode = false, e
 }
 
 /** Full page wrapper for the reusable job content. */
-export function JobDetail({ job, adminMode = false, myJobs = false, overviewOnly = false, otherJobs = [] }: { job: Job; adminMode?: boolean; myJobs?: boolean; overviewOnly?: boolean; otherJobs?: Job[] }) {
-  return <JobDetailContent job={job} adminMode={adminMode} myJobs={myJobs} overviewOnly={overviewOnly} otherJobs={otherJobs} />;
+export function JobDetail({ job, adminMode = false, myJobs = false, overviewOnly = false }: { job: Job; adminMode?: boolean; myJobs?: boolean; overviewOnly?: boolean }) {
+  return <JobDetailContent job={job} adminMode={adminMode} myJobs={myJobs} overviewOnly={overviewOnly} />;
 }
 
 function jobLink(job: Job) {

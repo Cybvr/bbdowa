@@ -25,14 +25,14 @@ export type CardMenuItem = {
 };
 
 /** The three-dot menu in a card's top right corner. */
-export function CardMenu({ items, label = "Actions" }: { items: CardMenuItem[]; label?: string }) {
+export function CardMenu({ items, label = "Actions", triggerClassName = CARD_MENU_TRIGGER }: { items: CardMenuItem[]; label?: string; triggerClassName?: string }) {
   const router = useRouter();
   const shown = items.filter(Boolean);
   if (!shown.length) return null;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button type="button" aria-label={label} className={CARD_MENU_TRIGGER}>
+        <button type="button" aria-label={label} className={triggerClassName}>
           <MoreVertical className="h-4 w-4" aria-hidden="true" />
         </button>
       </DropdownMenuTrigger>
@@ -93,6 +93,81 @@ export function ListCard({
         </p>
         {subtitle ? <p className="m-0 truncate text-sm text-muted-foreground">{subtitle}</p> : null}
       </div>
+    </li>
+  );
+}
+
+/** Rows that replace a list's table on phones. */
+export function MobileRows({ children }: { children: ReactNode }) {
+  return <ul className="m-0 grid list-none gap-3 p-0 sm:hidden">{children}</ul>;
+}
+
+/** Wraps a table so it only shows from the small breakpoint up. */
+export function DesktopTable({ children }: { children: ReactNode }) {
+  return <div className="hidden overflow-x-auto sm:block">{children}</div>;
+}
+
+export const ROW_ICON_ACTION =
+  "grid h-9 w-9 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40";
+
+/**
+ * One row in a list's table view on phones: thumbnail, title, a chip and a
+ * muted detail line, then the status and actions underneath.
+ */
+export function MobileRow({
+  href,
+  onActivate,
+  image,
+  title,
+  chip,
+  chipIcon,
+  detail,
+  status,
+  actions,
+  menu,
+}: {
+  href?: string;
+  onActivate?: () => void;
+  image?: string | null;
+  title: ReactNode;
+  chip?: ReactNode;
+  chipIcon?: ReactNode;
+  /** Muted text after the chip, e.g. "₦120,000 · 12 Oct 2026". */
+  detail?: ReactNode;
+  status?: ReactNode;
+  /** Icon buttons shown before the menu, e.g. view. */
+  actions?: ReactNode;
+  menu?: ReactNode;
+}) {
+  const router = useRouter();
+  const open = () => (onActivate ? onActivate() : href ? router.push(href) : undefined);
+  return (
+    <li
+      onClick={(event) => { if (!(event.target as HTMLElement).closest("button, a, [role=menu], [role=dialog]")) open(); }}
+      className="cursor-pointer rounded-2xl border border-border bg-background p-4 transition hover:border-foreground/30"
+    >
+      <div className="flex min-w-0 gap-4">
+        <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-muted">
+          <ImageWithFallback src={image} alt="" className="h-full w-full object-cover" fallbackClassName="h-full w-full" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="m-0 truncate text-body font-semibold">
+            {href ? <Link href={href} className="text-foreground no-underline hover:text-primary">{title}</Link> : title}
+          </p>
+          {chip || detail ? (
+            <div className="mt-1.5 flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
+              {chip ? <span className="inline-flex min-w-0 max-w-[60%] shrink-0 items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-foreground">{chipIcon}<span className="truncate">{chip}</span></span> : null}
+              {detail ? <span className="truncate">{detail}</span> : null}
+            </div>
+          ) : null}
+        </div>
+      </div>
+      {status || actions || menu ? (
+        <div className="mt-3 flex items-center justify-between gap-2 pl-20" onClick={(event) => event.stopPropagation()}>
+          <div className="min-w-0">{status}</div>
+          <div className="flex shrink-0 items-center gap-1">{actions}{menu}</div>
+        </div>
+      ) : null}
     </li>
   );
 }

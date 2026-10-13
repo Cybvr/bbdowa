@@ -156,9 +156,26 @@ export function useOwnUser(): OwnUserState {
     let active = true;
     setState((current) => ({ ...current, loading: true, error: null }));
     getDoc(doc(firebaseDb, "users", user.uid))
-      .then((snapshot) => {
+      .then(async (snapshot) => {
         if (!active) return;
-        setState({ user: snapshot.exists() ? normalizeUser(snapshot.data() as User) : null, loading: false, error: null });
+        if (snapshot.exists()) {
+          setState({ user: normalizeUser(snapshot.data() as User), loading: false, error: null });
+          return;
+        }
+
+        // Older directory records can be keyed by slug while still carrying
+        // the Firebase UID used by the signed-in account and View as mode.
+        let match = (await getDocs(query(collection(firebaseDb, "users"), where("uid", "==", user.uid), limit(1)))).docs[0];
+        // Records added by hand carry a placeholder uid, so fall back to the sign-in email.
+        const email = user.email?.trim();
+        if (!match && email) {
+          for (const candidate of [...new Set([email, email.toLowerCase()])]) {
+            match = (await getDocs(query(collection(firebaseDb, "users"), where("email", "==", candidate), limit(1)))).docs[0];
+            if (match) break;
+          }
+        }
+        if (!active) return;
+        setState({ user: match ? normalizeUser(match.data() as User) : null, loading: false, error: null });
       })
       .catch((error) => {
         console.error("Unable to load your profile from Firestore", error);

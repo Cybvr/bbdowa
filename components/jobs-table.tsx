@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { Building2, Eye } from "lucide-react";
 import { useMemo, useState } from "react";
 import { JOB_STATUS_LABELS, byLastModified, jobTitle, type Job } from "@/lib/jobs";
 import { jobHref, jobModifiedAt } from "@/lib/jobs";
 import { plural, updatedDate } from "@/lib/format";
 import { Badge, EmptyState } from "@/components/dashboard/ui";
 import { DashboardCardActions } from "@/components/dashboard-card";
-import { CardGrid, ListCard } from "@/components/dashboard/list-card";
+import { CardGrid, DesktopTable, ListCard, MobileRow, MobileRows, ROW_ICON_ACTION } from "@/components/dashboard/list-card";
 import { FilterBar, useListView, type FilterTab, type SortOption } from "@/components/dashboard/filter-bar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ClickableTableRow } from "@/components/ui/clickable-table-row";
@@ -121,7 +122,24 @@ export function JobsTable({ jobs }: { jobs: Job[] }) {
               ))}
             </CardGrid>
           ) : (
-            <div className="overflow-x-auto">
+            <>
+            <MobileRows>
+              {visible.map((job) => (
+                <MobileRow
+                  key={job.slug}
+                  href={jobHref(job, true)}
+                  image={job.image}
+                  title={jobTitle(job)}
+                  chip={job.clientName}
+                  chipIcon={<Building2 className="h-4 w-4 shrink-0" aria-hidden="true" />}
+                  detail={[job.category, updatedDate(jobModifiedAt(job))].filter(Boolean).join(" · ")}
+                  status={<Badge tone={job.status === "active" ? "active" : "neutral"}>{JOB_STATUS_LABELS[job.status]}</Badge>}
+                  actions={<Link href={jobHref(job, true)} aria-label={`View ${jobTitle(job)}`} className={ROW_ICON_ACTION}><Eye className="h-5 w-5" aria-hidden="true" /></Link>}
+                  menu={<DashboardCardActions collection="jobs" slug={job.slug} titleField="title" title={jobTitle(job)} triggerClassName={ROW_ICON_ACTION} />}
+                />
+              ))}
+            </MobileRows>
+            <DesktopTable>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -152,7 +170,8 @@ export function JobsTable({ jobs }: { jobs: Job[] }) {
                   ))}
                 </TableBody>
               </Table>
-            </div>
+            </DesktopTable>
+            </>
           )
         ) : (
           <EmptyState

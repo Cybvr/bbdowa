@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { JobDetail } from "@/components/job-detail";
-import { getJobBySlug, getJobs } from "@/lib/firebase/content";
+import { getJobBySlug } from "@/lib/firebase/content";
 import { jobTitle } from "@/lib/jobs";
 import { pageMetadata } from "@/lib/metadata";
 import { richTextToPlainText } from "@/lib/rich-text";
@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 
 export default async function JobPage({ params }: Params) {
   const { jobId } = await params;
-  const [job, jobs] = await Promise.all([getJobBySlug(jobId), getJobs()]);
+  const job = await getJobBySlug(jobId);
   if (!job) notFound();
-  return <JobDetail job={job} overviewOnly otherJobs={jobs} />;
+  return <JobDetail job={job} overviewOnly />;
 }

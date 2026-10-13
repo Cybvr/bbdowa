@@ -1,17 +1,5 @@
-import type { Metadata } from "next";
-import { PageHeader } from "@/components/dashboard/ui";
-import { ResourcesDirectory } from "@/components/resources-directory";
-import { getResources } from "@/lib/firebase/content";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = { title: "Resources" };
-
-export default async function ResourcesPage() {
-  const resources = await getResources();
-
-  return (
-    <main className="flex-1 px-5 pb-16 pt-4 sm:px-8">
-      <PageHeader title="Resources" createType="resource" />
-      <ResourcesDirectory resources={resources} />
-    </main>
-  );
+export default function ResourcesPage() {
+  redirect("/dashboard/help?tab=resources");
 }

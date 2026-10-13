@@ -30,7 +30,7 @@ export type NavItem =
 export const NAV_ITEMS: NavItem[] = [
   { kind: "link", label: "My profile", href: "/dashboard/me", requiresAuth: true, hideInSidebar: true },
   { kind: "link", label: "Home", href: "/dashboard" },
-  { kind: "link", label: "Jobs", href: "/dashboard/jobs", requiresAuth: true },
+  { kind: "link", label: "Jobs", href: "/dashboard/jobs", requiresAuth: true, hideInSidebar: true },
   { kind: "link", label: "My Jobs", href: "/dashboard/my-jobs", requiresAuth: true },
   { kind: "link", label: "Tracker", href: "/dashboard/tracker", requiresAuth: true },
   { kind: "link", label: "Payments", href: "/dashboard/payments", requiresAuth: true },
@@ -44,16 +44,12 @@ export const NAV_ITEMS: NavItem[] = [
     match: [
       "/dashboard/discover",
       "/dashboard/workflows",
-      "/dashboard/brand",
-      "/dashboard/resources",
       "/dashboard/people",
       "/dashboard/appraisals",
     ],
     items: [
       { label: "Discover", href: "/dashboard/discover" },
       { label: "Workflows", href: "/dashboard/workflows" },
-      { label: "Brand assets", href: "/dashboard/brand" },
-      { label: "Resources", href: "/dashboard/resources" },
       { label: "Team", href: "/dashboard/people" },
       { label: "Appraisals", href: "/dashboard/appraisals" },
     ],

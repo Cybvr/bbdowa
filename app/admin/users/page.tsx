@@ -2,14 +2,14 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Eye, Pencil } from "lucide-react";
+import { Eye, Pencil, Shield } from "lucide-react";
 import { UserCreateAction } from "@/components/user-create-action";
 import { UserActions } from "@/components/user-actions";
 import { useAuth } from "@/components/auth-provider";
 import { EmptyState, PageHeader } from "@/components/dashboard/ui";
 import { DashboardListPage } from "@/components/dashboard/list-page";
 import { FilterBar, useListView, type SortOption, type ViewMode } from "@/components/dashboard/filter-bar";
-import { CARD_MENU_TRIGGER, CardGrid, ListCard } from "@/components/dashboard/list-card";
+import { CARD_MENU_TRIGGER, CardGrid, DesktopTable, ListCard, MobileRow, MobileRows, ROW_ICON_ACTION } from "@/components/dashboard/list-card";
 import { TableActionsCell } from "@/components/dashboard/table-row-actions";
 import { useFirestoreUsers } from "@/lib/firebase/client-content";
 import { creatorCategoryOptions, isCreatorUser, isTeamUser, userHref, userRoles, type User, type UserRole } from "@/lib/users";
@@ -54,7 +54,7 @@ function userAddedMs(user: User): number {
   return toMs(record.createdAt) || toMs(user.addedAt) || toMs(record.updatedAt);
 }
 
-function UserItem({ user, categoryOptions, view }: { user: User; categoryOptions: string[]; view: ViewMode }) {
+function UserItem({ user, categoryOptions, view }: { user: User; categoryOptions: string[]; view: ViewMode | "row" }) {
   const { actualUser, startViewingAs } = useAuth();
   const variant = isCreatorUser(user) && !isTeamUser(user) ? "creator" : "team";
   const targetUid = user.uid;
@@ -93,6 +93,19 @@ function UserItem({ user, categoryOptions, view }: { user: User; categoryOptions
           />
         </div>
   );
+  if (view === "row") {
+    const firstRole = userRoles(user)[0];
+    return <MobileRow
+      onActivate={() => setEditOpen(true)}
+      image={user.profileImage}
+      title={user.name}
+      chip={firstRole ? (firstRole === "admin" && isSuperAdminEmail(user.email) ? "Super Admin" : ROLE_LABELS[firstRole]) : "Pending"}
+      chipIcon={<Shield className="h-4 w-4 shrink-0" aria-hidden="true" />}
+      detail={`${user.email || "No email"} · ${added}`}
+      actions={href ? <Link href={href} aria-label={`View ${user.name}`} className={ROW_ICON_ACTION}><Eye className="h-5 w-5" aria-hidden="true" /></Link> : null}
+      menu={<UserActions user={user} variant={variant} listHref="/admin/users" compactMenu menuTriggerClassName={ROW_ICON_ACTION} editOpen={editOpen} onEditOpenChange={setEditOpen} includeEditAction categoryOptions={categoryOptions} onMutated={() => window.location.reload()} />}
+    />;
+  }
   if (view === "cards") {
     return <ListCard onActivate={() => setEditOpen(true)} image={user.profileImage} title={href ? <Link href={href} className="text-foreground no-underline hover:text-primary">{user.name}</Link> : user.name} subtitle={added} menu={cardActions} />;
   }
@@ -204,7 +217,11 @@ export default function AdminUsersPage() {
             {visibleUsers.map((user, index) => <UserItem key={`${user.slug || "user"}-${user.email || "record"}-${index}`} user={user} categoryOptions={categoryOptions} view="cards" />)}
           </CardGrid>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          <MobileRows>
+            {visibleUsers.map((user, index) => <UserItem key={`${user.slug || "user"}-${user.email || "record"}-${index}`} user={user} categoryOptions={categoryOptions} view="row" />)}
+          </MobileRows>
+          <DesktopTable>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -220,7 +237,8 @@ export default function AdminUsersPage() {
                 {visibleUsers.map((user, index) => <UserItem key={`${user.slug || "user"}-${user.email || "record"}-${index}`} user={user} categoryOptions={categoryOptions} view="table" />)}
               </TableBody>
             </Table>
-          </div>
+          </DesktopTable>
+          </>
         ) : (
           <EmptyState title="No users match" description="Try a different search or role filter." />
         )}

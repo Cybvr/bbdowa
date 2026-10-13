@@ -4,12 +4,12 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { addDoc, collection, deleteDoc, doc } from "firebase/firestore";
-import { Copy, Plus, Trash2 } from "lucide-react";
+import { Briefcase, Copy, Eye, Plus, Trash2 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { EmptyState, PageHeader } from "@/components/dashboard/ui";
 import { DashboardListPage } from "@/components/dashboard/list-page";
 import { FilterBar, useListView, type FilterTab, type SortOption } from "@/components/dashboard/filter-bar";
-import { CardGrid, CardMenu, ListCard } from "@/components/dashboard/list-card";
+import { CardGrid, CardMenu, DesktopTable, ListCard, MobileRow, MobileRows, ROW_ICON_ACTION, type CardMenuItem } from "@/components/dashboard/list-card";
 import { TableActionsCell } from "@/components/dashboard/table-row-actions";
 import { UsersTableSkeleton } from "@/components/dashboard/loading-skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -263,6 +263,10 @@ export default function TasksPage() {
   if (authLoading || loading || usersLoading) return <UsersTableSkeleton />;
   if (!isStaff) return <main className="mx-auto w-full max-w-6xl flex-1 px-5 pb-16 pt-8 sm:px-8"><PageHeader title="Tasks" /><p className="mt-8 text-sm text-muted-foreground">A staff account is required to manage tasks.</p></main>;
 
+  const menuItems = (task: Task): CardMenuItem[] => [
+    { label: "Duplicate", icon: <Copy className="h-4 w-4" />, onSelect: () => void duplicate(task), disabled: busyId === task.id },
+    ...(role === "admin" ? [{ label: "Delete", icon: <Trash2 className="h-4 w-4" />, onSelect: () => void remove(task.id, task.title), destructive: true, disabled: busyId === task.id }] : []),
+  ];
   return <DashboardListPage title="Tasks" actions={<NewTaskDialog assignees={assignees} createdBy={user!.uid} createdByName={user!.name ?? user!.email} onCreated={() => window.location.reload()} />}
     toolbar={<FilterBar
       panelId="admin-tasks-filter"
@@ -290,12 +294,13 @@ export default function TasksPage() {
       {view === "cards" ? visible.length ? <CardGrid>{visible.map((task) => {
         const assignee = taskAssignees(task).length === 1 ? assignees.find((candidate) => candidate.uid === task.assignedTo) : undefined;
         const name = taskAssigneeNames(task) || assignee?.name || "—";
-        return <ListCard key={task.id} href={`/dashboard/work/${encodeURIComponent(task.id)}`} title={task.title} subtitle={updatedDate(task.updatedAt ?? task.createdAt)} menu={<CardMenu items={[
-          { label: "Duplicate", icon: <Copy className="h-4 w-4" />, onSelect: () => void duplicate(task), disabled: busyId === task.id },
-          ...(role === "admin" ? [{ label: "Delete", icon: <Trash2 className="h-4 w-4" />, onSelect: () => void remove(task.id, task.title), destructive: true, disabled: busyId === task.id }] : []),
-        ]} />} />;
+        return <ListCard key={task.id} href={`/dashboard/work/${encodeURIComponent(task.id)}`} title={task.title} subtitle={updatedDate(task.updatedAt ?? task.createdAt)} menu={<CardMenu items={menuItems(task)} />} />;
       })}</CardGrid> : <EmptyState title={tasks.length ? "No tasks match" : "No tasks yet"} description={tasks.length ? "Try another search or filter." : "Create a task and assign it to a creator."} /> :
-      visible.length ? <Table className="min-w-[760px] table-fixed"><TableHeader><TableRow><TableHead>Task</TableHead><TableHead className="w-32">Status</TableHead><TableHead className="w-28">Updated</TableHead><TableHead className="w-28">Due</TableHead><TableHead className="w-[1%] whitespace-nowrap text-right">Actions</TableHead></TableRow></TableHeader><TableBody>{visible.map((task) => {
+      visible.length ? <><MobileRows>{visible.map((task) => {
+        const assignee = taskAssignees(task).length === 1 ? assignees.find((candidate) => candidate.uid === task.assignedTo) : undefined;
+        const name = taskAssigneeNames(task) || assignee?.name || "Unassigned";
+        return <MobileRow key={task.id} href={`/dashboard/work/${encodeURIComponent(task.id)}`} title={task.title} chip={task.jobName || task.clientName || "No job"} chipIcon={<Briefcase className="h-4 w-4 shrink-0" aria-hidden="true" />} detail={`${name} · ${updatedDate(task.updatedAt ?? task.createdAt)}`} status={<TaskStatusBadge status={task.status} overdue={isOverdue(task)} />} actions={<Link href={`/dashboard/work/${encodeURIComponent(task.id)}`} aria-label={`View ${task.title}`} className={ROW_ICON_ACTION}><Eye className="h-5 w-5" aria-hidden="true" /></Link>} menu={<CardMenu items={menuItems(task)} triggerClassName={ROW_ICON_ACTION} />} />;
+      })}</MobileRows><DesktopTable><Table className="min-w-[760px] table-fixed"><TableHeader><TableRow><TableHead>Task</TableHead><TableHead className="w-32">Status</TableHead><TableHead className="w-28">Updated</TableHead><TableHead className="w-28">Due</TableHead><TableHead className="w-[1%] whitespace-nowrap text-right">Actions</TableHead></TableRow></TableHeader><TableBody>{visible.map((task) => {
         const assignee = taskAssignees(task).length === 1 ? assignees.find((candidate) => candidate.uid === task.assignedTo) : undefined;
         const name = taskAssigneeNames(task) || assignee?.name || "—";
         return <ClickableTableRow key={task.id} label={`Open task ${task.title}`} onActivate={() => router.push(`/dashboard/work/${encodeURIComponent(task.id)}`)} className="align-middle">
@@ -316,7 +321,7 @@ export default function TasksPage() {
             label={`More actions for ${task.title}`}
           />
         </ClickableTableRow>;
-      })}</TableBody></Table> : <div className="px-5 py-12 text-center"><p className="m-0 text-[15px] font-semibold">{tasks.length ? "No tasks match" : "No tasks yet"}</p><p className="mb-0 mt-1 text-sm text-muted-foreground">{tasks.length ? "Try another search or filter." : "Create a task and assign it to a creator."}</p></div>}
+      })}</TableBody></Table></DesktopTable></> : <div className="px-5 py-12 text-center"><p className="m-0 text-[15px] font-semibold">{tasks.length ? "No tasks match" : "No tasks yet"}</p><p className="mb-0 mt-1 text-sm text-muted-foreground">{tasks.length ? "Try another search or filter." : "Create a task and assign it to a creator."}</p></div>}
     </section>
 
   </DashboardListPage>;

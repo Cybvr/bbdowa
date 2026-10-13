@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { Building2, Eye } from "lucide-react";
 import { useMemo, useState } from "react";
 import { isInternalClient, type Client } from "@/lib/clients";
 import type { Job } from "@/lib/jobs";
 import { plural, updatedDate } from "@/lib/format";
 import { Badge, EmptyState, ImageWithFallback } from "@/components/dashboard/ui";
 import { DashboardCardActions } from "@/components/dashboard-card";
-import { CardGrid, ListCard } from "@/components/dashboard/list-card";
+import { CardGrid, DesktopTable, ListCard, MobileRow, MobileRows, ROW_ICON_ACTION } from "@/components/dashboard/list-card";
 import { FilterBar, useListView, type SortOption } from "@/components/dashboard/filter-bar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ClickableTableRow } from "@/components/ui/clickable-table-row";
@@ -90,7 +91,24 @@ export function ClientsDirectory({ clients, jobs }: { clients: Client[]; jobs: J
               ))}
             </CardGrid>
           ) : (
-            <div className="overflow-x-auto">
+            <>
+            <MobileRows>
+              {visibleClients.map((client) => (
+                <MobileRow
+                  key={client.slug}
+                  href={`/admin/clients/${client.slug}/overview`}
+                  image={client.profileImage}
+                  title={client.name}
+                  chip={client.industry}
+                  chipIcon={<Building2 className="h-4 w-4 shrink-0" aria-hidden="true" />}
+                  detail={updatedDate(client.updatedAt ?? client.date)}
+                  status={isInternalClient(client) ? <Badge tone="active">Internal</Badge> : null}
+                  actions={<Link href={`/admin/clients/${client.slug}/overview`} aria-label={`View ${client.name}`} className={ROW_ICON_ACTION}><Eye className="h-5 w-5" aria-hidden="true" /></Link>}
+                  menu={<DashboardCardActions collection="clients" slug={client.slug} titleField="name" title={client.name} triggerClassName={ROW_ICON_ACTION} />}
+                />
+              ))}
+            </MobileRows>
+            <DesktopTable>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -123,7 +141,8 @@ export function ClientsDirectory({ clients, jobs }: { clients: Client[]; jobs: J
                   ))}
                 </TableBody>
               </Table>
-            </div>
+            </DesktopTable>
+            </>
           )
         ) : (
           <EmptyState
