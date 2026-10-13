@@ -13,6 +13,8 @@ type ShareCreatorDialogProps = {
   path: string;
   className?: string;
   showLabel?: boolean;
+  /** Open as soon as it mounts, e.g. right after the link was created. */
+  defaultOpen?: boolean;
 };
 
 function absoluteUrl(path: string) {
@@ -37,8 +39,8 @@ async function copyText(value: string) {
   textarea.remove();
 }
 
-export function ShareCreatorDialog({ creatorName, path, className, showLabel = false, kind = "creator profile" }: ShareCreatorDialogProps) {
-  const [open, setOpen] = useState(false);
+export function ShareCreatorDialog({ creatorName, path, className, showLabel = false, kind = "creator profile", defaultOpen = false }: ShareCreatorDialogProps) {
+  const [open, setOpen] = useState(defaultOpen);
   const [copied, setCopied] = useState(false);
   const [nativeShareAvailable, setNativeShareAvailable] = useState(false);
 

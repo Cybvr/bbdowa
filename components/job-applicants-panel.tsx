@@ -46,7 +46,7 @@ function durationFromJob(job: Job): string {
   return length ? "Less than 1 month" : "";
 }
 
-function postingFromJob(job: Job, id: string, uid: string): JobPosting {
+export function postingFromJob(job: Job, id: string, uid: string): JobPosting {
   const now = new Date().toISOString();
   return {
     id,
@@ -290,4 +290,14 @@ export function JobApplicantsPanel({ job, onTeamChanged }: { job: Job; onTeamCha
       </ul> : <p className="mt-2 text-sm text-muted-foreground">No one has applied yet.</p>}
     </>}
   </section>;
+}
+
+/** Creates the job's public posting (closed until opened in Applicants) and returns its id. */
+export async function createJobPosting(job: Job, uid: string): Promise<string> {
+  const id = newPostingId();
+  const draft = postingFromJob(job, id, uid);
+  const { id: _id, ...record } = draft;
+  await setDoc(doc(firebaseDb, JOB_POSTINGS_COLLECTION, id), record);
+  await setDoc(doc(firebaseDb, JOB_POSTING_LINKS_COLLECTION, job.slug), { postingId: id, jobSlug: job.slug, createdAt: draft.createdAt });
+  return id;
 }

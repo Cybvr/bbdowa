@@ -153,3 +153,9 @@ export async function getOpeningBySlug(slug: string): Promise<Opening | undefine
 
 export const getTaskById = (id: string) =>
   getDocument<Pick<Task, "title" | "description"> & Partial<Pick<Task, "content">>>(TASK_COLLECTION, id);
+
+/** A public job posting's headline, for the share page's title. */
+export async function getJobPostingHeadline(id: string): Promise<string | undefined> {
+  const posting = await getDocument<{ headline?: string }>("jobPostings", id).catch(() => undefined);
+  return posting?.headline?.trim() || undefined;
+}

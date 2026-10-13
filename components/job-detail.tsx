@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { addDoc, collection, doc, getDoc, getDocs, query, serverTimestamp, updateDoc, where } from "firebase/firestore";
-import { ArrowUpRight, Banknote, CalendarClock, CalendarDays, Flag, Plus } from "lucide-react";
+import { ArrowUpRight, Banknote, CalendarClock, CalendarDays, Flag, Plus, Share2 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { Badge, SectionHeading } from "@/components/dashboard/ui";
 import { DetailBreadcrumb, DetailTabs } from "@/components/dashboard/detail-hero";
@@ -28,7 +28,7 @@ import { TeamAddAction } from "@/components/team-add-action";
 import { TeamPanel } from "@/components/team-panel";
 import { JobMediaPanel } from "@/components/job-media-panel";
 import { JobOverviewEditor } from "@/components/job-overview-editor";
-import { JobApplicantsPanel } from "@/components/job-applicants-panel";
+import { JobApplicantsPanel, createJobPosting } from "@/components/job-applicants-panel";
 import { JOB_POSTING_LINKS_COLLECTION, postingHref } from "@/lib/job-postings";
 import { PortalJobInvoices } from "@/components/portal-invoices";
 import { firebaseDb } from "@/lib/firebase/client";
@@ -213,6 +213,40 @@ export function JobDetailContent({ job, adminMode = false, portalMode = false, e
       .catch(() => { if (active) setPostingPath(null); });
     return () => { active = false; };
   }, [isStaff, slug, tab]);
+  const [creatingPosting, setCreatingPosting] = React.useState(false);
+  const [postingJustCreated, setPostingJustCreated] = React.useState(false);
+  // Without a posting yet, Share creates it first, then opens the share dialog with the public link.
+  const shareButton = (showLabel: boolean) => {
+    if (postingPath) return <ShareCreatorDialog key={postingPath} creatorName={title} path={postingPath} kind="job" showLabel={showLabel} defaultOpen={postingJustCreated} />;
+    if (!isStaff || !user) return null;
+    return (
+      <Button
+        type="button"
+        variant="ghost"
+        size={showLabel ? "default" : "icon"}
+        aria-label={`Share ${title}`}
+        title="Share"
+        disabled={creatingPosting}
+        onClick={async () => {
+          setCreatingPosting(true);
+          setActionError(null);
+          try {
+            const id = await createJobPosting(job, actualUser?.uid ?? user.uid);
+            setPostingJustCreated(true);
+            setPostingPath(postingHref(id));
+          } catch (cause) {
+            console.error("Unable to create the share link", cause);
+            setActionError("Couldn’t create the share link.");
+          } finally {
+            setCreatingPosting(false);
+          }
+        }}
+      >
+        <Share2 aria-hidden="true" className="h-4 w-4" />
+        {showLabel ? <span>Share</span> : null}
+      </Button>
+    );
+  };
   const tabs: { id: JobTab; label: string }[] = [
     { id: "overview", label: "Overview" },
     ...(overviewOnly || myJobs || showSignInGate ? [] : [{ id: "case-study" as const, label: "Case study" }]),
@@ -269,7 +303,7 @@ export function JobDetailContent({ job, adminMode = false, portalMode = false, e
     {!embedded ? <>
       <MobileHeaderTitle title={title} />
       <MobileHeaderActions>
-        {postingPath ? <ShareCreatorDialog creatorName={title} path={postingPath} kind="job" /> : null}
+        {shareButton(false)}
         {!adminMode && role === "admin" ? <JobActions job={job} onSaved={() => void loadTerms()} /> : null}
       </MobileHeaderActions>
     </> : null}
@@ -285,7 +319,7 @@ export function JobDetailContent({ job, adminMode = false, portalMode = false, e
             <p className="m-0 mt-1 truncate text-xs text-muted-foreground">JobId: {jobId(job)}</p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            {postingPath ? <ShareCreatorDialog creatorName={title} path={postingPath} kind="job" showLabel /> : null}
+            {shareButton(true)}
             {!adminMode && role === "admin" ? <JobActions job={job} onSaved={() => void loadTerms()} /> : null}
           </div>
         </div>
