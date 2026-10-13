@@ -25,7 +25,7 @@ export const HELP_TOPICS = [
   {
     title: "The Studio",
     href: "/dashboard/discover",
-    body: "Creators, workflows, the team and appraisals, all in one menu in the sidebar.",
+    body: "Creators and appraisals, all in one menu in the sidebar.",
   },
   {
     title: "Your profile",

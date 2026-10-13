@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Briefcase, File, FolderOpen, Info, LayoutGrid, Palette, Search } from "lucide-react";
+import { Briefcase, File, FolderOpen, Info, LayoutGrid, Palette, Search, Users, Workflow } from "lucide-react";
 import { plural } from "@/lib/format";
 
 export type HelpArticle = { title: string; section: string; href: string };
@@ -10,6 +10,8 @@ export type HelpSection = { key: string; label: string; count: number };
 
 const ICONS: Record<string, ReactNode> = {
   general: <LayoutGrid className="h-6 w-6" aria-hidden="true" />,
+  workflows: <Workflow className="h-6 w-6" aria-hidden="true" />,
+  team: <Users className="h-6 w-6" aria-hidden="true" />,
   resources: <FolderOpen className="h-6 w-6" aria-hidden="true" />,
   brand: <Palette className="h-6 w-6" aria-hidden="true" />,
   about: <Info className="h-6 w-6" aria-hidden="true" />,

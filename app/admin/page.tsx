@@ -89,7 +89,7 @@ export default function AdminPage() {
   }, [role]);
 
   const firstName = user?.name?.trim().split(/\s+/)[0] || "there";
-  const peopleHref = role === "admin" ? "/admin/users" : "/dashboard/people";
+  const peopleHref = role === "admin" ? "/admin/users" : "/dashboard/help?tab=team";
   const today = new Intl.DateTimeFormat("en-GB", { weekday: "long", day: "numeric", month: "long" }).format(new Date());
 
   // People: anyone in the directory who hasn't signed in yet hasn't joined.

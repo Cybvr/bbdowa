@@ -50,7 +50,7 @@ type CreatorTab = "overview" | "jobs" | "hours" | "tasks" | "documents";
 
 const SECTIONS = {
   discover: { label: "Discover", listHref: "/dashboard/discover", variant: "creator" },
-  people: { label: "Team", listHref: "/dashboard/people", variant: "team" },
+  people: { label: "Team", listHref: "/dashboard/help?tab=team", variant: "team" },
 } as const;
 
 /**

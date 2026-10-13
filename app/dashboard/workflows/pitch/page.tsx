@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
 export default function PitchWorkflowPage() {
-  redirect("/dashboard/workflows?tab=pitch");
+  redirect("/dashboard/help?tab=workflows&view=pitch");
 }

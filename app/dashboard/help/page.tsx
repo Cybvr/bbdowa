@@ -8,6 +8,8 @@ import { CareersSection } from "@/components/help/careers-section";
 import { GeneralSection, HELP_TOPICS } from "@/components/help/general-section";
 import { HelpGuide, type HelpArticle } from "@/components/help/help-guide";
 import { ResourcesSection } from "@/components/help/resources-section";
+import { TeamSection } from "@/components/help/team-section";
+import { WORKFLOWS, WorkflowsSection } from "@/components/help/workflows-section";
 import { getOpenings, getResources } from "@/lib/firebase/content";
 import { openingHref } from "@/lib/openings";
 
@@ -15,6 +17,8 @@ export const metadata: Metadata = { title: "Help" };
 
 const SECTION_LABELS = {
   general: "General",
+  workflows: "Workflows",
+  team: "Team",
   resources: "Resources",
   brand: "Brand assets",
   about: "About",
@@ -25,10 +29,12 @@ type SectionKey = keyof typeof SECTION_LABELS;
 
 const ABOUT_HEADINGS = ["Akwaaba", "Mission", "Vision", "Who we are", "What we do", "How we work", "The numbers"];
 
-type Props = { searchParams: Promise<{ tab?: string }> };
+type Props = { searchParams: Promise<{ tab?: string; view?: string }> };
+
+const TEAM_HEADINGS = ["Agency organogram", "The client pod", "Shared capability network"];
 
 export default async function HelpPage({ searchParams }: Props) {
-  const requested = (await searchParams).tab;
+  const { tab: requested, view } = await searchParams;
   const tab = requested && requested in SECTION_LABELS ? (requested as SectionKey) : null;
 
   if (tab) {
@@ -55,7 +61,9 @@ export default async function HelpPage({ searchParams }: Props) {
           </nav>
           <div className="min-w-0">
             <PageHeader title={SECTION_LABELS[tab]} />
-            {tab === "resources" ? <ResourcesSection />
+            {tab === "workflows" ? <WorkflowsSection view={view} />
+              : tab === "team" ? <TeamSection />
+              : tab === "resources" ? <ResourcesSection />
               : tab === "brand" ? <BrandSection />
               : tab === "about" ? <AboutSection />
               : tab === "careers" ? <CareersSection />
@@ -69,6 +77,8 @@ export default async function HelpPage({ searchParams }: Props) {
   const [resources, openings] = await Promise.all([getResources(), getOpenings()]);
   const groups: Record<SectionKey, HelpArticle[]> = {
     general: HELP_TOPICS.map((topic) => ({ title: topic.title, section: SECTION_LABELS.general, href: topic.href })),
+    workflows: WORKFLOWS.map((item) => ({ title: item.label, section: SECTION_LABELS.workflows, href: item.key === "pitch" ? "/dashboard/help?tab=workflows&view=pitch" : "/dashboard/help?tab=workflows" })),
+    team: TEAM_HEADINGS.map((heading) => ({ title: heading, section: SECTION_LABELS.team, href: "/dashboard/help?tab=team" })),
     resources: resources.map((resource) => ({ title: resource.label, section: SECTION_LABELS.resources, href: resource.href || "/dashboard/help?tab=resources" })),
     brand: BRAND_SECTIONS.map((section) => ({ title: section.label, section: SECTION_LABELS.brand, href: `/dashboard/help?tab=brand#${section.id}` })),
     about: ABOUT_HEADINGS.map((heading) => ({ title: heading, section: SECTION_LABELS.about, href: "/dashboard/help?tab=about" })),

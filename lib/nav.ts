@@ -43,14 +43,10 @@ export const NAV_ITEMS: NavItem[] = [
     requiresAuth: true,
     match: [
       "/dashboard/discover",
-      "/dashboard/workflows",
-      "/dashboard/people",
       "/dashboard/appraisals",
     ],
     items: [
       { label: "Discover", href: "/dashboard/discover" },
-      { label: "Workflows", href: "/dashboard/workflows" },
-      { label: "Team", href: "/dashboard/people" },
       { label: "Appraisals", href: "/dashboard/appraisals" },
     ],
   },

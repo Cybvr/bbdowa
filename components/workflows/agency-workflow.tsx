@@ -157,7 +157,7 @@ export function AgencyWorkflow() {
           reinforce each other while each channel runs work made for it.
         </p>
         <div className="flex flex-wrap gap-x-6 gap-y-2">
-          <TextLink href="/dashboard/people">View the pod structure</TextLink>
+          <TextLink href="/dashboard/help?tab=team">View the pod structure</TextLink>
           <a
             href="https://www.iab.com/guidelines/ai-governance-and-risk-management-playbook/"
             target="_blank"
