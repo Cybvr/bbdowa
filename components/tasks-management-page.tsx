@@ -16,7 +16,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { RichTextEditor } from "@/components/rich-text-editor";
 import { CreatorMultiPicker } from "@/components/creator-picker";
 import { TaskStatusBadge } from "@/components/tasks-view";
@@ -29,6 +28,7 @@ import { sendAppEmail } from "@/lib/app-email";
 import { plural, updatedDate } from "@/lib/format";
 import { isCreatorUser } from "@/lib/users";
 import { confirmDialog } from "@/components/confirm-dialog";
+import { LIST_ACTION_CLASS } from "@/components/dashboard/list-page-actions";
 
 export type AssigneeOption = { uid: string; name: string; slug: string; isCreator: boolean; hint: string };
 
@@ -107,9 +107,9 @@ export function NewTaskDialog({ assignees, createdBy, createdByName, initialClie
 
   return (
     <>
-      <Button type="button" onClick={() => setOpen(true)}>
+      <button type="button" onClick={() => setOpen(true)} className={LIST_ACTION_CLASS}>
         <Plus aria-hidden="true" className="h-4 w-4" />Add
-      </Button>
+      </button>
 
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent className="sm:max-w-2xl">
@@ -267,7 +267,7 @@ export default function TasksPage() {
     { label: "Duplicate", icon: <Copy className="h-4 w-4" />, onSelect: () => void duplicate(task), disabled: busyId === task.id },
     ...(role === "admin" ? [{ label: "Delete", icon: <Trash2 className="h-4 w-4" />, onSelect: () => void remove(task.id, task.title), destructive: true, disabled: busyId === task.id }] : []),
   ];
-  return <DashboardListPage title="Tasks" actions={<NewTaskDialog assignees={assignees} createdBy={user!.uid} createdByName={user!.name ?? user!.email} onCreated={() => window.location.reload()} />}
+  return <DashboardListPage title="Tasks"
     toolbar={<FilterBar
       panelId="admin-tasks-filter"
       tabs={TASK_STATUS_TABS}
@@ -287,6 +287,7 @@ export default function TasksPage() {
       resultCount={plural(visible.length, "task")}
       view={view}
       onViewChange={setView}
+      actions={<NewTaskDialog assignees={assignees} createdBy={user!.uid} createdByName={user!.name ?? user!.email} onCreated={() => window.location.reload()} />}
       className="my-4"
     />}>
     {error || actionError ? <p className="mb-4 text-[13px] text-destructive">{error ?? actionError}</p> : null}

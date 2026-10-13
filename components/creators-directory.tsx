@@ -485,8 +485,7 @@ function CreatorDiscoveryBar({
       resultCount={plural(visibleCount, "creator")}
       view={view === "list" ? "table" : "cards"}
       onViewChange={(next) => setView(next === "table" ? "list" : "cards")}
-      actions={filterActions}
-      mobileAction={createAction}
+      actions={<>{createAction}{filterActions}</>}
     />
   );
 }

@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { deleteDoc, doc } from "firebase/firestore";
-import { CalendarRange, Eye, Pencil, Plus, Trash2 } from "lucide-react";
+import { CalendarRange, Eye, Pencil, Trash2 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { AppraisalStatus } from "@/components/appraisal-status";
 import { EmptyState, PageHeader } from "@/components/dashboard/ui";
@@ -11,7 +11,6 @@ import { DashboardListPage } from "@/components/dashboard/list-page";
 import { FilterBar, useListView, type SortOption } from "@/components/dashboard/filter-bar";
 import { CardGrid, CardMenu, DesktopTable, ListCard, MobileRow, MobileRows, ROW_ICON_ACTION, type CardMenuItem } from "@/components/dashboard/list-card";
 import { TableActionsCell } from "@/components/dashboard/table-row-actions";
-import { LIST_ACTION_CLASS } from "@/components/dashboard/list-page-actions";
 import { UsersTableSkeleton } from "@/components/dashboard/loading-skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ClickableTableRow } from "@/components/ui/clickable-table-row";
@@ -63,8 +62,8 @@ export default function AppraisalsAdminPage() {
     { label: "Edit", icon: <Pencil className="h-4 w-4" />, href: `/admin/appraisals/${appraisal.id}/edit` },
     ...(role === "admin" ? [{ label: "Delete", icon: <Trash2 className="h-4 w-4" />, onSelect: () => void remove(appraisal.id, appraisal.assignedToName), destructive: true, disabled: busyId === appraisal.id }] : []),
   ];
-  return <DashboardListPage title="Appraisals" actions={<Link href="/admin/appraisals/new" className={LIST_ACTION_CLASS}><Plus aria-hidden="true" className="h-4 w-4" />Add</Link>}
-    toolbar={<FilterBar panelId="admin-appraisals-filter" search={search} onSearchChange={setSearch} searchPlaceholder="Search appraisals" sortOptions={APPRAISAL_SORTS} activeSort={sort} onSortChange={setSort} resultCount={plural(visible.length, "appraisal")} view={view} onViewChange={setView} />}>
+  return <DashboardListPage title="Appraisals"
+    toolbar={<FilterBar panelId="admin-appraisals-filter" search={search} onSearchChange={setSearch} searchPlaceholder="Search appraisals" sortOptions={APPRAISAL_SORTS} activeSort={sort} onSortChange={setSort} resultCount={plural(visible.length, "appraisal")} view={view} onViewChange={setView} add={{ href: "/admin/appraisals/new" }} />}>
     {error || actionError ? <p className="mb-4 text-[13px] text-destructive">{error ?? actionError}</p> : null}
     <section aria-label="Appraisals">
       {sorted.length ? view === "cards" ? <CardGrid>{sorted.map((appraisal) => (

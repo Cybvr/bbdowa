@@ -13,6 +13,7 @@ import { FilterBar, useListView, type FilterTab, type SortOption } from "@/compo
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 import { useAuth } from "@/components/auth-provider";
+import { QuickCreate, type CreateType } from "@/components/quick-create";
 
 const STATUS_TABS: FilterTab<"all" | "active" | "completed" | "archive">[] = [
   { key: "all", label: "All" },
@@ -43,7 +44,7 @@ function liveTime(job: Job): number {
   return job.liveAt ? Date.parse(`${job.liveAt.date}T00:00:00Z`) : 0;
 }
 
-export function JobsTable({ jobs }: { jobs: Job[] }) {
+export function JobsTable({ jobs, createType }: { jobs: Job[]; createType?: CreateType }) {
   const { isAdmin } = useAuth();
   const [status, setStatus] = useState<StatusKey>("all");
   const [category, setCategory] = useState("all");
@@ -104,6 +105,7 @@ export function JobsTable({ jobs }: { jobs: Job[] }) {
         resultCount={plural(visible.length, "job")}
         view={view}
         onViewChange={setView}
+        actions={createType ? <QuickCreate type={createType} /> : null}
       />
 
       <section id="job-panel" aria-label="Jobs">

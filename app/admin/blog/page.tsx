@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { Plus } from "lucide-react";
 import { AdminBlogDirectory } from "@/components/admin-blog-directory";
 import { DashboardListPage } from "@/components/dashboard/list-page";
-import { LIST_ACTION_CLASS } from "@/components/dashboard/list-page-actions";
 import { getBlogPosts } from "@/lib/firebase/content";
 
 export const metadata: Metadata = {
@@ -17,7 +14,6 @@ export default async function AdminBlogPage() {
   return (
     <DashboardListPage
       title="Blog"
-      actions={<Link href="/admin/blog/new" className={LIST_ACTION_CLASS}><Plus aria-hidden="true" className="h-4 w-4" />Add</Link>}
     >
       <AdminBlogDirectory posts={posts} />
     </DashboardListPage>

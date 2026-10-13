@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 
 /** Card grid used by every dashboard list in its cards view. */
 export function CardGrid({ children }: { children: ReactNode }) {
-  return <ul className="m-0 grid list-none gap-4 p-0 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{children}</ul>;
+  return <ul className="m-0 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{children}</ul>;
 }
 
 export const CARD_MENU_TRIGGER =
@@ -97,14 +97,14 @@ export function ListCard({
   );
 }
 
-/** Rows that replace a list's table on phones. */
+/** Rows that replace a list's table below the large breakpoint: one column on phones, two on tablets. */
 export function MobileRows({ children }: { children: ReactNode }) {
-  return <ul className="m-0 grid list-none gap-3 p-0 sm:hidden">{children}</ul>;
+  return <ul className="m-0 grid list-none grid-cols-1 gap-3 p-0 md:grid-cols-2 lg:hidden">{children}</ul>;
 }
 
-/** Wraps a table so it only shows from the small breakpoint up. */
+/** Wraps a table so it only shows from the large breakpoint up. */
 export function DesktopTable({ children }: { children: ReactNode }) {
-  return <div className="hidden overflow-x-auto sm:block">{children}</div>;
+  return <div className="hidden overflow-x-auto lg:block">{children}</div>;
 }
 
 export const ROW_ICON_ACTION =
@@ -144,7 +144,7 @@ export function MobileRow({
   return (
     <li
       onClick={(event) => { if (!(event.target as HTMLElement).closest("button, a, [role=menu], [role=dialog]")) open(); }}
-      className="cursor-pointer rounded-2xl border border-border bg-background p-4 transition hover:border-foreground/30"
+      className="min-w-0 cursor-pointer overflow-hidden rounded-2xl border border-border bg-background p-4 transition hover:border-foreground/30"
     >
       <div className="flex min-w-0 gap-4">
         <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-muted">
@@ -163,7 +163,7 @@ export function MobileRow({
         </div>
       </div>
       {status || actions || menu ? (
-        <div className="mt-3 flex items-center justify-between gap-2 pl-20" onClick={(event) => event.stopPropagation()}>
+        <div className="mt-3 flex min-w-0 items-center justify-between gap-2 pl-20" onClick={(event) => event.stopPropagation()}>
           <div className="min-w-0">{status}</div>
           <div className="flex shrink-0 items-center gap-1">{actions}{menu}</div>
         </div>

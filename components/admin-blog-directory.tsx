@@ -87,6 +87,7 @@ export function AdminBlogDirectory({ posts }: { posts: BlogPost[] }) {
         resultCount={plural(visible.length, "post")}
         view={view}
         onViewChange={setView}
+        add={{ href: "/admin/blog/new" }}
       />
 
       {error ? <p role="alert" className="mb-4 text-sm text-destructive">{error}</p> : null}

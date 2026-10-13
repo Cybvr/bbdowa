@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { addDoc, collection, deleteDoc, doc } from "firebase/firestore";
-import { Copy, Eye, Pencil, Plus, Trash2, UserRound } from "lucide-react";
+import { Copy, Eye, Pencil, Trash2, UserRound } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { DocumentStatus } from "@/components/document-status";
 import { EmptyState, PageHeader } from "@/components/dashboard/ui";
@@ -11,7 +11,6 @@ import { DashboardListPage } from "@/components/dashboard/list-page";
 import { FilterBar, useListView, type FilterTab, type SortOption } from "@/components/dashboard/filter-bar";
 import { CardGrid, CardMenu, DesktopTable, ListCard, MobileRow, MobileRows, ROW_ICON_ACTION, type CardMenuItem } from "@/components/dashboard/list-card";
 import { TableActionsCell } from "@/components/dashboard/table-row-actions";
-import { LIST_ACTION_CLASS } from "@/components/dashboard/list-page-actions";
 import { UsersTableSkeleton } from "@/components/dashboard/loading-skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ClickableTableRow } from "@/components/ui/clickable-table-row";
@@ -102,8 +101,8 @@ export default function DocumentsPage() {
     { label: "Duplicate", icon: <Copy className="h-4 w-4" />, onSelect: () => void duplicate(document), disabled: busyId === document.id },
     ...(role === "admin" ? [{ label: "Delete", icon: <Trash2 className="h-4 w-4" />, onSelect: () => void remove(document.id, document.title), destructive: true, disabled: busyId === document.id }] : []),
   ];
-  return <DashboardListPage title="Documents" actions={<Link href="/admin/documents/new" className={LIST_ACTION_CLASS}><Plus aria-hidden="true" className="h-4 w-4" />Add</Link>}
-    toolbar={<FilterBar panelId="admin-documents-filter" tabs={DOCUMENT_TABS} activeTab={status} onTabChange={setStatus} search={search} onSearchChange={setSearch} searchPlaceholder="Search documents" sortOptions={DOCUMENT_SORTS} activeSort={sort} onSortChange={setSort} resultCount={plural(visible.length, "document")} view={view} onViewChange={setView} />}>
+  return <DashboardListPage title="Documents"
+    toolbar={<FilterBar panelId="admin-documents-filter" tabs={DOCUMENT_TABS} activeTab={status} onTabChange={setStatus} search={search} onSearchChange={setSearch} searchPlaceholder="Search documents" sortOptions={DOCUMENT_SORTS} activeSort={sort} onSortChange={setSort} resultCount={plural(visible.length, "document")} view={view} onViewChange={setView} add={{ href: "/admin/documents/new" }} />}>
     {error || actionError ? <p className="mb-4 text-[13px] text-destructive">{error ?? actionError}</p> : null}
     <section aria-label="Documents">
       {sorted.length ? view === "cards" ? <CardGrid>{sorted.map((document) => (

@@ -335,7 +335,7 @@ export function TaskDetailPage({ task, canEdit, canDelete, assignees, onChanged,
         </div>
         {canEdit ? <button type="button" onClick={() => void shareTask()} className="inline-flex h-9 items-center gap-2 rounded-md border border-border px-3 text-[13px] font-semibold text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"><Share2 className="h-4 w-4" aria-hidden="true" />Share task</button> : null}
       </div>
-      <div className="grid gap-8 pt-7 lg:grid-cols-[minmax(0,1fr)_240px]">
+      <div className="grid gap-8 pt-7">
         <div className="min-w-0">
             {canEdit ? (
               <form onSubmit={save} className="space-y-6">
@@ -397,21 +397,6 @@ export function TaskDetailPage({ task, canEdit, canDelete, assignees, onChanged,
               </section>
             )}
         </div>
-        <aside aria-label="Task information" className="space-y-7 border-t border-border pt-5 text-sm lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
-          <section className="space-y-4">
-            <h2 className="m-0 text-base font-semibold">Assignment</h2>
-            <div><span className="block text-xs font-medium text-muted-foreground">Assigned to</span><p className="mt-1 font-medium">{taskAssigneeNames(task) || "Unassigned"}</p></div>
-            {task.createdByName ? <div><span className="block text-xs font-medium text-muted-foreground">Created by</span><p className="mt-1 font-medium">{task.createdByName}</p></div> : null}
-            {task.clientName ? <div><span className="block text-xs font-medium text-muted-foreground">Client</span><p className="mt-1 font-medium">{task.clientName}</p></div> : null}
-            {task.jobId ? <div><span className="block text-xs font-medium text-muted-foreground">Job</span><Link href={jobHref(task.jobId)} className="mt-1 block font-medium text-primary hover:underline">{task.jobName || "View job"}</Link></div> : null}
-          </section>
-          <section className="space-y-4 border-t border-border pt-5">
-            <h2 className="m-0 text-base font-semibold">Dates</h2>
-            {task.createdAt ? <div><span className="block text-xs font-medium text-muted-foreground">Created</span><p className="mt-1 font-medium"><time dateTime={task.createdAt}>{formatDate(task.createdAt)}</time></p></div> : null}
-            {task.dueDate ? <div><span className="block text-xs font-medium text-muted-foreground">Due</span><p className="mt-1 font-medium"><time dateTime={task.dueDate}>{formatDate(task.dueDate)}</time></p></div> : null}
-            {task.updatedAt ? <div><span className="block text-xs font-medium text-muted-foreground">Last updated</span><p className="mt-1 font-medium"><time dateTime={task.updatedAt}>{formatDate(task.updatedAt)}</time></p></div> : null}
-          </section>
-        </aside>
       </div>
       <Dialog open={shareOpen} onOpenChange={setShareOpen}>
         <DialogContent className="sm:max-w-lg">

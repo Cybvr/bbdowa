@@ -19,17 +19,12 @@ export default function DiscoverPage() {
   return (
     <DashboardListPage
       title="Discover"
-      actions={
-        <div className="hidden sm:block">
-          <CreatorCreateAction existingSlugs={users.map((user) => user.slug)} categoryOptions={categories} />
-        </div>
-      }
     >
       <CreatorDirectory
         creators={creators}
         categories={categories}
         locations={locations}
-        createAction={<CreatorCreateAction existingSlugs={users.map((user) => user.slug)} categoryOptions={categories} iconOnly />}
+        createAction={<CreatorCreateAction existingSlugs={users.map((user) => user.slug)} categoryOptions={categories} />}
       />
     </DashboardListPage>
   );

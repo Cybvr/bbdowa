@@ -182,7 +182,6 @@ export default function AdminUsersPage() {
   return (
     <DashboardListPage
         title="Users"
-        actions={<UserCreateAction existingSlugs={users.map((user) => user.slug)} categoryOptions={categoryOptions} />}
       toolbar={<FilterBar
         panelId="admin-users-filter"
         search={search}
@@ -209,6 +208,7 @@ export default function AdminUsersPage() {
         resultCount={plural(visibleUsers.length, "user")}
         view={view}
         onViewChange={setView}
+        actions={<UserCreateAction existingSlugs={users.map((user) => user.slug)} categoryOptions={categoryOptions} />}
       />}>
 
       <section aria-label="Users">

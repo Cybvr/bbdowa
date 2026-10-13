@@ -78,7 +78,6 @@ export default function AdminInvoicesPage() {
   return (
     <DashboardListPage
       title="Invoices"
-      actions={<button type="button" onClick={() => setCreating(true)} className={LIST_ACTION_CLASS}><Plus aria-hidden="true" className="h-4 w-4" />Add</button>}
       toolbar={<>
         <div className="mt-4">
           <StatRow>
@@ -101,6 +100,7 @@ export default function AdminInvoicesPage() {
           resultCount={plural(visible.length, "invoice")}
           view={view}
           onViewChange={setView}
+          actions={<button type="button" onClick={() => setCreating(true)} className={LIST_ACTION_CLASS}><Plus aria-hidden="true" className="h-4 w-4" />Add</button>}
         />
       </>}
     >

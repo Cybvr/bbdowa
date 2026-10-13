@@ -12,8 +12,8 @@ export default async function AdminJobsPage() {
   const jobs = await getJobs();
 
   return (
-    <DashboardListPage title="Jobs" createType="job">
-      <JobsTable jobs={jobs} />
+    <DashboardListPage title="Jobs">
+      <JobsTable jobs={jobs} createType="job" />
     </DashboardListPage>
   );
 }

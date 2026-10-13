@@ -255,7 +255,6 @@ export default function AdminTimePage() {
   return (
     <DashboardListPage
       title="Tracker"
-      actions={isAdmin ? <button type="button" onClick={() => { setFormError(null); setForm({ ...EMPTY_FORM, startedAt: toLocalInput(new Date().toISOString()) }); }} className={LIST_ACTION_CLASS}><Plus aria-hidden="true" className="h-4 w-4" />Add</button> : null}
       toolbar={<FilterBar
         panelId="admin-time-filter"
         search={search}
@@ -274,6 +273,7 @@ export default function AdminTimePage() {
         resultCount={`${visible.length} ${visible.length === 1 ? "entry" : "entries"} · ${formatClockFull(totalMs)}`}
         view={view}
         onViewChange={setView}
+        actions={isAdmin ? <button type="button" onClick={() => { setFormError(null); setForm({ ...EMPTY_FORM, startedAt: toLocalInput(new Date().toISOString()) }); }} className={LIST_ACTION_CLASS}><Plus aria-hidden="true" className="h-4 w-4" />Add</button> : null}
       />}
     >
       {error ? <p role="alert" className="mb-4 text-[13px] text-destructive">{error}</p> : null}

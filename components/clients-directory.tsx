@@ -13,6 +13,7 @@ import { FilterBar, useListView, type SortOption } from "@/components/dashboard/
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 import { useAuth } from "@/components/auth-provider";
+import { QuickCreate, type CreateType } from "@/components/quick-create";
 
 const SORTS: SortOption<"name" | "date" | "modified" | "industry">[] = [
   { key: "name", label: "Name (A–Z)" },
@@ -23,7 +24,7 @@ const SORTS: SortOption<"name" | "date" | "modified" | "industry">[] = [
 
 type SortKey = (typeof SORTS)[number]["key"];
 
-export function ClientsDirectory({ clients, jobs }: { clients: Client[]; jobs: Job[] }) {
+export function ClientsDirectory({ clients, jobs, createType }: { clients: Client[]; jobs: Job[]; createType?: CreateType }) {
   const { isAdmin } = useAuth();
   const [industry, setIndustry] = useState("all");
   const [search, setSearch] = useState("");
@@ -73,6 +74,7 @@ export function ClientsDirectory({ clients, jobs }: { clients: Client[]; jobs: J
         resultCount={plural(visibleClients.length, "client")}
         view={view}
         onViewChange={setView}
+        actions={createType ? <QuickCreate type={createType} /> : null}
       />
 
       <section id="client-panel" aria-label="Clients">

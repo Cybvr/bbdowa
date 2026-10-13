@@ -8,8 +8,10 @@
  */
 
 import { type ReactNode, useEffect, useState } from "react";
-import { Filter, Grid2X2, List } from "lucide-react";
+import Link from "next/link";
+import { Filter, Grid2X2, List, Plus } from "lucide-react";
 import { useMobileHeader } from "@/components/dashboard/mobile-header";
+import { LIST_ACTION_CLASS } from "@/components/dashboard/list-page-actions";
 import {
   Sheet,
   SheetClose,
@@ -169,6 +171,7 @@ export function FilterBar<TabKey extends string, SortKey extends string>({
   resultCount,
   view,
   onViewChange,
+  add,
   actions,
   mobileAction,
   className = "my-4",
@@ -189,6 +192,7 @@ export function FilterBar<TabKey extends string, SortKey extends string>({
   resultCount?: string;
   view?: ViewMode;
   onViewChange?: (view: ViewMode) => void;
+  add?: { href: string; label?: string };
   actions?: ReactNode;
   /** Extra control shown only in the mobile row, next to the view toggle. */
   mobileAction?: ReactNode;
@@ -227,71 +231,76 @@ export function FilterBar<TabKey extends string, SortKey extends string>({
             className={`${SEARCH_FIELD} ${searchClassName} w-full max-w-full flex-1 placeholder:text-muted-foreground sm:w-auto`}
           />
         ) : null}
-        {hasSheet ? (
-          <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
-            <SheetTrigger asChild>
-              <button
-                type="button"
-                className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-[13px] font-semibold text-foreground transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:hidden"
-              >
-                <Filter className="h-3.5 w-3.5" aria-hidden="true" />
-                Filters
-                {activeFilterCount > 0 ? (
-                  <span className="grid h-4 min-w-4 place-items-center rounded-full bg-foreground px-1 text-[10px] text-background">
-                    {activeFilterCount}
-                  </span>
-                ) : null}
-              </button>
-            </SheetTrigger>
-            <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto p-0">
-              <SheetHeader className="border-b border-border pr-12">
-                <SheetTitle>Filters</SheetTitle>
-              </SheetHeader>
-              <div className="space-y-5 px-4 pb-4">
-                {hasStatus ? (
-                  <SheetSelect
-                    label={tabsLabel}
-                    value={String(activeTab)}
-                    onChange={(value) => onTabChange!(value as TabKey)}
-                    options={statusOptions}
-                  />
-                ) : null}
-                {filters?.map((filter) => (
-                  <SheetSelect
-                    key={filter.label}
-                    label={filter.label}
-                    value={filter.value}
-                    onChange={filter.onChange}
-                    options={filter.options}
-                  />
-                ))}
-                {hasSort ? (
-                  <SheetSelect
-                    label="Sort by"
-                    value={String(activeSort)}
-                    onChange={(value) => onSortChange!(value as SortKey)}
-                    options={sortOptions!.map((option) => ({ value: option.key, label: option.label }))}
-                  />
-                ) : null}
-              </div>
-              <SheetFooter className="border-t border-border sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex shrink-0 items-center gap-2 sm:contents">
+          {hasSheet ? (
+            <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
+              <SheetTrigger asChild>
                 <button
                   type="button"
-                  onClick={clearFilters}
-                  disabled={activeFilterCount === 0}
-                  className="h-9 rounded-lg px-3 text-[13px] font-semibold text-muted-foreground transition hover:text-foreground disabled:cursor-not-allowed disabled:opacity-45"
+                  className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-[13px] font-semibold text-foreground transition hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:hidden"
                 >
-                  Clear filters
+                  <Filter className="h-3.5 w-3.5" aria-hidden="true" />
+                  Filters
+                  {activeFilterCount > 0 ? (
+                    <span className="grid h-4 min-w-4 place-items-center rounded-full bg-foreground px-1 text-[10px] text-background">
+                      {activeFilterCount}
+                    </span>
+                  ) : null}
                 </button>
-                <SheetClose asChild>
-                  <button type="button" className="h-9 rounded-lg bg-foreground px-4 text-[13px] font-semibold text-background transition hover:opacity-90">
-                    Done
+              </SheetTrigger>
+              <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto p-0">
+                <SheetHeader className="border-b border-border pr-12">
+                  <SheetTitle>Filters</SheetTitle>
+                </SheetHeader>
+                <div className="space-y-5 px-4 pb-4">
+                  {hasStatus ? (
+                    <SheetSelect
+                      label={tabsLabel}
+                      value={String(activeTab)}
+                      onChange={(value) => onTabChange!(value as TabKey)}
+                      options={statusOptions}
+                    />
+                  ) : null}
+                  {filters?.map((filter) => (
+                    <SheetSelect
+                      key={filter.label}
+                      label={filter.label}
+                      value={filter.value}
+                      onChange={filter.onChange}
+                      options={filter.options}
+                    />
+                  ))}
+                  {hasSort ? (
+                    <SheetSelect
+                      label="Sort by"
+                      value={String(activeSort)}
+                      onChange={(value) => onSortChange!(value as SortKey)}
+                      options={sortOptions!.map((option) => ({ value: option.key, label: option.label }))}
+                    />
+                  ) : null}
+                </div>
+                <SheetFooter className="border-t border-border sm:flex-row sm:items-center sm:justify-between">
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    disabled={activeFilterCount === 0}
+                    className="h-9 rounded-lg px-3 text-[13px] font-semibold text-muted-foreground transition hover:text-foreground disabled:cursor-not-allowed disabled:opacity-45"
+                  >
+                    Clear filters
                   </button>
-                </SheetClose>
-              </SheetFooter>
-            </SheetContent>
-          </Sheet>
-        ) : null}
+                  <SheetClose asChild>
+                    <button type="button" className="h-9 rounded-lg bg-foreground px-4 text-[13px] font-semibold text-background transition hover:opacity-90">
+                      Done
+                    </button>
+                  </SheetClose>
+                </SheetFooter>
+              </SheetContent>
+            </Sheet>
+          ) : null}
+          {add ? <Link href={add.href} className={`${LIST_ACTION_CLASS} sm:hidden`}><Plus aria-hidden="true" className="h-4 w-4" />{add.label ?? "Add"}</Link> : null}
+          {actions ? <div className="flex shrink-0 items-center gap-2 sm:hidden">{actions}</div> : null}
+          {mobileAction ? <div className="flex shrink-0 items-center gap-2 sm:hidden">{mobileAction}</div> : null}
+        </div>
       </div>
 
       <div className="hidden ml-auto flex-wrap items-center justify-end gap-2 sm:flex sm:gap-3">
@@ -327,6 +336,7 @@ export function FilterBar<TabKey extends string, SortKey extends string>({
             {resultCount}
           </p>
         ) : null}
+        {add ? <Link href={add.href} className={LIST_ACTION_CLASS}><Plus aria-hidden="true" className="h-4 w-4" />{add.label ?? "Add"}</Link> : null}
         {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
 
       </div>
@@ -337,8 +347,6 @@ export function FilterBar<TabKey extends string, SortKey extends string>({
           </p>
         ) : <span />}
         <div className="flex items-center gap-2">
-          {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
-          {mobileAction}
           {view && onViewChange ? <ViewToggle view={view} onChange={onViewChange} /> : null}
         </div>
       </div>

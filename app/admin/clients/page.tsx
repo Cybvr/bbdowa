@@ -12,8 +12,8 @@ export default async function ClientsPage() {
   const [clients, jobs] = await Promise.all([getClients(), getJobs()]);
 
   return (
-    <DashboardListPage title="Clients" createType="client">
-      <ClientsDirectory clients={clients} jobs={jobs} />
+    <DashboardListPage title="Clients">
+      <ClientsDirectory clients={clients} jobs={jobs} createType="client" />
     </DashboardListPage>
   );
 }
