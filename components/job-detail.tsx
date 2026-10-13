@@ -28,6 +28,7 @@ import { TeamAddAction } from "@/components/team-add-action";
 import { TeamPanel } from "@/components/team-panel";
 import { JobMediaPanel } from "@/components/job-media-panel";
 import { JobOverviewEditor } from "@/components/job-overview-editor";
+import { JobApplicantsPanel } from "@/components/job-applicants-panel";
 import { PortalJobInvoices } from "@/components/portal-invoices";
 import { firebaseDb } from "@/lib/firebase/client";
 import { sendAppEmail } from "@/lib/app-email";
@@ -42,7 +43,7 @@ import { ACTIVITY_COLLECTION, elapsedMs, formatDuration, type ActivityEntry } fr
 import { isCreatorUser, jobTeamKey, matchesJobTeamKey, userHref } from "@/lib/users";
 import { notify } from "@/lib/email/notify";
 
-type JobTab = "overview" | "case-study" | "media" | "team" | "tasks" | "timesheets" | "payments";
+type JobTab = "overview" | "case-study" | "media" | "team" | "applicants" | "tasks" | "timesheets" | "payments";
 const fieldClass = "block space-y-1.5 text-sm font-medium";
 const SECTION = "border-b border-border py-6";
 const BODY = "m-0 max-w-[70ch] text-[15px] leading-[1.55]";
@@ -208,6 +209,7 @@ export function JobDetailContent({ job, adminMode = false, portalMode = false, e
     ...(!overviewOnly && user ? [
       // My jobs shows the team on the overview instead of its own tab.
       ...(myJobs ? [] : [{ id: "team" as const, label: "Team" }]),
+      ...(canManage ? [{ id: "applicants" as const, label: "Applicants" }] : []),
       { id: "tasks" as const, label: "Tasks" },
       { id: "timesheets" as const, label: "Tracker" },
       { id: "payments" as const, label: "Payments" },
@@ -350,6 +352,8 @@ export function JobDetailContent({ job, adminMode = false, portalMode = false, e
     {tab === "media" && (hasMedia || canManage || portalMode) ? <JobMediaPanel jobSlug={slug} jobName={title} initialMedia={job.media ?? []}canManage={canManage} /> : null}
 
     {tab === "team" ? <section className="pt-6"><ClientWorkspaceHeading title="Team" actions={canManage ? <TeamAddAction jobSlug={slug} jobName={title} creators={users} selectedSlugs={teamSlugs} onSaved={(slugs) => { setTeamSlugs(slugs); void loadTerms(); }} /> : null} />{portalMode ? <div className="mt-4 rounded-xl border border-border bg-background p-4 sm:p-5">{lead || teamMembers.length ? <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2 lg:grid-cols-3">{[...(lead ? [lead] : []), ...teamMembers.filter((person) => person.slug !== lead?.slug)].map((person) => <li key={jobTeamKey(person)} className="flex items-center gap-3"><CreatorThumbnail imageSrc={person.profileImage} avatarSeed={person.name} className="h-8 w-8 shrink-0" /><span className="min-w-0 truncate font-medium">{person.name}</span>{person.slug === lead?.slug ? <span className="text-xs text-muted-foreground">Team lead</span> : null}</li>)}</ul> : <p className="m-0 text-sm text-muted-foreground">We’re putting the team together.</p>}</div> : <TeamPanel panelId={`job-${slug}-team-filter`} label={`${title} team`} members={teamMembers} allUsers={users} listHref={currentJobHref} emptyText="No one is on this job's team yet." />}</section> : null}
+
+    {tab === "applicants" && canManage ? <JobApplicantsPanel job={job} onTeamChanged={() => { void loadTerms(); router.refresh(); }} /> : null}
 
     {tab === "tasks" ? <section className="pt-6">
       <ClientWorkspaceHeading title="Tasks" actions={canManage ? <>{terms?.assignedTo ? <Button type="button" variant="outline" onClick={() => setAttachingTask(true)}>Attach task</Button> : null}<Button type="button" onClick={() => setAddingTask(true)}><Plus aria-hidden="true" className="h-3.5 w-3.5" />Add</Button></> : null} />

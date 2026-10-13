@@ -181,6 +181,51 @@ service cloud.firestore {
           "languages", "fee", "updatedAt"
         ]);
     }
+    // Brandless job postings behind a random share link. Public to read so
+    // anyone with the link can see the job; only staff write them.
+    match /jobPostings/{id} {
+      allow read: if true;
+      allow write: if (isAdmin() || isManager());
+    }
+
+    // Which job a posting belongs to, keyed by job slug. Staff only, so the
+    // share link can't be traced back to the brand.
+    match /jobPostingLinks/{jobSlug} {
+      allow read, write: if (isAdmin() || isManager());
+    }
+
+    // Applications to a posting, one per person (`{postingId}_{uid}`). The
+    // applicant sends and edits their own while it's new; staff review it and
+    // set the status and, on shortlist, the job it's for.
+    match /jobApplications/{id} {
+      function applicantKeys() {
+        return [
+          "postingId", "uid", "name", "email", "rateAmount", "rateCurrency", "rateUnit",
+          "duration", "coverIntro", "coverApproach", "coverNext", "answers", "portfolio",
+          "samples", "testimonial", "status", "jobSlug", "createdAt", "updatedAt"
+        ];
+      }
+      allow read: if (isAdmin() || isManager())
+        || (signedIn() && resource.data.uid == request.auth.uid);
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && id == request.resource.data.postingId + "_" + request.auth.uid
+        && request.resource.data.status == "submitted"
+        && request.resource.data.jobSlug == null
+        && request.resource.data.keys().hasOnly(applicantKeys())
+        && exists(/databases/$(database)/documents/jobPostings/$(request.resource.data.postingId))
+        && get(/databases/$(database)/documents/jobPostings/$(request.resource.data.postingId)).data.status == "open";
+      allow update: if (isAdmin() || isManager())
+        || (signedIn()
+          && resource.data.uid == request.auth.uid
+          && resource.data.status == "submitted"
+          && request.resource.data.keys().hasOnly(applicantKeys())
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+            "postingId", "uid", "status", "jobSlug", "createdAt"
+          ]));
+      allow delete: if (isAdmin() || isManager());
+    }
+
     match /campaigns/{id} {
       allow read: if true;
       allow write: if (isAdmin() || isManager());

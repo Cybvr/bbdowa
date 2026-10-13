@@ -156,6 +156,15 @@ const builtinTemplates = {
     }, `You were added to ${input.job}`);
   },
 
+  applicationReceived(input: { to: string | null; applicant: string | null; job: string; url: string }) {
+    return render({
+      preheader: `${input.applicant ?? "Someone"} applied to ${input.job}.`,
+      heading: "New job application",
+      paragraphs: [`Hi ${firstName(input.to)}, ${input.applicant ?? "a freelancer"} applied to "${input.job}".`],
+      button: { label: "Review applicants", url: input.url },
+    }, `New application: ${input.job}`);
+  },
+
   messageReceived(input: { to: string | null; from: string | null; preview: string; url: string }) {
     const sender = input.from ?? "Someone";
     return render({

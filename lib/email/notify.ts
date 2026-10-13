@@ -10,6 +10,7 @@ export type NotifyEvent =
   | { event: "payment.paid"; id: string }
   | { event: "job.assigned"; id: string; uids: string[] }
   | { event: "message.sent"; id: string }
+  | { event: "application.submitted"; id: string }
   | { event: "client.invite"; email: string }
   | { event: "welcome" }
   | { event: "test" };

@@ -36,12 +36,19 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
     else router.replace("/portal");
   }, [isClientUser, isViewingAs, stopViewingAs, router]);
 
+  // The dashboard is for signed-in people only. Shared job links live at /jobs.
+  const signedOut = Boolean(auth && !auth.loading && !auth.user);
+  useEffect(() => {
+    if (signedOut) router.replace(`/auth/login?next=${encodeURIComponent(pathname)}`);
+  }, [signedOut, pathname, router]);
+
   // An admin switched onboarding on for this person: send them through it first.
   useEffect(() => {
     if (onboardingDue && !pathname.startsWith("/onboarding")) router.replace("/onboarding");
   }, [onboardingDue, pathname, router]);
 
   if (isClientUser) return null;
+  if (!auth || auth.loading || signedOut) return null;
   if (isApplication) return <>{children}</>;
 
   const hideMobileHeader = isClientDetail;
