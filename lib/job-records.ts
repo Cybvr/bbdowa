@@ -47,7 +47,7 @@ export function newJobRecord({
     leadUserId: null,
     creatorSlugs,
     publishedBy: null,
-    fee: "To be confirmed",
+    fee: "",
     target: "To be confirmed",
     result: "To be confirmed",
     image: "/images/projects/project-placeholder.svg",

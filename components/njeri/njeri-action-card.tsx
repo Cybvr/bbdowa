@@ -196,7 +196,7 @@ export async function executeNjeriAction(
         status: action.record.status,
         leadUserId: null,
         publishedBy: user.uid,
-        fee: "To be confirmed",
+        fee: "",
         target: action.record.target || "To be confirmed",
         result: action.record.outcome || "To be confirmed",
         image: "/images/projects/project-placeholder.svg",

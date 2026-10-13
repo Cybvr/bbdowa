@@ -50,7 +50,7 @@ function briefFields(brief: JobBrief) {
     desiredStartDate: brief.startDate || null,
     startDate: brief.startDate || null,
     endDate: brief.endDate || null,
-    fee: brief.budget.trim() || "To be confirmed",
+    fee: brief.budget.trim(),
     updatedAt: serverTimestamp(),
   };
 }

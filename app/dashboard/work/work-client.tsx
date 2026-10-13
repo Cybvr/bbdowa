@@ -104,7 +104,7 @@ function MyTasksPage() {
       </ul> : <p className="py-12 text-center text-sm text-muted-foreground">{tasks.length ? "No tasks match." : "No tasks yet."}</p>) : visible.length ? (
         <section className="mt-4 overflow-x-auto">
           <Table className="w-full min-w-[620px] table-fixed border-collapse">
-            <TableHeader><TableRow><TableHead className="px-4 py-3">Task</TableHead><TableHead className="w-28 px-4 py-3">Created</TableHead><TableHead className="w-28 px-4 py-3">Due</TableHead><TableHead className="w-32 px-4 py-3 text-right">Status</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead className="px-4 py-3">Task</TableHead><TableHead className="w-28 px-4 py-3">Created</TableHead><TableHead className="w-28 px-4 py-3">Due</TableHead><TableHead className="w-24 px-4 py-3 text-right">Status</TableHead></TableRow></TableHeader>
             <TableBody>
           {visible.map((task) => (
             <ClickableTableRow key={task.id} label={`Open task ${task.title}`} onActivate={() => router.push(`/dashboard/work/${encodeURIComponent(task.id)}`)} className="align-middle">

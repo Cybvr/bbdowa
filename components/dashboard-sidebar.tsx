@@ -198,7 +198,9 @@ export function DashboardNavList({ onNavigate, collapsed = false }: { onNavigate
                     {formatClock(elapsedMs(running, now))}
                   </span>
                 ) : item.label === "My Jobs" && !collapsed && myJobsCount !== null ? (
-                  <span className="ml-auto text-xs font-semibold tabular-nums text-muted-foreground">{myJobsCount}</span>
+                  <span className="ml-auto grid h-6 w-6 shrink-0 place-items-center rounded-full bg-primary text-xs font-semibold tabular-nums text-primary-foreground">
+                    {myJobsCount}
+                  </span>
                 ) : null}
               </Link>
             </li>

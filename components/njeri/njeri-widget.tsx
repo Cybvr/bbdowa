@@ -1,9 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Maximize2, X, Plus } from "lucide-react";
+import { Minimize2, X, Plus } from "lucide-react";
 import { NjeriMark } from "./njeri-mark";
 import { NjeriChatView } from "./njeri-chat-view";
 import { useNjeri } from "./use-njeri";
@@ -25,7 +24,6 @@ export function NjeriWidget() {
 
   // Hidden on the dedicated Njeri page and across the admin section.
   const isHidden = pathname === "/dashboard/njeri" || pathname === "/portal/njeri" || pathname === "/njeri" || pathname.startsWith("/admin");
-  const fullPageHref = pathname.startsWith("/portal") ? "/portal/njeri" : "/dashboard/njeri";
 
   useEffect(() => {
     if (!open) return;
@@ -48,12 +46,16 @@ export function NjeriWidget() {
     return (
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          newChat();
+          setOpen(true);
+        }}
         aria-label="Open Njeri assistant"
         title="Open Njeri Assistant"
-        className="fixed bottom-3 right-3 z-50 hidden h-[88px] w-[54px] cursor-pointer place-items-center border-0 bg-transparent p-0 transition-transform duration-200 hover:scale-105 active:scale-95 focus-visible:rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 md:grid"
+        aria-expanded={open}
+        className="fixed bottom-4 right-4 z-50 hidden h-14 w-14 cursor-pointer place-items-center overflow-hidden rounded-full border-0 bg-primary p-0 transition-transform duration-200 hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 md:grid"
       >
-        <NjeriMark className="h-full w-full object-contain drop-shadow-[0_2px_5px_rgba(0,0,0,0.18)]" />
+        <NjeriMark className="h-full w-full object-cover object-top" />
       </button>
     );
   }
@@ -83,20 +85,21 @@ export function NjeriWidget() {
               <Plus className="h-4 w-4" />
             </button>
 
-            <Link
-              href={fullPageHref}
+            <button
+              type="button"
               onClick={() => setOpen(false)}
-              aria-label="Open full page"
-              title="Open full page with history"
+              aria-label="Minimize Njeri"
+              title="Minimize Njeri"
               className="grid h-10 w-10 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground"
             >
-              <Maximize2 className="h-3.5 w-3.5" />
-            </Link>
+              <Minimize2 className="h-4 w-4" />
+            </button>
 
             <button
               type="button"
               onClick={() => setOpen(false)}
               aria-label="Close Njeri"
+              title="Close Njeri"
               className="grid h-10 w-10 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground"
             >
               <X className="h-4 w-4" />

@@ -9,10 +9,10 @@ import { useAuth } from "@/components/auth-provider";
 import { EmptyState, PageHeader } from "@/components/dashboard/ui";
 import { DashboardListPage } from "@/components/dashboard/list-page";
 import { FilterBar, useListView, type FilterTab, type SortOption } from "@/components/dashboard/filter-bar";
-import { CardGrid, CardMenu, DesktopTable, ListCard, MobileRow, MobileRows, ROW_ICON_ACTION, type CardMenuItem } from "@/components/dashboard/list-card";
+import { CardGrid, CardMenu, ListCard, MobileRow, MobileRows, ROW_ICON_ACTION, type CardMenuItem } from "@/components/dashboard/list-card";
 import { TableActionsCell } from "@/components/dashboard/table-row-actions";
 import { UsersTableSkeleton } from "@/components/dashboard/loading-skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -301,20 +301,19 @@ export default function TasksPage() {
         const assignee = taskAssignees(task).length === 1 ? assignees.find((candidate) => candidate.uid === task.assignedTo) : undefined;
         const name = taskAssigneeNames(task) || assignee?.name || "Unassigned";
         return <MobileRow key={task.id} href={`/dashboard/work/${encodeURIComponent(task.id)}`} title={task.title} chip={task.jobName || task.clientName || "No job"} chipIcon={<Briefcase className="h-4 w-4 shrink-0" aria-hidden="true" />} detail={`${name} · ${updatedDate(task.updatedAt ?? task.createdAt)}`} status={<TaskStatusBadge status={task.status} overdue={isOverdue(task)} />} actions={<Link href={`/dashboard/work/${encodeURIComponent(task.id)}`} aria-label={`View ${task.title}`} className={ROW_ICON_ACTION}><Eye className="h-5 w-5" aria-hidden="true" /></Link>} menu={<CardMenu items={menuItems(task)} triggerClassName={ROW_ICON_ACTION} />} />;
-      })}</MobileRows><DesktopTable><Table className="min-w-[760px] table-fixed"><TableHeader><TableRow><TableHead>Task</TableHead><TableHead className="w-32">Status</TableHead><TableHead className="w-28">Updated</TableHead><TableHead className="w-28">Due</TableHead><TableHead className="w-[1%] whitespace-nowrap text-right">Actions</TableHead></TableRow></TableHeader><TableBody>{visible.map((task) => {
+      })}</MobileRows><div className="hidden w-full lg:block"><table className="w-full table-auto border-collapse text-body"><TableHeader><TableRow><TableHead className="w-[36%]">Task</TableHead><TableHead className="w-20">Status</TableHead><TableHead className="w-24">Due</TableHead><TableHead className="w-[1%] whitespace-nowrap text-right">Actions</TableHead></TableRow></TableHeader><TableBody>{visible.map((task) => {
         const assignee = taskAssignees(task).length === 1 ? assignees.find((candidate) => candidate.uid === task.assignedTo) : undefined;
         const name = taskAssigneeNames(task) || assignee?.name || "—";
         return <ClickableTableRow key={task.id} label={`Open task ${task.title}`} onActivate={() => router.push(`/dashboard/work/${encodeURIComponent(task.id)}`)} className="align-middle">
           <TableCell>
-            <Link href={`/dashboard/work/${encodeURIComponent(task.id)}`} className="m-0 block max-w-full truncate text-left font-semibold text-foreground hover:text-primary">{task.title}</Link>
-            <div className="mt-1 flex min-w-0 items-center gap-2 overflow-hidden whitespace-nowrap text-[13px] text-muted-foreground">
-              {assignee?.isCreator ? <Link href={`/dashboard/discover/${assignee.slug}`} className="max-w-[35%] shrink-0 truncate font-semibold text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary">{name}</Link> : <span className="max-w-[35%] shrink-0 truncate">{name}</span>}
-              {task.clientName ? <span className="hidden truncate sm:inline">· {task.clientName}</span> : null}
-              {task.jobName ? <span className="hidden truncate lg:inline">· {task.jobName}</span> : null}
+            <Link href={`/dashboard/work/${encodeURIComponent(task.id)}`} className="m-0 block break-words text-left font-semibold text-foreground hover:text-primary">{task.title}</Link>
+            <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-muted-foreground">
+              {assignee?.isCreator ? <Link href={`/dashboard/discover/${assignee.slug}`} className="break-words font-semibold text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary">{name}</Link> : <span className="break-words">{name}</span>}
+              {task.clientName ? <span className="break-words">· {task.clientName}</span> : null}
+              {task.jobName ? <span className="break-words">· {task.jobName}</span> : null}
             </div>
           </TableCell>
           <TableCell><TaskStatusBadge status={task.status} overdue={isOverdue(task)} /></TableCell>
-          <TableCell className="whitespace-nowrap text-sm text-muted-foreground">{updatedDate(task.updatedAt ?? task.createdAt)}</TableCell>
           <TableCell className="whitespace-nowrap text-sm text-muted-foreground">{task.dueDate ? <time dateTime={task.dueDate}>{formatDate(task.dueDate)}</time> : "—"}</TableCell>
           <TableActionsCell
             primary={{ label: "Duplicate", icon: <Copy className="h-4 w-4" />, onSelect: () => void duplicate(task), disabled: busyId === task.id }}
@@ -322,7 +321,7 @@ export default function TasksPage() {
             label={`More actions for ${task.title}`}
           />
         </ClickableTableRow>;
-      })}</TableBody></Table></DesktopTable></> : <div className="px-5 py-12 text-center"><p className="m-0 text-[15px] font-semibold">{tasks.length ? "No tasks match" : "No tasks yet"}</p><p className="mb-0 mt-1 text-sm text-muted-foreground">{tasks.length ? "Try another search or filter." : "Create a task and assign it to a creator."}</p></div>}
+      })}</TableBody></table></div></> : <div className="px-5 py-12 text-center"><p className="m-0 text-[15px] font-semibold">{tasks.length ? "No tasks match" : "No tasks yet"}</p><p className="mb-0 mt-1 text-sm text-muted-foreground">{tasks.length ? "Try another search or filter." : "Create a task and assign it to a creator."}</p></div>}
     </section>
 
   </DashboardListPage>;

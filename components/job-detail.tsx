@@ -32,7 +32,7 @@ import { PortalJobInvoices } from "@/components/portal-invoices";
 import { firebaseDb } from "@/lib/firebase/client";
 import { sendAppEmail } from "@/lib/app-email";
 import { useFirestoreUsers } from "@/lib/firebase/client-content";
-import { jobHref, jobId, jobTitle, type Job } from "@/lib/jobs";
+import { jobHref, jobId, jobPostedDate, jobTitle, type Job } from "@/lib/jobs";
 import { teamSizeLabel, type Client } from "@/lib/clients";
 import { TASK_COLLECTION, formatDate, isOverdue, type Task } from "@/lib/creator-tasks";
 import { BILLING_CYCLE_LABELS, JOB_TERMS_COLLECTION, jobAssignees, type JobTerms } from "@/lib/job-terms";
@@ -238,7 +238,7 @@ export function JobDetailContent({ job, adminMode = false, portalMode = false, e
 
   // The dashboard job page fits the screen on desktop: the other-jobs list and
   // the job each scroll on their own instead of the whole page scrolling.
-  return <div className={embedded ? "w-full" : overviewOnly ? "flex flex-1 flex-col bg-muted px-5 pb-16 pt-8 sm:px-8 nav:h-[calc(100dvh-60px)] nav:overflow-hidden nav:pb-0 nav:pt-6" : "min-h-[calc(100dvh-60px)] flex-1 bg-muted px-4 pb-24 pt-6 sm:px-8"}>
+  return <div className={embedded ? "w-full" : overviewOnly ? "flex flex-1 flex-col bg-muted px-5 pb-16 pt-8 sm:px-8 nav:h-[calc(100dvh-60px)] nav:overflow-hidden nav:pb-0 nav:pt-6" : `min-h-[calc(100dvh-60px)] flex-1 ${myJobs ? "bg-background" : "bg-muted"} px-4 pb-24 pt-6 sm:px-8`}>
     {!embedded ? <DetailBreadcrumb
       crumbs={adminMode ? [
         { label: "All jobs", href: jobsBase },
@@ -282,8 +282,8 @@ export function JobDetailContent({ job, adminMode = false, portalMode = false, e
         </section> : null}
 
         <dl aria-label="Job dates and fee" className="m-0 grid min-w-0 gap-x-8 gap-y-2 text-sm sm:grid-cols-2">
-          <JobHeaderFact icon={<CalendarDays aria-hidden="true" className="size-4 shrink-0" />} label="Job posted" value={job.jobPostedAt ? formatDate(job.jobPostedAt) : "—"} />
-          <JobHeaderFact icon={<Banknote aria-hidden="true" className="size-4 shrink-0" />} label="Fee" value={job.fee || "—"} />
+          <JobHeaderFact icon={<CalendarDays aria-hidden="true" className="size-4 shrink-0" />} label="Job posted" value={jobPostedDate(job) ? formatDate(jobPostedDate(job)!) : "—"} />
+          {job.fee && job.fee !== "To be confirmed" ? <JobHeaderFact icon={<Banknote aria-hidden="true" className="size-4 shrink-0" />} label="Fee" value={job.fee} /> : null}
           <JobHeaderFact icon={<CalendarClock aria-hidden="true" className="size-4 shrink-0" />} label="Start" value={job.startDate ? formatDate(job.startDate) : "—"} />
           <JobHeaderFact icon={<Flag aria-hidden="true" className="size-4 shrink-0" />} label="End" value={job.endDate ? formatDate(job.endDate) : "—"} />
         </dl>
