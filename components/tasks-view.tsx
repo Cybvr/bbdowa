@@ -330,15 +330,14 @@ export function TaskDetailPage({ task, canEdit, canDelete, assignees, onChanged,
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-5 pb-16 pt-6 sm:px-8">
       <button type="button" onClick={() => (window.history.length > 1 ? router.back() : router.push(task.jobId ? jobHref(task.jobId) : "/dashboard/work"))} className="inline-flex min-h-9 items-center text-sm font-medium text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">← Back</button>
-      <div className="mt-5 flex flex-wrap items-start justify-between gap-4 border-b border-border pb-6">
+      {canEdit ? null : <div className="mt-5 flex flex-wrap items-start justify-between gap-4 border-b border-border pb-6">
         <div className="min-w-0 space-y-3">
           <h1 className="m-0 break-words text-page-title font-bold leading-tight tracking-tight sm:text-page-title-lg">{task.title}</h1>
           {task.clientName || task.jobName ? <p className="m-0 text-sm text-muted-foreground">{[task.clientName, task.jobName].filter(Boolean).join(" · ")}</p> : null}
           <TaskStatusBadge status={task.status} overdue={isOverdue(task)} />
         </div>
-        {canEdit ? <button type="button" onClick={() => void shareTask()} className="inline-flex h-9 items-center gap-2 rounded-md border border-border px-3 text-[13px] font-semibold text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"><Share2 className="h-4 w-4" aria-hidden="true" />Share task</button> : null}
-      </div>
-      <div className="grid gap-8 pt-7">
+      </div>}
+      <div className={`grid gap-8 ${canEdit ? "pt-5" : "pt-7"}`}>
         <div className="min-w-0">
             {canEdit ? (
               <form onSubmit={save} className="space-y-6">
@@ -389,7 +388,10 @@ export function TaskDetailPage({ task, canEdit, canDelete, assignees, onChanged,
                 </section>
                 <div className="flex items-center justify-between gap-3 border-t border-border pt-5">
                   {canDelete ? <button type="button" onClick={() => void removeTask()} disabled={busy} className="inline-flex h-9 items-center gap-1.5 rounded-md border border-border px-3 text-[13px] font-semibold text-destructive transition hover:border-destructive disabled:opacity-50"><Trash2 className="h-4 w-4" aria-hidden="true" />Delete</button> : <span />}
-                  <button type="submit" disabled={busy || !title.trim()} className="h-9 rounded-md bg-primary px-4 text-[13px] font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50">{busy ? "Saving…" : "Save changes"}</button>
+                  <div className="flex items-center gap-2">
+                    <button type="button" onClick={() => void shareTask()} className="inline-flex h-9 items-center gap-2 rounded-md border border-border px-3 text-[13px] font-semibold text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"><Share2 className="h-4 w-4" aria-hidden="true" />Share</button>
+                    <button type="submit" disabled={busy || !title.trim()} className="h-9 rounded-md bg-primary px-4 text-[13px] font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50">{busy ? "Saving…" : "Save changes"}</button>
+                  </div>
                 </div>
               </form>
             ) : (
