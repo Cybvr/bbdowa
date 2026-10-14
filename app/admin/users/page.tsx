@@ -102,8 +102,9 @@ function UserItem({ user, categoryOptions, view }: { user: User; categoryOptions
       chip={firstRole ? (firstRole === "admin" && isSuperAdminEmail(user.email) ? "Super Admin" : ROLE_LABELS[firstRole]) : "Pending"}
       chipIcon={<Shield className="h-4 w-4 shrink-0" aria-hidden="true" />}
       detail={`${user.email || "No email"} · ${added}`}
-      actions={href ? <Link href={href} aria-label={`View ${user.name}`} className={ROW_ICON_ACTION}><Eye className="h-5 w-5" aria-hidden="true" /></Link> : null}
-      menu={<UserActions user={user} variant={variant} listHref="/admin/users" compactMenu menuTriggerClassName={ROW_ICON_ACTION} editOpen={editOpen} onEditOpenChange={setEditOpen} includeEditAction categoryOptions={categoryOptions} onMutated={() => window.location.reload()} />}
+      // Same as the desktop table: the eye is View as. The profile is in the menu.
+      actions={targetUid && targetUid !== actualUser?.uid ? <button type="button" onClick={() => startViewingAs({ uid: targetUid, name: user.name, email: user.email, picture: user.profileImage, role: user.role, clientId: user.clientId ?? null })} aria-label={`View ${user.name} as this user`} title="View as" className={ROW_ICON_ACTION}><Eye className="h-5 w-5" aria-hidden="true" /></button> : null}
+      menu={<UserActions user={user} variant={variant} viewHref={href} listHref="/admin/users" compactMenu menuTriggerClassName={ROW_ICON_ACTION} editOpen={editOpen} onEditOpenChange={setEditOpen} includeEditAction categoryOptions={categoryOptions} onMutated={() => window.location.reload()} />}
     />;
   }
   if (view === "cards") {

@@ -179,6 +179,7 @@ export function UserActions({
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-36">
+            {viewHref ? <DropdownMenuItem className="text-xs" onSelect={() => router.push(viewHref)}><Eye className="h-4 w-4" />View profile</DropdownMenuItem> : null}
             {canEditUser && (includeEditAction || role === "manager" || !compactMenu) ? <DropdownMenuItem className="text-xs" onSelect={_open}><Pencil className="h-4 w-4" />Edit</DropdownMenuItem> : null}
             {isAdmin ? <DropdownMenuItem className="text-xs" variant="destructive" onSelect={removeFromMenu}><Trash2 className="h-4 w-4" />Delete</DropdownMenuItem> : null}
           </DropdownMenuContent>
