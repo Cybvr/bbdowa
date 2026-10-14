@@ -168,7 +168,7 @@ export function TeamSection() {
           </div>
         </div>
         <div aria-hidden="true" className="mx-auto h-8 w-px bg-border max-[720px]:hidden" />
-        <div className="grid grid-cols-2 gap-3 pt-8 sm:grid-cols-3 lg:grid-cols-6">
+        <div className="grid grid-cols-1 gap-3 pt-8 min-[480px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
           {BRANCHES.map((branch) => (
             <section key={branch.name} className="min-w-0 overflow-hidden rounded-xl border border-border">
               <h3 className="m-0 flex min-h-[56px] items-center justify-center bg-muted px-3 py-3 text-center text-[13px] font-semibold leading-[1.15]">

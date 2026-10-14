@@ -43,9 +43,10 @@ export default async function HelpPage({ searchParams }: Props) {
         <Link href="/dashboard/help" className="inline-flex items-center gap-1 text-sm text-muted-foreground no-underline hover:text-foreground">
           <ChevronLeft className="h-4 w-4" aria-hidden="true" />Help Guide
         </Link>
-        <div className="mt-4 grid gap-8 lg:grid-cols-[200px_minmax(0,1fr)]">
-          <nav aria-label="Help pages" className="lg:sticky lg:top-6 lg:self-start">
-            <ul className="m-0 flex list-none gap-1 overflow-x-auto p-0 lg:flex-col">
+        <div className="mt-4 grid grid-cols-1 gap-6 lg:grid-cols-[200px_minmax(0,1fr)] lg:gap-8">
+          {/* Phones: the section tabs scroll sideways inside their own row, edge to edge. */}
+          <nav aria-label="Help pages" className="-mx-5 min-w-0 sm:-mx-8 lg:sticky lg:top-6 lg:mx-0 lg:self-start">
+            <ul className="m-0 flex list-none gap-1 overflow-x-auto px-5 py-0 [scrollbar-width:none] sm:px-8 lg:flex-col lg:px-0">
               {(Object.keys(SECTION_LABELS) as SectionKey[]).map((key) => (
                 <li key={key}>
                   <Link
