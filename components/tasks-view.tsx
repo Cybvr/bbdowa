@@ -23,6 +23,7 @@ import { readTasksAssignedTo } from "@/lib/firebase/task-queries";
 import { notify } from "@/lib/email/notify";
 import {
   TASK_COLLECTION,
+  TASK_FILTER_STATUSES,
   TASK_STATUSES,
   TASK_STATUS_LABELS,
   formatDate,
@@ -49,6 +50,8 @@ export function TaskStatusBadge({ status, overdue }: { status: TaskStatus; overd
   const tone =
     status === "done"
       ? "bg-foreground text-background"
+      : status === "archived"
+        ? "border border-border text-muted-foreground"
       : status === "in_progress"
         ? "bg-primary/10 text-primary"
         : "bg-muted text-muted-foreground";
@@ -365,7 +368,7 @@ export function TaskDetailPage({ task, canEdit, canDelete, assignees, onChanged,
                       <label htmlFor="edit-task-status" className="block text-[13px] text-muted-foreground">Status</label>
                       <Select value={status} onValueChange={(value) => setStatus(value as TaskStatus)} disabled={busy}>
                         <SelectTrigger id="edit-task-status" className="min-w-0 rounded-md border border-input bg-background"><SelectValue /></SelectTrigger>
-                        <SelectContent>{TASK_STATUSES.map((value) => <SelectItem key={value} value={value}>{TASK_STATUS_LABELS[value]}</SelectItem>)}</SelectContent>
+                        <SelectContent>{(status === "archived" ? TASK_FILTER_STATUSES : TASK_STATUSES).map((value) => <SelectItem key={value} value={value}>{TASK_STATUS_LABELS[value]}</SelectItem>)}</SelectContent>
                       </Select>
                     </div>
                     <TaskClientJobFields

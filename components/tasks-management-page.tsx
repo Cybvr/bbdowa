@@ -3,8 +3,8 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { addDoc, collection, deleteDoc, doc } from "firebase/firestore";
-import { Briefcase, Copy, Eye, Plus, Trash2 } from "lucide-react";
+import { addDoc, collection, deleteDoc, doc, updateDoc } from "firebase/firestore";
+import { Archive, ArchiveRestore, Briefcase, Copy, Eye, Plus, Trash2 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { EmptyState, PageHeader } from "@/components/dashboard/ui";
 import { DashboardListPage } from "@/components/dashboard/list-page";
@@ -22,7 +22,7 @@ import { TaskStatusBadge } from "@/components/tasks-view";
 import { TaskClientJobFields, useTaskLinkOptions } from "@/components/task-link-fields";
 import { useFirestoreTasks, useFirestoreUsers } from "@/lib/firebase/client-content";
 import { notify } from "@/lib/email/notify";
-import { TASK_COLLECTION, TASK_STATUSES, TASK_STATUS_LABELS, formatDate, isOverdue, isTaskAssignee, taskAssigneeFields, taskAssigneeNames, taskAssignees, type Task, type TaskStatus } from "@/lib/creator-tasks";
+import { TASK_COLLECTION, TASK_FILTER_STATUSES, TASK_STATUS_LABELS, matchesTaskStatus, formatDate, isOverdue, isTaskAssignee, taskAssigneeFields, taskAssigneeNames, taskAssignees, type Task, type TaskStatus } from "@/lib/creator-tasks";
 import { firebaseDb } from "@/lib/firebase/client";
 import { sendAppEmail } from "@/lib/app-email";
 import { plural, updatedDate } from "@/lib/format";
@@ -34,7 +34,7 @@ export type AssigneeOption = { uid: string; name: string; slug: string; isCreato
 
 const TASK_STATUS_TABS: FilterTab<TaskStatus | "all">[] = [
   { key: "all", label: "All" },
-  ...TASK_STATUSES.map((key) => ({ key, label: TASK_STATUS_LABELS[key] })),
+  ...TASK_FILTER_STATUSES.map((key) => ({ key, label: TASK_STATUS_LABELS[key] })),
 ];
 
 const TASK_SORTS: SortOption<"recent" | "due" | "title" | "updated">[] = [
@@ -214,7 +214,7 @@ export default function TasksPage() {
       .map(([value, label]) => ({ value, label })),
   ], [tasks]);
   const visible = tasks.filter((task) => {
-    if (status !== "all" && task.status !== status) return false;
+    if (!matchesTaskStatus(task, status)) return false;
     if (assigneeId !== "all" && !isTaskAssignee(task, assigneeId)) return false;
     if (jobId !== "all" && task.jobId !== jobId) return false;
     return [task.title, task.description, task.content, taskAssigneeNames(task), task.clientName, task.jobName].filter(Boolean).join(" ").toLowerCase().includes(search.trim().toLowerCase());
@@ -246,6 +246,20 @@ export default function TasksPage() {
     }
   };
 
+  // Done tasks can be archived to clear them from the list; archived ones go back to done.
+  const setArchived = async (task: Task, archived: boolean) => {
+    setBusyId(task.id);
+    setActionError(null);
+    try {
+      await updateDoc(doc(firebaseDb, TASK_COLLECTION, task.id), { status: archived ? "archived" : "done", updatedAt: new Date().toISOString() });
+      window.location.reload();
+    } catch (cause) {
+      console.error("Unable to archive task", cause);
+      setActionError(archived ? "Couldn’t archive the task. Please try again." : "Couldn’t unarchive the task. Please try again.");
+      setBusyId(null);
+    }
+  };
+
   const remove = async (id: string, title: string) => {
     if (!await confirmDialog(`Delete “${title}”? This can’t be undone.`)) return;
     setBusyId(id);
@@ -263,7 +277,13 @@ export default function TasksPage() {
   if (authLoading || loading || usersLoading) return <UsersTableSkeleton />;
   if (!isStaff) return <main className="mx-auto w-full max-w-6xl flex-1 px-5 pb-16 pt-8 sm:px-8"><PageHeader title="Tasks" /><p className="mt-8 text-sm text-muted-foreground">A staff account is required to manage tasks.</p></main>;
 
+  const archiveItems = (task: Task): CardMenuItem[] => task.status === "done"
+    ? [{ label: "Archive", icon: <Archive className="h-4 w-4" />, onSelect: () => void setArchived(task, true), disabled: busyId === task.id }]
+    : task.status === "archived"
+      ? [{ label: "Unarchive", icon: <ArchiveRestore className="h-4 w-4" />, onSelect: () => void setArchived(task, false), disabled: busyId === task.id }]
+      : [];
   const menuItems = (task: Task): CardMenuItem[] => [
+    ...archiveItems(task),
     { label: "Duplicate", icon: <Copy className="h-4 w-4" />, onSelect: () => void duplicate(task), disabled: busyId === task.id },
     ...(role === "admin" ? [{ label: "Delete", icon: <Trash2 className="h-4 w-4" />, onSelect: () => void remove(task.id, task.title), destructive: true, disabled: busyId === task.id }] : []),
   ];
@@ -317,7 +337,7 @@ export default function TasksPage() {
           <TableCell className="whitespace-nowrap text-sm text-muted-foreground">{task.dueDate ? <time dateTime={task.dueDate}>{formatDate(task.dueDate)}</time> : "—"}</TableCell>
           <TableActionsCell
             primary={{ label: "Duplicate", icon: <Copy className="h-4 w-4" />, onSelect: () => void duplicate(task), disabled: busyId === task.id }}
-            items={role === "admin" ? [{ label: "Delete", icon: <Trash2 className="h-4 w-4" />, onSelect: () => void remove(task.id, task.title), destructive: true, disabled: busyId === task.id }] : []}
+            items={[...archiveItems(task), ...(role === "admin" ? [{ label: "Delete", icon: <Trash2 className="h-4 w-4" />, onSelect: () => void remove(task.id, task.title), destructive: true, disabled: busyId === task.id }] : [])]}
             label={`More actions for ${task.title}`}
           />
         </ClickableTableRow>;

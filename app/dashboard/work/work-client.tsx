@@ -14,13 +14,13 @@ import { FilterBar, type FilterTab, type SortOption, type ViewMode } from "@/com
 import { DashboardCard } from "@/components/dashboard-card";
 import { PageLoadingSkeleton } from "@/components/dashboard/loading-skeleton";
 import { firebaseDb } from "@/lib/firebase/client";
-import { TASK_COLLECTION, formatDate, isOverdue, sortTasks, type Task, type TaskStatus, TASK_STATUSES, TASK_STATUS_LABELS } from "@/lib/creator-tasks";
+import { TASK_COLLECTION, formatDate, isOverdue, sortTasks, type Task, type TaskStatus, TASK_FILTER_STATUSES, TASK_STATUS_LABELS, matchesTaskStatus } from "@/lib/creator-tasks";
 import { plural } from "@/lib/format";
 import { readTasksAssignedTo } from "@/lib/firebase/task-queries";
 
 const TASK_STATUS_TABS: FilterTab<TaskStatus | "all">[] = [
   { key: "all", label: "All" },
-  ...TASK_STATUSES.map((key) => ({ key, label: TASK_STATUS_LABELS[key] })),
+  ...TASK_FILTER_STATUSES.map((key) => ({ key, label: TASK_STATUS_LABELS[key] })),
 ];
 
 const TASK_SORTS: SortOption<"recent" | "due" | "title">[] = [
@@ -57,7 +57,7 @@ function MyTasksPage() {
   }, [load]);
 
   const visible = tasks.filter((task) => {
-    if (status !== "all" && task.status !== status) return false;
+    if (!matchesTaskStatus(task, status)) return false;
     if (jobId !== "all" && task.jobId !== jobId) return false;
     return [task.title, task.description, task.content, task.assignedToName, task.clientName, task.jobName].filter(Boolean).join(" ").toLowerCase().includes(search.trim().toLowerCase());
   }).sort((a, b) => {

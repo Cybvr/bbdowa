@@ -9,7 +9,7 @@ import { MobileHeaderTitle } from "@/components/dashboard/mobile-header";
 import { JobMigrationPanel } from "@/components/job-migration-panel";
 import { firebaseDb } from "@/lib/firebase/client";
 import { readJobsFromFirestore, useFirestoreDocuments, useFirestoreTasks, useFirestoreUsers } from "@/lib/firebase/client-content";
-import { isOverdue } from "@/lib/creator-tasks";
+import { isOverdue, isTaskOpen } from "@/lib/creator-tasks";
 import { plural } from "@/lib/format";
 import { INVOICES_COLLECTION, invoiceTotals, isInvoiceOverdue, type Invoice } from "@/lib/invoices";
 import type { Job } from "@/lib/jobs";
@@ -101,7 +101,7 @@ export default function AdminPage() {
   const doneJobs = jobs.filter((job) => job.status === "completed").length;
   const archivedJobs = jobs.filter((job) => job.status === "archived").length;
 
-  const openTasks = tasks.filter((task) => task.status !== "done");
+  const openTasks = tasks.filter(isTaskOpen);
   const overdueTasks = openTasks.filter(isOverdue).length;
   const doneTasks = tasks.length - openTasks.length;
 

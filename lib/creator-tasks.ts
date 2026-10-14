@@ -3,7 +3,8 @@
 // One document per task in the `creatorTasks` collection. Staff can manage all
 // task fields; assignees can edit work details while ownership remains fixed.
 
-export type TaskStatus = "todo" | "in_progress" | "done";
+/** "archived" is a done task put away: hidden from the main lists, kept for the record. */
+export type TaskStatus = "todo" | "in_progress" | "done" | "archived";
 
 export type Task = {
   id: string;
@@ -37,19 +38,34 @@ export type Task = {
 
 export const TASK_COLLECTION = "creatorTasks";
 
+/** The working statuses people pick from. Archiving is a separate action. */
 export const TASK_STATUSES: TaskStatus[] = ["todo", "in_progress", "done"];
+
+/** Status tabs on task lists: the working statuses plus Archived. */
+export const TASK_FILTER_STATUSES: TaskStatus[] = [...TASK_STATUSES, "archived"];
 
 export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
   todo: "To do",
   in_progress: "In progress",
   done: "Done",
+  archived: "Archived",
 };
+
+/** Still to do: not done and not archived. */
+export function isTaskOpen(task: Pick<Task, "status">): boolean {
+  return task.status === "todo" || task.status === "in_progress";
+}
+
+/** Whether a task shows under a status tab. "All" leaves archived tasks out. */
+export function matchesTaskStatus(task: Pick<Task, "status">, status: TaskStatus | "all"): boolean {
+  return status === "all" ? task.status !== "archived" : task.status === status;
+}
 
 /** Open tasks first (oldest due date first), then done tasks, most recent first. */
 export function sortTasks(tasks: Task[]): Task[] {
   return [...tasks].sort((a, b) => {
-    const aOpen = a.status !== "done";
-    const bOpen = b.status !== "done";
+    const aOpen = isTaskOpen(a);
+    const bOpen = isTaskOpen(b);
     if (aOpen !== bOpen) return aOpen ? -1 : 1;
     if (aOpen) {
       if (a.dueDate && b.dueDate) return a.dueDate.localeCompare(b.dueDate);
@@ -61,7 +77,7 @@ export function sortTasks(tasks: Task[]): Task[] {
 }
 
 export function isOverdue(task: Task, now: number = Date.now()): boolean {
-  if (!task.dueDate || task.status === "done") return false;
+  if (!task.dueDate || !isTaskOpen(task)) return false;
   return Date.parse(`${task.dueDate}T23:59:59`) < now;
 }
 
