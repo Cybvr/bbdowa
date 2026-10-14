@@ -72,6 +72,15 @@ function taskEditorText(task: Task) {
   };
 }
 
+/** Tasks no longer have a separate description; an old one is kept at the top of the content. */
+function taskContentWithDescription(text: { description: string; content: string }) {
+  const description = text.description.trim();
+  if (!description || text.content.includes(description)) return text.content;
+  if (!text.content.trim()) return description;
+  const escaped = description.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return text.content.trimStart().startsWith("<") ? `<p>${escaped}</p>${text.content}` : `${description}\n\n${text.content}`;
+}
+
 export function NewTaskSheet({ creatorUid, creatorName, createdBy, createdByName, onCreated }: {
   creatorUid: string;
   creatorName: string;
@@ -81,7 +90,6 @@ export function NewTaskSheet({ creatorUid, creatorName, createdBy, createdByName
 }) {
   const [open, setOpen] = React.useState(false);
   const [title, setTitle] = React.useState("");
-  const [description, setDescription] = React.useState("");
   const [content, setContent] = React.useState("");
   const [dueDate, setDueDate] = React.useState("");
   const [clientId, setClientId] = React.useState<string | null>(null);
@@ -92,7 +100,6 @@ export function NewTaskSheet({ creatorUid, creatorName, createdBy, createdByName
 
   const reset = () => {
     setTitle("");
-    setDescription("");
     setContent("");
     setDueDate("");
     setClientId(null);
@@ -116,7 +123,7 @@ export function NewTaskSheet({ creatorUid, creatorName, createdBy, createdByName
       const now = new Date().toISOString();
       const created = await addDoc(collection(firebaseDb, TASK_COLLECTION), {
         title: title.trim(),
-        description: description.trim(),
+        description: "",
         content,
         clientId,
         clientName: clients.find((client) => client.slug === clientId)?.name ?? null,
@@ -167,10 +174,6 @@ export function NewTaskSheet({ creatorUid, creatorName, createdBy, createdByName
                 <label htmlFor="task-title" className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Title</label>
                 <Input id="task-title" value={title} onChange={(event) => setTitle(event.target.value)} disabled={busy} placeholder="What needs doing" required />
               </div>
-              <div className="space-y-1.5">
-                <label htmlFor="task-description" className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Description</label>
-                <Input id="task-description" value={description} onChange={(event) => setDescription(event.target.value)} disabled={busy} placeholder="Short task summary" />
-              </div>
               <RichTextEditor label="Content" value={content} onChange={setContent} placeholder="Add detailed instructions and copy…" compact />
               <div className="grid gap-3 sm:grid-cols-2">
                 <TaskClientJobFields
@@ -213,7 +216,6 @@ export function TaskDetailPage({ task, canEdit, canDelete, assignees, onChanged,
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [title, setTitle] = React.useState("");
-  const [description, setDescription] = React.useState("");
   const [content, setContent] = React.useState("");
   const [status, setStatus] = React.useState<TaskStatus>("todo");
   const [dueDate, setDueDate] = React.useState("");
@@ -232,8 +234,7 @@ export function TaskDetailPage({ task, canEdit, canDelete, assignees, onChanged,
   React.useEffect(() => {
     setTitle(task.title);
     const text = taskEditorText(task);
-    setDescription(text.description);
-    setContent(text.content);
+    setContent(taskContentWithDescription(text));
     setStatus(task.status);
     setDueDate(task.dueDate ?? "");
     setClientId(task.clientId ?? null);
@@ -284,7 +285,7 @@ export function TaskDetailPage({ task, canEdit, canDelete, assignees, onChanged,
       const job = jobs.find((item) => item.slug === jobId && item.clientId === clientId);
       await updateDoc(doc(firebaseDb, TASK_COLLECTION, task.id), {
         title: title.trim(),
-        description: description.trim(),
+        description: "",
         content,
         status,
         dueDate: dueDate || null,
@@ -348,10 +349,6 @@ export function TaskDetailPage({ task, canEdit, canDelete, assignees, onChanged,
                     <label htmlFor="edit-task-title" className="block text-[13px] text-muted-foreground">Title</label>
                     <Input id="edit-task-title" value={title} onChange={(event) => setTitle(event.target.value)} disabled={busy} required />
                   </div>
-                  <div className="space-y-1">
-                    <label htmlFor="edit-task-description" className="block text-[13px] text-muted-foreground">Description</label>
-                    <Input id="edit-task-description" value={description} onChange={(event) => setDescription(event.target.value)} disabled={busy} placeholder="Short task summary" />
-                  </div>
                   <RichTextEditor label="Content" value={content} onChange={setContent} placeholder="Add detailed instructions and copy…" />
                 </section>
                 <section aria-labelledby="task-assignment-heading" className="space-y-5 border-t border-border pt-6">
@@ -397,8 +394,7 @@ export function TaskDetailPage({ task, canEdit, canDelete, assignees, onChanged,
             ) : (
               <section aria-labelledby="task-work-heading" className="space-y-6">
                 <h2 id="task-work-heading" className="m-0 text-lg font-semibold">Task details</h2>
-                <div><span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Description</span><p className="m-0 whitespace-pre-wrap text-[14px] leading-[1.55] text-foreground">{task.description || "No description added."}</p></div>
-                {task.content ? <div><span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Content</span><RichTextContent value={task.content} className="text-[14px] leading-[1.55]" /></div> : null}
+                {task.content || task.description ? <RichTextContent value={taskContentWithDescription(taskEditorText(task))} className="text-[14px] leading-[1.55]" /> : <p className="m-0 text-[14px] text-muted-foreground">No details added.</p>}
               </section>
             )}
         </div>

@@ -54,7 +54,6 @@ export function NewTaskDialog({ assignees, createdBy, createdByName, initialClie
   const [open, setOpen] = React.useState(false);
   const [assigneeUids, setAssigneeUids] = React.useState<string[]>([]);
   const [title, setTitle] = React.useState("");
-  const [description, setDescription] = React.useState("");
   const [content, setContent] = React.useState("");
   const [dueDate, setDueDate] = React.useState("");
   const [clientId, setClientId] = React.useState<string | null>(initialClientId);
@@ -63,7 +62,7 @@ export function NewTaskDialog({ assignees, createdBy, createdByName, initialClie
   const [error, setError] = React.useState<string | null>(null);
   const { clients, jobs, loading: linksLoading } = useTaskLinkOptions();
 
-  const reset = () => { setAssigneeUids([]); setTitle(""); setDescription(""); setContent(""); setDueDate(""); setClientId(initialClientId); setJobId(null); setError(null); };
+  const reset = () => { setAssigneeUids([]); setTitle(""); setContent(""); setDueDate(""); setClientId(initialClientId); setJobId(null); setError(null); };
   const handleOpenChange = (next: boolean) => { setOpen(next); if (!next) reset(); };
   // Tasks belong to jobs, so picking a client means picking one of its jobs too.
   const canSave = title.trim().length > 0 && assigneeUids.length > 0 && (!clientId || Boolean(jobId)) && !busy;
@@ -78,7 +77,7 @@ export function NewTaskDialog({ assignees, createdBy, createdByName, initialClie
       const now = new Date().toISOString();
       const created = await addDoc(collection(firebaseDb, TASK_COLLECTION), {
         title: title.trim(),
-        description: description.trim(),
+        description: "",
         content,
         clientId,
         clientName: clients.find((client) => client.slug === clientId)?.name ?? null,
@@ -133,10 +132,6 @@ export function NewTaskDialog({ assignees, createdBy, createdByName, initialClie
             <div className="space-y-1.5">
               <label htmlFor="task-title" className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Title</label>
               <Input id="task-title" value={title} onChange={(event) => setTitle(event.target.value)} disabled={busy} placeholder="What needs doing" required />
-            </div>
-            <div className="space-y-1.5">
-              <label htmlFor="task-description" className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Description</label>
-              <Input id="task-description" value={description} onChange={(event) => setDescription(event.target.value)} disabled={busy} placeholder="Short task summary" />
             </div>
             <RichTextEditor label="Content" value={content} onChange={setContent} placeholder="Add detailed instructions and copy…" compact />
             <div className="grid gap-3 sm:grid-cols-2">
