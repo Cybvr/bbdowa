@@ -2,20 +2,22 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Briefcase, File, FolderOpen, Info, LayoutGrid, Palette, Search, Users, Workflow } from "lucide-react";
+import { Briefcase, Building2, File, FolderOpen, HelpCircle, Home, Info, LayoutGrid, Search, Users, Workflow } from "lucide-react";
 import { plural } from "@/lib/format";
 
 export type HelpArticle = { title: string; section: string; href: string };
 export type HelpSection = { key: string; label: string; count: number };
 
 const ICONS: Record<string, ReactNode> = {
-  general: <LayoutGrid className="h-6 w-6" aria-hidden="true" />,
+  bantaba: <Home className="h-6 w-6" aria-hidden="true" />,
+  features: <LayoutGrid className="h-6 w-6" aria-hidden="true" />,
   workflows: <Workflow className="h-6 w-6" aria-hidden="true" />,
+  about: <Info className="h-6 w-6" aria-hidden="true" />,
+  casers: <Building2 className="h-6 w-6" aria-hidden="true" />,
   team: <Users className="h-6 w-6" aria-hidden="true" />,
   resources: <FolderOpen className="h-6 w-6" aria-hidden="true" />,
-  brand: <Palette className="h-6 w-6" aria-hidden="true" />,
-  about: <Info className="h-6 w-6" aria-hidden="true" />,
   careers: <Briefcase className="h-6 w-6" aria-hidden="true" />,
+  faqs: <HelpCircle className="h-6 w-6" aria-hidden="true" />,
 };
 
 function ArticleList({ articles }: { articles: HelpArticle[] }) {
@@ -62,11 +64,11 @@ export function HelpGuide({ sections, articles, popular }: { sections: HelpSecti
             <h2 className="m-0 mb-4 text-item-title font-semibold">Browse by section</h2>
             <ul className="m-0 grid list-none grid-cols-2 gap-3 p-0 sm:gap-4 lg:grid-cols-4">
               {sections.map((section) => (
-                <li key={section.key}>
+                <li key={section.key} className="min-w-0">
                   <Link href={`/dashboard/help?tab=${section.key}`} className="flex flex-col items-start gap-3 rounded-2xl border border-border bg-background p-4 text-foreground no-underline transition hover:border-foreground/30 sm:flex-row sm:items-center sm:gap-4 sm:p-6">
                     <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-muted sm:h-14 sm:w-14">{ICONS[section.key]}</span>
-                    <span className="min-w-0">
-                      <span className="block truncate text-item-title font-semibold">{section.label}</span>
+                    <span className="w-full min-w-0">
+                      <span className="block break-words text-item-title font-semibold leading-tight">{section.label}</span>
                       <span className="mt-1 block text-sm text-muted-foreground">{plural(section.count, "article")}</span>
                     </span>
                   </Link>
@@ -76,7 +78,7 @@ export function HelpGuide({ sections, articles, popular }: { sections: HelpSecti
           </section>
 
           <section className="mt-8 sm:mt-12">
-            <h2 className="m-0 mb-4 text-item-title font-semibold">Popular articles</h2>
+            <h2 className="m-0 mb-4 text-item-title font-semibold">Start here</h2>
             <ArticleList articles={popular} />
           </section>
         </>

@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/ui";
-import { AboutSection } from "@/components/help/about-section";
-import { BRAND_SECTIONS, BrandSection } from "@/components/help/brand-section";
+import { ABOUT_HEADINGS, AboutSection } from "@/components/help/about-section";
+import { BANTABA_HEADINGS, BantabaSection } from "@/components/help/bantaba-section";
+import { BRAND_SECTIONS } from "@/components/help/brand-section";
 import { CareersSection } from "@/components/help/careers-section";
-import { GeneralSection, HELP_TOPICS } from "@/components/help/general-section";
+import { CASERS_HEADINGS, CasersSection } from "@/components/help/casers-section";
+import { FAQS, FaqsSection } from "@/components/help/faqs-section";
+import { FEATURES, FeaturesSection } from "@/components/help/features-section";
 import { HelpGuide, type HelpArticle } from "@/components/help/help-guide";
 import { ResourcesSection } from "@/components/help/resources-section";
 import { TeamSection } from "@/components/help/team-section";
@@ -15,26 +19,35 @@ import { openingHref } from "@/lib/openings";
 
 export const metadata: Metadata = { title: "Help" };
 
+// The guide runs from the platform (Bantaba and its features) out to the
+// company (BBDO West Africa, Casers Group, the team), then reference material.
 const SECTION_LABELS = {
-  general: "General",
-  workflows: "Workflows",
-  team: "Team",
+  bantaba: "About Bantaba",
+  features: "Features",
+  workflows: "How we work",
+  about: "About BBDO West Africa",
+  casers: "About Casers Group",
+  team: "The team",
   resources: "Resources",
-  brand: "Brand assets",
-  about: "About",
   careers: "Careers",
+  faqs: "FAQs",
 } as const;
 
 type SectionKey = keyof typeof SECTION_LABELS;
 
-const ABOUT_HEADINGS = ["Akwaaba", "Mission", "Vision", "Who we are", "What we do", "How we work", "The numbers"];
-
-type Props = { searchParams: Promise<{ tab?: string; view?: string }> };
+/** Old tab names, kept so existing links still land in the right place. */
+const OLD_TABS: Record<string, string> = {
+  general: "/dashboard/help?tab=features",
+  brand: "/dashboard/help?tab=resources&view=brand",
+};
 
 const TEAM_HEADINGS = ["Agency organogram", "The client pod", "Shared capability network"];
 
+type Props = { searchParams: Promise<{ tab?: string; view?: string }> };
+
 export default async function HelpPage({ searchParams }: Props) {
   const { tab: requested, view } = await searchParams;
+  if (requested && OLD_TABS[requested]) redirect(OLD_TABS[requested]);
   const tab = requested && requested in SECTION_LABELS ? (requested as SectionKey) : null;
 
   if (tab) {
@@ -47,6 +60,11 @@ export default async function HelpPage({ searchParams }: Props) {
           {/* Phones: the section tabs scroll sideways inside their own row, edge to edge. */}
           <nav aria-label="Help pages" className="-mx-5 min-w-0 sm:-mx-8 lg:sticky lg:top-6 lg:mx-0 lg:self-start">
             <ul className="m-0 flex list-none gap-1 overflow-x-auto px-5 py-0 [scrollbar-width:none] sm:px-8 lg:flex-col lg:px-0">
+              <li>
+                <Link href="/dashboard/help" className="block whitespace-nowrap rounded-lg px-3 py-2 text-sm text-muted-foreground no-underline transition hover:bg-muted hover:text-foreground">
+                  Home
+                </Link>
+              </li>
               {(Object.keys(SECTION_LABELS) as SectionKey[]).map((key) => (
                 <li key={key}>
                   <Link
@@ -62,13 +80,15 @@ export default async function HelpPage({ searchParams }: Props) {
           </nav>
           <div className="min-w-0">
             <PageHeader title={SECTION_LABELS[tab]} />
-            {tab === "workflows" ? <WorkflowsSection view={view} />
-              : tab === "team" ? <TeamSection />
-              : tab === "resources" ? <ResourcesSection />
-              : tab === "brand" ? <BrandSection />
+            {tab === "bantaba" ? <BantabaSection />
+              : tab === "workflows" ? <WorkflowsSection view={view} />
               : tab === "about" ? <AboutSection />
+              : tab === "casers" ? <CasersSection />
+              : tab === "team" ? <TeamSection />
+              : tab === "resources" ? <ResourcesSection view={view} />
               : tab === "careers" ? <CareersSection />
-              : <GeneralSection />}
+              : tab === "faqs" ? <FaqsSection />
+              : <FeaturesSection />}
           </div>
         </div>
       </main>
@@ -76,20 +96,26 @@ export default async function HelpPage({ searchParams }: Props) {
   }
 
   const [resources, openings] = await Promise.all([getResources(), getOpenings()]);
+  const at = (key: SectionKey, title: string, href = `/dashboard/help?tab=${key}`): HelpArticle => ({ title, section: SECTION_LABELS[key], href });
   const groups: Record<SectionKey, HelpArticle[]> = {
-    general: HELP_TOPICS.map((topic) => ({ title: topic.title, section: SECTION_LABELS.general, href: topic.href })),
-    workflows: WORKFLOWS.map((item) => ({ title: item.label, section: SECTION_LABELS.workflows, href: item.key === "pitch" ? "/dashboard/help?tab=workflows&view=pitch" : "/dashboard/help?tab=workflows" })),
-    team: TEAM_HEADINGS.map((heading) => ({ title: heading, section: SECTION_LABELS.team, href: "/dashboard/help?tab=team" })),
-    resources: resources.map((resource) => ({ title: resource.label, section: SECTION_LABELS.resources, href: resource.href || "/dashboard/help?tab=resources" })),
-    brand: BRAND_SECTIONS.map((section) => ({ title: section.label, section: SECTION_LABELS.brand, href: `/dashboard/help?tab=brand#${section.id}` })),
-    about: ABOUT_HEADINGS.map((heading) => ({ title: heading, section: SECTION_LABELS.about, href: "/dashboard/help?tab=about" })),
-    careers: openings.map((opening) => ({ title: opening.title, section: SECTION_LABELS.careers, href: openingHref(opening.slug) })),
+    bantaba: BANTABA_HEADINGS.map((heading) => at("bantaba", heading)),
+    features: FEATURES.map((feature) => at("features", feature.title)),
+    workflows: WORKFLOWS.map((item) => at("workflows", item.label, item.key === "pitch" ? "/dashboard/help?tab=workflows&view=pitch" : "/dashboard/help?tab=workflows")),
+    about: ABOUT_HEADINGS.map((heading) => at("about", heading)),
+    casers: CASERS_HEADINGS.map((heading) => at("casers", heading)),
+    team: TEAM_HEADINGS.map((heading) => at("team", heading)),
+    resources: [
+      ...resources.map((resource) => at("resources", resource.label, resource.href || "/dashboard/help?tab=resources")),
+      ...BRAND_SECTIONS.map((section) => at("resources", `Brand: ${section.label}`, `/dashboard/help?tab=resources&view=brand#${section.id}`)),
+    ],
+    careers: openings.map((opening) => at("careers", opening.title, openingHref(opening.slug))),
+    faqs: FAQS.map((faq) => at("faqs", faq.question)),
   };
   const sections = (Object.keys(SECTION_LABELS) as SectionKey[]).map((key) => ({ key, label: SECTION_LABELS[key], count: groups[key].length }));
 
   return (
     <main className="flex-1 bg-muted px-5 pb-16 pt-4 sm:px-8">
-      <HelpGuide sections={sections} articles={Object.values(groups).flat()} popular={groups.general} />
+      <HelpGuide sections={sections} articles={Object.values(groups).flat()} popular={[...groups.bantaba, ...groups.features.slice(0, 4)]} />
     </main>
   );
 }

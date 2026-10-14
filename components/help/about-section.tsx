@@ -6,6 +6,8 @@ const FACTS = [
   { value: "40+", label: "Awards" },
 ];
 
+export const ABOUT_HEADINGS = ["Mission", "Vision", "Who we are", "What we do", "How we work", "The numbers"];
+
 export function AboutSection() {
   return (
     <div>
@@ -16,16 +18,6 @@ export function AboutSection() {
       </p>
 
       <div className="mt-8 grid grid-cols-1 gap-8">
-        <section>
-          <SectionHeading>Akwaaba</SectionHeading>
-          <p className="mb-0 mt-0 max-w-[70ch] text-[15px] leading-[1.5]">
-            Welcome to Bantaba, our shared home for agency information and working knowledge. A
-            bantaba is the traditional gathering place, often a large meeting tree, where community
-            members congregate for dialogue, storytelling and collective decision-making. This is
-            ours.
-          </p>
-        </section>
-
         <section>
           <SectionHeading>Mission</SectionHeading>
           <p className="mb-0 mt-0 max-w-[70ch] text-[15px] leading-[1.5]">
