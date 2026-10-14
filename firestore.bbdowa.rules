@@ -202,7 +202,7 @@ service cloud.firestore {
         return [
           "postingId", "uid", "name", "email", "rateAmount", "rateCurrency", "rateUnit",
           "duration", "coverIntro", "coverApproach", "coverNext", "answers", "portfolio",
-          "samples", "testimonial", "status", "jobSlug", "createdAt", "updatedAt"
+          "samples", "testimonial", "attachment", "status", "jobSlug", "createdAt", "updatedAt"
         ];
       }
       allow read: if (isAdmin() || isManager())

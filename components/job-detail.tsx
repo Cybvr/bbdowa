@@ -346,7 +346,7 @@ export function JobDetailContent({ job, adminMode = false, portalMode = false, e
 
         <DetailSection title="Job details"><dl className="m-0 mt-2 grid gap-x-8 gap-y-1 sm:grid-cols-2">
           <Detail label="Category" stacked>{job.category || "—"}</Detail>
-          <Detail label="Work setup" stacked>{job.workSetup || "—"}</Detail>
+          <Detail label="Job type" stacked>{job.workSetup || "—"}</Detail>
           <Detail label="Est. length" stacked>{job.estimatedLength || "—"}</Detail>
           <Detail label="Desired start" stacked>{job.desiredStartDate ? formatDate(job.desiredStartDate) : "—"}</Detail>
         </dl></DetailSection>

@@ -22,6 +22,7 @@ import { jobDisplayTitle, jobTitle, type Job } from "@/lib/jobs";
 import { jobTeamKey } from "@/lib/users";
 import { EMPTY_JOB_TERMS, JOB_TERMS_COLLECTION, jobAssignees, type JobTerms } from "@/lib/job-terms";
 import { notify } from "@/lib/email/notify";
+import { syncPostingFromJob } from "@/components/job-applicants-panel";
 
 const listValue = (value?: string[] | null) => (value ?? []).join(", ");
 const parseList = (value: string) => value.split(",").map((item) => item.trim()).filter(Boolean);
@@ -118,6 +119,7 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
       placeholder: false,
       updatedAt: serverTimestamp(),
     });
+    await syncPostingFromJob(job.slug, { workSetup, requiredSkills });
     if (terms) {
       // Assignees are always on the team, so they keep access alongside everyone else on it.
       const teamUids = [...new Set([...(terms.teamUids ?? []), ...assignedUids])];
@@ -221,7 +223,7 @@ export function JobActions({ job, compactMenu = false, onSaved }: { job: Job; co
       <TextField label="Start date" value={startDate} onChange={setStartDate} type="date" />
       <TextField label="End date" value={endDate} onChange={setEndDate} type="date" />
       <SelectField
-        label="Work setup"
+        label="Job type"
         value={workSetup}
         onChange={setWorkSetup}
         options={[

@@ -25,7 +25,7 @@ export function BasicsFields({ brief, change }: { brief: JobBrief; change: Chang
       <label className={FIELD}>Job title<input value={brief.title} onChange={(event) => change("title", event.target.value)} className={INPUT} placeholder="e.g. Social media content for our October launch" /></label>
       <div className="grid gap-4 sm:grid-cols-2">
         <label className={FIELD}>Category<input value={brief.category} onChange={(event) => change("category", event.target.value)} className={INPUT} placeholder="e.g. Social media" /></label>
-        <label className={FIELD}>Work setup
+        <label className={FIELD}>Job type
           <select value={brief.workSetup} onChange={(event) => change("workSetup", event.target.value)} className={INPUT}>
             <option value="remote">Remote</option>
             <option value="hybrid">Hybrid</option>
@@ -78,7 +78,7 @@ export function BriefPreview({ brief }: { brief: JobBrief }) {
         <h2 className="m-0 text-item-title font-semibold">Details</h2>
         <dl className="m-0 mt-3">
           <Row label="Category">{brief.category || "—"}</Row>
-          <Row label="Work setup">{SETUP_LABELS[brief.workSetup] ?? (brief.workSetup || "—")}</Row>
+          <Row label="Job type">{SETUP_LABELS[brief.workSetup] ?? (brief.workSetup || "—")}</Row>
           <Row label="Start">{brief.startDate ? longDate(brief.startDate) : "—"}</Row>
           <Row label="End">{brief.endDate ? longDate(brief.endDate) : "—"}</Row>
           <Row label="Est. length">{brief.estimatedLength || "—"}</Row>

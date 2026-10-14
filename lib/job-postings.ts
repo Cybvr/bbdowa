@@ -27,8 +27,14 @@ export type JobPosting = {
   /** Rich text brief with no brand names. */
   brief: string;
   deliverables: string[];
+  /** Shown as the rate, e.g. "₦500,000 a month". */
   budget: string;
+  /** Job length, one of DURATION_OPTIONS. */
   duration: string;
+  /** Hours a week, one of COMMITMENT_OPTIONS. */
+  commitment: string;
+  industry: string;
+  /** Shown as Job type: Remote, Hybrid or Onsite. */
   workSetup: string;
   skills: string[];
   /** Up to three screening questions. */
@@ -42,6 +48,8 @@ export type ApplicationStatus = "submitted" | "shortlisted" | "hired" | "decline
 
 export type ApplicationLink = { title: string; url: string };
 
+export type ApplicationAttachment = { name: string; url: string; path: string };
+
 export type JobApplication = {
   /** `${postingId}_${uid}`: one application per person per posting. */
   id: string;
@@ -49,19 +57,20 @@ export type JobApplication = {
   uid: string;
   name: string | null;
   email: string | null;
-  rateAmount: number | null;
-  rateCurrency: PaymentCurrency;
-  rateUnit: "hour" | "fixed";
-  duration: string;
-  /** Cover letter in three short parts. */
+  /** The cover letter. Older applications also split it into coverApproach and coverNext. */
   coverIntro: string;
-  coverApproach: string;
-  coverNext: string;
   answers: { question: string; answer: string }[];
-  portfolio: ApplicationLink[];
-  /** Links to work samples (files aren't uploaded yet). */
-  samples: ApplicationLink[];
-  testimonial: { quote: string; name: string; company: string } | null;
+  attachment?: ApplicationAttachment | null;
+  /** Fields from the earlier proposal form, kept so older applications still read. */
+  rateAmount?: number | null;
+  rateCurrency?: PaymentCurrency;
+  rateUnit?: "hour" | "fixed";
+  duration?: string;
+  coverApproach?: string;
+  coverNext?: string;
+  portfolio?: ApplicationLink[];
+  samples?: ApplicationLink[];
+  testimonial?: { quote: string; name: string; company: string } | null;
   status: ApplicationStatus;
   /** Set by staff on shortlist, so the applicant can open the job once the NDA is signed. */
   jobSlug: string | null;
@@ -70,6 +79,37 @@ export type JobApplication = {
 };
 
 export const DURATION_OPTIONS = ["Less than 1 month", "1 to 3 months", "3 to 6 months", "6+ months"];
+
+export const COMMITMENT_OPTIONS = ["5 hrs/wk", "10 hrs/wk", "20 hrs/wk", "40 hrs/wk"];
+
+export const INDUSTRY_OPTIONS = [
+  "Advertising and marketing",
+  "Agriculture",
+  "Automotive",
+  "Banking",
+  "Beverages",
+  "Consumer goods",
+  "Education",
+  "Energy",
+  "Entertainment and media",
+  "Fashion and beauty",
+  "Finance",
+  "Food",
+  "Government and public sector",
+  "Healthcare",
+  "Hospitality and travel",
+  "Insurance",
+  "Logistics",
+  "Manufacturing",
+  "Non-profit",
+  "Oil and gas",
+  "Real estate",
+  "Retail and e-commerce",
+  "Sports",
+  "Technology",
+  "Telecoms",
+  "Other",
+];
 
 export const APPLICATION_STATUS_LABELS: Record<ApplicationStatus, string> = {
   submitted: "New",
@@ -105,6 +145,8 @@ export function normalizePosting(id: string, data: Record<string, unknown>): Job
     deliverables: list(data.deliverables),
     budget: text(data.budget),
     duration: text(data.duration),
+    commitment: text(data.commitment),
+    industry: text(data.industry),
     workSetup: text(data.workSetup),
     skills: list(data.skills),
     questions: list(data.questions).slice(0, 3),
@@ -116,5 +158,5 @@ export function normalizePosting(id: string, data: Record<string, unknown>): Job
 
 /** The application's proposal as one plain cover letter, for email and copy. */
 export function coverLetter(application: Pick<JobApplication, "coverIntro" | "coverApproach" | "coverNext">): string {
-  return [application.coverIntro, application.coverApproach, application.coverNext].map((part) => part.trim()).filter(Boolean).join("\n\n");
+  return [application.coverIntro, application.coverApproach, application.coverNext].map((part) => (part ?? "").trim()).filter(Boolean).join("\n\n");
 }

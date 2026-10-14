@@ -191,7 +191,7 @@ export function LoginForm({
     <div className={cn("w-full", className)}>
       <div className="mb-6 flex flex-col items-center text-center">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/bbdo-west-africa.png" alt="BBDO West Africa" className="mb-5 h-8 w-auto object-contain dark:invert" />
+        <img src="/bbdo-west-africa.png" alt="BBDO West Africa" className="mb-5 h-8 w-auto object-contain dark:brightness-0 dark:invert" />
         <h2 className="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
           {mode === "signin" ? "Welcome back" : "Hi Creator 👋"}
         </h2>

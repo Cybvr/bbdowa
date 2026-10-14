@@ -3,23 +3,24 @@
 import * as React from "react";
 import Link from "next/link";
 import { doc, getDoc, setDoc } from "firebase/firestore";
+import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { useAuth } from "@/components/auth-provider";
 import { LoginForm } from "@/components/login-form";
 import { RichTextContent, richTextHasContent } from "@/components/rich-text-editor";
 import { Badge } from "@/components/dashboard/ui";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { firebaseDb } from "@/lib/firebase/client";
+import { firebaseDb, firebaseStorage } from "@/lib/firebase/client";
 import { notify } from "@/lib/email/notify";
+import { longDate } from "@/lib/format";
 import { loadNdaState, type NdaState } from "@/lib/firebase/master-nda";
-import type { PaymentCurrency } from "@/lib/payments";
 import {
   APPLICATION_STATUS_LABELS,
-  DURATION_OPTIONS,
   JOB_APPLICATIONS_COLLECTION,
   JOB_POSTINGS_COLLECTION,
   applicationId,
+  coverLetter,
   normalizePosting,
-  type ApplicationLink,
+  type ApplicationAttachment,
   type JobApplication,
   type JobPosting,
 } from "@/lib/job-postings";
@@ -27,61 +28,29 @@ import {
 const FIELD = "w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-1 focus:ring-primary/40";
 const LABEL = "block space-y-1.5 text-sm font-medium";
 const HINT = "m-0 text-xs font-normal text-muted-foreground";
+const ATTACHMENT_TYPES = ".pdf,.doc,.docx,image/*";
+const ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024;
 
 type Draft = {
-  rateAmount: string;
-  rateCurrency: PaymentCurrency;
-  rateUnit: "hour" | "fixed";
-  duration: string;
   coverIntro: string;
-  coverApproach: string;
-  coverNext: string;
   answers: string[];
-  portfolio: ApplicationLink[];
-  samples: ApplicationLink[];
-  testimonialQuote: string;
-  testimonialName: string;
-  testimonialCompany: string;
+  attachment: ApplicationAttachment | null;
 };
 
-const EMPTY_LINKS = (): ApplicationLink[] => [{ title: "", url: "" }, { title: "", url: "" }, { title: "", url: "" }];
-
 function emptyDraft(posting: JobPosting): Draft {
-  return {
-    rateAmount: "",
-    rateCurrency: "NGN",
-    rateUnit: "fixed",
-    duration: posting.duration && DURATION_OPTIONS.includes(posting.duration) ? posting.duration : "",
-    coverIntro: "",
-    coverApproach: "",
-    coverNext: "Happy to jump on a call this week.",
-    answers: posting.questions.map(() => ""),
-    portfolio: EMPTY_LINKS(),
-    samples: EMPTY_LINKS(),
-    testimonialQuote: "",
-    testimonialName: "",
-    testimonialCompany: "",
-  };
+  return { coverIntro: "", answers: posting.questions.map(() => ""), attachment: null };
 }
 
 function draftFromApplication(posting: JobPosting, application: JobApplication): Draft {
-  const pad = (links: ApplicationLink[]) => [...links, ...EMPTY_LINKS()].slice(0, 3);
   return {
-    rateAmount: application.rateAmount == null ? "" : String(application.rateAmount),
-    rateCurrency: application.rateCurrency,
-    rateUnit: application.rateUnit,
-    duration: application.duration,
-    coverIntro: application.coverIntro,
-    coverApproach: application.coverApproach,
-    coverNext: application.coverNext,
+    coverIntro: coverLetter(application),
     answers: posting.questions.map((question) => application.answers.find((item) => item.question === question)?.answer ?? ""),
-    portfolio: pad(application.portfolio),
-    samples: pad(application.samples),
-    testimonialQuote: application.testimonial?.quote ?? "",
-    testimonialName: application.testimonial?.name ?? "",
-    testimonialCompany: application.testimonial?.company ?? "",
+    attachment: application.attachment ?? null,
   };
 }
+
+// A chosen file can't go in localStorage, so it's held here while the person creates an account.
+const pendingFiles = new Map<string, File>();
 
 // The draft is kept in the browser while the person creates an account, so
 // the application can send itself once they're signed in.
@@ -106,52 +75,38 @@ function writeStoredDraft(postingId: string, value: StoredDraft | null) {
   }
 }
 
-function validUrl(value: string) {
-  return /^https?:\/\/\S+\.\S+/i.test(value.trim());
-}
-
-function problemWith(draft: Draft, posting: JobPosting): string | null {
-  const amount = Number(draft.rateAmount);
-  if (!draft.rateAmount.trim() || !Number.isFinite(amount) || amount <= 0) return "Enter your rate.";
-  if (!draft.duration) return "Pick how long you need.";
-  if (!draft.coverIntro.trim()) return "Say who you are in the cover letter.";
-  if (!draft.coverApproach.trim()) return "Say how you'd do the job in the cover letter.";
-  if (posting.questions.some((_, index) => !draft.answers[index]?.trim())) return "Answer the client's questions.";
-  const links = [...draft.portfolio, ...draft.samples].filter((link) => link.url.trim());
-  if (!draft.portfolio.some((link) => link.url.trim())) return "Add at least one portfolio link.";
-  if (links.some((link) => !validUrl(link.url))) return "Links must start with http:// or https://.";
+function problemWith(draft: Draft, posting: JobPosting, file: File | null): string | null {
+  if (!draft.coverIntro.trim()) return "Write your cover letter.";
+  if (posting.questions.some((_, index) => !draft.answers[index]?.trim())) return "Answer the application questions.";
+  if (!file && !draft.attachment) return "Attach your CV or portfolio.";
   return null;
 }
 
-function cleanLinks(links: ApplicationLink[]): ApplicationLink[] {
-  return links
-    .map((link) => ({ title: link.title.trim().slice(0, 120), url: link.url.trim().slice(0, 500) }))
-    .filter((link) => link.url);
+function PostingTerms({ posting }: { posting: JobPosting }) {
+  const facts = [["Commitment", posting.commitment], ["Rate", posting.budget], ["Job length", posting.duration], ["Industry", posting.industry], ["Job type", posting.workSetup === "Onsite" ? "On-site" : posting.workSetup]].filter(([, value]) => value);
+  if (!facts.length && !posting.skills.length) return null;
+  return <section className="border-t border-border pt-6">
+    <h2 className="m-0 text-base font-semibold">Terms</h2>
+    <dl className="m-0 mt-3 grid gap-1.5 text-sm">
+      {facts.map(([label, value]) => <div key={label} className="flex gap-1.5"><dt className="text-muted-foreground">{label}:</dt><dd className="m-0 font-medium">{value}</dd></div>)}
+      {posting.skills.length ? <div className="flex flex-wrap items-center gap-1.5"><dt className="text-muted-foreground">Skills:</dt><dd className="m-0"><ul className="m-0 flex list-none flex-wrap gap-1.5 p-0">{posting.skills.map((skill) => <li key={skill}><Badge>{skill}</Badge></li>)}</ul></dd></div> : null}
+    </dl>
+  </section>;
 }
 
-function LinkRows({ label, hint, links, onChange }: { label: string; hint: string; links: ApplicationLink[]; onChange: (links: ApplicationLink[]) => void }) {
-  return <fieldset className="space-y-2">
-    <legend className="text-sm font-medium">{label}</legend>
-    <p className={HINT}>{hint}</p>
-    {links.map((link, index) => <div key={index} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
-      <input value={link.title} onChange={(event) => onChange(links.map((item, at) => at === index ? { ...item, title: event.target.value } : item))} placeholder="Project for client" aria-label={`${label} ${index + 1} title`} className={FIELD} />
-      <input type="url" value={link.url} onChange={(event) => onChange(links.map((item, at) => at === index ? { ...item, url: event.target.value } : item))} placeholder="https://" aria-label={`${label} ${index + 1} link`} className={FIELD} />
-    </div>)}
-  </fieldset>;
+function PostedDate({ posting }: { posting: JobPosting }) {
+  if (!posting.createdAt) return null;
+  return <p className="mb-0 mt-2 text-xs text-muted-foreground">Posted {longDate(posting.createdAt.slice(0, 10))}</p>;
 }
 
 function PostingSummary({ posting }: { posting: JobPosting }) {
-  const facts = [["Budget", posting.budget], ["Duration", posting.duration], ["Work setup", posting.workSetup]].filter(([, value]) => value);
   return <article>
     <p className="m-0 text-xs font-bold uppercase tracking-[0.08em] text-muted-foreground">{posting.clientLabel || "Confidential client"}</p>
     <h1 className="mb-0 mt-3 text-3xl font-bold tracking-tight sm:text-4xl">{posting.headline || "Open job"}</h1>
-    {facts.length ? <dl className="m-0 mt-5 flex flex-wrap gap-x-8 gap-y-2 text-sm">
-      {facts.map(([label, value]) => <div key={label} className="flex gap-1.5"><dt className="text-muted-foreground">{label}</dt><dd className="m-0 font-medium">{value}</dd></div>)}
-    </dl> : null}
-    {richTextHasContent(posting.brief) ? <section className="mt-8 border-t border-border pt-6"><h2 className="m-0 text-base font-semibold">The brief</h2><RichTextContent value={posting.brief} className="mt-3 max-w-[70ch] text-body" /></section> : null}
+    <PostedDate posting={posting} />
+    <div className="mt-8"><PostingTerms posting={posting} /></div>
+    {richTextHasContent(posting.brief) ? <section className="mt-8 border-t border-border pt-6"><h2 className="m-0 text-base font-semibold">About</h2><RichTextContent value={posting.brief} className="mt-3 max-w-[70ch] text-body" /></section> : null}
     {posting.deliverables.length ? <section className="mt-8 border-t border-border pt-6"><h2 className="m-0 text-base font-semibold">Deliverables</h2><ul className="m-0 mt-3 grid gap-1.5 pl-5 text-[15px]">{posting.deliverables.map((item) => <li key={item}>{item}</li>)}</ul></section> : null}
-    {posting.skills.length ? <section className="mt-8 border-t border-border pt-6"><h2 className="m-0 text-base font-semibold">Skills</h2><ul className="m-0 mt-3 flex list-none flex-wrap gap-2 p-0">{posting.skills.map((skill) => <li key={skill}><Badge>{skill}</Badge></li>)}</ul></section> : null}
-    <p className="mb-0 mt-8 border-t border-border pt-6 text-sm text-muted-foreground">The client&apos;s name and full brief are shared with shortlisted freelancers after they sign our NDA.</p>
   </article>;
 }
 
@@ -197,6 +152,7 @@ export function JobPostingPage({ postingId }: { postingId: string }) {
   const [application, setApplication] = React.useState<JobApplication | null>(null);
   const [view, setView] = React.useState<View>("posting");
   const [draft, setDraft] = React.useState<Draft | null>(null);
+  const [file, setFile] = React.useState<File | null>(() => pendingFiles.get(postingId) ?? null);
   const [sending, setSending] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [justSent, setJustSent] = React.useState(false);
@@ -231,53 +187,45 @@ export function JobPostingPage({ postingId }: { postingId: string }) {
     }
   }, [draft, posting, postingId]);
 
-  // Fill in rate and portfolio from the person's profile when they start fresh.
-  const prefill = React.useCallback(async (base: Draft): Promise<Draft> => {
-    if (!user) return base;
-    const profile = (await getDoc(doc(firebaseDb, "users", user.uid)).catch(() => null))?.data() ?? {};
-    const links = [profile.portfolio, profile.behance, profile.linkedin].filter((value): value is string => typeof value === "string" && validUrl(value));
-    return {
-      ...base,
-      rateCurrency: profile.rateCurrency === "USD" ? "USD" : base.rateCurrency,
-      portfolio: links.length ? [...links.map((url) => ({ title: "", url })), ...EMPTY_LINKS()].slice(0, 3) : base.portfolio,
-    };
-  }, [user]);
-
-  const startApplying = async () => {
+  const startApplying = () => {
     if (!posting) return;
     setError(null);
-    setDraft(application ? draftFromApplication(posting, application) : draft ?? await prefill(emptyDraft(posting)));
+    setDraft(application ? draftFromApplication(posting, application) : draft ?? emptyDraft(posting));
     setView("form");
+  };
+
+  const chooseFile = (next: File | null) => {
+    if (next && next.size > ATTACHMENT_MAX_BYTES) { setError("Attachments can be up to 10 MB."); return; }
+    setError(null);
+    setFile(next);
+    if (next) pendingFiles.set(postingId, next);
+    else pendingFiles.delete(postingId);
   };
 
   const submit = React.useCallback(async (current: Draft) => {
     if (!posting || !user) return;
-    const problem = problemWith(current, posting);
+    const problem = problemWith(current, posting, file);
     if (problem) { setError(problem); setView("form"); return; }
     setSending(true);
     setError(null);
     try {
       const now = new Date().toISOString();
       const id = applicationId(posting.id, user.uid);
-      const testimonial = current.testimonialQuote.trim()
-        ? { quote: current.testimonialQuote.trim().slice(0, 600), name: current.testimonialName.trim().slice(0, 120), company: current.testimonialCompany.trim().slice(0, 120) }
-        : null;
+      let attachment = current.attachment;
+      if (file) {
+        const path = `applications/${user.uid}/${posting.id}-${Date.now()}-${file.name.replace(/[^\w.-]+/g, "_").slice(-80)}`;
+        const uploaded = await uploadBytes(ref(firebaseStorage, path), file, { contentType: file.type || "application/octet-stream" });
+        if (current.attachment?.path) void deleteObject(ref(firebaseStorage, current.attachment.path)).catch(() => undefined);
+        attachment = { name: file.name.slice(0, 160), url: await getDownloadURL(uploaded.ref), path };
+      }
       const record: Omit<JobApplication, "id"> = {
         postingId: posting.id,
         uid: user.uid,
         name: user.name,
         email: user.email,
-        rateAmount: Number(current.rateAmount),
-        rateCurrency: current.rateCurrency,
-        rateUnit: current.rateUnit,
-        duration: current.duration,
-        coverIntro: current.coverIntro.trim().slice(0, 1500),
-        coverApproach: current.coverApproach.trim().slice(0, 1500),
-        coverNext: current.coverNext.trim().slice(0, 600),
+        coverIntro: current.coverIntro.trim().slice(0, 4000),
         answers: posting.questions.map((question, index) => ({ question, answer: (current.answers[index] ?? "").trim().slice(0, 1500) })),
-        portfolio: cleanLinks(current.portfolio),
-        samples: cleanLinks(current.samples),
-        testimonial,
+        attachment,
         status: "submitted",
         jobSlug: null,
         createdAt: application?.createdAt ?? now,
@@ -288,6 +236,8 @@ export function JobPostingPage({ postingId }: { postingId: string }) {
       writeStoredDraft(posting.id, null);
       setApplication({ id, ...record });
       setDraft(null);
+      setFile(null);
+      pendingFiles.delete(posting.id);
       setJustSent(true);
       setView("posting");
     } catch (cause) {
@@ -297,7 +247,7 @@ export function JobPostingPage({ postingId }: { postingId: string }) {
     } finally {
       setSending(false);
     }
-  }, [application, posting, user]);
+  }, [application, file, posting, user]);
 
   // Back from sign-up: send the saved application.
   React.useEffect(() => {
@@ -309,7 +259,7 @@ export function JobPostingPage({ postingId }: { postingId: string }) {
 
   const continueToSend = () => {
     if (!posting || !draft) return;
-    const problem = problemWith(draft, posting);
+    const problem = problemWith(draft, posting, file);
     if (problem) { setError(problem); return; }
     setError(null);
     if (user) { void submit(draft); return; }
@@ -332,7 +282,7 @@ export function JobPostingPage({ postingId }: { postingId: string }) {
     <div className="mx-auto max-w-3xl">
       <Link href="/" className="inline-flex items-center">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/bbdo-west-africa.png" alt="BBDO West Africa" className="h-7 w-auto object-contain dark:invert" />
+        <img src="/bbdo-west-africa.png" alt="BBDO West Africa" className="h-7 w-auto object-contain dark:brightness-0 dark:invert" />
       </Link>
 
       {loading ? <p className="mt-12 text-sm text-muted-foreground">Loading job…</p> : !posting ? <section className="mt-12 border-t border-border pt-8">
@@ -352,62 +302,34 @@ export function JobPostingPage({ postingId }: { postingId: string }) {
           <div>
             <button type="button" onClick={() => setView("posting")} className="text-sm font-semibold text-muted-foreground hover:text-foreground">← Back to the job</button>
             <h1 className="mb-0 mt-4 text-2xl font-bold tracking-tight sm:text-3xl">Apply: {posting.headline || "Open job"}</h1>
-            <p className="mb-0 mt-2 text-sm text-muted-foreground">Keep it short. Clients read many of these.</p>
+            <PostedDate posting={posting} />
           </div>
 
-          <section className="grid gap-4 border-t border-border pt-6 sm:grid-cols-2">
-            <h2 className="m-0 text-base font-semibold sm:col-span-2">Rate and time</h2>
-            <fieldset className="space-y-1.5 sm:col-span-2">
-              <legend className="text-sm font-medium">How do you charge?</legend>
-              <div className="flex gap-4 text-sm">
-                {(["fixed", "hour"] as const).map((unit) => <label key={unit} className="flex items-center gap-2"><input type="radio" name="rateUnit" checked={draft.rateUnit === unit} onChange={() => update("rateUnit", unit)} className="h-4 w-4 accent-[var(--primary)]" />{unit === "fixed" ? "Fixed price" : "Hourly"}</label>)}
-              </div>
-            </fieldset>
-            <label className={LABEL}>{draft.rateUnit === "fixed" ? "Price for the job" : "Hourly rate"}
-              <div className="flex gap-2">
-                <select value={draft.rateCurrency} onChange={(event) => update("rateCurrency", event.target.value as PaymentCurrency)} aria-label="Currency" className={`${FIELD} w-24`}><option value="NGN">NGN</option><option value="USD">USD</option></select>
-                <input inputMode="decimal" value={draft.rateAmount} onChange={(event) => update("rateAmount", event.target.value.replace(/[^\d.]/g, ""))} placeholder="0" className={FIELD} />
-              </div>
-            </label>
-            <label className={LABEL}>How long you need
-              <select value={draft.duration} onChange={(event) => update("duration", event.target.value)} className={FIELD}>
-                <option value="">Pick one</option>
-                {DURATION_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
-              </select>
-            </label>
-          </section>
+          <PostingTerms posting={posting} />
 
           <section className="grid gap-4 border-t border-border pt-6">
-            <h2 className="m-0 text-base font-semibold">Cover letter</h2>
-            <label className={LABEL}>Who you are
-              <textarea value={draft.coverIntro} onChange={(event) => update("coverIntro", event.target.value)} rows={3} className={`${FIELD} resize-y`} placeholder="I'm a [role] with [X] years doing [type of work] for brands like [Client 1] and [Client 2]." />
-            </label>
-            <label className={LABEL}>Their problem and how you&apos;d solve it
-              <textarea value={draft.coverApproach} onChange={(event) => update("coverApproach", event.target.value)} rows={4} className={`${FIELD} resize-y`} placeholder="You need [their problem in one line]. I'd [your approach], and deliver [deliverables] by [timeline]." />
-            </label>
-            <label className={LABEL}>Next step
-              <input value={draft.coverNext} onChange={(event) => update("coverNext", event.target.value)} className={FIELD} />
-            </label>
+            <h2 className="m-0 text-base font-semibold"><label htmlFor="cover-letter">Cover letter</label></h2>
+            <textarea id="cover-letter" value={draft.coverIntro} onChange={(event) => update("coverIntro", event.target.value)} rows={8} className={`${FIELD} resize-y`} />
           </section>
 
           {posting.questions.length ? <section className="grid gap-4 border-t border-border pt-6">
-            <h2 className="m-0 text-base font-semibold">The client&apos;s questions</h2>
+            <h2 className="m-0 text-base font-semibold">Application questions</h2>
             {posting.questions.map((question, index) => <label key={question} className={LABEL}>{question}
               <textarea value={draft.answers[index] ?? ""} onChange={(event) => update("answers", draft.answers.map((answer, at) => at === index ? event.target.value : answer))} rows={3} className={`${FIELD} resize-y`} />
             </label>)}
           </section> : null}
 
-          <section className="grid gap-6 border-t border-border pt-6">
-            <h2 className="m-0 text-base font-semibold">Your work</h2>
-            <LinkRows label="Portfolio" hint="Up to 3 projects. At least one." links={draft.portfolio} onChange={(links) => update("portfolio", links)} />
-            <LinkRows label="Samples" hint="Optional. Up to 3 links to the work closest to this job." links={draft.samples} onChange={(links) => update("samples", links)} />
-          </section>
-
-          <section className="grid gap-4 border-t border-border pt-6 sm:grid-cols-2">
-            <h2 className="m-0 text-base font-semibold sm:col-span-2">Testimonial <span className="font-normal text-muted-foreground">(optional)</span></h2>
-            <label className={`${LABEL} sm:col-span-2`}>Quote<textarea value={draft.testimonialQuote} onChange={(event) => update("testimonialQuote", event.target.value)} rows={2} className={`${FIELD} resize-y`} /></label>
-            <label className={LABEL}>Name<input value={draft.testimonialName} onChange={(event) => update("testimonialName", event.target.value)} className={FIELD} /></label>
-            <label className={LABEL}>Company<input value={draft.testimonialCompany} onChange={(event) => update("testimonialCompany", event.target.value)} className={FIELD} /></label>
+          <section className="grid gap-3 border-t border-border pt-6">
+            <h2 className="m-0 text-base font-semibold">Attachment</h2>
+            <p className={HINT}>CV or portfolio. PDF, Word or image, up to 10 MB.</p>
+            <div className="flex flex-wrap items-center gap-3">
+              <label className={buttonVariants({ variant: "outline", className: "cursor-pointer" })}>
+                {file || draft.attachment ? "Replace file" : "Choose file"}
+                <input type="file" accept={ATTACHMENT_TYPES} onChange={(event) => { chooseFile(event.target.files?.[0] ?? null); event.target.value = ""; }} className="sr-only" />
+              </label>
+              {file ? <span className="min-w-0 truncate text-sm">{file.name}</span>
+                : draft.attachment ? <a href={draft.attachment.url} target="_blank" rel="noreferrer" className="min-w-0 truncate text-sm underline underline-offset-4">{draft.attachment.name}</a> : null}
+            </div>
           </section>
 
           {error ? <p role="alert" className="m-0 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">{error}</p> : null}
@@ -425,6 +347,14 @@ export function JobPostingPage({ postingId }: { postingId: string }) {
           </div>
         </section> : null}
       </div>}
+
+      <footer className="mt-16 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-6 text-xs text-muted-foreground">
+        <p className="m-0">© 2025 - 2026 Caser&apos;s Group</p>
+        <ul className="m-0 flex list-none gap-4 p-0">
+          <li><Link href="/about" className="hover:text-foreground">Terms</Link></li>
+          <li><Link href="/about" className="hover:text-foreground">Privacy</Link></li>
+        </ul>
+      </footer>
     </div>
   </main>;
 }

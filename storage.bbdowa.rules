@@ -26,6 +26,17 @@ service firebase.storage {
         && request.resource.contentType.matches('image/.*');
     }
 
+    // Application attachments (CV, portfolio PDF), each confined to its applicant.
+    match /applications/{userId}/{fileName} {
+      allow create, update: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.size < 10 * 1024 * 1024
+        && (request.resource.contentType == 'application/pdf'
+          || request.resource.contentType.matches('application/(msword|vnd.openxmlformats-officedocument.wordprocessingml.document)')
+          || request.resource.contentType.matches('image/.*'));
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+
     // Profile and dashboard images are publicly readable once their URL is
     // saved in Firestore, but uploads still require a signed-in dashboard user.
     match /{allPaths=**} {

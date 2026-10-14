@@ -22,10 +22,13 @@ import { jobTeamKey } from "@/lib/users";
 import type { Job } from "@/lib/jobs";
 import {
   APPLICATION_STATUS_LABELS,
+  COMMITMENT_OPTIONS,
   DURATION_OPTIONS,
+  INDUSTRY_OPTIONS,
   JOB_APPLICATIONS_COLLECTION,
   JOB_POSTINGS_COLLECTION,
   JOB_POSTING_LINKS_COLLECTION,
+  coverLetter,
   newPostingId,
   normalizePosting,
   postingHref,
@@ -57,6 +60,8 @@ export function postingFromJob(job: Job, id: string, uid: string): JobPosting {
     deliverables: [],
     budget: job.fee && job.fee !== "To be confirmed" ? job.fee : "",
     duration: durationFromJob(job),
+    commitment: "",
+    industry: "",
     workSetup: job.workSetup ? job.workSetup[0].toUpperCase() + job.workSetup.slice(1) : "",
     skills: job.requiredSkills ?? [],
     questions: [],
@@ -92,7 +97,7 @@ function PostingEditor({ posting, onSaved }: { posting: JobPosting; onSaved: (po
         headline: fields.headline.trim(),
         clientLabel: fields.clientLabel.trim(),
         budget: fields.budget.trim(),
-        workSetup: fields.workSetup.trim(),
+        industry: fields.industry.trim(),
         questions: questions.map((question) => question.trim()).filter(Boolean),
         updatedAt: new Date().toISOString(),
       };
@@ -119,15 +124,16 @@ function PostingEditor({ posting, onSaved }: { posting: JobPosting; onSaved: (po
         <a href={postingHref(posting.id)} target="_blank" rel="noreferrer" className="inline-flex h-11 items-center gap-1.5 rounded-md border border-border px-4 text-[14px] font-medium hover:border-foreground sm:h-9 sm:px-3 sm:text-[13px]"><ExternalLink aria-hidden="true" className="h-3.5 w-3.5" />Preview</a>
       </div>
     </div>
-    <p className="m-0 rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">Anyone with the link can read this. Don&apos;t name the client or brand. They see that after signing the NDA.</p>
 
     <div className="grid gap-4 sm:grid-cols-2">
       <label className={`${LABEL} sm:col-span-2`}>Headline<input value={fields.headline} onChange={(event) => update("headline", event.target.value)} placeholder="e.g. Launch film for a drinks brand" className={FIELD} /></label>
       <label className={LABEL}>Client described as<input value={fields.clientLabel} onChange={(event) => update("clientLabel", event.target.value)} placeholder="e.g. Global drinks brand" className={FIELD} /></label>
       <label className={LABEL}>Status<select value={fields.status} onChange={(event) => update("status", event.target.value as JobPosting["status"])} className={FIELD}><option value="open">Open: taking applications</option><option value="closed">Closed</option></select></label>
-      <label className={LABEL}>Budget<input value={fields.budget} onChange={(event) => update("budget", event.target.value)} placeholder="e.g. ₦500,000 to ₦800,000" className={FIELD} /></label>
-      <label className={LABEL}>Duration<select value={fields.duration} onChange={(event) => update("duration", event.target.value)} className={FIELD}><option value="">Not set</option>{DURATION_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
-      <label className={LABEL}>Work setup<select value={fields.workSetup} onChange={(event) => update("workSetup", event.target.value)} className={FIELD}><option value="">Not set</option><option value="Remote">Remote</option><option value="Hybrid">Hybrid</option><option value="Onsite">On-site</option></select></label>
+      <label className={LABEL}>Rate<input value={fields.budget} onChange={(event) => update("budget", event.target.value)} placeholder="e.g. ₦500,000 a month" className={FIELD} /></label>
+      <label className={LABEL}>Industry<select value={fields.industry} onChange={(event) => update("industry", event.target.value)} className={FIELD}><option value="">Not set</option>{(fields.industry && !INDUSTRY_OPTIONS.includes(fields.industry) ? [fields.industry, ...INDUSTRY_OPTIONS] : INDUSTRY_OPTIONS).map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
+      <label className={LABEL}>Commitment<select value={fields.commitment} onChange={(event) => update("commitment", event.target.value)} className={FIELD}><option value="">Not set</option>{COMMITMENT_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
+      <label className={LABEL}>Job length<select value={fields.duration} onChange={(event) => update("duration", event.target.value)} className={FIELD}><option value="">Not set</option>{DURATION_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
+      <label className={LABEL}>Job type<select value={fields.workSetup} onChange={(event) => update("workSetup", event.target.value)} className={FIELD}><option value="">Not set</option><option value="Remote">Remote</option><option value="Hybrid">Hybrid</option><option value="Onsite">On-site</option></select></label>
     </div>
     <RichTextEditor label="Brief" value={fields.brief} onChange={(value) => update("brief", value)} placeholder="The client's problem and what you need. No brand names." />
     <TagInput label="Deliverables" value={fields.deliverables} onChange={(value) => update("deliverables", value)} placeholder="e.g. 3 x 15s cutdowns, then press Enter" />
@@ -160,7 +166,6 @@ function MasterNdaPicker({ masterId, onChange }: { masterId: string | null; onCh
       <option value="">Not set</option>
       {templates.map((document) => <option key={document.id} value={document.id}>{document.title}</option>)}
     </select>
-    <span className="font-normal text-xs text-muted-foreground">A draft in Documents. Each freelancer signs it once.</span>
   </label>;
 }
 
@@ -173,14 +178,17 @@ function ApplicationRow({ application, masterId, busy, onAction }: { application
     return () => { active = false; };
   }, [application.uid, application.status, masterId]);
   const ndaReady = !masterId || nda?.status === "signed";
-  const rate = application.rateAmount != null ? `${formatAmount(application.rateAmount, application.rateCurrency)}${application.rateUnit === "hour" ? " / hour" : " fixed"}` : "—";
+  const rate = application.rateAmount != null ? `${formatAmount(application.rateAmount, application.rateCurrency ?? "NGN")}${application.rateUnit === "hour" ? " / hour" : " fixed"}` : null;
   const ndaLabel = !masterId ? null : nda?.status === "signed" ? "NDA signed" : nda?.status === "pending" ? "NDA sent" : "No NDA";
+  const meta = [rate, application.duration, application.attachment ? application.attachment.name : null, ndaLabel].filter(Boolean).join(" · ");
+  const links = [...(application.portfolio ?? []), ...(application.samples ?? [])];
+  const letter = coverLetter(application);
 
   return <li className="py-3">
     <div className="flex flex-wrap items-center justify-between gap-3">
       <button type="button" onClick={() => setOpen((value) => !value)} aria-expanded={open} className="min-w-0 text-left">
         <span className="block font-semibold">{application.name || application.email || "Applicant"}</span>
-        <span className="mt-1 block text-xs text-muted-foreground">{rate} · {application.duration || "—"}{ndaLabel ? ` · ${ndaLabel}` : ""}</span>
+        {meta ? <span className="mt-1 block text-xs text-muted-foreground">{meta}</span> : null}
       </button>
       <div className="flex flex-wrap items-center gap-2">
         <Badge tone={application.status === "declined" ? "neutral" : application.status === "hired" ? "inverse" : "active"}>{APPLICATION_STATUS_LABELS[application.status]}</Badge>
@@ -190,9 +198,10 @@ function ApplicationRow({ application, masterId, busy, onAction }: { application
       </div>
     </div>
     {open ? <div className="mt-3 grid gap-4 rounded-lg bg-muted/40 p-4 text-sm">
-      <section><h4 className="m-0 font-semibold">Cover letter</h4>{[application.coverIntro, application.coverApproach, application.coverNext].filter(Boolean).map((part, index) => <p key={index} className="mb-0 mt-2 whitespace-pre-line">{part}</p>)}</section>
+      {letter ? <section><h4 className="m-0 font-semibold">Cover letter</h4><p className="mb-0 mt-2 whitespace-pre-line">{letter}</p></section> : null}
       {application.answers.length ? <section><h4 className="m-0 font-semibold">Screening answers</h4>{application.answers.map((item) => <div key={item.question} className="mt-2"><p className="m-0 text-muted-foreground">{item.question}</p><p className="m-0 mt-1 whitespace-pre-line">{item.answer}</p></div>)}</section> : null}
-      {[["Portfolio", application.portfolio], ["Samples", application.samples]].map(([label, links]) => (links as JobApplication["portfolio"]).length ? <section key={label as string}><h4 className="m-0 font-semibold">{label as string}</h4><ul className="m-0 mt-2 grid gap-1 pl-5">{(links as JobApplication["portfolio"]).map((link) => <li key={link.url}><a href={link.url} target="_blank" rel="noreferrer" className="underline underline-offset-4 hover:text-primary">{link.title || link.url}</a></li>)}</ul></section> : null)}
+      {application.attachment ? <section><h4 className="m-0 font-semibold">Attachment</h4><a href={application.attachment.url} target="_blank" rel="noreferrer" className="mt-2 inline-block underline underline-offset-4 hover:text-primary">{application.attachment.name}</a></section> : null}
+      {links.length ? <section><h4 className="m-0 font-semibold">Links</h4><ul className="m-0 mt-2 grid gap-1 pl-5">{links.map((link) => <li key={link.url}><a href={link.url} target="_blank" rel="noreferrer" className="underline underline-offset-4 hover:text-primary">{link.title || link.url}</a></li>)}</ul></section> : null}
       {application.testimonial ? <section><h4 className="m-0 font-semibold">Testimonial</h4><p className="mb-0 mt-2">&ldquo;{application.testimonial.quote}&rdquo; – {[application.testimonial.name, application.testimonial.company].filter(Boolean).join(", ")}</p></section> : null}
       <p className="m-0 text-xs text-muted-foreground">{application.email ?? ""}{nda?.documentId ? <> · <Link href={`/admin/documents/${encodeURIComponent(nda.documentId)}`} className="underline underline-offset-4">View NDA</Link></> : null}</p>
     </div> : null}
@@ -220,9 +229,18 @@ export function JobApplicantsPanel({ job, onTeamChanged }: { job: Job; onTeamCha
       getDoc(doc(firebaseDb, JOB_POSTINGS_COLLECTION, postingId)),
       getDocs(query(collection(firebaseDb, JOB_APPLICATIONS_COLLECTION), where("postingId", "==", postingId))),
     ]);
-    setPosting(postingSnapshot.exists() ? normalizePosting(postingSnapshot.id, postingSnapshot.data()) : null);
+    let loaded = postingSnapshot.exists() ? normalizePosting(postingSnapshot.id, postingSnapshot.data()) : null;
+    if (loaded && ((!loaded.workSetup && job.workSetup) || (!loaded.skills.length && job.requiredSkills?.length))) {
+      const fill = {
+        workSetup: loaded.workSetup || (job.workSetup ? job.workSetup[0].toUpperCase() + job.workSetup.slice(1) : ""),
+        skills: loaded.skills.length ? loaded.skills : job.requiredSkills ?? [],
+      };
+      await updateDoc(doc(firebaseDb, JOB_POSTINGS_COLLECTION, loaded.id), fill);
+      loaded = { ...loaded, ...fill };
+    }
+    setPosting(loaded);
     setApplications(applicationSnapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<JobApplication, "id">) })).sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
-  }, [job.slug]);
+  }, [job.requiredSkills, job.slug, job.workSetup]);
 
   React.useEffect(() => {
     void load().catch((cause) => { console.error("Unable to load applicants", cause); setError("Couldn't load the posting."); }).finally(() => setLoading(false));
@@ -290,6 +308,15 @@ export function JobApplicantsPanel({ job, onTeamChanged }: { job: Job; onTeamCha
       </ul> : <p className="mt-2 text-sm text-muted-foreground">No one has applied yet.</p>}
     </>}
   </section>;
+}
+
+/** Copies the job's work setup and skills onto its public posting, if it has one. */
+export async function syncPostingFromJob(jobSlug: string, fields: { workSetup?: string | null; requiredSkills?: string[] | null }) {
+  const link = await getDoc(doc(firebaseDb, JOB_POSTING_LINKS_COLLECTION, jobSlug));
+  const postingId = link.data()?.postingId;
+  if (typeof postingId !== "string") return;
+  const setup = fields.workSetup ? fields.workSetup[0].toUpperCase() + fields.workSetup.slice(1) : "";
+  await updateDoc(doc(firebaseDb, JOB_POSTINGS_COLLECTION, postingId), { workSetup: setup, skills: fields.requiredSkills ?? [], updatedAt: new Date().toISOString() });
 }
 
 /** Creates the job's public posting (closed until opened in Applicants) and returns its id. */

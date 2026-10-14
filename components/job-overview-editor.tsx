@@ -14,6 +14,7 @@ import { notify } from "@/lib/email/notify";
 import { jobsCollection } from "@/lib/firebase/job-collections";
 import { JOB_STATUS_LABELS, jobPostedDate, type Job } from "@/lib/jobs";
 import { longDate } from "@/lib/format";
+import { syncPostingFromJob } from "@/components/job-applicants-panel";
 
 const FIELD = "w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-1 focus:ring-primary/40";
 const parseList = (value: string) => value.split(",").map((item) => item.trim()).filter(Boolean);
@@ -100,6 +101,7 @@ export function JobOverviewEditor({ job, scope = "staff" }: { job: Job; scope?: 
         fee: fee.trim(),
         updatedAt: serverTimestamp(),
       });
+      if (scope === "staff") await syncPostingFromJob(job.slug, { workSetup, requiredSkills });
       if (scope === "staff" && terms) {
         const assignees = assignedUids.map((uid) => ({ uid, name: people.find((person) => person.uid === uid)?.name ?? "Assignee" }));
         // Assignees are always on the team, so they keep access alongside everyone else on it.
@@ -147,7 +149,7 @@ export function JobOverviewEditor({ job, scope = "staff" }: { job: Job; scope?: 
         <label className="space-y-1.5 text-sm font-medium">Campaign title<input value={campaignTitle} onChange={(event) => setCampaignTitle(event.target.value)} className={FIELD} placeholder="Client-facing campaign name" /></label>
         {scope === "staff" ? <label className="space-y-1.5 text-sm font-medium">Client<select value={clientId} onChange={(event) => setClientId(event.target.value)} className={FIELD}>{clientOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label> : <label className="space-y-1.5 text-sm font-medium">Client<input value={job.clientName} readOnly className={`${FIELD} text-muted-foreground`} /></label>}
         {scope === "staff" ? <label className="space-y-1.5 text-sm font-medium">Status<select value={status} onChange={(event) => setStatus(event.target.value as Job["status"])} className={FIELD}><option value="active">Active</option><option value="completed">Completed</option><option value="archived">Archived</option></select></label> : <label className="space-y-1.5 text-sm font-medium">Status<input value={JOB_STATUS_LABELS[job.status]} readOnly className={`${FIELD} text-muted-foreground`} /></label>}
-        <label className="space-y-1.5 text-sm font-medium">Work setup<select value={workSetup} onChange={(event) => setWorkSetup(event.target.value)} className={FIELD}><option value="remote">Remote</option><option value="hybrid">Hybrid</option><option value="onsite">On-site</option></select></label>
+        <label className="space-y-1.5 text-sm font-medium">Job type<select value={workSetup} onChange={(event) => setWorkSetup(event.target.value)} className={FIELD}><option value="remote">Remote</option><option value="hybrid">Hybrid</option><option value="onsite">On-site</option></select></label>
         <label className="space-y-1.5 text-sm font-medium">Estimated length<select value={estimatedLength} onChange={(event) => setEstimatedLength(event.target.value)} className={FIELD}>
           <option value="">Not set</option>
           {[...(estimatedLength && !ESTIMATED_LENGTHS.includes(estimatedLength) ? [estimatedLength] : []), ...ESTIMATED_LENGTHS].map((option) => <option key={option} value={option}>{option}</option>)}
