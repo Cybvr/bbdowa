@@ -12,10 +12,10 @@ import { TaskStatusBadge } from "@/components/tasks-view";
 import { getBlogMediaType, type BlogPost } from "@/lib/blog";
 import { formatBlogDate } from "@/lib/blog-dates";
 import { TASK_COLLECTION, formatDate as formatTaskDate, isOverdue, sortTasks, type Task } from "@/lib/creator-tasks";
-import { readJobsFromFirestore, useFirestoreAppraisals, useFirestoreUsers } from "@/lib/firebase/client-content";
+import { useFirestoreAppraisals, useFirestoreUsers } from "@/lib/firebase/client-content";
 import { firebaseDb } from "@/lib/firebase/client";
-import { readMyJobIds } from "@/lib/firebase/job-team";
-import { byLastModified, type Job } from "@/lib/jobs";
+import { type Job } from "@/lib/jobs";
+import { readAssignedJobs } from "@/lib/firebase/my-jobs";
 import { ACTIVITY_COLLECTION, elapsedMs, formatClockFull, startOfWeek, type ActivityEntry } from "@/lib/time-tracking";
 import type { User } from "@/lib/users";
 import { appraisalNeedsCompletion } from "@/lib/appraisals";
@@ -86,13 +86,10 @@ export default function HomePage() {
       return () => { active = false; };
     }
 
-    Promise.all([
-      readMyJobIds(uid, user?.email),
-      readJobsFromFirestore(),
-    ])
-      .then(([myJobIds, jobs]) => {
+    readAssignedJobs(uid, user?.email)
+      .then((jobs) => {
         if (!active) return;
-        setMyJobs(jobs.filter((job) => myJobIds.has(job.slug)).sort(byLastModified).slice(0, 4));
+        setMyJobs(jobs.slice(0, 4));
       })
       .catch((cause) => {
         console.error("Unable to load your jobs", cause);
