@@ -29,7 +29,7 @@ function Card({ title, action, children }: { title: string; action?: React.React
 
 /** The client's company profile. Everyone at the company sees it; the owner edits it and adds colleagues. */
 export function PortalCompany() {
-  const { user, isViewingAs } = useAuth();
+  const { user } = useAuth();
   const portal = usePortalClient();
   const clientId = portal?.clientId ?? "";
   const { users } = useFirestoreUsers();
@@ -43,8 +43,8 @@ export function PortalCompany() {
     });
   }, [clientId]);
 
-  // The owner (or an admin viewing as them) manages the company.
-  const isOwner = Boolean(company && user && (company.ownerUid === user.uid || isViewingAs));
+  // View-as must follow the selected user's permissions, not the admin's.
+  const isOwner = Boolean(company && user && company.ownerUid === user.uid);
 
   React.useEffect(() => {
     if (!clientId || !isOwner) return;

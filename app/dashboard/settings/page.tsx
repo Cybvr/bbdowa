@@ -42,7 +42,7 @@ function labelFor(key: SectionKey) {
 }
 
 export default function SettingsPage() {
-  const { user: authUser, actualUser, isAdmin, loading: authLoading } = useAuth();
+  const { user: authUser, isViewingAs, isAdmin, loading: authLoading } = useAuth();
   const { user: own, loading: ownLoading, error } = useOwnUser();
   const { users } = useFirestoreUsers();
 
@@ -220,7 +220,7 @@ export default function SettingsPage() {
                   </div>
                 ) : null}
               </div>
-              {actualUser ? <PushNotificationSettings uid={actualUser.uid} /> : null}
+              {!isViewingAs && authUser ? <PushNotificationSettings uid={authUser.uid} /> : null}
               <div className="space-y-4 border-t border-border pt-5">
                 <h3 className="m-0 text-[13px] font-semibold">Financial details</h3>
                 <TextField label="Bank name" value={hr.bankName} onChange={(value) => setHr({ ...hr, bankName: value })} />

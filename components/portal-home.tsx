@@ -20,7 +20,7 @@ import { matchesJobTeamKey } from "@/lib/users";
 
 /** Portal home follows the dashboard home: work on the left, company context on the right. */
 export function PortalHome() {
-  const { user, isViewingAs } = useAuth();
+  const { user } = useAuth();
   const portal = usePortalClient();
   const { users, loading: peopleLoading, error: peopleError } = useFirestoreUsers();
   const [jobs, setJobs] = React.useState<Job[] | null>(null);
@@ -56,7 +56,7 @@ export function PortalHome() {
   const leadContact = users.find((person) => company?.leadContactUserId && person.role !== "client" && !person.roles?.includes("client") && matchesJobTeamKey(person, company.leadContactUserId));
   const accountManager = users.find((person) => company?.accountManagerUserId && person.role !== "client" && !person.roles?.includes("client") && matchesJobTeamKey(person, company.accountManagerUserId));
   const personLabel = (key: string | null | undefined, personName?: string) => peopleLoading ? "Loading…" : peopleError ? "Unavailable" : personName || (key ? "Assigned person unavailable" : "To be assigned");
-  const canEditCompany = Boolean(company && user && (company.ownerUid === user.uid || isViewingAs));
+  const canEditCompany = Boolean(company && user && company.ownerUid === user.uid);
   const facts = [
     { label: "Company", value: company?.name || "—" },
     { label: "Industry", value: company?.industry || "—" },
