@@ -6,7 +6,7 @@ import { LuArrowUpRight, LuPause, LuPlay, LuPlus, LuSquare } from "react-icons/l
 import { useAuth } from "@/components/auth-provider";
 import { firebaseDb } from "@/lib/firebase/client";
 import { jobsCollection } from "@/lib/firebase/job-collections";
-import { readMyJobIds } from "@/lib/firebase/job-team";
+import { readAssignedJobs } from "@/lib/firebase/my-jobs";
 import { jobTitle, normalizeJob } from "@/lib/jobs";
 import { EmptyState, PageHeader } from "@/components/dashboard/ui";
 import { DashboardCard } from "@/components/dashboard-card";
@@ -193,25 +193,16 @@ export function TimeTracker({
     }
 
     let active = true;
-    Promise.all([
-      jobsCollection(),
-      isStaff ? Promise.resolve<Set<string> | null>(null) : readMyJobIds(userId, userEmail),
-    ])
-      .then(async ([name, assignedJobIds]) => ({
-        snapshot: await getDocs(collection(firebaseDb, name)),
-        assignedJobIds,
-      }))
-      .then(({ snapshot, assignedJobIds }) => {
+    const jobs = isStaff
+      ? jobsCollection().then((name) => getDocs(collection(firebaseDb, name)).then((snapshot) => snapshot.docs.map((document) => normalizeJob(document.data(), document.id))))
+      : readAssignedJobs(userId, userEmail);
+
+    jobs
+      .then((records) => {
         if (!active) return;
-        const rows = snapshot.docs
-          .map((document) => ({ documentId: document.id, job: normalizeJob(document.data(), document.id) }))
-          .filter(({ documentId, job }) =>
-            job.status === "active"
-            && (isStaff
-              || assignedJobIds?.has(documentId)
-              || assignedJobIds?.has(job.slug)),
-          )
-          .map(({ job }) => ({ slug: job.slug, name: jobTitle(job) }))
+        const rows = records
+          .filter((job) => job.status === "active")
+          .map((job) => ({ slug: job.slug, name: jobTitle(job) }))
           .sort((a, b) => a.name.localeCompare(b.name));
         setJobs(rows);
       })
@@ -235,7 +226,7 @@ export function TimeTracker({
 
   const manualMinutes = parseDurationToMinutes(duration);
   const hasActivity = activity.trim().length > 0;
-  const hasJob = jobs.some((job) => job.slug === jobId);
+  const hasJob = jobId === NO_JOB ? !jobSlug : jobs.some((job) => job.slug === jobId);
   const displayedManualMinutes = manualMinutes ?? 0;
   const manualHoursLabel = String(Math.floor(displayedManualMinutes / 60)).padStart(2, "0");
   const manualMinutesLabel = String(displayedManualMinutes % 60).padStart(2, "0");
@@ -456,8 +447,11 @@ export function TimeTracker({
             <div className="space-y-2">
               <span className="text-sm font-medium">Job</span>
               <Select value={jobId === NO_JOB ? "" : jobId} onValueChange={setJobId} disabled={busy}>
-                <SelectTrigger className="h-11 w-full min-w-0 rounded-xl text-sm"><SelectValue placeholder={jobs.length ? "Select a job" : isStaff ? "No active jobs" : "No assigned jobs"} /></SelectTrigger>
-                <SelectContent>{jobs.map((option) => <SelectItem key={option.slug} value={option.slug}>{option.name}</SelectItem>)}</SelectContent>
+                <SelectTrigger className="h-11 w-full min-w-0 rounded-xl text-sm"><SelectValue placeholder={jobs.length ? "Select a job (optional)" : "Track without a job"} /></SelectTrigger>
+                <SelectContent>
+                  {!jobSlug ? <SelectItem value={NO_JOB}>No job</SelectItem> : null}
+                  {jobs.map((option) => <SelectItem key={option.slug} value={option.slug}>{option.name}</SelectItem>)}
+                </SelectContent>
               </Select>
             </div>
             <div className="flex flex-col gap-2 pt-1">
@@ -562,8 +556,11 @@ export function TimeTracker({
                 className="h-10 flex-1 text-sm"
               />
               <Select value={jobId === NO_JOB ? "" : jobId} onValueChange={setJobId}>
-                <SelectTrigger aria-required className="h-10 w-[38%] text-sm"><SelectValue placeholder="Select a job" /></SelectTrigger>
-                <SelectContent>{jobs.map((option) => <SelectItem key={option.slug} value={option.slug}>{option.name}</SelectItem>)}</SelectContent>
+                <SelectTrigger className="h-10 w-[38%] text-sm"><SelectValue placeholder="Select a job (optional)" /></SelectTrigger>
+                <SelectContent>
+                  {!jobSlug ? <SelectItem value={NO_JOB}>No job</SelectItem> : null}
+                  {jobs.map((option) => <SelectItem key={option.slug} value={option.slug}>{option.name}</SelectItem>)}
+                </SelectContent>
               </Select>
             </div>
             <div className="flex gap-2">
