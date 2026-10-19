@@ -214,7 +214,10 @@ service cloud.firestore {
         && request.resource.data.jobSlug == null
         && request.resource.data.keys().hasOnly(applicantKeys())
         && exists(/databases/$(database)/documents/jobPostings/$(request.resource.data.postingId))
-        && get(/databases/$(database)/documents/jobPostings/$(request.resource.data.postingId)).data.status == "open";
+        && (
+          get(/databases/$(database)/documents/jobPostings/$(request.resource.data.postingId)).data.status == "open"
+          || !get(/databases/$(database)/documents/jobPostings/$(request.resource.data.postingId)).data.keys().hasAny(["status"])
+        );
       allow update: if (isAdmin() || isManager())
         || (signedIn()
           && resource.data.uid == request.auth.uid
