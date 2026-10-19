@@ -242,7 +242,10 @@ export function JobPostingPage({ postingId }: { postingId: string }) {
       const now = new Date().toISOString();
       const id = applicationId(posting.id, uid);
       // Someone who signed in through the form may have applied before.
-      const earlier = application ?? (await getDoc(doc(firebaseDb, JOB_APPLICATIONS_COLLECTION, id))).data() as JobApplication | undefined;
+      // The rules refuse reads of an application that doesn't exist yet, so a refusal means none.
+      const earlier = application ?? await getDoc(doc(firebaseDb, JOB_APPLICATIONS_COLLECTION, id))
+        .then((snapshot) => snapshot.data() as JobApplication | undefined)
+        .catch(() => undefined);
       let attachment = current.attachment;
       if (file) {
         const path = `applications/${uid}/${posting.id}-${Date.now()}-${file.name.replace(/[^\w.-]+/g, "_").slice(-80)}`;
