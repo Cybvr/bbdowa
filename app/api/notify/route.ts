@@ -210,10 +210,12 @@ export async function POST(request: Request) {
     const posting = await getDocument(`jobPostings/${str(application.postingId)}`, actor.token);
     if (!posting) return BAD("Not allowed.", 403);
     const headline = str(posting.headline) || "your job posting";
+    // Applicants needn't have an account, so the name comes from the form.
+    const applicant = str(application.name) || actor.name;
     for (const person of await recipientsFor([str(posting.createdBy)], actor)) {
       // The applicant can't read which job the posting is for, so link to the admin jobs list.
       const path = "/admin/jobs";
-      queue(person, templates.applicationReceived({ to: person.name, applicant: actor.name, job: headline, url: link(path) }), path, `${actor.name ?? "Someone"} applied to “${headline}”.`);
+      queue(person, templates.applicationReceived({ to: person.name, applicant, job: headline, url: link(path) }), path, `${applicant ?? "Someone"} applied to “${headline}”.`);
     }
   } else if (event === "client.invite") {
     const email = str(body.email).trim().toLowerCase();
