@@ -333,7 +333,7 @@ export function JobPostingPage({ postingId }: { postingId: string }) {
             <label className={LABEL}>Email
               <input type="email" value={draft.email} onChange={(event) => update("email", event.target.value)} autoComplete="email" className={FIELD} />
             </label>
-            <label className={`${LABEL} sm:col-span-2`}>Password
+            <label className={`${LABEL} sm:col-span-2`}>Create password
               <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="new-password" className={FIELD} />
             </label>
           </section>}
