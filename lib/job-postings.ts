@@ -6,7 +6,7 @@ import type { PaymentCurrency } from "@/lib/payments";
 // (`jobPostingLinks/{jobSlug}`).
 //
 // Freelancers apply with a proposal (Upwork-style). Their application doubles
-// as sign-up: they fill it in, then create an account to send it. Shortlisting
+// as sign-up: the name, email and password on the form create their account. Shortlisting
 // sends the master NDA once; after it's signed the applicant can open the job.
 
 export const JOB_POSTINGS_COLLECTION = "jobPostings";
@@ -116,6 +116,14 @@ export const APPLICATION_STATUS_LABELS: Record<ApplicationStatus, string> = {
   shortlisted: "Shortlisted",
   hired: "Hired",
   declined: "Declined",
+};
+
+/** The same statuses as the applicant sees them. */
+export const APPLICANT_STATUS_LABELS: Record<ApplicationStatus, string> = {
+  submitted: "In review",
+  shortlisted: "Shortlisted",
+  hired: "Hired",
+  declined: "Not selected",
 };
 
 export function applicationId(postingId: string, uid: string): string {

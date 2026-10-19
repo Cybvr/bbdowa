@@ -3,6 +3,7 @@ import { getDocument, queryEquals, type PlainDoc } from "@/lib/email/firestore-r
 import { emailConfigured, sendEmail } from "@/lib/email/send";
 import { templates, applySavedTemplate, type EmailContent } from "@/lib/email/templates";
 import { pushConfigured, sendPush, type PushPayload } from "@/lib/push/send";
+import { coverLetter } from "@/lib/job-postings";
 
 // Transactional email for the dashboard. The browser says what happened (an event
 // and a record id) and this route works out who to email and what to say from
@@ -212,10 +213,19 @@ export async function POST(request: Request) {
     const headline = str(posting.headline) || "your job posting";
     // Applicants needn't have an account, so the name comes from the form.
     const applicant = str(application.name) || actor.name;
+    const attachment = application.attachment as { name?: unknown; url?: unknown } | null | undefined;
+    const answers = Array.isArray(application.answers) ? application.answers as Array<{ question?: unknown; answer?: unknown }> : [];
+    const details: Array<[string, string]> = [
+      ["Name", applicant ?? ""],
+      ["Email", str(application.email)],
+      ["Cover letter", coverLetter({ coverIntro: str(application.coverIntro), coverApproach: str(application.coverApproach), coverNext: str(application.coverNext) }).slice(0, 2000)],
+      ...answers.map((item): [string, string] => [str(item.question), str(item.answer).slice(0, 1500)]),
+      ["Attachment", str(attachment?.url)],
+    ];
     for (const person of await recipientsFor([str(posting.createdBy)], actor)) {
       // The applicant can't read which job the posting is for, so link to the admin jobs list.
       const path = "/admin/jobs";
-      queue(person, templates.applicationReceived({ to: person.name, applicant, job: headline, url: link(path) }), path, `${applicant ?? "Someone"} applied to “${headline}”.`);
+      queue(person, templates.applicationReceived({ to: person.name, applicant, job: headline, url: link(path), details }), path, `${applicant ?? "Someone"} applied to “${headline}”.`);
     }
   } else if (event === "client.invite") {
     const email = str(body.email).trim().toLowerCase();

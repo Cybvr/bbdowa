@@ -156,11 +156,12 @@ const builtinTemplates = {
     }, `You were added to ${input.job}`);
   },
 
-  applicationReceived(input: { to: string | null; applicant: string | null; job: string; url: string }) {
+  applicationReceived(input: { to: string | null; applicant: string | null; job: string; url: string; details?: Array<[string, string]> }) {
     return render({
       preheader: `${input.applicant ?? "Someone"} applied to ${input.job}.`,
       heading: "New job application",
       paragraphs: [`Hi ${firstName(input.to)}, ${input.applicant ?? "a freelancer"} applied to "${input.job}".`],
+      details: input.details,
       button: { label: "Review applicants", url: input.url },
     }, `New application: ${input.job}`);
   },

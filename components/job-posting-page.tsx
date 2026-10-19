@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { FirebaseError } from "firebase/app";
@@ -16,12 +17,13 @@ import { longDate } from "@/lib/format";
 import { loadNdaState, type NdaState } from "@/lib/firebase/master-nda";
 import { upsertUserProfile } from "@/lib/firebase/user-profiles";
 import {
-  APPLICATION_STATUS_LABELS,
+  APPLICANT_STATUS_LABELS,
   JOB_APPLICATIONS_COLLECTION,
   JOB_POSTINGS_COLLECTION,
   applicationId,
   coverLetter,
   normalizePosting,
+  postingHref,
   type ApplicationAttachment,
   type JobApplication,
   type JobPosting,
@@ -155,7 +157,7 @@ function ApplicationStatusPanel({ application, onEdit }: { application: JobAppli
   return <section className="rounded-xl border border-border bg-background p-5">
     <div className="flex items-center justify-between gap-3">
       <h2 className="m-0 text-base font-semibold">Your application</h2>
-      <Badge tone={application.status === "declined" ? "neutral" : "active"}>{APPLICATION_STATUS_LABELS[application.status]}</Badge>
+      <Badge tone={application.status === "declined" ? "neutral" : "active"}>{APPLICANT_STATUS_LABELS[application.status]}</Badge>
     </div>
     {application.status === "submitted" ? <>
       <p className="mb-0 mt-3 text-sm text-muted-foreground">Sent. We&apos;ll let you know if you&apos;re shortlisted.</p>
@@ -188,6 +190,7 @@ export function JobPostingPage({ postingId }: { postingId: string }) {
   const [sending, setSending] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [justSent, setJustSent] = React.useState(false);
+  const router = useRouter();
 
   React.useEffect(() => {
     let active = true;
@@ -272,6 +275,7 @@ export function JobPostingPage({ postingId }: { postingId: string }) {
       setApplication({ id, ...record });
       setDraft(null);
       setFile(null);
+      if (!earlier) { router.push(`${postingHref(posting.id)}/sent`); return; }
       setJustSent(true);
       setView("posting");
     } catch (cause) {
@@ -305,7 +309,7 @@ export function JobPostingPage({ postingId }: { postingId: string }) {
         <p className="mt-3 text-muted-foreground">This job link no longer works.</p>
       </section> : <div className="mt-12 grid gap-8">
         {view === "posting" ? <>
-          {justSent ? <p role="status" className="m-0 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm">Application sent.</p> : null}
+          {justSent ? <p role="status" className="m-0 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm">Changes saved.</p> : null}
           {application ? <ApplicationStatusPanel application={application} onEdit={() => void startApplying()} /> : null}
           <PostingSummary posting={posting} />
           {!application && !isViewingAs ? closed
