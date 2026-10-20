@@ -58,6 +58,7 @@ export function ImageUploadField({
   disabled = false,
   accept = "image/*",
   uploadPath = "dashboard/images",
+  compactSize = "h-24 w-24",
 }: {
   label: string;
   value: string;
@@ -69,6 +70,8 @@ export function ImageUploadField({
   accept?: string;
   /** Storage prefix for the uploaded file. Pass null to keep a local data URI. */
   uploadPath?: string | null;
+  /** Size classes for the compact circle. */
+  compactSize?: string;
 }) {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = React.useState(false);
@@ -153,7 +156,7 @@ export function ImageUploadField({
       <div
         role="button"
         tabIndex={isDisabled ? -1 : 0}
-        aria-label={compact ? "Change avatar" : undefined}
+        aria-label={compact ? `Change ${label.toLowerCase() || "avatar"}` : undefined}
         aria-disabled={isDisabled}
         aria-busy={uploading}
         onClick={() => {
@@ -175,7 +178,7 @@ export function ImageUploadField({
           setDragging(false);
           if (!isDisabled) void readImage(event.dataTransfer.files[0]);
         }}
-        className={`relative cursor-pointer overflow-hidden border border-dashed transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${compact ? "h-24 w-24 rounded-full p-0" : variant === "avatar" ? "rounded-xl p-3" : "rounded-lg p-3"} ${dragging ? "border-primary bg-primary/5" : "border-border hover:border-foreground/50"} ${isDisabled ? "cursor-not-allowed opacity-50" : ""}`}
+        className={`relative cursor-pointer overflow-hidden border border-dashed transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${compact ? `${compactSize} shrink-0 rounded-full p-0` : variant === "avatar" ? "rounded-xl p-3" : "rounded-lg p-3"} ${dragging ? "border-primary bg-primary/5" : "border-border hover:border-foreground/50"} ${isDisabled ? "cursor-not-allowed opacity-50" : ""}`}
       >
         <input
           ref={inputRef}

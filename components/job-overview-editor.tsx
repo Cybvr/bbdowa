@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
+import { ImageUploadField } from "@/components/detail-editor";
 import { RichTextEditor } from "@/components/rich-text-editor";
 import { TagInput } from "@/components/tag-input";
 import { firebaseDb } from "@/lib/firebase/client";
@@ -25,6 +26,7 @@ const LANGUAGE_OPTIONS = ["English", "French", "English, French"];
 export function JobOverviewEditor({ job, scope = "staff" }: { job: Job; scope?: "staff" | "client" }) {
   const router = useRouter();
   const [title, setTitle] = React.useState(job.title ?? job.name);
+  const [image, setImage] = React.useState(job.image ?? "");
   const [campaignTitle, setCampaignTitle] = React.useState(job.campaignTitle ?? job.title ?? job.name ?? "");
   const [clientId, setClientId] = React.useState(job.clientId ?? "");
   const clientOptions = useClientOptions({ clientId: job.clientId, clientName: job.clientName });
@@ -88,6 +90,7 @@ export function JobOverviewEditor({ job, scope = "staff" }: { job: Job; scope?: 
           clientName: clientOptions.find((option) => option.value === clientId)?.label ?? job.clientName,
           status,
           leadUserId: leadUserId || null,
+          image: image.trim(),
         } : {}),
         category: category.trim(),
         summary: description.trim(),
@@ -141,7 +144,10 @@ export function JobOverviewEditor({ job, scope = "staff" }: { job: Job; scope?: 
     {error ? <p role="alert" className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">{error}</p> : null}
     <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.7fr)]">
       <div className="min-w-0">
-        <label className="mb-6 block space-y-1.5 text-sm font-medium">Job title<input value={title} onChange={(event) => setTitle(event.target.value)} className={FIELD} /></label>
+        <div className="mb-6 flex items-end gap-3">
+          {scope === "staff" ? <ImageUploadField label="Job image" value={image} onChange={(value) => { setImage(value); setSaved(false); }} compact hideLabel compactSize="h-10 w-10" /> : null}
+          <label className="block min-w-0 flex-1 space-y-1.5 text-sm font-medium">Job title<input value={title} onChange={(event) => setTitle(event.target.value)} className={FIELD} /></label>
+        </div>
         <RichTextEditor label="Description" value={description} onChange={setDescription} placeholder="Describe the job…" tall />
       </div>
       <div className="flex min-w-0 flex-col gap-4 lg:sticky lg:top-6">
