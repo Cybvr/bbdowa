@@ -252,6 +252,8 @@ export function RichTextEditor({
   tall = false,
   disabled = false,
   allowMessageButton = false,
+  composer = false,
+  showToolbar = true,
 }: {
   label: string;
   hideLabel?: boolean;
@@ -261,6 +263,9 @@ export function RichTextEditor({
   compact?: boolean;
   disabled?: boolean;
   allowMessageButton?: boolean;
+  /** Let an email composer use the editor as a full-height writing surface. */
+  composer?: boolean;
+  showToolbar?: boolean;
   /** A much taller writing area, for long-form copy like a job description. */
   tall?: boolean;
 }) {
@@ -287,7 +292,7 @@ export function RichTextEditor({
       },
       attributes: {
         "aria-label": label,
-        class: `${tall ? "min-h-[32rem]" : compact ? "min-h-36" : "min-h-56"} px-4 py-3 text-[14px] leading-[1.65] outline-none ${PROSE}`,
+        class: `${composer ? "min-h-full px-0 py-0 text-[15px]" : tall ? "min-h-[32rem] px-4 py-3 text-[14px]" : compact ? "min-h-36 px-4 py-3 text-[14px]" : "min-h-56 px-4 py-3 text-[14px]"} leading-[1.65] outline-none ${PROSE}`,
       },
     },
     onUpdate: ({ editor: currentEditor }) => onChange(currentEditor.getHTML()),
@@ -311,10 +316,10 @@ export function RichTextEditor({
   });
 
   return (
-    <div className="space-y-1.5">
+    <div className={composer ? "flex h-full min-h-0 flex-col" : "space-y-1.5"}>
       <span className={hideLabel ? "sr-only" : compact ? "block text-[13px] text-muted-foreground" : "block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground"}>{label}</span>
-      <div className="overflow-hidden rounded-md border border-input bg-background transition focus-within:border-foreground focus-within:ring-2 focus-within:ring-primary/20">
-        <div className="flex flex-wrap items-center gap-0.5 border-b border-border bg-muted/30 px-2 py-1" aria-label={`${label} formatting`}>
+      <div className={composer ? "flex min-h-0 flex-1 flex-col overflow-hidden bg-background" : "overflow-hidden rounded-md border border-input bg-background transition focus-within:border-foreground focus-within:ring-2 focus-within:ring-primary/20"}>
+        {showToolbar ? <div className={composer ? "order-last flex shrink-0 items-center gap-0.5 overflow-x-auto border-t border-border bg-muted/30 px-2 py-1" : "flex flex-wrap items-center gap-0.5 border-b border-border bg-muted/30 px-2 py-1"} aria-label={`${label} formatting`}>
           <select
             aria-label="Text style"
             disabled={!editor || disabled || htmlMode}
@@ -397,7 +402,7 @@ export function RichTextEditor({
           <ToolbarButton label={htmlMode ? "Back to editor" : "Edit HTML"} active={htmlMode} disabled={!editor || disabled} onClick={() => setHtmlMode((current) => !current)}>
             <FileCode className="h-4 w-4" aria-hidden="true" />
           </ToolbarButton>
-        </div>
+        </div> : null}
         {htmlMode ? (
           <textarea
             aria-label={`${label} HTML`}
@@ -405,12 +410,12 @@ export function RichTextEditor({
             onChange={(event) => onChange(event.target.value)}
             disabled={disabled}
             spellCheck={false}
-            className={`${tall ? "min-h-[32rem]" : compact ? "min-h-36" : "min-h-56"} block w-full resize-y bg-background px-4 py-3 font-mono text-[13px] leading-[1.6] outline-none`}
+            className={`${composer ? "min-h-0 flex-1 resize-none px-0 py-0" : tall ? "min-h-[32rem] resize-y px-4 py-3" : compact ? "min-h-36 resize-y px-4 py-3" : "min-h-56 resize-y px-4 py-3"} block w-full bg-background font-mono text-[13px] leading-[1.6] outline-none`}
           />
         ) : (
-          <div className="relative">
+          <div className={composer ? "relative min-h-0 flex-1 overflow-y-auto [&>div]:min-h-full [&_.ProseMirror]:min-h-full" : "relative"}>
             {!value && !editor?.getText() ? (
-              <span className="pointer-events-none absolute left-4 top-3 text-[14px] text-muted-foreground">{placeholder}</span>
+              <span className={`pointer-events-none absolute text-[14px] text-muted-foreground ${composer ? "left-0 top-0" : "left-4 top-3"}`}>{placeholder}</span>
             ) : null}
             <EditorContent editor={editor} />
           </div>

@@ -96,5 +96,5 @@ export const ADMIN_NAV_ITEMS: NavItem[] = [
       { label: "Notifications", href: "/admin/notifications", requiresAdmin: true },
     ],
   },
-  { kind: "link", label: "Dashboard", href: "/dashboard" },
+  { kind: "link", label: "Portal", href: "/dashboard" },
 ];

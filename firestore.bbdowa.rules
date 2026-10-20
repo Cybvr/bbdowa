@@ -322,6 +322,54 @@ service cloud.firestore {
       allow read, create: if isAdmin() || isManager();
     }
 
+    // The admin email workspace shares drafts across admins and managers.
+    match /emailDrafts/{draftId} {
+      allow read, delete: if isAdmin() || isManager();
+      allow create, update: if (isAdmin() || isManager())
+        && request.resource.data.keys().hasOnly([
+          "id", "recipients", "query", "subject", "message", "templateKey", "updatedAt"
+        ])
+        && request.resource.data.id == draftId
+        && request.resource.data.recipients is list
+        && request.resource.data.recipients.size() <= 200
+        && request.resource.data.query is string
+        && request.resource.data.query.size() <= 320
+        && request.resource.data.subject is string
+        && request.resource.data.subject.size() <= 200
+        && request.resource.data.message is string
+        && request.resource.data.message.size() <= 20000
+        && request.resource.data.templateKey is string
+        && request.resource.data.templateKey.size() <= 120
+        && request.resource.data.updatedAt is string;
+    }
+
+    // Shared Bin for the admin email workspace. Inbox and Sent records are
+    // hidden by these records; a draft is stored here before its active copy is removed.
+    match /emailBin/{itemId} {
+      allow read, delete: if isAdmin() || isManager();
+      allow create: if (isAdmin() || isManager())
+        && request.resource.data.keys().hasOnly([
+          "id", "source", "sourceId", "subject", "correspondent", "originalAt", "deletedAt", "draft"
+        ])
+        && request.resource.data.id == itemId
+        && request.resource.data.source in ["inbox", "sent", "draft"]
+        && request.resource.data.sourceId is string
+        && request.resource.data.subject is string
+        && request.resource.data.correspondent is string
+        && request.resource.data.originalAt is string
+        && request.resource.data.deletedAt is string;
+    }
+
+    // Star and importance markers are shared across the admin inbox.
+    match /emailInboxFlags/{emailId} {
+      allow read: if isAdmin() || isManager();
+      allow create, update: if (isAdmin() || isManager())
+        && request.resource.data.keys().hasOnly(["id", "starred", "important"])
+        && request.resource.data.id == emailId
+        && request.resource.data.starred is bool
+        && request.resource.data.important is bool;
+    }
+
     // A browser push subscription belongs to one signed-in person and one
     // browser profile. Delivery is performed by the server service account.
     match /pushSubscriptions/{id} {
