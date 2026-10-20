@@ -370,6 +370,7 @@ export const NAV_ICON_SET: Record<string, NavIconComponent> = {
   Communication: MessagesIcon,
   Overview: DashboardIcon,
   Users: TeamIcon,
+  Applicants: TeamIcon,
   Documents: DocumentsIcon,
   Appraisals: AppraisalsIcon,
   Tasks: TasksIcon,

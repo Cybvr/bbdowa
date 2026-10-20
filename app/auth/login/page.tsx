@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { LoginForm } from "@/components/login-form";
+import { SignedInRedirect } from "@/components/signed-in-redirect";
 
 export const metadata: Metadata = {
   title: "Sign In — Bantaba | BBDO West Africa",
@@ -19,6 +20,7 @@ export default async function LoginPage({
       : "/dashboard";
 
   return (
+    <SignedInRedirect redirectTo={redirectTo}>
     <div className="min-h-screen bg-background">
       <main className="flex min-h-screen items-center justify-center px-5 py-10 sm:px-8 sm:py-14">
         <section className="w-full max-w-[440px]">
@@ -29,5 +31,6 @@ export default async function LoginPage({
       </main>
 
     </div>
+    </SignedInRedirect>
   );
 }

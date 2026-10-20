@@ -70,9 +70,10 @@ export const ADMIN_NAV_ITEMS: NavItem[] = [
   {
     kind: "menu",
     label: "People",
-    match: ["/admin/users", "/admin/appraisals"],
+    match: ["/admin/users", "/admin/applicants", "/admin/appraisals"],
     items: [
       { label: "Users", href: "/admin/users", requiresAdmin: true },
+      { label: "Applicants", href: "/admin/applicants" },
       { label: "Appraisals", href: "/admin/appraisals" },
     ],
   },

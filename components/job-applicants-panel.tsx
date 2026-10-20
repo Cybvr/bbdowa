@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { arrayUnion, collection, doc, getDoc, getDocs, query, setDoc, updateDoc, where } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, query, setDoc, updateDoc, where } from "firebase/firestore";
 import { Copy, ExternalLink } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { Badge } from "@/components/dashboard/ui";
@@ -11,14 +11,10 @@ import { RichTextEditor } from "@/components/rich-text-editor";
 import { TagInput } from "@/components/tag-input";
 import { Button } from "@/components/ui/button";
 import { firebaseDb } from "@/lib/firebase/client";
-import { jobsCollection } from "@/lib/firebase/job-collections";
+import { updateJobApplication } from "@/lib/firebase/job-applications";
 import { useFirestoreDocuments, useFirestoreUsers } from "@/lib/firebase/client-content";
-import { getMasterNdaId, loadNdaState, sendMasterNda, setMasterNdaId, type NdaState } from "@/lib/firebase/master-nda";
-import { EMPTY_JOB_TERMS, JOB_TERMS_COLLECTION, type JobTerms } from "@/lib/job-terms";
-import { sendAppEmail } from "@/lib/app-email";
-import { notify } from "@/lib/email/notify";
+import { getMasterNdaId, loadNdaState, setMasterNdaId, type NdaState } from "@/lib/firebase/master-nda";
 import { formatAmount } from "@/lib/payments";
-import { jobTeamKey } from "@/lib/users";
 import type { Job } from "@/lib/jobs";
 import {
   APPLICATION_STATUS_LABELS,
@@ -169,8 +165,8 @@ function MasterNdaPicker({ masterId, onChange }: { masterId: string | null; onCh
   </label>;
 }
 
-function ApplicationRow({ application, masterId, busy, onAction }: { application: JobApplication; masterId: string | null; busy: boolean; onAction: (application: JobApplication, status: ApplicationStatus) => void }) {
-  const [open, setOpen] = React.useState(false);
+export function ApplicationRow({ application, masterId, busy, onAction, defaultOpen = false }: { application: JobApplication; masterId: string | null; busy: boolean; onAction: (application: JobApplication, status: ApplicationStatus) => void; defaultOpen?: boolean }) {
+  const [open, setOpen] = React.useState(defaultOpen);
   const [nda, setNda] = React.useState<NdaState | null>(null);
   React.useEffect(() => {
     let active = true;
@@ -262,31 +258,13 @@ export function JobApplicantsPanel({ job, onTeamChanged }: { job: Job; onTeamCha
     }
   };
 
-  /** Hiring puts the person on the job's team, the same as the Team tab. */
-  const addToTeam = async (uid: string) => {
-    const person = users.find((candidate) => candidate.uid === uid);
-    const key = person ? jobTeamKey(person) : `uid:${uid}`;
-    const termsRef = doc(firebaseDb, JOB_TERMS_COLLECTION, job.slug);
-    const terms = await getDoc(termsRef);
-    if (terms.exists()) await updateDoc(termsRef, { teamUids: arrayUnion(uid), updatedAt: new Date().toISOString() });
-    else await setDoc(termsRef, { ...EMPTY_JOB_TERMS, teamUids: [uid], updatedAt: new Date().toISOString() } satisfies JobTerms);
-    if (key && !(job.creatorSlugs ?? []).includes(key)) await updateDoc(doc(firebaseDb, await jobsCollection(), job.slug), { creatorSlugs: arrayUnion(key) });
-    void sendAppEmail({ type: "job", jobSlug: job.slug, uids: [uid] });
-    void notify({ event: "job.assigned", id: job.slug, uids: [uid] });
-  };
-
   const act = async (application: JobApplication, status: ApplicationStatus) => {
     if (!staff || busyId) return;
     setBusyId(application.id);
     setError(null);
     try {
-      if (status === "shortlisted" && masterId) {
-        await sendMasterNda(masterId, { uid: application.uid, name: application.name }, { uid: staff.uid, name: staff.name ?? staff.email });
-      }
-      if (status === "hired") await addToTeam(application.uid);
-      const jobSlug = status === "declined" ? application.jobSlug : job.slug;
-      await updateDoc(doc(firebaseDb, JOB_APPLICATIONS_COLLECTION, application.id), { status, jobSlug, updatedAt: new Date().toISOString() });
-      setApplications((current) => current.map((item) => item.id === application.id ? { ...item, status, jobSlug } : item));
+      const updated = await updateJobApplication({ application, status, job, users, staff, masterId });
+      setApplications((current) => current.map((item) => item.id === application.id ? updated : item));
       if (status === "hired") onTeamChanged?.();
     } catch (cause) {
       console.error("Unable to update application", cause);
