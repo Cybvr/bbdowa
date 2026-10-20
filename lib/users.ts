@@ -135,8 +135,21 @@ export type Creator = User;
 /** Normalize records written before the multi-role model was introduced. */
 export function normalizeUser(user: User): User {
   const roles = userRoles(user);
+  // Accounts made at sign-up or by skipping onboarding can lack these fields;
+  // pages call string and array methods on them, so give them empty values.
   return {
     ...user,
+    name: user.name ?? "",
+    title: user.title ?? "",
+    department: user.department ?? "",
+    category: user.category ?? "",
+    location: user.location ?? "",
+    terms: user.terms ?? "",
+    dayRate: user.dayRate ?? "",
+    vouchedBy: user.vouchedBy ?? "",
+    craftNote: user.craftNote ?? "",
+    tags: Array.isArray(user.tags) ? user.tags : [],
+    workedOn: Array.isArray(user.workedOn) ? user.workedOn : [],
     role: user.role ?? roles[0] ?? "pending",
     roles,
   };
@@ -175,8 +188,8 @@ export function rateFloorNgn(creator: Creator): number {
   return creator.rateCurrency === "USD" ? creator.rateMin * NGN_PER_USD : creator.rateMin;
 }
 
-export function baseCity(location: string): string {
-  return location.split(" /")[0];
+export function baseCity(location: string | null | undefined): string {
+  return (location ?? "").split(" /")[0];
 }
 
 export const CREATOR_NEW_WINDOW_DAYS = 30;
