@@ -1,6 +1,6 @@
 import { MESSAGE_TEMPLATES } from "../message-templates";
 import type { MessageTemplate } from "../message-templates";
-import { messageHtmlToPlainText } from "../message-html";
+import { buildMessageHtml, messageHtmlToPlainText } from "../message-html";
 
 export const TEMPLATE_COLLECTION = "messageTemplates";
 export type SavedTemplate = MessageTemplate & { kind: "message" | "transactional"; heading: string; variables: string[]; published: boolean; updatedAt?: string };
@@ -23,6 +23,23 @@ const transactional = [
 
 export const TEMPLATE_DEFAULTS: SavedTemplate[] = [
   ...MESSAGE_TEMPLATES.map((template) => ({ ...template, kind: "message" as const, heading: template.subject, variables: [], published: true })),
+  {
+    key: "share-job",
+    label: "Share job",
+    description: "Email a job link to someone.",
+    subject: "A job to share",
+    message: buildMessageHtml("I thought this job might interest you. Please review the details at the link below.", "View job", "/dashboard/jobs"),
+    actionLabel: "View job",
+    actionHref: "/dashboard/jobs",
+    audience: "people",
+    email: true,
+    inApp: false,
+    push: false,
+    kind: "message",
+    heading: "A job to share",
+    variables: [],
+    published: true,
+  },
   ...transactional.map(([key, label, subject, heading, message, variables]) => ({ key, label, subject, heading, message, variables: [...variables], kind: "transactional" as const, published: true, description: "Sent automatically when this event occurs. Record details and action links are added automatically.", audience: "people" as const, email: true, inApp: true, push: true })),
 ];
 

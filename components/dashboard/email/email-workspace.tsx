@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { collection, getDocs } from "firebase/firestore";
-import { LuArrowLeft, LuChevronDown, LuFileText, LuInbox, LuLayoutTemplate, LuMaximize2, LuMinimize2, LuMinus, LuPlus, LuRefreshCw, LuSend, LuStar, LuTrash2, LuUsers, LuX } from "react-icons/lu";
+import { LuArrowLeft, LuFileText, LuInbox, LuLayoutTemplate, LuMaximize2, LuMinimize2, LuMinus, LuPlus, LuRefreshCw, LuSend, LuStar, LuTrash2, LuUsers, LuX } from "react-icons/lu";
 import { useAuth } from "@/components/auth-provider";
 import { NAV_ACTIVE, NAV_TEXT } from "@/components/dashboard-sidebar";
 import { EmptyState, PageHeader, PANEL } from "@/components/dashboard/ui";
@@ -12,6 +12,7 @@ import { FilterBar, useListView, type SortOption, type ViewMode } from "@/compon
 import { CardGrid, MobileRow, MobileRows } from "@/components/dashboard/list-card";
 import { RichTextContent, RichTextEditor, richTextHasContent } from "@/components/rich-text-editor";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { firebaseAuth, firebaseDb } from "@/lib/firebase/client";
 import { useFirestoreUsers } from "@/lib/firebase/client-content";
 import { loadTemplates } from "@/lib/email/template-store";
@@ -198,14 +199,14 @@ function RecipientChip({ item, onRemove }: { item: Recipient; onRemove: () => vo
   );
 }
 
-function ComposeEmail({ templates, initialTemplate, initialDraft, staffUid, onDraftSaved, onDraftRemoved, onSent, onClose, registerSave }: { templates: SavedTemplate[]; initialTemplate?: SavedTemplate | null; initialDraft?: EmailDraft | null; staffUid: string; onDraftSaved: (draft: EmailDraft) => void; onDraftRemoved: (id: string) => void; onSent: () => void; onClose: () => void; registerSave: (save: (() => Promise<boolean>) | null) => void }) {
+export function ComposeEmail({ templates, initialTemplate, initialDraft, staffUid, onDraftSaved, onDraftRemoved, onSent, onClose, registerSave, showGroups = true, allowEmailAddresses = true }: { templates: SavedTemplate[]; initialTemplate?: SavedTemplate | null; initialDraft?: EmailDraft | null; staffUid: string; onDraftSaved: (draft: EmailDraft) => void; onDraftRemoved: (id: string) => void; onSent: () => void; onClose: () => void; registerSave: (save: (() => Promise<boolean>) | null) => void; showGroups?: boolean; allowEmailAddresses?: boolean }) {
   const { users } = useFirestoreUsers();
   const [recipients, setRecipients] = React.useState<Recipient[]>(initialDraft?.recipients ?? []);
   const [query, setQuery] = React.useState(initialDraft?.query ?? "");
   const [pickerOpen, setPickerOpen] = React.useState(false);
-  const [templateKey, setTemplateKey] = React.useState(initialDraft?.templateKey ?? "blank");
-  const [subject, setSubject] = React.useState(initialDraft?.subject ?? "");
-  const [message, setMessage] = React.useState(initialDraft?.message ?? "");
+  const [templateKey, setTemplateKey] = React.useState(initialDraft?.templateKey ?? initialTemplate?.key ?? "blank");
+  const [subject, setSubject] = React.useState(initialDraft?.subject ?? initialTemplate?.subject ?? "");
+  const [message, setMessage] = React.useState(initialDraft?.message ?? initialTemplate?.message ?? "");
   const [from, setFrom] = React.useState("");
   const [fromError, setFromError] = React.useState("");
   const [busy, setBusy] = React.useState(false);
@@ -257,8 +258,8 @@ function ComposeEmail({ templates, initialTemplate, initialDraft, staffUid, onDr
   const needle = query.trim().toLowerCase();
   const chosen = new Set(recipients.map(recipientId));
   const options: Recipient[] = [
-    ...(EMAIL_PATTERN.test(needle) ? [{ kind: "email", address: needle, label: needle } as Recipient] : []),
-    ...MESSAGE_GROUPS.filter((item) => !needle || item.label.toLowerCase().includes(needle)).map((item) => ({ kind: "group" as const, key: item.key, label: item.label })),
+    ...(allowEmailAddresses && EMAIL_PATTERN.test(needle) ? [{ kind: "email", address: needle, label: needle } as Recipient] : []),
+    ...(showGroups ? MESSAGE_GROUPS.filter((item) => !needle || item.label.toLowerCase().includes(needle)).map((item) => ({ kind: "group" as const, key: item.key, label: item.label })) : []),
     ...people.filter((person) => !needle || person.name.toLowerCase().includes(needle) || person.email.toLowerCase().includes(needle)).slice(0, 8).map((person) => ({ kind: "person" as const, uid: person.uid, label: person.name, email: person.email })),
   ].filter((item) => !chosen.has(recipientId(item)));
 
@@ -314,7 +315,7 @@ function ComposeEmail({ templates, initialTemplate, initialDraft, staffUid, onDr
 
   const send = async () => {
     const hasMessage = Boolean(subject.trim() && richTextHasContent(message));
-    if (!hasMessage || !recipients.length || !from || busy) return;
+    if (!hasMessage || !recipients.length || !from || busy || (!allowEmailAddresses && (addresses.length || EMAIL_PATTERN.test(needle)))) return;
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = null;
     setBusy(true);
@@ -347,12 +348,15 @@ function ComposeEmail({ templates, initialTemplate, initialDraft, staffUid, onDr
   };
 
   const plainLength = messageHtmlToPlainText(message).length;
-  const canSend = Boolean(subject.trim() && richTextHasContent(message) && recipients.length && from && !busy);
+  const canSend = Boolean(subject.trim() && richTextHasContent(message) && recipients.length && from && !busy && (allowEmailAddresses || (!addresses.length && !EMAIL_PATTERN.test(needle))));
 
   return (
     <section className={`fixed z-50 flex flex-col overflow-hidden rounded-xl border border-border bg-background shadow-[0_12px_40px_rgba(0,0,0,0.22)] ${maximized ? "inset-3 h-auto w-auto sm:inset-5" : `bottom-3 right-3 w-[calc(100vw-1.5rem)] sm:bottom-4 sm:right-4 sm:w-[min(32rem,calc(100vw-2rem))] ${minimized ? "h-14" : "h-[min(29rem,calc(100dvh-5rem))]"}`}`} aria-label="Compose email">
       <div className="flex h-14 shrink-0 items-center justify-between gap-3 bg-muted px-4 sm:px-5">
-        <div className="min-w-0"><h2 className="m-0 text-item-title font-semibold">{initialDraft ? "Draft" : "New Message"}</h2>{draftSaveState === "saved" ? <p className="m-0 text-xs text-muted-foreground">Saved in Drafts</p> : draftSaveState === "saving" ? <p className="m-0 text-xs text-muted-foreground">Saving draft…</p> : draftSaveState === "error" ? <p className="m-0 text-xs text-destructive">Draft could not be saved</p> : null}</div>
+        <div className="flex min-w-0 items-baseline gap-2">
+          <h2 className="m-0 shrink-0 text-item-title font-semibold">{initialDraft ? "Draft" : "New Message"}</h2>
+          {draftSaveState === "saved" ? <span className="min-w-0 truncate text-xs text-muted-foreground">Saved in Drafts</span> : draftSaveState === "saving" ? <span className="min-w-0 truncate text-xs text-muted-foreground">Saving draft…</span> : draftSaveState === "error" ? <span className="min-w-0 truncate text-xs text-destructive">Draft could not be saved</span> : null}
+        </div>
         <div className="flex items-center gap-1 text-muted-foreground">
           <button type="button" onClick={() => { setMinimized((value) => !value); setMaximized(false); }} aria-label={minimized ? "Restore composer" : "Minimize composer"} title={minimized ? "Restore composer" : "Minimize composer"} className="grid h-9 w-9 place-items-center rounded-md hover:bg-background/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"><LuMinus aria-hidden="true" className="h-4 w-4" /></button>
           <button type="button" onClick={() => { setMaximized((value) => !value); setMinimized(false); }} aria-label={maximized ? "Restore composer size" : "Maximize composer"} title={maximized ? "Restore composer size" : "Maximize composer"} className="grid h-9 w-9 place-items-center rounded-md hover:bg-background/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">{maximized ? <LuMinimize2 aria-hidden="true" className="h-4 w-4" /> : <LuMaximize2 aria-hidden="true" className="h-4 w-4" />}</button>
@@ -371,7 +375,7 @@ function ComposeEmail({ templates, initialTemplate, initialDraft, staffUid, onDr
           <div ref={pickerRef} className="relative min-w-0 flex-1">
             <div className="flex min-h-12 max-h-24 flex-wrap items-center gap-1.5 overflow-y-auto py-1 focus-within:outline-none" onClick={() => setPickerOpen(true)}>
               {recipients.map((item) => <RecipientChip key={recipientId(item)} item={item} onRemove={() => setRecipients((current) => current.filter((other) => recipientId(other) !== recipientId(item)))} />)}
-              <input aria-labelledby="email-to" value={query} onChange={(event) => { setQuery(event.target.value); setPickerOpen(true); }} onFocus={() => setPickerOpen(true)} onKeyDown={(event) => { if ((event.key === "Enter" || event.key === ",") && options[0]) { event.preventDefault(); addRecipient(options[0]); } else if (event.key === "Backspace" && !query && recipients.length) setRecipients((current) => current.slice(0, -1)); }} disabled={busy} placeholder={recipients.length ? "Add another…" : "People, groups or email address"} className="h-8 min-w-[8rem] flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground" />
+              <input aria-labelledby="email-to" value={query} onChange={(event) => { setQuery(event.target.value); setPickerOpen(true); }} onFocus={() => setPickerOpen(true)} onKeyDown={(event) => { if ((event.key === "Enter" || event.key === ",") && options[0]) { event.preventDefault(); addRecipient(options[0]); } else if (event.key === "Backspace" && !query && recipients.length) setRecipients((current) => current.slice(0, -1)); }} disabled={busy} placeholder={recipients.length ? "Add another…" : showGroups ? "People, groups or email address" : allowEmailAddresses ? "User or email address" : "Search users"} className="h-8 min-w-[8rem] flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground" />
             </div>
             {pickerOpen && options.length ? <ul role="listbox" className="absolute left-0 right-0 top-full z-30 m-0 mt-1 max-h-64 list-none overflow-y-auto rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-lg">
               {options.map((item) => <li key={recipientId(item)} role="option" aria-selected={false}><button type="button" onClick={() => addRecipient(item)} className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm hover:bg-muted"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-border text-[10px] font-bold text-primary">{item.kind === "group" ? <LuUsers aria-hidden="true" className="h-3.5 w-3.5" /> : initials(item.label)}</span><span className="min-w-0 truncate font-medium">{item.kind === "email" ? `Send to ${item.address}` : item.label}</span></button></li>)}
@@ -392,14 +396,19 @@ function ComposeEmail({ templates, initialTemplate, initialDraft, staffUid, onDr
         <div className="flex min-h-16 shrink-0 items-center gap-2 border-t border-border px-4 py-2 sm:px-5">
           <button type="button" onClick={() => void send()} disabled={!canSend} className="inline-flex h-10 shrink-0 items-center rounded-full bg-primary px-6 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">{busy ? "Sending…" : "Send"}</button>
           <button type="button" onClick={() => setFormattingOpen((value) => !value)} aria-label="Formatting options" aria-expanded={formattingOpen} title="Formatting options" className={`grid h-10 w-10 shrink-0 place-items-center rounded-md text-lg font-semibold transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${formattingOpen ? "bg-muted text-foreground" : "text-muted-foreground"}`}>Aa</button>
-          <div className="relative flex min-w-0 items-center text-muted-foreground">
-            <LuLayoutTemplate aria-hidden="true" className="pointer-events-none absolute left-2 h-4 w-4" />
+          <div className="min-w-0 shrink-0">
             <label htmlFor="email-template" className="sr-only">Message template</label>
-            <select id="email-template" value={templateKey} onChange={(event) => applyTemplate(event.target.value)} disabled={busy} className="h-10 w-10 appearance-none rounded-md bg-transparent pl-8 text-sm text-foreground outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary sm:w-32 sm:pr-5">
-              <option value="blank">Template</option>
-              {messageTemplates.map((item) => <option key={item.key} value={item.key}>{item.label}</option>)}
-            </select>
-            <LuChevronDown aria-hidden="true" className="pointer-events-none absolute right-1 hidden h-3 w-3 sm:block" />
+            <Select value={templateKey} onValueChange={applyTemplate} disabled={busy}>
+              <SelectTrigger id="email-template" aria-label="Message template" className="h-10 w-12 shrink-0 rounded-md border-0 px-1 text-sm text-foreground shadow-none hover:bg-muted sm:w-36 sm:px-2">
+                <LuLayoutTemplate aria-hidden="true" className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <span className="hidden min-w-0 flex-1 text-left sm:block"><SelectValue /></span>
+              </SelectTrigger>
+              <SelectContent align="end" className="z-[60] max-h-[min(24rem,calc(100dvh-4rem))] max-w-[calc(100vw-2rem)]">
+                <SelectItem value="blank" className="text-sm">Blank email</SelectItem>
+                {templateKey !== "blank" && !messageTemplates.some((item) => item.key === templateKey) ? <SelectItem value={templateKey} className="text-sm">Saved draft template</SelectItem> : null}
+                {messageTemplates.map((item) => <SelectItem key={item.key} value={item.key} className="text-sm">{item.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
           <span className="ml-auto hidden shrink-0 text-xs tabular-nums text-muted-foreground sm:block" aria-label={`${plainLength} of ${MAX_MESSAGE} characters`}>{plainLength} / {MAX_MESSAGE}</span>
         </div>
