@@ -88,9 +88,10 @@ export const ADMIN_NAV_ITEMS: NavItem[] = [
   {
     kind: "menu",
     label: "Communication",
-    match: ["/admin/blog", "/admin/messages", "/admin/notifications"],
+    match: ["/admin/blog", "/admin/messages", "/admin/email", "/admin/notifications"],
     items: [
       { label: "Blog", href: "/admin/blog" },
+      { label: "Email", href: "/admin/email" },
       { label: "Send message", href: "/admin/messages" },
       { label: "Notifications", href: "/admin/notifications", requiresAdmin: true },
     ],
