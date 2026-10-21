@@ -20,9 +20,12 @@ import {
   APPLICANT_STATUS_LABELS,
   JOB_APPLICATIONS_COLLECTION,
   JOB_POSTINGS_COLLECTION,
+  OVERLAP_OPTIONS,
+  OVERLAP_QUESTION_START,
   applicationId,
   coverLetter,
   normalizePosting,
+  overlapQuestion,
   postingHref,
   type ApplicationAttachment,
   type JobApplication,
@@ -40,11 +43,13 @@ type Draft = {
   email: string;
   coverIntro: string;
   answers: string[];
+  /** Hours of overlap with the client's workday, one of OVERLAP_OPTIONS. */
+  overlap: string;
   attachment: ApplicationAttachment | null;
 };
 
 function emptyDraft(posting: JobPosting, user: { name: string | null; email: string | null } | null): Draft {
-  return { name: user?.name ?? "", email: user?.email ?? "", coverIntro: "", answers: posting.questions.map(() => ""), attachment: null };
+  return { name: user?.name ?? "", email: user?.email ?? "", coverIntro: "", answers: posting.questions.map(() => ""), overlap: "", attachment: null };
 }
 
 function draftFromApplication(posting: JobPosting, application: JobApplication): Draft {
@@ -53,6 +58,7 @@ function draftFromApplication(posting: JobPosting, application: JobApplication):
     email: application.email ?? "",
     coverIntro: coverLetter(application),
     answers: posting.questions.map((question) => application.answers.find((item) => item.question === question)?.answer ?? ""),
+    overlap: application.answers.find((item) => item.question.startsWith(OVERLAP_QUESTION_START))?.answer ?? "",
     attachment: application.attachment ?? null,
   };
 }
@@ -103,13 +109,14 @@ function accountProblem(cause: unknown): string | null {
   return null;
 }
 
-function problemWith(draft: Draft, posting: JobPosting, file: File | null, password: string | null): string | null {
+function problemWith(draft: Draft, posting: JobPosting, file: File | null, password: string | null, asksOverlap: boolean): string | null {
   if (password !== null) {
     if (!draft.name.trim()) return "Add your name.";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(draft.email.trim())) return "Add a valid email address.";
     if (password.length < 6) return "Choose a password of at least 6 characters.";
   }
   if (!draft.coverIntro.trim()) return "Write your cover letter.";
+  if (asksOverlap && !draft.overlap) return "Say how many hours you can overlap with the client's workday.";
   if (posting.questions.some((_, index) => !draft.answers[index]?.trim())) return "Answer the application questions.";
   if (!file && !draft.attachment) return "Attach your CV or portfolio.";
   return null;
@@ -236,7 +243,7 @@ export function JobPostingPage({ postingId }: { postingId: string }) {
 
   const submit = async (current: Draft) => {
     if (!posting) return;
-    const problem = problemWith(current, posting, file, user ? null : password);
+    const problem = problemWith(current, posting, file, user ? null : password, Boolean(overlap));
     if (problem) { setError(problem); return; }
     setSending(true);
     setError(null);
@@ -262,7 +269,10 @@ export function JobPostingPage({ postingId }: { postingId: string }) {
         name: (user?.name ?? current.name.trim()).slice(0, 120),
         email: (user?.email ?? current.email.trim()).toLowerCase().slice(0, 200),
         coverIntro: current.coverIntro.trim().slice(0, 4000),
-        answers: posting.questions.map((question, index) => ({ question, answer: (current.answers[index] ?? "").trim().slice(0, 1500) })),
+        answers: [
+          ...(overlap ? [{ question: overlap, answer: current.overlap }] : []),
+          ...posting.questions.map((question, index) => ({ question, answer: (current.answers[index] ?? "").trim().slice(0, 1500) })),
+        ],
         attachment,
         status: "submitted",
         jobSlug: null,
@@ -296,6 +306,8 @@ export function JobPostingPage({ postingId }: { postingId: string }) {
   };
 
   const closed = posting?.status === "closed";
+  // Worded in the applicant's own time zone, as their browser reports it.
+  const overlap = posting ? overlapQuestion(posting, Intl.DateTimeFormat().resolvedOptions().timeZone) : null;
 
   return <main className="min-h-screen bg-background px-5 py-10 text-foreground sm:px-10 sm:py-16">
     <div className="mx-auto max-w-3xl">
@@ -347,12 +359,18 @@ export function JobPostingPage({ postingId }: { postingId: string }) {
             <textarea id="cover-letter" value={draft.coverIntro} onChange={(event) => update("coverIntro", event.target.value)} rows={8} className={`${FIELD} resize-y`} />
           </section>
 
-          {posting.questions.length ? <section className="grid gap-4 border-t border-border pt-6">
+          <section className="grid gap-4 border-t border-border pt-6">
             <h2 className="m-0 text-base font-semibold">Application questions</h2>
+            {overlap ? <label className={LABEL}>{overlap}
+              <select value={draft.overlap} onChange={(event) => update("overlap", event.target.value)} className={FIELD}>
+                <option value="">Choose one</option>
+                {OVERLAP_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
+              </select>
+            </label> : null}
             {posting.questions.map((question, index) => <label key={question} className={LABEL}>{question}
               <textarea value={draft.answers[index] ?? ""} onChange={(event) => update("answers", draft.answers.map((answer, at) => at === index ? event.target.value : answer))} rows={3} className={`${FIELD} resize-y`} />
             </label>)}
-          </section> : null}
+          </section>
 
           <section className="grid gap-3 border-t border-border pt-6">
             <h2 className="m-0 text-base font-semibold">Attachment</h2>

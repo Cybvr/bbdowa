@@ -39,6 +39,11 @@ export type JobPosting = {
   skills: string[];
   /** Up to three screening questions. */
   questions: string[];
+  /** The client's IANA time zone, e.g. "America/Los_Angeles". Every application asks about overlap with it. */
+  clientTimezone: string;
+  /** The client's working hours in their own time zone, as "HH:MM". */
+  workStart: string;
+  workEnd: string;
   createdBy: string;
   createdAt: string;
   updatedAt: string;
@@ -77,6 +82,9 @@ export type JobApplication = {
   createdAt: string;
   updatedAt: string;
 };
+
+/** Used when a posting doesn't set the client's hours, so the overlap question is always asked. */
+export const DEFAULT_WORK_HOURS = { clientTimezone: "Africa/Lagos", workStart: "09:00", workEnd: "17:00" };
 
 export const DURATION_OPTIONS = ["Less than 1 month", "1 to 3 months", "3 to 6 months", "6+ months"];
 
@@ -158,6 +166,9 @@ export function normalizePosting(id: string, data: Record<string, unknown>): Job
     workSetup: text(data.workSetup),
     skills: list(data.skills),
     questions: list(data.questions).slice(0, 3),
+    clientTimezone: text(data.clientTimezone) || DEFAULT_WORK_HOURS.clientTimezone,
+    workStart: text(data.workStart) || DEFAULT_WORK_HOURS.workStart,
+    workEnd: text(data.workEnd) || DEFAULT_WORK_HOURS.workEnd,
     createdBy: text(data.createdBy),
     createdAt: text(data.createdAt),
     updatedAt: text(data.updatedAt),
@@ -167,4 +178,57 @@ export function normalizePosting(id: string, data: Record<string, unknown>): Job
 /** The application's proposal as one plain cover letter, for email and copy. */
 export function coverLetter(application: Pick<JobApplication, "coverIntro" | "coverApproach" | "coverNext">): string {
   return [application.coverIntro, application.coverApproach, application.coverNext].map((part) => (part ?? "").trim()).filter(Boolean).join("\n\n");
+}
+
+export const OVERLAP_OPTIONS = ["Less than 2 hours", "2 to 4 hours", "4 to 6 hours", "More than 6 hours"];
+
+/** Every question about time overlap starts this way, whatever the applicant's time zone. */
+export const OVERLAP_QUESTION_START = "The client's time zone is";
+
+export function timeZoneOptions(): string[] {
+  try {
+    return Intl.supportedValuesOf("timeZone");
+  } catch {
+    return ["Africa/Lagos", "Europe/London", "America/New_York", "America/Los_Angeles"];
+  }
+}
+
+/** Minutes the zone is ahead of UTC at that moment. */
+function zoneOffset(timeZone: string, at: Date): number {
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).formatToParts(at).map((part) => [part.type, part.value]));
+  const asUtc = Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day), Number(parts.hour), Number(parts.minute));
+  return Math.round((asUtc - Math.floor(at.getTime() / 60_000) * 60_000) / 60_000);
+}
+
+/** "(UTC-07:00) America - Los Angeles" */
+export function timeZoneLabel(timeZone: string, at = new Date()): string {
+  const offset = zoneOffset(timeZone, at);
+  const sign = offset < 0 ? "-" : "+";
+  const hours = String(Math.floor(Math.abs(offset) / 60)).padStart(2, "0");
+  const minutes = String(Math.abs(offset) % 60).padStart(2, "0");
+  return `(UTC${sign}${hours}:${minutes}) ${timeZone.replace(/\//g, " - ").replace(/_/g, " ")}`;
+}
+
+/** Today's "HH:MM" in the client's zone, as an instant. */
+function clientTime(timeZone: string, hhmm: string, now = new Date()): Date {
+  const [hour, minute] = hhmm.split(":").map(Number);
+  const day = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(now).split("-").map(Number);
+  const guess = Date.UTC(day[0], day[1] - 1, day[2], hour, minute);
+  return new Date(guess - zoneOffset(timeZone, new Date(guess)) * 60_000);
+}
+
+function shortTime(at: Date, timeZone: string): string {
+  return at.toLocaleTimeString("en-US", { timeZone, hour: "numeric", minute: "2-digit" }).replace(":00", "").replace(" ", "").toLowerCase();
+}
+
+/** The overlap question in the applicant's time zone, or null if the zone can't be read. */
+export function overlapQuestion(posting: Pick<JobPosting, "clientTimezone" | "workStart" | "workEnd">, applicantZone: string): string | null {
+  if (!posting.clientTimezone || !posting.workStart || !posting.workEnd) return null;
+  try {
+    const start = shortTime(clientTime(posting.clientTimezone, posting.workStart), applicantZone);
+    const end = shortTime(clientTime(posting.clientTimezone, posting.workEnd), applicantZone);
+    return `${OVERLAP_QUESTION_START} ${timeZoneLabel(posting.clientTimezone)}, and their working hours are ${start} - ${end} in your time zone ${timeZoneLabel(applicantZone)}. How many hours of overlap can you provide during their workday?`;
+  } catch {
+    return null;
+  }
 }

@@ -24,7 +24,10 @@ import {
   APPLICATION_STATUS_LABELS,
   COMMITMENT_OPTIONS,
   DURATION_OPTIONS,
+  DEFAULT_WORK_HOURS,
   INDUSTRY_OPTIONS,
+  timeZoneLabel,
+  timeZoneOptions,
   JOB_APPLICATIONS_COLLECTION,
   JOB_POSTINGS_COLLECTION,
   JOB_POSTING_LINKS_COLLECTION,
@@ -65,6 +68,7 @@ export function postingFromJob(job: Job, id: string, uid: string): JobPosting {
     workSetup: job.workSetup ? job.workSetup[0].toUpperCase() + job.workSetup.slice(1) : "",
     skills: job.requiredSkills ?? [],
     questions: [],
+    ...DEFAULT_WORK_HOURS,
     createdBy: uid,
     createdAt: now,
     updatedAt: now,
@@ -138,6 +142,12 @@ function PostingEditor({ posting, onSaved }: { posting: JobPosting; onSaved: (po
     <RichTextEditor label="Brief" value={fields.brief} onChange={(value) => update("brief", value)} placeholder="The client's problem and what you need. No brand names." />
     <TagInput label="Deliverables" value={fields.deliverables} onChange={(value) => update("deliverables", value)} placeholder="e.g. 3 x 15s cutdowns, then press Enter" />
     <TagInput label="Skills" value={fields.skills} onChange={(value) => update("skills", value)} placeholder="e.g. Motion design, then press Enter" />
+    <fieldset className="grid gap-4 sm:grid-cols-3">
+      <legend className="mb-1.5 text-sm font-medium">Client&apos;s working hours <span className="font-normal text-muted-foreground">(every applicant says how many hours they can overlap)</span></legend>
+      <label className={LABEL}>Time zone<select value={fields.clientTimezone} onChange={(event) => update("clientTimezone", event.target.value)} className={FIELD}>{timeZoneOptions().map((zone) => <option key={zone} value={zone}>{timeZoneLabel(zone)}</option>)}</select></label>
+      <label className={LABEL}>Start<input type="time" value={fields.workStart} onChange={(event) => update("workStart", event.target.value || DEFAULT_WORK_HOURS.workStart)} className={FIELD} /></label>
+      <label className={LABEL}>End<input type="time" value={fields.workEnd} onChange={(event) => update("workEnd", event.target.value || DEFAULT_WORK_HOURS.workEnd)} className={FIELD} /></label>
+    </fieldset>
     <fieldset className="grid gap-2">
       <legend className="mb-1.5 text-sm font-medium">Screening questions <span className="font-normal text-muted-foreground">(up to 3)</span></legend>
       {questions.map((question, index) => <input key={index} value={question} onChange={(event) => { setQuestions((current) => current.map((item, at) => at === index ? event.target.value : item)); setMessage(null); }} placeholder={index === 0 ? "e.g. Have you shot for a drinks brand before?" : "Optional"} aria-label={`Question ${index + 1}`} className={FIELD} />)}
