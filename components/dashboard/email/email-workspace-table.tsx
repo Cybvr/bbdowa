@@ -1,7 +1,6 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { DesktopTable } from "@/components/dashboard/list-card";
 import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
@@ -32,7 +31,8 @@ export function EmailWorkspaceTable({ label, columns, rows, emptyTitle, emptyDes
   columnWidths?: readonly string[];
 }) {
   const widths = columnWidths ?? (columns.length === 4 ? FOUR_COLUMN_WIDTHS : THREE_COLUMN_WIDTHS);
-  return <DesktopTable>
+  // Cells truncate, so the list never needs to scroll sideways.
+  return <div className="hidden overflow-x-hidden lg:block [&>div]:overflow-x-hidden">
     {toolbar}
     <Table className="w-full table-fixed" aria-label={label}>
       <TableBody>
@@ -48,5 +48,5 @@ export function EmailWorkspaceTable({ label, columns, rows, emptyTitle, emptyDes
         </TableCell></TableRow>}
       </TableBody>
     </Table>
-  </DesktopTable>;
+  </div>;
 }
