@@ -64,7 +64,7 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
         />
       ) : null}
       <div
-        className={`min-w-0 flex-1 pb-16 pt-0 nav:pb-0 transition-[margin-left] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${sidebarCollapsed ? "nav:ml-[80px]" : "nav:ml-[272px]"}`}
+        className={`min-w-0 flex-1 pb-16 pt-0 nav:pb-0 transition-[margin-left] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${sidebarCollapsed ? "nav:ml-[64px]" : "nav:ml-[256px]"}`}
       >
         {children}
       </div>

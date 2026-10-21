@@ -3,6 +3,7 @@ import { sortJobsByLatestLive } from "@/lib/jobs";
 import { getJobs } from "@/lib/firebase/content";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
+import { SignedInRedirect } from "@/components/signed-in-redirect";
 import { ContactForm } from "./contact-form";
 
 const RECORD = [
@@ -19,7 +20,7 @@ export default async function MarketingHomePage() {
   ).slice(0, 8);
 
   return (
-    <>
+    <SignedInRedirect>
       <Header />
 
       <main className="flex-1">
@@ -177,6 +178,6 @@ export default async function MarketingHomePage() {
       </main>
 
       <Footer />
-    </>
+    </SignedInRedirect>
   );
 }

@@ -7,7 +7,7 @@ export const STORAGE_CHANGE_EVENT = "njeri:storage-change";
 export const DEFAULT_WELCOME_MESSAGE: ChatMessage = {
   id: "welcome-1",
   role: "assistant",
-  text: "Hi, I’m Njeri. Ask me about our creators, clients, jobs, tasks, documents, or tracked work. Admins and managers can also ask me to update the portal or add something from pasted details.",
+  text: "Hi, I’m Njeri. Ask me about our creators, clients, jobs, tasks, documents, or tracked work.",
   timestamp: Date.now(),
 };
 

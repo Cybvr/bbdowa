@@ -22,8 +22,8 @@ export function NjeriWidget() {
     newChat,
   } = useNjeri();
 
-  // Hidden on the dedicated Njeri page and across the admin section.
-  const isHidden = pathname === "/dashboard/njeri" || pathname === "/portal/njeri" || pathname === "/njeri" || pathname.startsWith("/admin");
+  // Keep the assistant off public job shares, including application confirmations.
+  const isHidden = pathname === "/dashboard/njeri" || pathname === "/portal/njeri" || pathname === "/njeri" || pathname.startsWith("/admin") || pathname.startsWith("/jobs/");
 
   useEffect(() => {
     if (!open) return;

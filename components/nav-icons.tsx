@@ -291,6 +291,14 @@ export const MessagesIcon: NavIconComponent = ({ className }) => (
   </Glyph>
 );
 
+// Email — envelope
+export const EmailIcon: NavIconComponent = ({ className }) => (
+  <Glyph className={className}>
+    <rect x="3.5" y="5.5" width="17" height="13" rx="1.6" />
+    <path d="m4.5 7 7.5 6 7.5-6" />
+  </Glyph>
+);
+
 // Payments — banknote with a centre mark
 export const PaymentsIcon: NavIconComponent = ({ className }) => (
   <Glyph className={className}>
@@ -320,6 +328,7 @@ export const NotificationsIcon: NavIconComponent = ({ className }) => (
 export const NAV_ICON_SET: Record<string, NavIconComponent> = {
   Home: HomeIcon,
   Dashboard: DashboardIcon,
+  Portal: DashboardIcon,
   Projects: ProjectsIcon,
   Clients: PeopleIcon,
   Products: ProductsIcon,
@@ -338,6 +347,7 @@ export const NAV_ICON_SET: Record<string, NavIconComponent> = {
   Tracker: TrackerIcon,
   Notifications: NotificationsIcon,
   "Send message": MessagesIcon,
+  Email: EmailIcon,
   Njeri: NjeriIcon,
   Messages: MessagesIcon,
   Help: HelpIcon,
@@ -360,6 +370,7 @@ export const NAV_ICON_SET: Record<string, NavIconComponent> = {
   Communication: MessagesIcon,
   Overview: DashboardIcon,
   Users: TeamIcon,
+  Applicants: TeamIcon,
   Documents: DocumentsIcon,
   Appraisals: AppraisalsIcon,
   Tasks: TasksIcon,

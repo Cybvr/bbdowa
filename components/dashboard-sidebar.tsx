@@ -291,7 +291,9 @@ export function DashboardNavFooter({ onNavigate, collapsed = false }: { onNaviga
         <NavIcon label="Help" />
         <span className={`${NAV_LABEL} ${collapsed ? "max-w-0 opacity-0" : "max-w-[180px] opacity-100"}`}>Help</span>
       </Link>
-      {auth?.user ? null : (
+      {auth?.user ? (
+        <SidebarProfileNav onNavigate={onNavigate} collapsed={collapsed} />
+      ) : (
         <Link href="/auth/login" onClick={onNavigate} className={`${NAV_TEXT} ${collapsed ? "justify-center px-0" : ""}`}>
           <NavIcon label="My profile" />
           <span className={`${NAV_LABEL} ${collapsed ? "max-w-0 opacity-0" : "max-w-[180px] opacity-100"}`}>Sign in</span>
@@ -336,7 +338,6 @@ export function DashboardSidebarContent({
           </div>
         ) : null}
       </div>
-      <SidebarProfileNav onNavigate={onNavigate} collapsed={collapsed} />
       <DashboardNavList onNavigate={onNavigate} collapsed={collapsed} />
       <DashboardNavFooter onNavigate={onNavigate} collapsed={collapsed} />
     </>
@@ -355,7 +356,7 @@ function SidebarProfileNav({ onNavigate, collapsed }: { onNavigate?: () => void;
         showChevron={!collapsed}
         showAdminForStaff
         menuAlign="start"
-        menuSide="bottom"
+        menuSide="top"
         items={[
           { label: "My profile", href: "/dashboard/me", icon: <NavIcon label="My profile" /> },
           { label: "Settings", href: "/dashboard/settings", icon: <NavIcon label="Settings" /> },

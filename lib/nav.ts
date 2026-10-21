@@ -70,9 +70,10 @@ export const ADMIN_NAV_ITEMS: NavItem[] = [
   {
     kind: "menu",
     label: "People",
-    match: ["/admin/users", "/admin/appraisals"],
+    match: ["/admin/users", "/admin/applicants", "/admin/appraisals"],
     items: [
       { label: "Users", href: "/admin/users", requiresAdmin: true },
+      { label: "Applicants", href: "/admin/applicants" },
       { label: "Appraisals", href: "/admin/appraisals" },
     ],
   },
@@ -88,12 +89,13 @@ export const ADMIN_NAV_ITEMS: NavItem[] = [
   {
     kind: "menu",
     label: "Communication",
-    match: ["/admin/blog", "/admin/messages", "/admin/notifications"],
+    match: ["/admin/blog", "/admin/messages", "/admin/email", "/admin/notifications"],
     items: [
       { label: "Blog", href: "/admin/blog" },
+      { label: "Email", href: "/admin/email" },
       { label: "Send message", href: "/admin/messages" },
       { label: "Notifications", href: "/admin/notifications", requiresAdmin: true },
     ],
   },
-  { kind: "link", label: "Dashboard", href: "/dashboard" },
+  { kind: "link", label: "Portal", href: "/dashboard" },
 ];

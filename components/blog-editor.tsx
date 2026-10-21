@@ -130,6 +130,10 @@ export function BlogEditor({ post }: { post?: BlogPost }) {
       <form onSubmit={save} className="mt-7 space-y-7">
         <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
           <div className="min-w-0">
+            <div className="mb-7">
+              <label htmlFor="blog-title" className={FIELD_LABEL}>Title</label>
+              <Input id="blog-title" value={title} onChange={(event) => setTitle(event.target.value)} className={FIELD} required disabled={busy} />
+            </div>
             <RichTextEditor label="Content" value={content} onChange={setContent} placeholder="Write the post…" tall />
           </div>
 
@@ -145,11 +149,6 @@ export function BlogEditor({ post }: { post?: BlogPost }) {
               onUploadingChange={setMediaUploading}
               disabled={busy}
             />
-
-            <div>
-              <label htmlFor="blog-title" className={FIELD_LABEL}>Title</label>
-              <Input id="blog-title" value={title} onChange={(event) => setTitle(event.target.value)} className={FIELD} required disabled={busy} />
-            </div>
 
             <div>
               <label htmlFor="blog-excerpt" className={FIELD_LABEL}>Excerpt</label>
@@ -170,16 +169,18 @@ export function BlogEditor({ post }: { post?: BlogPost }) {
               </div>
             </div>
 
+            {error ? <p role="alert" className="m-0 text-sm text-destructive">{error}</p> : null}
+            {saved ? <p role="status" className="m-0 text-sm text-muted-foreground">Changes saved.</p> : null}
+
+            <div className="flex items-center justify-between gap-3 border-t border-border pt-5">
+              {post ? <button type="button" onClick={() => void remove()} disabled={busy} aria-label="Delete post" title="Delete post" className="grid h-9 w-9 place-items-center rounded-md text-destructive transition hover:bg-destructive/10 disabled:opacity-50"><Trash2 aria-hidden="true" className="h-4 w-4" /></button> : <span aria-hidden="true" />}
+              <div className="flex items-center gap-3">
+                <Link href="/admin/blog" className={LIST_ACTION_CLASS}>Cancel</Link>
+                <button type="submit" disabled={busy || mediaUploading} className={PRIMARY_ACTION_CLASS}>{busy ? "Saving…" : mediaUploading ? "Uploading media…" : post ? "Save" : "Create post"}</button>
+              </div>
+            </div>
+
           </aside>
-        </div>
-
-        {error ? <p role="alert" className="m-0 text-sm text-destructive">{error}</p> : null}
-        {saved ? <p role="status" className="m-0 text-sm text-muted-foreground">Changes saved.</p> : null}
-
-        <div className="flex flex-wrap items-center gap-3 border-t border-border pt-5">
-          <button type="submit" disabled={busy || mediaUploading} className={PRIMARY_ACTION_CLASS}>{busy ? "Saving…" : mediaUploading ? "Uploading media…" : post ? "Save changes" : "Create post"}</button>
-          <Link href="/admin/blog" className={LIST_ACTION_CLASS}>Cancel</Link>
-          {post ? <button type="button" onClick={() => void remove()} disabled={busy} className="ml-auto inline-flex h-9 items-center gap-2 text-sm font-medium text-destructive hover:underline disabled:opacity-50"><Trash2 aria-hidden="true" className="h-4 w-4" />Delete post</button> : null}
         </div>
       </form>
     </>
