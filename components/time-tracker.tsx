@@ -97,6 +97,11 @@ function durationValueFromMinutes(minutes: number): string {
 // list behind the header's add-tracker modal) reload.
 const TRACKER_CHANGED_EVENT = "tracker:changed";
 
+/** "YYYY-MM-DD" in the person's own time zone. */
+function localDateValue(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
 export function TimeTracker({
   compact = false,
   jobSlug,
@@ -120,6 +125,8 @@ export function TimeTracker({
   const [now, setNow] = React.useState(() => Date.now());
 
   const [mode, setMode] = React.useState<"timer" | "manual">("timer");
+  // Manual entries can go on an earlier day; "" means today.
+  const [logDate, setLogDate] = React.useState("");
   const [localTrackerOpen, setLocalTrackerOpen] = React.useState(false);
   const trackerOpen = open ?? localTrackerOpen;
   const setTrackerOpen = (next: boolean) => {
@@ -237,6 +244,7 @@ export function TimeTracker({
     setActivity("");
     setJobId(jobSlug ?? NO_JOB);
     setDuration("");
+    setLogDate("");
     setTimerStart("00:00:00");
   };
 
@@ -312,7 +320,8 @@ export function TimeTracker({
     }
   };
 
-  // Manual: log a completed activity ending now with the selected duration.
+  // Manual: log a completed activity with the selected duration. Today's ends
+  // now; an earlier day's ends at 5pm that day.
   const logActivity = async () => {
     if (!user || busy) return;
     if (logProblem || manualMinutes === null) { setError(logProblem); return; }
@@ -320,7 +329,8 @@ export function TimeTracker({
     setError(null);
     try {
       const chosen = chosenJob();
-      const endedAt = new Date();
+      const today = localDateValue(new Date());
+      const endedAt = logDate && logDate < today ? new Date(`${logDate}T17:00:00`) : new Date();
       const startedAt = new Date(endedAt.getTime() - manualMinutes * 60000);
       await addDoc(collection(firebaseDb, ACTIVITY_COLLECTION), {
         uid: user.uid,
@@ -440,6 +450,9 @@ export function TimeTracker({
                 ))}
                 <button type="button" onClick={() => setDuration("")} disabled={busy || displayedManualMinutes === 0} className="h-9 rounded-full border border-border px-4 text-sm text-muted-foreground transition-colors hover:border-muted-foreground hover:text-foreground disabled:opacity-50">Reset</button>
               </div>
+              <label className="flex items-center justify-center gap-2 text-sm text-muted-foreground">Day
+                <input type="date" value={logDate || localDateValue(new Date())} max={localDateValue(new Date())} onChange={(event) => setLogDate(event.target.value)} disabled={busy} className="h-9 rounded-lg border border-input bg-background px-2 text-sm text-foreground outline-none focus:border-primary" />
+              </label>
             </div>
           )}
           <form onSubmit={(event) => { event.preventDefault(); void (mode === "timer" ? startActivity() : logActivity()); }} className="space-y-5">
