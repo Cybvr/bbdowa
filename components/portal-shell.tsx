@@ -1,6 +1,5 @@
 "use client";
 
-import { ChromeNotice } from "@/components/chrome-notice";
 import * as React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -93,8 +92,7 @@ export function PortalShell({ children }: { children: React.ReactNode }) {
     );
   }, [clientId]);
 
-  if (loading) return <ChromeNotice message="Loading…" email={user?.email} onSignOut={user ? logout : undefined} />;
-  if (!user || role !== "client") return <ChromeNotice message="Taking you to the right place…" email={user?.email} onSignOut={user ? logout : undefined} />;
+  if (loading || !user || role !== "client") return null;
 
   const displayName = user.name ?? user.email?.split("@")[0] ?? "Client";
   const avatar = client?.profileImage || profileImage || createGlyphAvatarDataUri(displayName);

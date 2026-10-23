@@ -6,7 +6,6 @@ import { DashboardHeader } from "@/components/dashboard-header";
 import { DashboardFooter } from "@/components/dashboard-footer";
 import { MobileHeaderProvider } from "@/components/dashboard/mobile-header";
 import { useOptionalAuth } from "@/components/auth-provider";
-import { ChromeNotice } from "@/components/chrome-notice";
 
 export function DashboardChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -48,10 +47,8 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
     if (onboardingDue && !pathname.startsWith("/onboarding")) router.replace("/onboarding");
   }, [onboardingDue, pathname, router]);
 
-  // Never a blank screen: say what's happening and let a wrong account sign out.
-  if (!auth || auth.loading) return <ChromeNotice message="Loading…" email={auth?.user?.email} onSignOut={auth?.user ? auth.logout : undefined} />;
-  if (signedOut) return <ChromeNotice message="Taking you to sign in…" />;
-  if (isClientUser) return <ChromeNotice message="Opening your client portal…" email={auth.user?.email} onSignOut={auth.logout} />;
+  if (isClientUser) return null;
+  if (!auth || auth.loading || signedOut) return null;
   if (isApplication) return <>{children}</>;
 
   const hideMobileHeader = isClientDetail;
